@@ -17,78 +17,6 @@ token
 tag
 """
 
-import events
-
-class NotEvenAChildError(AttributeError):
-	pass
-
-class Node(events.Dispatcher):
-	def __init__(self):
-		self.children = {}
-	
-	def __getattr__(self, name):
-
-		if self.children.has_key(name):
-			return self.children[name]
-		else:
-			raise NotEvenAChildError(name, self)
-
-	def set(self, key, item):
-		self.children[key] = item
-		item.parent = self
-
-	def replace(self, item):
-		self.parent.children[self.parent.children.values.index(self)] = item
-
-	def on_text_input(self, text):
-		print "on_text default handler:", self, text
-		return False
-	
-	def on_cursor_motion(self, motion):
-		print "on_cursor_motion default handler:", self, motion
-		return False
-
-	def on_key_press(self, symbol, modifiers):
-		print "on_key_press default:", self,(
-			pyglet.window.key.modifiers_string(modifiers),
-			pyglet.window.key.symbol_string(symbol))
-		return False
-		
-	def on_mouse_press(self, x, y, button, modifiers):
-		print "on_mouse_press default:", self, (
-			x,y,button,modifiers)
-		return False
-
-	def is_caret_on_me(self):
-		return active == self
-
-	def register_event_types(self, types):
-		for item in types.split(', '):
-			self.register_event_type(item)
-
-	def position(self):
-		return self.doc.positions[self]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class Window(pyglet.window.Window):
@@ -112,56 +40,6 @@ class Window(pyglet.window.Window):
 	def dedent(self):
 		self.indentation -= 1
 
-	def squash(a):
-		r = {}
-		for i in a:
-			r[i.items()[0][0]] = i.items()[0][1]
-		return r
-
-	def test_squash():
-		if squash([{"a": 1}, {"b": 2}, {"a": 3}]) != {"a": 3, "b": 2}:
-			raise Exception()
-
-	def project(tags):
-		lines = [[]]
-		atts = []
-		out = []
-		for tag in tags:
-			if isinstance(tag, AttTag):
-				atts.push(tag.attribute)
-			if isinstance(tag, EndTag):
-				atts.pop()
-            if isinstance(tag, IndentTag):
-                indent+=1
-            if isinstance(tag, DedentTag):
-                indent-=1
-
-			if isinstance(tag, TextTag):
-				for i, letter in enumerate(tag.text):
-					atts.append({"letter_index": i})
-					out.append((letter, squash(atts)))
-					atts.pop()
-		return out
-	
-	def test_project():
-		if str(project([AttTag({"node": 1}), TextTag("boo"), AttTag({"b":3}), TextTag("B"), EndTag(), EndTag(), TextTag("ies")])) != "[('b', {'node': 1, 'letter_index': 0}), ('o', {'node': 1, 'letter_index': 1}), ('o', {'node': 1, 'letter_index': 2}), ('B', {'node': 1, 'b': 3, 'letter_index': 0}), ('i', {'letter_index': 0}), ('e', {'letter_index': 1}), ('s', {'letter_index': 2})]":
-			raise Exception()
-
-	def break_at_newlines(self, chars):
-
-		l = 0
-		c = 0
-		do_indent = True
-		while c < len(chars):
-			lines[l].append(chars[c])
-			if chars[c] == "\n":
-				lines.append([])
-				l += 1
-				do_indent = True
-	
-	screen=break_at_newlines(project(root.render)))
-	for line in screen:
-		for char in line;
 	
 		if self.do_indent:   
 			self._append(self.indent_spaces(), a)
