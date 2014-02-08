@@ -1,4 +1,19 @@
+"""
+functon project takes a list of tags created by root.render
+ and outputs a list of lines
+ line is a list of tuples: (character, attributes)
+
+ break line on "\n"
+ later: break too long lines
+"""
+
+from tags import *
+
+
 def squash(a):
+	"""merges a list of dicts into a single dict
+	(currently just dicts containing a single value)
+	"""
 	r = {}
 	for i in a:
 		r[i.items()[0][0]] = i.items()[0][1]
@@ -8,47 +23,47 @@ def test_squash():
 	if squash([{"a": 1}, {"b": 2}, {"a": 3}]) != {"a": 3, "b": 2}:
 		raise Exception()
 
-def project(tags):
+def project(tags, indent_spaces):
 	lines = [[]]
+	line = lines[0]
 	atts = []
-	do_indent = True
+	indent = 0
+
+
 	for tag in tags:
 		if isinstance(tag, AttTag):
-			atts.push(tag.attribute)
+			atts.append(tag.attribute)
 		if isinstance(tag, NodeTag):
-			atts.push({"node": tag.node})
+			atts.append({"node": tag.node})
 		if isinstance(tag, EndTag):
 			atts.pop()
-        if isinstance(tag, IndentTag):
-            indent+=1
-        if isinstance(tag, DedentTag):
-            indent-=1
-
+		if isinstance(tag, IndentTag):
+			indent+=1
+		if isinstance(tag, DedentTag):
+			indent-=1
+		if isinstance(tag, BackspaceTag):
+			if len(line) <> tag.spaces:
+				print "cant backspace that much"
+			line = line[:-tag.spaces]
 		if isinstance(tag, TextTag):
 			for i, char in enumerate(tag.text):
-				atts.append({"char_index": i})
-				out.append((char, squash(atts)))
-				atts.pop() #char_index
-	return out
+				if char == "\n":
+					for i in indent * indent_spaces:
+						#keeps the attributes of the last node,
+						#but lets see..
+						line.append((" ", squash(atts)))
+					lines.append([])
+					line = lines[len(lines)-1]
+				else:
+					atts.append({"char_index": i})
+					line.append((char, squash(atts)))
+					atts.pop() #char_index
 
-def break_at_newlines(self, chars):
-	l = 0
-	c = 0
-	while c < len(chars):
-		lines[l].append(chars[c])
-		if chars[c] == "\n":
-			lines.append([])
-			l += 1
-
-aand this
-		if self.do_indent:   
-			self._append(self.indent_spaces(), a)
-		self.do_indent = (text == "\n")
-		self._append(text, a)
+	return lines
 
 
-test_project():
-	tags = [#output of root.render() will look something like that:  
+def test_project():
+	tags = [#output of root.render() will look something like that:
 		NodeTag(1),
 		TextTag("program Hello World:"),
 		IndentTag(),
@@ -62,11 +77,17 @@ test_project():
 		TextTag("end."),
 		EndTag()
 	]
-	
-	lines = project(tags)
-	
 
+	lines = project(tags, indent_spaces = 4)
+	return lines
+"""
 def render(lines):
 	for l, line in enumerate(screen):
 		for c, char in enumerate(line);
 			#render char on screen
+"""
+
+test_squash()
+test_project()
+
+print "thumbs up"

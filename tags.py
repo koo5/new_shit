@@ -19,4 +19,14 @@ class DedentTag(Tag):
 	pass
 
 class NodeTag(Tag):
-	pass
+	"""just a special instance of AttTag, really"""
+	def __init__(self, node):
+		self.node = node
+
+class BackspaceTag(Tag):
+	def __init__(self, spaces):
+		self.spaces = spaces
+
+class TwoDGraphicTag(Tag):
+	def __init__(self, width, height, draw_function):
+		pass
