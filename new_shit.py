@@ -24,7 +24,8 @@ class Window(pyglet.window.Window):
 
 		self.indent_spaces = 4
 		self.cursor_c = self.cursor_r = 0
-		self.font_size = 18
+		self.font_width = 18
+		self.font_height = 24
 		self.indent_spaces = 4
 
 #		self.root = test_root()
@@ -44,22 +45,31 @@ class Window(pyglet.window.Window):
 		super(Window, self).on_resize(width, height)
 
 	def under_cursor(self):
-		return self.under_pos(self.cursor_c, cursor_r)
+		return self.under_pos(self.cursor_c, self.cursor_r)
 
 	def under_pos(self, x, y):
 		return self.lines[y][x][1]["node"]
 
 	def on_text(self, text):
-		self.under_cursor().dispatch_event('on_text', text)
-		self.rerender()
+		print self.under_cursor()#.dispatch_event('on_text', text)
+		self.render()
 
 	def on_text_motion(self, motion):
 #		if not self.under_cursor().dispatch_event('on_text_motion', motion):
+		
+		if motion == pyglet.window.key.MOTION_UP:
+			self.cursor_r -= 1
+		if motion == pyglet.window.key.MOTION_DOWN:
+			self.cursor_r += 1
+		if motion == pyglet.window.key.MOTION_LEFT:
+			self.cursor_c -= 1
+		if motion == pyglet.window.key.MOTION_RIGHT:
+			self.cursor_c += 1
 			
 			
 			
 			
-		self.rerender()
+		self.render()
 
 
 	def on_key_press(self, key, modifiers):
@@ -91,15 +101,27 @@ class Window(pyglet.window.Window):
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
 				pyglet.text.Label(char[0], 
-					x=self.font_size * col,
-					y = self.height-self.font_size * row,
+					x=self.font_width * col,
+					y = self.height- self.font_height * row,
 					batch = batch,
-					font_size = self.font_size,
+					font_size = self.font_width,
 					anchor_y='top'
 					
 					)
 					
-		print "draw", self.lines
+#		print "draw", self.lines
+		
+		pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
+ 			('v2i', (
+ 				self.font_width * self.cursor_c, 
+    			self.height - self.font_height * self.cursor_r, 
+    			self.font_width * self.cursor_c, 
+    			self.height - self.font_height * (self.cursor_r+1))),
+    		('c3B', (255,0,0,255,255,255)))
+	
+		
+
+
 		batch.draw()
 
 
