@@ -48,7 +48,7 @@ def project(tags, indent_spaces):
 		if isinstance(tag, TextTag):
 			for i, char in enumerate(tag.text):
 				if char == "\n":
-					for i in indent * indent_spaces:
+					for i in range(indent * indent_spaces):
 						#keeps the attributes of the last node,
 						#but lets see..
 						line.append((" ", squash(atts)))
@@ -62,15 +62,15 @@ def project(tags, indent_spaces):
 	return lines
 
 
-def test_project():
-	tags = [#output of root.render() will look something like that:
+test_tags = [
+		#output of root.render() will look something like that:
 		NodeTag(1),
-		TextTag("program Hello World:"),
+		TextTag("program Hello World:\n"),
 		IndentTag(),
 		NodeTag(2),
 		TextTag("print "),
 		NodeTag(3),
-		TextTag("\"hello world\""),
+		TextTag("\"hello world\"\n"),
 		EndTag(),
 		EndTag(),
 		DedentTag(),
@@ -78,8 +78,13 @@ def test_project():
 		EndTag()
 	]
 
-	lines = project(tags, indent_spaces = 4)
+
+def test_project():
+
+	lines = project(test_tags, indent_spaces = 4)
 	return lines
+
+
 """
 def render(lines):
 	for l, line in enumerate(screen):
