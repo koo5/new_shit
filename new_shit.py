@@ -11,9 +11,19 @@ would be cool: scribbles
 
 import pyglet
 
+import logger
+
 import project
 #from test_root import test_root
 
+
+class Node():
+	def scope():
+		
+
+
+def mini_test_root():
+	return
 
 
 class Window(pyglet.window.Window):
@@ -30,6 +40,7 @@ class Window(pyglet.window.Window):
 
 #		self.root = test_root()
 #		self.root.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
+		self.root = mini_test_root()
 		self.render()
 
 	def on_settings_change(self, setting):
@@ -128,4 +139,5 @@ class Window(pyglet.window.Window):
 print __name__
 if __name__ == "__main__":
 	window = Window()
+	#logger.catch(
 	pyglet.app.run()
