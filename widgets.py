@@ -3,7 +3,7 @@
 
 import pyglet
 import element
-
+from logger import log
 
 class Widget(element.Element):
 	pass
@@ -14,6 +14,9 @@ class Text(Widget):
 		self.register_event_types('on_edit')
 		self.color = (150,150,255,255)
 		self.text = text
+		self.doc.push_handlers(
+			post_render = self.post_render_move_caret)
+		self.post_render_move_caret = 0
 		
 	def get_caret_position(self):
 		return self.doc.caret_position - self.doc.positions[self]
@@ -23,21 +26,19 @@ class Text(Widget):
 	
 	def on_text(self, text):
 		pos = self.get_caret_position()
-		print "on_text, pos: ", pos
+		log(pos)
 
-		#print self.text[:pos], text, self.text[pos:]
 		self.text = self.text[:pos] + text + self.text[pos:]
 
 		self.post_render_move_caret = len(text)
-		#not wise to move the caret in the middle of rerendering
-
-		#print self.text, len(self.text)
+		
+		log(self.text + "len: " + len(self.text))
 		self.dispatch_event('on_edit', self)
 		return True
 
 	
 	def on_text_motion(self, motion, select=False):
-		#print "TextWidget on_text_motion"
+		ping()
 		if motion == pyglet.window.key.MOTION_BACKSPACE:
 			position = self.get_caret_position()
 			if position > 0:

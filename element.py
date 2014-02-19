@@ -2,7 +2,7 @@
 
 import pyglet
 from logger import log, ping
-
+import tags
 
 class NotEvenAChildError(AttributeError):
 	pass
@@ -53,3 +53,7 @@ class Element(pyglet.event.EventDispatcher):
 
 	#def position(self):
 	#	return self.doc.positions[self]
+
+
+	def tags(self):
+		return [tags.NodeTag(self)] + self.render() + [tags.EndTag()]

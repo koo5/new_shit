@@ -23,20 +23,19 @@ free in grey areas
 
 others: $1/user/year
 
-half ot the collected money goes to the Free Software Foundation
-
-
-
-contributor agreement:
-with your first commit or pull request, you must in some way make it clear that you accept this agreement:
-you grant me any rights that i need for making money on this 
-
-
+half of the collected money goes to the Free Software Foundation
 
 i will always keep this software free as stated here.
 you can distribute and sell this software (but still sharealike), 
 i can relicence this software, 
 but i cant sell my rights to your commits
+
+contributor agreement:
+please make a separate commit adding your nick or name here:
+
+this way, you make it clear that you agree to this license.
+you grant me any rights that i need for making money on this. simple.
+
 
 
 

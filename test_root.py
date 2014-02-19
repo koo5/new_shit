@@ -10,10 +10,12 @@ import nodes
 
 
 def test_stuff():
+	#Что это?
 	return Dict((
 			"settings", Dict(
 				("font_size", settings.FontSize(18)),
 				("fullscreen", settings.Fullscreen())
+				set all syntaxes to zero
 				)
 			),(
 			"programs", List([
