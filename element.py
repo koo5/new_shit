@@ -4,21 +4,28 @@ import pyglet
 from logger import log, ping
 import tags
 
-class NotEvenAChildError(AttributeError):
+class NotEvenAChildOrWidgetError(AttributeError):
 	pass
 
 class Element(pyglet.event.EventDispatcher):
 	def __init__(self):
 		self.children = {}
+		self.widgets = {}
 	
 	def __getattr__(self, name):
 		if self.children.has_key(name):
 			return self.children[name]
+		elif self.widgets.has_key(name):
+			return self.widgets[name]
 		else:
-			raise NotEvenAChildError(name, self)
+			raise NotEvenAChildOrWidgetError(name, self)
 
-	def set(self, key, item):
+	def setch(self, key, item):
 		self.children[key] = item
+		item.parent = self
+
+	def setw(self, key, item):
+		self.widgets[key] = item
 		item.parent = self
 
 	def replace_with(self, item):
@@ -46,8 +53,6 @@ class Element(pyglet.event.EventDispatcher):
 		for item in types.split(','):
 			self.register_event_type(item.strip())
 
-	#Что это?
-
 	#def is_caret_on_me(self):
 	#	return active == self
 
@@ -57,3 +62,27 @@ class Element(pyglet.event.EventDispatcher):
 
 	def tags(self):
 		return [tags.NodeTag(self)] + self.render() + [tags.EndTag()]
+
+	@property
+	def win(self):
+		return self.root.window
+
+	@property
+	def root(self):
+		if self.parent = None:
+			log("root is "+str(self))
+			return self
+		else
+			return self.parent.root
+
+	def fix_relations(self):
+		fix_(widgets)
+		fix_(children)
+	
+	def fix_(self, items):
+		for k,i in items.iteritems():
+			i.parent = self
+			i.fix_relations()	
+	
+	
+	

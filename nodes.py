@@ -27,6 +27,10 @@ class Node(element.Element):
 #				return None
 
 
+	def scope(self):
+		pass
+	
+
 class Syntaxed(Node):
 	def __init__(self):
 		super(Syntaxed, self).__init__()
@@ -41,25 +45,24 @@ class Syntaxed(Node):
 				res += self.children[item.name].tags()
 			else
 				res += item
-	def prev_template(self):
-		self.template_index  -= 1
-		if self.template_index < 0:
-			self.template_index = 0
-	def next_template(self):
-		self.template_index  += 1
-		if self.template_index == len(self.templates):
-			self.template_index = len(self.templates)-1
+	def prev_syntax(self):
+		self.syntax_index  -= 1
+		if self.syntax_index < 0:
+			self.syntax_index = 0
+	def next_syntax(self):
+		self.syntax_index  += 1
+		if self.syntax_index == len(self.syntaxes):
+			self.syntax_index = len(self.syntaxes)-1
 	def on_key_press(self, key, modifiers):
 		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.UP):
-			self.prev_template()
-			print "prev"
+			self.prev_syntax()
+			log("prev")
 		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.DOWN):
-			self.next_template()
-			print "next"
+			self.next_syntax()
+			log("next")
 
 
-
-
+#literals
 
 class Text(Node):
 	def __init__(self, value):
@@ -71,30 +74,29 @@ class Text(Node):
 class Number(Node):
 	def __init__(self, value):
 		super(Number, self).__init__()
-		self.value = value
-		self.minus_button = widgets.Button()
-		self.plus_button = widgets.Button()
+		self.widget = widgets.Number(value)
 	def render(self):
-		self.doc.append(str(self.value), self)
+		self.widget.render()
+
+
+
+
 
 class Collapsible(Node):
 	def __init__(self, items):
 		super(Collapsible, self).__init__()
-		self.items = items #do this first or bad things will happen
+		self.items = items #do this first or bad things will happen (?)
 		self.set('expand_collapse_button', widgets.Button())
 		self.expand_collapse_button.push_handlers(on_click=self.on_widget_click)
 		self.expanded = True
 	def render(self):
 		self.expand_collapse_button.text = (
 			("-" if self.expanded else "+") +
-			(" " * (self.doc.indent_length - 1)))
-		self.expand_collapse_button.render()
-		self.doc.indent()
-		if self.expanded:
-			self.render_items()
-		else:
-			self.doc.newline(self)
-		self.doc.dedent()
+			(" " * (self.win.indent_length - 1)))
+		return self.expand_collapse_button.tags() + 
+			indent() + 
+			(self.render_items() if self.expanded else newline()) +
+			dedent()
 	
 	def toggle(self):
 		self.expanded = not self.expanded
@@ -290,16 +292,17 @@ class CallNode(TemplatedNode):
 		self.target
 """		
 		
-class Useless(Templated):
+class Note(Node):
 	def __init__(self):
-		super(Useless,self).__init__()
+		super(Note,self).__init__()
 	
-class Todo(Useless):
+class Todo(Note):
 	def __init__(self, text="", priority = 1):
 		super(Todo,self).__init__()
+		self.priority_widget = widgets.Number
 		if priority == 10:
 			self.color=(255,0,0,255)
-		self.templates = [template([t("todo: "), child("text")])]
+		self.syntaxes = [[t("todo:"), ch("text")]]
 		self.set('text', widgets.Text(text))
 class Idea(Useless):
 	def __init__(self, text=""):

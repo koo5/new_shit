@@ -1,29 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""window draws:
+"""window should draw:
 projected text
 menu
 cursor
-would be cool: scribbles
+TwoDTag
+wish: structured scribbles
 """
 
-
 import pyglet
-
 import logger
-
 import project
-#from test_root import test_root
+from test_root import test_root
 
 
-class Node():
-	def scope():
-		
 
-
-def mini_test_root():
-	return
 
 
 class Window(pyglet.window.Window):
@@ -38,9 +30,9 @@ class Window(pyglet.window.Window):
 		self.font_height = 24
 		self.indent_spaces = 4
 
-#		self.root = test_root()
-#		self.root.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
-		self.root = mini_test_root()
+		self.root = test_root()
+		self.root.fix_relations()
+		self.root.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
 		self.render()
 
 	def on_settings_change(self, setting):

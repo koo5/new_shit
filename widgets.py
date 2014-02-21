@@ -5,6 +5,9 @@ import pyglet
 import element
 from logger import log
 
+from tags import TextTag, EndTag, 
+
+
 class Widget(element.Element):
 	pass
 
@@ -14,15 +17,12 @@ class Text(Widget):
 		self.register_event_types('on_edit')
 		self.color = (150,150,255,255)
 		self.text = text
-		self.doc.push_handlers(
-			post_render = self.post_render_move_caret)
-		self.post_render_move_caret = 0
 		
 	def get_caret_position(self):
 		return self.doc.caret_position - self.doc.positions[self]
 		
 	def render(self):
-		return [tags.TextTag(self.text)]
+		return [TextTag(self.text)]
 	
 	def on_text(self, text):
 		pos = self.get_caret_position()
@@ -44,7 +44,7 @@ class Text(Widget):
 			if position > 0:
 				self.text = self.text[:position-1]+self.text[position:]
 			self.dispatch_event('on_edit', self)
-			self.post_render_move_caret = -1
+			self.win.post_render_move_caret = -1
 		else:
 			return False
 		return True
@@ -59,7 +59,7 @@ class ShadowedText(Text):
 
 	def render(self):
 
-		self.doc.append(self.text, self, {'color':self.color})
+		return [TextTag(self.text), self, {'color':self.color})
 		self.doc.append(self.shadow[len(self.text):], self, {'color':(130,130,130,255)})
 
 	def len(self):
@@ -90,25 +90,26 @@ class Menu(Widget):
 
 
 class Button(Widget):
-	def __init__(self, text="[🔳]"):
+	def __init__(self, text="[🔳🔳🔳🔳]"):
 		super(Button, self).__init__()
 		self.register_event_types('on_click, on_text')
 		self.color = (255,150,150,255)
 		self.text = text
 	def on_mouse_press(self, x, y, button, modifiers):
-		#print "button clicked"
+		ping()
 		self.dispatch_event('on_click', self)
 	def on_text(self, text):
-		print "button pressed",text,"..."
+		ping()
 		if text == "\r":
 			self.dispatch_event('on_click', self)
 		else:
 			self.dispatch_event('on_text',  text)
 		
 	def render(self):
-		self.doc.append(self.text, self)
-	
+		return TextTag(self.text)
+
 class Number(Text):
+	"""Number widget inherits from text, contents are only int()'ed when needed"""	
 	def __init__(self, text):
 		super(Number, self).__init__(text)
 		self.text = str(text)
@@ -117,9 +118,9 @@ class Number(Text):
 		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 		self.plus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 	def render(self):
-		self.minus_button.render()
-		self.doc.append(self.text, self)
-		self.plus_button.render()
+		return self.minus_button.tags()+
+				TextTag(self.text)+
+				self.plus_button.tags()
 	@property
 	def value(self):
 		return int(self.text)
@@ -144,7 +145,7 @@ class Toggle(Widget):
 		super(Toggle, self).__init__()
 		self.value = value
 	def render(self):
-		self.doc.append(self.text, self)
+		return TextTag(self.text)
 	@property
 	def text(self):
 		return "checked" if self.value else "unchecked"

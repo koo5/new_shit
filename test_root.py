@@ -4,13 +4,20 @@
 
 
 
-import nodes
+from nodes import *
 
 
 
+def test_root():
+"""
 
-def test_stuff():
 	#Что это?
+	
+	new todo list:
+	systemic changes to consider:
+		projectured needs to be tried out and evaluated for a possible use as the base of lemon.
+"""
+	
 	return Dict((
 			"settings", Dict(
 				("font_size", settings.FontSize(18)),
