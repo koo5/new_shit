@@ -43,7 +43,7 @@ class Syntaxed(Node):
 		for item in self.syntax:
 			if isinstance(item, child):
 				res += self.children[item.name].tags()
-			else
+			else:
 				res += item
 	def prev_syntax(self):
 		self.syntax_index  -= 1
@@ -93,10 +93,7 @@ class Collapsible(Node):
 		self.expand_collapse_button.text = (
 			("-" if self.expanded else "+") +
 			(" " * (self.win.indent_length - 1)))
-		return self.expand_collapse_button.tags() + 
-			indent() + 
-			(self.render_items() if self.expanded else newline()) +
-			dedent()
+		return self.expand_collapse_button.tags() + indent() + (self.render_items() if self.expanded else newline()) + dedent()
 	
 	def toggle(self):
 		self.expanded = not self.expanded
@@ -374,9 +371,6 @@ class SyntaxNode(Node):
 	def __init__(self, items):
 		self.items = items
 
-test_progra_syntax = SyntaxNode([
-
-
 
 
 
@@ -405,3 +399,7 @@ test_progra_syntax = SyntaxNode([
 
 #child, parent -> sub, sup?
 #CarryNode?:)
+
+
+#class SillySimpleCommandDeclaration()
+

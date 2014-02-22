@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 import pyglet
 from logger import log, ping
 import tags
@@ -69,10 +70,10 @@ class Element(pyglet.event.EventDispatcher):
 
 	@property
 	def root(self):
-		if self.parent = None:
+		if self.parent == None:
 			log("root is "+str(self))
 			return self
-		else
+		else:
 			return self.parent.root
 
 	def fix_relations(self):

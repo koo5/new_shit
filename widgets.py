@@ -5,7 +5,7 @@ import pyglet
 import element
 from logger import log
 
-from tags import TextTag, EndTag, 
+from tags import TextTag, EndTag
 
 
 class Widget(element.Element):
@@ -58,9 +58,9 @@ class ShadowedText(Text):
 		self.shadow = shadow
 
 	def render(self):
-
-		return [TextTag(self.text), self, {'color':self.color})
-		self.doc.append(self.shadow[len(self.text):], self, {'color':(130,130,130,255)})
+		return [TextTag(self.text),
+				ColorTag((130,130,130,255)),
+				TextTag(self.shadow[len(self.text):])]
 
 	def len(self):
 		return len(self.text+self.shadow[len(self.text)])
@@ -118,9 +118,7 @@ class Number(Text):
 		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 		self.plus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 	def render(self):
-		return self.minus_button.tags()+
-				TextTag(self.text)+
-				self.plus_button.tags()
+		return self.minus_button.tags()+TextTag(self.text)+self.plus_button.tags()
 	@property
 	def value(self):
 		return int(self.text)

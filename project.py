@@ -35,6 +35,8 @@ def project(tags, indent_spaces):
 			atts.append(tag.attribute)
 		if isinstance(tag, NodeTag):
 			atts.append({"node": tag.node})
+		if isinstance(tag, ColorTag):
+			atts.append({"color": tag.color})
 		if isinstance(tag, EndTag):
 			atts.pop()
 		if isinstance(tag, IndentTag):

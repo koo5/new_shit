@@ -23,6 +23,10 @@ class NodeTag(Tag):
 	def __init__(self, node):
 		self.node = node
 
+class ColorTag(Tag):
+	def __init__(self, color):
+		self.color = color
+
 class BackspaceTag(Tag):
 	def __init__(self, spaces):
 		self.spaces = spaces

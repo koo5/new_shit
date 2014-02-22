@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 
 
@@ -9,26 +10,30 @@ from nodes import *
 
 
 def test_root():
-"""
+	"""
 
 	#Что это?
 	
 	new todo list:
 	systemic changes to consider:
 		projectured needs to be tried out and evaluated for a possible use as the base of lemon.
-"""
+	"""
 	
 	return Dict((
+			"menu", List(
+			[
+				settings.SetAllSyntaxesToZero()
+			], compact = True),
+
 			"settings", Dict(
 				("font_size", settings.FontSize(18)),
 				("fullscreen", settings.Fullscreen())
-				set all syntaxes to zero
 				)
 			),(
 			"programs", List([
 				Program(Statements([
 					Placeholder(), 
-					FunctionDefinition(Text("substring"))
+					FunctionDefinition(Text("substring")),
 					Asignment(Text("a"), Number(1)),
 					Asignment(Text("b"), Number(5)), 
 					While(IsLessThan(VariableRead("a"), VariableRead("b")),	Statements([
@@ -72,7 +77,13 @@ eye tracking
 				Todo("salvage the logger thingy...printing does get tedious...but its so damn quick")
 				])
 			),(
-			"clock",Clock()
+			"clock",Clock(),
+			"test modules", List([
+				Module(Statements([
+					CommentNode("stupid, but gotta start somewhere"),
+					CommandDefNode(syntaxes = [[t("disable screensaver")]], body = ShellCommand("xset s off"))
+				]))
+			])
 			)	
 			)
 
