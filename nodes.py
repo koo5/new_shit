@@ -64,20 +64,21 @@ class Node(element.Element):
 
 
 	def render_syntax(self, syntax):
-		res = []
+		r = []
 		for item in syntax:
 			if isinstance(item, ch):
 				log('expanding child "'+item.name+'" of node '+str(self))
 				if not self.children.has_key(item.name):
 					log("doesnt look good")
-				res += self.children[item.name].tags()
+				r += self.children[item.name].tags()
 			if isinstance(item, w):
 				log('expanding widget "'+item.name+'" of node '+str(self))
 				if not self.__dict__.has_key(item.name):
 					log("doesnt look good")
-				res += self.__dict__[item.name].tags()
+				r += self.__dict__[item.name].tags()
 			else:
-				res.append(item)
+				r.append(item)
+		return r
 
 
 class Syntaxed(Node):

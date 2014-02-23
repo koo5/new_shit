@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+
+
 """
-functon project takes a list of tags created by root.render
+functon project takes a list of tags created by root.tags()
  and outputs a list of lines
  line is a list of tuples: (character, attributes)
 
@@ -23,7 +26,7 @@ def test_squash():
 	if squash([{"a": 1}, {"b": 2}, {"a": 3}]) != {"a": 3, "b": 2}:
 		raise Exception()
 
-def project(tags, indent_spaces):
+def project(tags, indent_spaces, debug):
 	lines = [[]]
 	line = lines[0]
 	atts = []
@@ -35,9 +38,11 @@ def project(tags, indent_spaces):
 			atts.append(tag.attribute)
 		if isinstance(tag, NodeTag):
 			atts.append({"node": tag.node})
+			if debug: line.append(">")#⇾")
 		if isinstance(tag, ColorTag):
 			atts.append({"color": tag.color})
 		if isinstance(tag, EndTag):
+			if debug: line.append("<")#⇽")
 			atts.pop()
 		if isinstance(tag, IndentTag):
 			indent+=1
@@ -83,7 +88,7 @@ test_tags = [
 
 def test_project():
 
-	lines = project(test_tags, indent_spaces = 4)
+	lines = project(test_tags, indent_spaces = 4, debug=False)
 	return lines
 
 

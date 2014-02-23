@@ -12,7 +12,8 @@ def test_root():
 			),(
 			"settings", Dict([
 				("font_size", settings.FontSize(18)),
-				("fullscreen", settings.Fullscreen())
+				("fullscreen", settings.Fullscreen()),
+				("projection_debug", settings.ProjectionDebug())
 				])
 			),(
 			"programs", List([

@@ -30,6 +30,15 @@ class Fullscreen(Setting):
 	def value(self):
 		return self.widget.value
 
+class ProjectionDebug(Setting):
+	def __init__(self):
+		super(ProjectionDebug, self).__init__()
+		self.syntaxes = [[w("widget")]]
+		self.widget = widgets.Toggle(self, True)
+	@property
+	def value(self):
+		return self.widget.value
+
 """
 todo:
 move the settings tree here?

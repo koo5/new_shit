@@ -24,17 +24,14 @@ class Window(pyglet.window.Window):
 				resizable=True)
 		self.set_icon(pyglet.image.load('icon32x32.png'))
 
-		self.indent_spaces = 4
 		self.cursor_c = self.cursor_r = 0
 		self.font_width = 18
 		self.font_height = 24
 		self.indent_length = 4
 
 		self.root = test_root()
-		print self.root
 		self.root.window = self
 		self.root.items['settings']['fullscreen'].push_handlers(on_change = self.on_settings_change)
-		print self.root.win
 		self.render()
 
 	def on_settings_change(self, setting):
@@ -43,7 +40,10 @@ class Window(pyglet.window.Window):
 			window.toggle_fullscreen()
 
 	def render(self):
-		self.lines = project.project(self.root.tags(), self.indent_spaces)
+		tags = self.root.tags()
+		print tags
+		self.lines = project.project(tags, self.indent_length, self.root.items['settings']['projection_debug'].value)
+		print self.lines
 #		self.lines = project.project(project.test_tags, self.indent_spaces)
 
 	def on_resize(self, width, height):
@@ -105,6 +105,7 @@ class Window(pyglet.window.Window):
 
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
+				#print char[0]
 				pyglet.text.Label(char[0], 
 					x=self.font_width * col,
 					y = self.height- self.font_height * row,
