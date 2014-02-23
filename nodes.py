@@ -5,7 +5,7 @@ from collections import OrderedDict
 import element
 import widgets
 import tags
-from tags import ChildTag as ch, TextTag as t, nl, indent, dedent
+from tags import ChildTag as ch, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent
 
 
 
@@ -217,38 +217,42 @@ class Clock(Node):
 
 
 
+class SyntaxDef(Node):
+	def __init__(self, tags):
+		super(SyntaxDef, self).__init__()
+		self.tags = tags
+
+	def render(self):
+		return [t("syntax definition:"), t(str(self.tags))]
+
+class WithDef(Node):
+	def __init__(self, syntax_def):
+		self.syntax_def = syntax_def
 
 
-class Program(Templated):
+class Program(WithDef):
 	def __init__(self, statements, name="unnamed", author="banana", date_created="1.1.1.1111"):
-		super(Program, self).__init__()
+		super(Program, self).__init__(syntax_def = "fix")
+		
 		assert isinstance(statements, Statements)
 		self.sys=__import__("sys")
-		self.templates = [template([t("program by "), child("author"),s(), t("created on "), child("date_created"), newline(), child("statements"), t("end.")]),
-						template([t("lemon operating language running on python"), t(self.sys.version.replace("\n", "")), t(" ready."), newline(),child("statements")])]
+
 		self.set('statements', statements)
 		self.set('author', widgets.Text(author))
 		self.set('date_created', widgets.Text(date_created))
-
-#	@property
-#	def uses(self):
-#		for i in self.statements.items:
 			
 
-class Templates(List):
-	def __init__(self,items):
-		super(Templates,self).__init__()
 
-
-class While(Templated):
+class While(Syntaxed):
 	def __init__(self,condition,statements):
 		super(While,self).__init__()
 
-		self.templates = [template([t("while "), child("condition"), t(" do:"),newline(),child("statements")]),
-		template([t("repeat if "), child("condition"), t(" is true:"),newline(),child("statements"),t("go back up..")])]
+		self.syntaxes = [[t("while"), ch("condition"), t("do:"), nl(), ch("statements")],
+						 [t("repeat if"), ch("condition"), t("is true:"), nl(), ch("statements"), t("go back up..")]]
 		self.set('condition', condition)
 		self.set('statements', statements)
 
+"""
 
 class Asignment(Templated):
 	def __init__(self, left, right):
@@ -276,7 +280,7 @@ class Print(Templated):
 				template([t("say "), child("value")])]
 		self.set('value', value)
 
-"""
+
 #set backlight brightness to %{number}%
 self.templates = target.call_templates?
 class CallNode(TemplatedNode):
@@ -286,7 +290,6 @@ class CallNode(TemplatedNode):
 		self.arguments = arguments
 	def render(self):
 		self.target
-"""		
 		
 class Note(Node):
 	def __init__(self):
@@ -403,3 +406,4 @@ class SyntaxNode(Node):
 #class SillySimpleCommandDeclaration()
 
 #class triple
+"""

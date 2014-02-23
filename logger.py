@@ -3,7 +3,7 @@ from inspect import *
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
-def log(x):
+def tb(x):
 	bt = getouterframes(currentframe())
 	for f in reversed(bt):
 		a,b,c,d = getargvalues(f[0])
@@ -17,6 +17,8 @@ def ping():
 	line = f[1]+":"+str(f[2])+":"+f[3]+formatargvalues(a,b,c,d)
 	logging.debug(line)
 
+def log(x):
+	logging.debug(x)
 
 #def catch(fun):
 #	try:

@@ -1,29 +1,13 @@
 # -*- coding: utf-8 -*-
-
-
-
-
-
-
 from nodes import *
-
-
+import settings, menu
 
 def test_root():
-	"""
-
-	#Что это?
-	
-	new todo list:
-	systemic changes to consider:
-		projectured needs to be tried out and evaluated for a possible use as the base of lemon.
-	"""
-	
-	return Dict((
+	r = Dict((
 			"menu", List(
 			[
-				settings.SetAllSyntaxesToZero()
-			], compact = True),
+				menu.SetAllSyntaxesToZero()
+			]),#compact = True
 
 			"settings", Dict(
 				("font_size", settings.FontSize(18)),
@@ -78,15 +62,39 @@ eye tracking
 				])
 			),(
 			"clock",Clock(),
-			"test modules", List([
+			"modules", List([
+			
+				Module(Statements([
+					SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end.")])
+				])),
+
 				Module(Statements([
 					CommentNode("stupid, but gotta start somewhere"),
 					CommandDefNode(syntaxes = [[t("disable screensaver")]], body = ShellCommand("xset s off"))
 				]))
 			])
-			)	
+			)
 			)
 
+	for p in r.programs:
+		p.syntax_def = r.modules[0][0]
+
+	r.fix_relations()
+
+	return r
 
 
 
+
+
+"""
+
+
+	#Что это?
+	new todo list:
+	systemic changes to consider:
+		projectured needs to be tried out and evaluated for a possible use as the base of lemon.
+
+
+
+"""

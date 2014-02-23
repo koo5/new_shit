@@ -18,8 +18,24 @@ class IndentTag(Tag):
 class DedentTag(Tag):
 	pass
 
+class ChildTag(Tag):
+	def __init__(self, name):
+		self.name = name
+
+class BackspaceTag(Tag):
+	def __init__(self, spaces):
+		self.spaces = spaces
+
+class NewlineTag(Tag):
+	pass
+
+
+class TwoDGraphicTag(Tag):
+	def __init__(self, width, height, draw_function):
+		pass
+
+"""just a special instances of AttTag"""
 class NodeTag(Tag):
-	"""just a special instance of AttTag, really"""
 	def __init__(self, node):
 		self.node = node
 
@@ -27,10 +43,3 @@ class ColorTag(Tag):
 	def __init__(self, color):
 		self.color = color
 
-class BackspaceTag(Tag):
-	def __init__(self, spaces):
-		self.spaces = spaces
-
-class TwoDGraphicTag(Tag):
-	def __init__(self, width, height, draw_function):
-		pass

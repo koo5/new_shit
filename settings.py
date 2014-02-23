@@ -2,7 +2,7 @@
 import widgets
 from nodes import *
 
-class Setting(Templated):
+class Setting(Syntaxed):
 	def __init__(self):
 		super(Setting, self).__init__()
 		self.register_event_types("on_change")
@@ -11,8 +11,8 @@ class Setting(Templated):
 class FontSize(Setting):
 	def __init__(self, value):
 		super(FontSize, self).__init__()
-		self.templates = [template([child("widget")])]
-		self.set('widget', widgets.Number(value))
+		self.syntaxes = [[ch("widget")]]
+		self.setw('widget', widgets.Number(value))
 
 	@property
 	def value(self):
@@ -21,11 +21,10 @@ class FontSize(Setting):
 class Fullscreen(Setting):
 	def __init__(self):
 		super(Fullscreen, self).__init__()
-		self.templates = [template([child("widget")])]
-		self.set('widget', widgets.Toggle(False))
+		self.syntaxes = [[ch("widget")]]
+		self.setw('widget', widgets.Toggle(False))
 		self.widget.push_handlers(on_edit = self.on_widget_edit)
 	def on_widget_edit(self, widget):
-		print "aaa"
 		self.dispatch_event('on_change', self)
 
 	@property

@@ -1,12 +1,30 @@
 # -*- coding: utf-8 -*-
 
-
 import pyglet
 from logger import log, ping
 import tags
 
+
+
+#a man needs some fun and learning
+try:
+	import fuzzywuzzy
+	from fuzzywuzzy import process as fuzzywuzzyprocess
+except:
+	fuzzywuzzyprocess = None
+
 class NotEvenAChildOrWidgetError(AttributeError):
-	pass
+	def __init__(self, wanted, obj):
+#		super(NotEvenAChildOrWidgetError, self).__init__()
+		self.obj = obj
+		self.wanted = wanted
+		self.message = "BANANA"
+	def __str__(self):
+		r = "\"%s\" is not an attribute, child or widget of %s" % (self.wanted, self.obj)
+		if fuzzywuzzyprocess:
+			r += ", you might have meant: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, dir(self.obj), limit=10, score_cutoff=50)]) + "..."
+		return r
+					
 
 class Element(pyglet.event.EventDispatcher):
 	def __init__(self):
