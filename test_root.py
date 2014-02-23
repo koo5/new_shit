@@ -3,33 +3,34 @@ from nodes import *
 import settings, menu
 
 def test_root():
-	r = Dict((
+	r = Dict([
+			(
 			"menu", List(
-			[
+				[
 				menu.SetAllSyntaxesToZero()
-			]),#compact = True
-
-			"settings", Dict(
+				])#,compact = True
+			),(
+			"settings", Dict([
 				("font_size", settings.FontSize(18)),
 				("fullscreen", settings.Fullscreen())
-				)
+				])
 			),(
 			"programs", List([
 				Program(Statements([
-					Placeholder(), 
-					FunctionDefinition(Text("substring")),
-					Asignment(Text("a"), Number(1)),
-					Asignment(Text("b"), Number(5)), 
-					While(IsLessThan(VariableRead("a"), VariableRead("b")),	Statements([
-						Print(
-							VariableRead("a")), #byname
-							Placeholder()])),
-					Placeholder()]), name="test1"),
-					If(IsLessThan(VariableRead("a"), Number(4)),
-						Statements([Print(Text("hi!\n"))]))
+					Placeholder()#,
+					#FunctionDefinition(name = Text("substring")),
+					#Asignment(Text("a"), Number(1)),
+					#Asignment(Text("b"), Number(5)), 
+					#While(IsLessThan(VariableRead("a"), VariableRead("b")),	Statements([
+					#	Print(
+					#		VariableRead("a")), #byname
+					#		Placeholder()])),
+					#laceholder()]), name="test1"),
+					#If(IsLessThan(VariableRead("a"), Number(4)),
+					#	Statements([Print(Text("hi!\n"))]))
 				#	For(VariableDeclaration("item")
 						
-				])
+				]))])
 			),(
 			"notes", List([
 				Todo("""big themes: 
@@ -61,23 +62,26 @@ eye tracking
 				Todo("salvage the logger thingy...printing does get tedious...but its so damn quick")
 				])
 			),(
-			"clock",Clock(),
+			"clock",Clock()
+			),(
 			"modules", List([
 			
 				Module(Statements([
 					SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end.")])
-				])),
+				]), name = "syntaxes for builtins"),
 
 				Module(Statements([
-					CommentNode("stupid, but gotta start somewhere"),
-					CommandDefNode(syntaxes = [[t("disable screensaver")]], body = ShellCommand("xset s off"))
-				]))
+					Note("stupid, but gotta start somewhere"),
+					FunctionDefNode(
+						syntax = SyntaxDef([t("disable screensaver")]), 
+						body = Statements([ShellCommand("xset s off")]))
+				]), name = "commands to command you PC around")
 			])
 			)
-			)
+			])
 
 	for p in r.programs:
-		p.syntax_def = r.modules[0][0]
+		p.syntax_def = r.modules[0].statements[0]
 
 	r.fix_relations()
 

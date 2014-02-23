@@ -6,7 +6,7 @@ import tags
 
 
 
-#a man needs some fun and learning
+#a man needs some fun and learning, pip install --user fuzzyfuzzy
 try:
 	import fuzzywuzzy
 	from fuzzywuzzy import process as fuzzywuzzyprocess
@@ -15,7 +15,6 @@ except:
 
 class NotEvenAChildOrWidgetError(AttributeError):
 	def __init__(self, wanted, obj):
-#		super(NotEvenAChildOrWidgetError, self).__init__()
 		self.obj = obj
 		self.wanted = wanted
 		self.message = "BANANA"
@@ -28,6 +27,8 @@ class NotEvenAChildOrWidgetError(AttributeError):
 
 class Element(pyglet.event.EventDispatcher):
 	def __init__(self):
+		super(Element, self).__init__()
+		ping()
 		self.children = {}
 		self.widgets = {}
 	
@@ -37,6 +38,7 @@ class Element(pyglet.event.EventDispatcher):
 		elif self.widgets.has_key(name):
 			return self.widgets[name]
 		else:
+			#raise AttributeError()
 			raise NotEvenAChildOrWidgetError(name, self)
 
 	def setch(self, key, item):

@@ -113,20 +113,26 @@ class Number(Text):
 	def __init__(self, text):
 		super(Number, self).__init__(text)
 		self.text = str(text)
-		self.set('minus_button', Button("-"))
-		self.set('plus_button', Button("+"))
+		self.setw('minus_button', Button("-"))
+		self.setw('plus_button', Button("+"))
 		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 		self.plus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
+		self.register_event_types('on_change')
+
 	def render(self):
 		return self.minus_button.tags()+TextTag(self.text)+self.plus_button.tags()
 	@property
 	def value(self):
 		return int(self.text)
+
 	def inc(self):
 		self.text = str(int(self.text)+1)
+		self.dispatch_event('on_change', self)
+	
 	def dec(self):
 		self.text = str(int(self.text)-1)
-
+		self.dispatch_event('on_change', self)
+	
 	def on_widget_click(self,widget):
 		if widget == self.minus_button:
 			self.dec()
@@ -141,6 +147,7 @@ class Number(Text):
 class Toggle(Widget):
 	def __init__(self, value):
 		super(Toggle, self).__init__()
+		self.register_event_types('on_change')
 		self.value = value
 	def render(self):
 		return TextTag(self.text)
