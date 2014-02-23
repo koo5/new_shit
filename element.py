@@ -56,8 +56,8 @@ class Element(pyglet.event.EventDispatcher):
 			i.fix_relations()	
 	
 
-	#def is_caret_on_me(self):
-	#	return active == self
+	def is_active(self):
+		return False
 
 	#def position(self):
 	#	return self.doc.positions[self]

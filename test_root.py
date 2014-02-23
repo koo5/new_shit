@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from nodes import *
-import settings, menu
+import settings, toolbar
 
 def test_root():
 	r = Root(Dict([
 			(
 			"menu", List(
 				[
-				menu.SetAllSyntaxesToZero()
+				toolbar.SetAllSyntaxesToZero()
 				])#,compact = True
 			),(
 			"settings", Dict([

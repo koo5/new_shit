@@ -4,6 +4,7 @@ from collections import OrderedDict
 from logger import ping, log
 import element
 import widgets
+import menu
 import tags
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent
 
@@ -60,19 +61,11 @@ class Node(element.Element):
 
 	def scope(self):
 		pass
-	
 
-class Syntaxed(Node):
-	def __init__(self):
-		super(Syntaxed, self).__init__()
-		self.syntax_index = 0
-	@property
-	def syntax(self):
-		return self.syntaxes[self.syntax_index]
-	def render(self):
+
+	def render_syntax(self, syntax):
 		res = []
-		print self
-		for item in self.syntax:
+		for item in syntax:
 			if isinstance(item, ch):
 				log('expanding child "'+item.name+'" of node '+str(self))
 				if not self.children.has_key(item.name):
@@ -85,6 +78,17 @@ class Syntaxed(Node):
 				res += self.__dict__[item.name].tags()
 			else:
 				res.append(item)
+
+
+class Syntaxed(Node):
+	def __init__(self):
+		super(Syntaxed, self).__init__()
+		self.syntax_index = 0
+	@property
+	def syntax(self):
+		return self.syntaxes[self.syntax_index]
+	def render(self):
+		return self.render_syntax(self.syntax)
 	def prev_syntax(self):
 		self.syntax_index  -= 1
 		if self.syntax_index < 0:
@@ -177,7 +181,7 @@ class List(Collapsible):
 	def render_items(self):
 		r = []
 		for item in self.items:
-			r += item.tags() + [nl()]
+			r += item.tags()# + [nl()]
 		return r
 	def __getitem__(self, i):
 		return self.items[i]
@@ -207,7 +211,7 @@ class Placeholder(Node):
 		self.default = default
 		self.example = example
 		self.textbox = widgets.ShadowedText(self, "", "<<>>")
-		self.menu = widgets.Menu(self, [])
+		self.menu = menu.Menu(self, [])
 		self.textbox.push_handlers(
 			on_edit=self.on_widget_edit
 			#on_text_motion=self.on_widget_text_motion,
@@ -227,7 +231,7 @@ class Placeholder(Node):
 		d = (" (default:"+self.default+")") if self.default else ""
 		e = (" (for example:"+self.example+")") if self.example else ""
 
-		x = d + e if self.doc.active == self.textbox else ""
+		x = d + e if self.textbox.is_active() else ""
 
 
 		self.textbox.shadow = "<<" + x + ">>"
@@ -254,23 +258,28 @@ class Clock(Node):
 		super(Node,self).__init__()
 		self.datetime = __import__("datetime")
 	def render(self):
-		return [t(str(self.datetime.datetime.now()), self)]
+		return [t(str(self.datetime.datetime.now()))]
 
+#design:
+#the difference between Syntaxed and WithDef is that Syntaxed
+#has the syntaxes as part of "class definition" (in __init__, really)
+#WithDef uses another object, "SyntaxDef"
 
-
-class SyntaxDef(Node):
-	def __init__(self, tags):
+class SyntaxDef(Syntaxed):
+	def __init__(self, syntax_def):
 		super(SyntaxDef, self).__init__()
-		self.tags = tags
+		self.syntax_def = syntax_def
 
 	def render(self):
-		return [t("syntax definition:"), t(str(self.tags))]
+		return [t("syntax definition:"), t(str(self.syntax_def))]
 
 class WithDef(Node):
 	def __init__(self, syntax_def):
 		super(WithDef, self).__init__()
 		self.syntax_def = syntax_def
-
+		
+	def render(self):
+		return self.render_syntax(self.syntax_def.syntax_def)
 
 class Program(WithDef):
 	def __init__(self, statements, name="unnamed", author="banana", date_created="1.1.1.1111"):
@@ -291,7 +300,7 @@ class Module(Syntaxed):
 		assert isinstance(statements, Statements)
 		self.setch('statements', statements)
 		self.name = widgets.Text(self, name)
-		self.syntaxes = [[t("module"), ch("name"), nl(), ch("statements"), t("end.")]]
+		self.syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
 		
 
 class FunctionDefNode(Syntaxed):
@@ -307,7 +316,7 @@ class ShellCommand(Syntaxed):
 	def __init__(self, command):
 		super(ShellCommand, self).__init__()
 		self.command = widgets.Text(self, command)
-		self.syntaxes = [[t("run shell command:"), ch("command")]]
+		self.syntaxes = [[t("run shell command:"), w("command")]]
 
 class Root(Syntaxed):
 	def __init__(self, items):
@@ -326,16 +335,16 @@ class While(Syntaxed):
 		self.setch('statements', statements)
 
 
-class Note(Node):
+class Note(Syntaxed):
 	def __init__(self, text=""):
 		super(Note,self).__init__()
-		self.syntaxes = [[t("note: "), ch("text")]]
+		self.syntaxes = [[t("note: "), w("text")]]
 		self.text = widgets.Text(self, text)
 
 class Todo(Note):
 	def __init__(self, text="", priority = 1):
 		super(Todo,self).__init__(text)
-		self.syntaxes = [[t("todo:"), ch("text"), ch("priority")]]
+		self.syntaxes = [[t("todo:"), w("text"), w("priority_widget")]]
 		self.text = widgets.Text(self, text)
 		self.priority_widget = widgets.Number(self, priority)
 		self.priority_widget.push_handlers(
@@ -354,7 +363,7 @@ class Idea(Note):
 	def __init__(self, text=""):
 		super(Idea,self).__init__()
 	
-		self.syntaxes = [[t("idea: "), ch("text")]]
+		self.syntaxes = [[t("idea: "), w("text")]]
 		self.text = widgets.Text(self, text)
 
 

@@ -66,30 +66,6 @@ class ShadowedText(Text):
 	def len(self):
 		return len(self.text+self.shadow[len(self.text)])
 		
-
-#menu is *totally* outdated
-class Menu(Widget):
-	def __init__(self, parent, items):
-		super(Menu, self).__init__(parent)
-		self.register_event_types('on_click')
-		self.color = (100,230,50,255)
-		self.items = items
-		self.sel = -1
-
-	def render(self):
-		for i, item in enumerate(self.items):
-			#we will need to shift this here
-			self.doc.append("\n", self)
-			self.doc.append(item, self, 
-				{'color':(255,100,100,255)} if self.sel == i else {})
-
-		self.doc.append("\n", self)
-		
-	
-
-
-
-
 class Button(Widget):
 	def __init__(self, parent, text="[🔳🔳🔳🔳]"):
 		super(Button, self).__init__(parent)
@@ -159,5 +135,8 @@ class Toggle(Widget):
 		self.value = not self.value
 		self.dispatch_event('on_edit', self)
 		
+
+
+
 
 
