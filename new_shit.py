@@ -31,14 +31,14 @@ class Window(pyglet.window.Window):
 		self.indent_spaces = 4
 
 		self.root = test_root()
-		self.root.win = self
-		self.root.fix_relations()
-		self.root.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
+		print self.root
+		self.root.window = self
+		self.root.items.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
 		self.render()
 
 	def on_settings_change(self, setting):
 		print setting
-		if setting == self.root.settings.fullscreen:
+		if setting == self.root.items.settings.fullscreen:
 			window.toggle_fullscreen()
 
 	def render(self):

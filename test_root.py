@@ -3,7 +3,7 @@ from nodes import *
 import settings, menu
 
 def test_root():
-	r = Dict([
+	r = Root(Dict([
 			(
 			"menu", List(
 				[
@@ -78,10 +78,10 @@ eye tracking
 				]), name = "commands to command you PC around")
 			])
 			)
-			])
+			]))
 
-	for p in r.programs:
-		p.syntax_def = r.modules[0].statements[0]
+	for p in r.items.programs: #the Program objects
+		p.syntax_def = r.items.modules[0].statements[0]
 
 	r.fix_relations()
 

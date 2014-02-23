@@ -84,10 +84,11 @@ class Number(Node):
 class Collapsible(Node):
 	def __init__(self, items):
 		super(Collapsible, self).__init__()
-		self.items = items #do this first or bad things will happen (?)
+		self.items = items #do this first or bad things will happen (and i forgot why)
 		self.setw('expand_collapse_button', widgets.Button())
 		self.expand_collapse_button.push_handlers(on_click=self.on_widget_click)
 		self.expanded = True
+	
 	def render(self):
 		self.expand_collapse_button.text = (
 			("-" if self.expanded else "+") +
@@ -123,6 +124,7 @@ class Dict(Collapsible):
 		else:
 			return super(Dict, self).__getattr__(name)
 
+
 class List(Collapsible):
 	def __init__(self, items):
 		super(List, self).__init__(items)
@@ -135,10 +137,7 @@ class List(Collapsible):
 				item.render()
 				self.doc.newline(item)
 	def __getitem__(self, i):
-		if len(self.items) > i:
-			return self.items[i]
-		else:
-			return super(List, self).__getitem__(i) #?
+		return self.items[i]
 
 
 class CollapsibleText(Collapsible):
@@ -268,8 +267,13 @@ class ShellCommand(Syntaxed):
 		super(ShellCommand, self).__init__()
 		self.setch('command', widgets.Text(command))
 		self.syntaxes = [[t("run shell command:"), ch("command")]]
-			
 
+class Root(Syntaxed):
+	def __init__(self, items):
+		super(Root, self).__init__()
+		self.setch('items', items)
+		self.syntaxes = [[t("root of all evil:"), nl(), ch("command")]]
+	
 
 class While(Syntaxed):
 	def __init__(self,condition,statements):
@@ -335,8 +339,7 @@ class Todo(Note):
 		self.priority_widget.push_handlers(
 			on_change=self.on_priority_change)
 		self.on_priority_change("whatever")
-	#in retrospect, i think widgets shouldnt be accesible by name from Element.__getattr__,
-	#but grouped in "widgets" .. ie, the dot dict object way
+
 	@property
 	def priority(self):
 		return self.priority_widget.value

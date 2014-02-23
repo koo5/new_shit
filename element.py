@@ -97,13 +97,15 @@ class Element(pyglet.event.EventDispatcher):
 			return self.parent.root
 
 	def fix_relations(self):
-		fix_(widgets)
-		fix_(children)
+		self.fix_(self.widgets)
+		self.fix_(self.children)
 	
 	def fix_(self, items):
 		for k,i in items.iteritems():
 			i.parent = self
 			i.fix_relations()	
 	
-	
+	#in retrospect, i think widgets shouldnt be accesible by name from Element.__getattr__,
+	#but grouped in "widgets" .. ie, the dot dict object way
+
 	
