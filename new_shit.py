@@ -28,22 +28,23 @@ class Window(pyglet.window.Window):
 		self.cursor_c = self.cursor_r = 0
 		self.font_width = 18
 		self.font_height = 24
-		self.indent_spaces = 4
+		self.indent_length = 4
 
 		self.root = test_root()
 		print self.root
 		self.root.window = self
-		self.root.items.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
+		self.root.items['settings']['fullscreen'].push_handlers(on_change = self.on_settings_change)
+		print self.root.win
 		self.render()
 
 	def on_settings_change(self, setting):
 		print setting
-		if setting == self.root.items.settings.fullscreen:
+		if setting == self.root.items.items['settings'].items['fullscreen']:
 			window.toggle_fullscreen()
 
 	def render(self):
-#		self.lines = project.project(self.root.render(), self.indent_spaces)
-		self.lines = project.project(project.test_tags, self.indent_spaces)
+		self.lines = project.project(self.root.tags(), self.indent_spaces)
+#		self.lines = project.project(project.test_tags, self.indent_spaces)
 
 	def on_resize(self, width, height):
 		super(Window, self).on_resize(width, height)

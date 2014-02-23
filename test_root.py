@@ -80,8 +80,8 @@ eye tracking
 			)
 			]))
 
-	for p in r.items.programs: #the Program objects
-		p.syntax_def = r.items.modules[0].statements[0]
+	for p in r.children['items'].items["programs"]: #the Program objects
+		p.syntax_def = r.items.items['modules'][0].statements[0]
 
 	r.fix_relations()
 

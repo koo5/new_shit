@@ -4,16 +4,16 @@
 import pyglet
 import element
 from logger import log
-
-from tags import TextTag, EndTag
+from tags import TextTag, ColorTag, EndTag
 
 
 class Widget(element.Element):
-	pass
+	def __init__(self, parent):
+		self.parent = parent
 
 class Text(Widget):
-	def __init__(self, text):
-		super(Text, self).__init__()
+	def __init__(self, parent, text):
+		super(Text, self).__init__(parent)
 		self.register_event_types('on_edit')
 		self.color = (150,150,255,255)
 		self.text = text
@@ -52,25 +52,26 @@ class Text(Widget):
 
 class ShadowedText(Text):
 
-	def __init__(self, text, shadow):
+	def __init__(self, parent, text, shadow):
 
-		super(ShadowedText, self).__init__(text)
+		super(ShadowedText, self).__init__(parent, text)
 		self.shadow = shadow
 
 	def render(self):
 		return [TextTag(self.text),
 				ColorTag((130,130,130,255)),
-				TextTag(self.shadow[len(self.text):])]
+				TextTag(self.shadow[len(self.text):]),
+				EndTag()]
 
 	def len(self):
 		return len(self.text+self.shadow[len(self.text)])
 		
 
-
+#menu is *totally* outdated
 class Menu(Widget):
-	def __init__(self, items):
-		super(Menu, self).__init__()
-		[self.register_event_type(i) for i in ['on_click']]
+	def __init__(self, parent, items):
+		super(Menu, self).__init__(parent)
+		self.register_event_types('on_click')
 		self.color = (100,230,50,255)
 		self.items = items
 		self.sel = -1
@@ -90,8 +91,8 @@ class Menu(Widget):
 
 
 class Button(Widget):
-	def __init__(self, text="[🔳🔳🔳🔳]"):
-		super(Button, self).__init__()
+	def __init__(self, parent, text="[🔳🔳🔳🔳]"):
+		super(Button, self).__init__(parent)
 		self.register_event_types('on_click, on_text')
 		self.color = (255,150,150,255)
 		self.text = text
@@ -110,17 +111,17 @@ class Button(Widget):
 
 class Number(Text):
 	"""Number widget inherits from text, contents are only int()'ed when needed"""	
-	def __init__(self, text):
-		super(Number, self).__init__(text)
+	def __init__(self, parent, text):
+		super(Number, self).__init__(parent, text)
 		self.text = str(text)
-		self.setw('minus_button', Button("-"))
-		self.setw('plus_button', Button("+"))
+		self.minus_button = Button(self, "-")
+		self.plus_button = Button(self, "+")
 		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 		self.plus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 		self.register_event_types('on_change')
 
 	def render(self):
-		return self.minus_button.tags()+TextTag(self.text)+self.plus_button.tags()
+		return self.minus_button.tags()+[TextTag(self.text)]+self.plus_button.tags()
 	@property
 	def value(self):
 		return int(self.text)
@@ -145,8 +146,8 @@ class Number(Text):
 			self.dec()
 				
 class Toggle(Widget):
-	def __init__(self, value):
-		super(Toggle, self).__init__()
+	def __init__(self, parent, value):
+		super(Toggle, self).__init__(parent)
 		self.register_event_types('on_change')
 		self.value = value
 	def render(self):

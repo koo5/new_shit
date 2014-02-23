@@ -1,19 +1,51 @@
 from collections import OrderedDict
 
 
-
+from logger import ping, log
 import element
 import widgets
 import tags
-from tags import ChildTag as ch, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent
+from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent
 
 
+
+try:
+	import fuzzywuzzy #pip install --user fuzzyfuzzy
+	from fuzzywuzzy import process as fuzzywuzzyprocess
+except:
+	fuzzywuzzyprocess = None
+
+class NotEvenAChildOrWidgetError(AttributeError):
+	def __init__(self, wanted, obj):
+		self.obj = obj
+		self.wanted = wanted
+	def __str__(self):
+		r = "\"%s\" is not an attribute or child of %s" % (self.wanted, self.obj)
+		if fuzzywuzzyprocess:
+			r += ", you might have meant: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, dir(self.obj), limit=10, score_cutoff=50)]) + "..."
+		return r
 
 
 class Node(element.Element):
 	def __init__(self):
 		super(Node, self).__init__()
 		self.color = (0,255,0,255)
+		self.children = {}
+
+	def fix_relations(self):
+		self.fix_(self.children)
+
+	def setch(self, key, item):
+		self.children[key] = item
+		item.parent = self
+
+	def __getattr__(self, name):
+		if self.children.has_key(name):
+			return self.children[name]
+		else:
+			#raise AttributeError()
+			raise NotEvenAChildOrWidgetError(name, self)
+
 
 #	def program(self):
 #		if isinstance(self, Program):
@@ -39,11 +71,20 @@ class Syntaxed(Node):
 		return self.syntaxes[self.syntax_index]
 	def render(self):
 		res = []
+		print self
 		for item in self.syntax:
-			if isinstance(item, child):
+			if isinstance(item, ch):
+				log('expanding child "'+item.name+'" of node '+str(self))
+				if not self.children.has_key(item.name):
+					log("doesnt look good")
 				res += self.children[item.name].tags()
+			if isinstance(item, w):
+				log('expanding widget "'+item.name+'" of node '+str(self))
+				if not self.__dict__.has_key(item.name):
+					log("doesnt look good")
+				res += self.__dict__[item.name].tags()
 			else:
-				res += item
+				res.append(item)
 	def prev_syntax(self):
 		self.syntax_index  -= 1
 		if self.syntax_index < 0:
@@ -66,16 +107,16 @@ class Syntaxed(Node):
 class Text(Node):
 	def __init__(self, value):
 		super(Text, self).__init__()
-		self.widget = widgets.Text(value)
+		self.widget = widgets.Text(self, value)
 	def render(self):
-		self.widget.render()
+		return self.widget.tags()
 
 class Number(Node):
 	def __init__(self, value):
 		super(Number, self).__init__()
-		self.widget = widgets.Number(value)
+		self.widget = widgets.Number(self, value)
 	def render(self):
-		self.widget.render()
+		return self.widget.tags()
 
 
 
@@ -85,7 +126,7 @@ class Collapsible(Node):
 	def __init__(self, items):
 		super(Collapsible, self).__init__()
 		self.items = items #do this first or bad things will happen (and i forgot why)
-		self.setw('expand_collapse_button', widgets.Button())
+		self.expand_collapse_button = widgets.Button(self)
 		self.expand_collapse_button.push_handlers(on_click=self.on_widget_click)
 		self.expanded = True
 	
@@ -93,7 +134,7 @@ class Collapsible(Node):
 		self.expand_collapse_button.text = (
 			("-" if self.expanded else "+") +
 			(" " * (self.win.indent_length - 1)))
-		return self.expand_collapse_button.tags() + indent() + (self.render_items() if self.expanded else newline()) + dedent()
+		return self.expand_collapse_button.tags() + [indent()] + (self.render_items() if self.expanded else [newline()]) + [dedent()]
 	
 	def toggle(self):
 		self.expanded = not self.expanded
@@ -104,25 +145,26 @@ class Collapsible(Node):
 
 class Dict(Collapsible):
 	def __init__(self, tuples):
-		#Dict is created from a list of pairs ("key", value)
 		super(Dict, self).__init__(OrderedDict(tuples))
+		#Dict is created from a list of pairs ("key", value)
+
 		for key, item in self.items.iteritems():
 			item.parent = self
 
 	def render_items(self):
-			for key, item in self.items.iteritems():
-				self.doc.append(key+":", self)
-				if hasattr(item, "oneliner"):
-					self.doc.append(" ", self)
-				else:
-					self.doc.append("\n", self)
-				item.render()
-				self.doc.newline(item)
-	def __getattr__(self, name):
-		if self.items.has_key(name):
-			return self.items[name]
-		else:
-			return super(Dict, self).__getattr__(name)
+		r = []
+		for key, item in self.items.iteritems():
+			r.append(t(key+":"))
+			r += item.tags()
+			r.append(nl())
+		return r
+#	def __getattr__(self, name):
+#		if self.items.has_key(name):
+#			return self.items[name]
+#		else:
+#			return super(Dict, self).__dict__[name]?
+	def __getitem__(self, i):
+		return self.items[i]
 
 
 class List(Collapsible):
@@ -133,9 +175,10 @@ class List(Collapsible):
 			item.parent = self
 
 	def render_items(self):
-			for item in self.items:
-				item.render()
-				self.doc.newline(item)
+		r = []
+		for item in self.items:
+			r += item.tags() + [nl()]
+		return r
 	def __getitem__(self, i):
 		return self.items[i]
 
@@ -143,9 +186,9 @@ class List(Collapsible):
 class CollapsibleText(Collapsible):
 	def __init__(self, value):
 		super(CollapsibleText, self).__init__(value)
-		self.setw('widget', widgets.Text(value))
+		self.widget = widgets.Text(self, value)
 	def render_items(self):
-		self.widget.render()
+		return self.widget.tags()
 		
 
 class Statements(List):
@@ -156,15 +199,15 @@ class VariableRead(Node):
 		super(VariableRead, self).__init__()
 		self.name = widgets.Text(name)
 	def render(self):
-		self.name.render()
+		return self.name.tags()
 
 class Placeholder(Node):
 	def __init__(self, name="placeholder", type=None, default="None", example="None"):
 		super(Placeholder, self).__init__()
 		self.default = default
 		self.example = example
-		self.setw('textbox', widgets.ShadowedText("", "<<>>"))
-		self.setw('menu', widgets.Menu([]))
+		self.textbox = widgets.ShadowedText(self, "", "<<>>")
+		self.menu = widgets.Menu(self, [])
 		self.textbox.push_handlers(
 			on_edit=self.on_widget_edit
 			#on_text_motion=self.on_widget_text_motion,
@@ -189,9 +232,7 @@ class Placeholder(Node):
 
 		self.textbox.shadow = "<<" + x + ">>"
 
-		self.textbox.render()
-#		print self.menu.items
-		self.menu.render()
+		return self.textbox.tags() + self.menu.tags()
 
 
 	def on_widget_text_motion(self, motion):
@@ -239,9 +280,9 @@ class Program(WithDef):
 		self.sys=__import__("sys")
 
 		self.setch('statements', statements)
-		self.setch('name', widgets.Text(name))
-		self.setch('author', widgets.Text(author))
-		self.setch('date_created', widgets.Text(date_created))
+		self.setch('name', widgets.Text(self, name))
+		self.setch('author', widgets.Text(self, author))
+		self.setch('date_created', widgets.Text(self, date_created))
 			
 
 class Module(Syntaxed):
@@ -249,7 +290,7 @@ class Module(Syntaxed):
 		super(Module, self).__init__()
 		assert isinstance(statements, Statements)
 		self.setch('statements', statements)
-		self.setch('name', widgets.Text(name))
+		self.name = widgets.Text(self, name)
 		self.syntaxes = [[t("module"), ch("name"), nl(), ch("statements"), t("end.")]]
 		
 
@@ -265,14 +306,14 @@ class FunctionDefNode(Syntaxed):
 class ShellCommand(Syntaxed):
 	def __init__(self, command):
 		super(ShellCommand, self).__init__()
-		self.setch('command', widgets.Text(command))
+		self.command = widgets.Text(self, command)
 		self.syntaxes = [[t("run shell command:"), ch("command")]]
 
 class Root(Syntaxed):
 	def __init__(self, items):
 		super(Root, self).__init__()
 		self.setch('items', items)
-		self.syntaxes = [[t("root of all evil:"), nl(), ch("command")]]
+		self.syntaxes = [[t("root of all evil:"), nl(), ch("items")]]
 	
 
 class While(Syntaxed):
@@ -283,6 +324,40 @@ class While(Syntaxed):
 						 [t("repeat if"), ch("condition"), t("is true:"), nl(), ch("statements"), t("go back up..")]]
 		self.setch('condition', condition)
 		self.setch('statements', statements)
+
+
+class Note(Node):
+	def __init__(self, text=""):
+		super(Note,self).__init__()
+		self.syntaxes = [[t("note: "), ch("text")]]
+		self.text = widgets.Text(self, text)
+
+class Todo(Note):
+	def __init__(self, text="", priority = 1):
+		super(Todo,self).__init__(text)
+		self.syntaxes = [[t("todo:"), ch("text"), ch("priority")]]
+		self.text = widgets.Text(self, text)
+		self.priority_widget = widgets.Number(self, priority)
+		self.priority_widget.push_handlers(
+			on_change=self.on_priority_change)
+		self.on_priority_change("whatever")
+
+	@property
+	def priority(self):
+		return self.priority_widget.value
+
+	def on_priority_change(self, widget):
+		self.color=(255,255-self.priority * 10,255-self.priority * 10,255)
+		#total brightness decreases as priority increases..such are the paradoxes of our lives
+
+class Idea(Note):
+	def __init__(self, text=""):
+		super(Idea,self).__init__()
+	
+		self.syntaxes = [[t("idea: "), ch("text")]]
+		self.text = widgets.Text(self, text)
+
+
 
 """
 
@@ -323,38 +398,7 @@ class CallNode(TemplatedNode):
 	def render(self):
 		self.target
 
-"""		
-class Note(Node):
-	def __init__(self, text=""):
-		super(Note,self).__init__()
-		self.syntaxes = [[t("note: "), ch("text")]]
-		self.setw('text', widgets.Text(text))
 
-class Todo(Note):
-	def __init__(self, text="", priority = 1):
-		super(Todo,self).__init__(text)
-		self.syntaxes = [[t("todo:"), ch("text"), ch("priority")]]
-		self.setw('text', widgets.Text(text))
-		self.setw('priority_widget', widgets.Number(priority))
-		self.priority_widget.push_handlers(
-			on_change=self.on_priority_change)
-		self.on_priority_change("whatever")
-
-	@property
-	def priority(self):
-		return self.priority_widget.value
-
-	def on_priority_change(self, widget):
-		self.color=(255,255-self.priority * 10,255-self.priority * 10,255)
-		#total brightness decreases as priority increases..such are the paradoxes of our lives
-
-class Idea(Note):
-	def __init__(self, text=""):
-		super(Idea,self).__init__()
-	
-		self.syntaxes = [[t("idea: "), ch("text")]]
-		self.setw('text', widgets.Text(text))
-"""
 class If(Templated):
 	def __init__(self,condition,statements):
 		super(If,self).__init__()

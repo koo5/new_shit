@@ -22,6 +22,10 @@ class ChildTag(Tag):
 	def __init__(self, name):
 		self.name = name
 
+class WidgetTag(Tag):
+	def __init__(self, name):
+		self.name = name
+
 class BackspaceTag(Tag):
 	def __init__(self, spaces):
 		self.spaces = spaces

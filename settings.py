@@ -6,13 +6,12 @@ class Setting(Syntaxed):
 	def __init__(self):
 		super(Setting, self).__init__()
 		self.register_event_types("on_change")
-		self.oneliner = True
 
 class FontSize(Setting):
 	def __init__(self, value):
 		super(FontSize, self).__init__()
-		self.syntaxes = [[ch("widget")]]
-		self.setw('widget', widgets.Number(value))
+		self.syntaxes = [[w("widget")]]
+		self.widget = widgets.Number(self, value)
 
 	@property
 	def value(self):
@@ -21,8 +20,8 @@ class FontSize(Setting):
 class Fullscreen(Setting):
 	def __init__(self):
 		super(Fullscreen, self).__init__()
-		self.syntaxes = [[ch("widget")]]
-		self.setw('widget', widgets.Toggle(False))
+		self.syntaxes = [[w("widget")]]
+		self.widget = widgets.Toggle(self, False)
 		self.widget.push_handlers(on_change = self.on_widget_edit)
 	def on_widget_edit(self, widget):
 		self.dispatch_event('on_change', self)
