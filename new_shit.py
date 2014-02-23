@@ -31,6 +31,7 @@ class Window(pyglet.window.Window):
 		self.indent_spaces = 4
 
 		self.root = test_root()
+		self.root.win = self
 		self.root.fix_relations()
 		self.root.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
 		self.render()

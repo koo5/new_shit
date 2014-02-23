@@ -5,10 +5,9 @@ from collections import OrderedDict
 import element
 import widgets
 import tags
-from tags import ch, t, nl, indent, dedent
+from tags import ChildTag as ch, TextTag as t, nl, indent, dedent
 
 
-#class triple
 
 
 class Node(element.Element):
@@ -403,3 +402,4 @@ class SyntaxNode(Node):
 
 #class SillySimpleCommandDeclaration()
 
+#class triple
