@@ -13,7 +13,14 @@ def test_root():
 			"settings", Dict([
 				("font_size", settings.FontSize(18)),
 				("fullscreen", settings.Fullscreen()),
-				("projection_debug", settings.ProjectionDebug())
+				("projection_debug", settings.ProjectionDebug()),
+				("invert colors", widgets.Toggle(None, False)),
+				("background color", Dict([
+					("R", widgets.Number(None, 0)),
+					("G", widgets.Number(None, 0)),
+					("B", widgets.Number(None, 0))]))
+					
+					
 				])
 			),(
 			"programs", List([

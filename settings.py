@@ -34,7 +34,7 @@ class ProjectionDebug(Setting):
 	def __init__(self):
 		super(ProjectionDebug, self).__init__()
 		self.syntaxes = [[w("widget")]]
-		self.widget = widgets.Toggle(self, True)
+		self.widget = widgets.Toggle(self, False)
 	@property
 	def value(self):
 		return self.widget.value

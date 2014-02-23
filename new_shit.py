@@ -29,6 +29,14 @@ class Window(pyglet.window.Window):
 		self.font_height = 24
 		self.indent_length = 4
 
+		self.batch = pyglet.graphics.Batch()
+		self.document = pyglet.text.document.FormattedDocument("")
+		self.layout = pyglet.text.layout.TextLayout(
+					self.document, self.width, self.height,
+					multiline=True, batch=self.batch, wrap=False)
+		self.layout.x = 0
+		self.layout.y = 0
+
 		self.root = test_root()
 		self.root.window = self
 		self.root.items['settings']['fullscreen'].push_handlers(on_change = self.on_settings_change)
@@ -41,10 +49,11 @@ class Window(pyglet.window.Window):
 
 	def render(self):
 		tags = self.root.tags()
-		print tags
+		#print tags
 		self.lines = project.project(tags, self.indent_length, self.root.items['settings']['projection_debug'].value)
-		print self.lines
+		#print self.lines
 #		self.lines = project.project(project.test_tags, self.indent_spaces)
+		self.layout.document.text = ''.join([''.join([i[0] for i in line])  for line in self.lines])
 
 	def on_resize(self, width, height):
 		super(Window, self).on_resize(width, height)
@@ -90,15 +99,21 @@ class Window(pyglet.window.Window):
 		self.on(pos).dispatch_event('on_mouse_press', x, y, button, modifiers)
 		self.rerender()
 
-
-
-
-	def toggle_fullscreen(self):
-		print "!fullscreen"
-		self.set_fullscreen(not self.fullscreen)
-
+	def invert(self, c, max=255):
+		c = list(c)
+		if self.root.items.items['settings'].items['invert colors']:
+			for i in range(len(c) / 4):
+				for a in range(3):
+					c[a+(4*i)] = max - c[a+(4*i)]
+		return tuple(c)
+	#im tired. they made me do it. there was LSD in my banana.
 	def on_draw(self):
-		pyglet.gl.glClearColor(0, 0.1, 0.2, 1)
+		s = self.root.items.items['settings'].items['background color'].items
+		r = s['R'].value
+		g = s['G'].value
+		b = s['B'].value
+		R,G,B=self.invert((r,g,b), 255)
+		pyglet.gl.glClearColor(R/255,G/255,B/255,1)
 		self.clear()
 		
 		batch = pyglet.graphics.Batch()
@@ -117,18 +132,24 @@ class Window(pyglet.window.Window):
 					
 #		print "draw", self.lines
 		
+		#cursor
 		pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
  			('v2i', (
  				self.font_width * self.cursor_c, 
     			self.height - self.font_height * self.cursor_r, 
     			self.font_width * self.cursor_c, 
     			self.height - self.font_height * (self.cursor_r+1))),
-    		('c3B', (255,0,0,255,255,255)))
+    		('c4B', self.invert((255,255,255,255,255,255,255,255))))
 	
 		
 
 
 		batch.draw()
+
+	def toggle_fullscreen(self):
+		print "!fullscreen"
+		self.set_fullscreen(not self.fullscreen)
+
 
 
 print __name__
