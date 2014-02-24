@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 
+import pygame
 from logger import ping, log
 import element
 import widgets
@@ -98,13 +99,14 @@ class Syntaxed(Node):
 		self.syntax_index  += 1
 		if self.syntax_index == len(self.syntaxes):
 			self.syntax_index = len(self.syntaxes)-1
-	def on_key_press(self, key, modifiers):
-		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.UP):
-			self.prev_syntax()
-			log("prev")
-		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.DOWN):
-			self.next_syntax()
-			log("next")
+	def on_keypress(self, e):
+		if pygame.KMOD_CTRL & e.mod:
+			if e.key == pygame.K_UP:
+				self.prev_syntax()
+				log("prev")
+			if e.key == pygame.K_DOWN:
+				self.next_syntax()
+				log("next")
 
 
 #literals
@@ -324,6 +326,7 @@ class Root(Syntaxed):
 		super(Root, self).__init__()
 		self.setch('items', items)
 		self.syntaxes = [[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]]
+		self.parent = None
 
 	@property
 	def indent_length(self):

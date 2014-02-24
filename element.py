@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import pyglet
+import event
 from logger import log, ping
 import tags
 
-class Element(pyglet.event.EventDispatcher):
+class Element(event.EventDispatcher):
 	def __init__(self):
 		super(Element, self).__init__()
 	
-	def on_keypress(self, symbol, modifiers):
+	def on_keypress(self, event):
 		ping()
 		return False
 		

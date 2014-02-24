@@ -15,7 +15,7 @@ import logger
 import project
 from test_root import test_root
 
-
+lines = []
 def render():
 	global lines
 	
@@ -27,7 +27,7 @@ def render():
 	#self.lines = project.project(project.test_tags, self.indent_spaces)
 
 
-def under_cursor(self):
+def under_cursor():
 	return lines[cursor_r][cursor_c][1]["node"]
 
 """
@@ -59,13 +59,11 @@ def top_keypress(event):
 
 
 def keypress(event):
-	k = event.key
-
-	e = active_element(cursor_c, cursor_r)
-	while e != Null and not e.keypress(event):
+	e = under_cursor()
+	while e != None and not e.on_keypress(event):
 		e = e.parent
 	
-	if e == Null:
+	if e == None:
 		top_keypress(event)
 		
 	render()
@@ -90,7 +88,8 @@ def draw_root():
 		for col, char in enumerate(line):
 			x = font_width * col
 			y = font_height * row
-			sur = font.render(char[0],True,invert_color(char[1]['color']),bg_color())
+			sur = font.render("0",True,(0,255,0),(0,0,255))
+#			sur = font.render(char[0],True,invert_color(char[1]['color']),bg_color())
 			screen_surface.blit(sur,(x,y))
 
 def draw_cursor():
@@ -108,7 +107,7 @@ def bg_color():
 	return invert_color((r,g,b))
 
 def draw_bg():
-	screen_surface.fill(bg_color())
+	screen_surface.fill((255,0,0))#bg_color())
 	
 def draw():
 	draw_bg()
@@ -144,13 +143,12 @@ render()
 
 root.items['settings']['fullscreen'].push_handlers(on_change = toggle_fullscreen)
 
-
-
+pygame.time.set_timer(pygame.USEREVENT, 100)
 
 while __name__ == "__main__":
 	try:
 		loop()
-	except KeyboardInterrupt() as e:
+	except KeyboardInterrupt() as e: #add timer
 		pygame.display.iconify()
 		raise e
 	except Exception() as e:
