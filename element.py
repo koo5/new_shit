@@ -8,15 +8,7 @@ class Element(pyglet.event.EventDispatcher):
 	def __init__(self):
 		super(Element, self).__init__()
 	
-	def on_text(self, text):
-		ping()
-		return False
-	
-	def on_text_motion(self, motion, select=False):
-		ping()
-		return False
-
-	def on_key_press(self, symbol, modifiers):
+	def on_keypress(self, symbol, modifiers):
 		ping()
 		return False
 		
@@ -36,16 +28,16 @@ class Element(pyglet.event.EventDispatcher):
 		return [tags.NodeTag(self)] + r + [tags.EndTag()]
 
 	@property
-	def win(self):
-		return self.root.window
-
-	@property
 	def root(self):
 		if self.__dict__.has_key('parent'):
 			return self.parent.root
 		else:
 			log("root is "+str(self))
 			return self
+			
+	@property
+	def indent_length(self):
+		return self.parent.indent_length
 			
 	def fix_relations(self):
 		self.fix_(self.widgets)

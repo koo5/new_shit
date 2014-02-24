@@ -6,7 +6,7 @@ import element
 import widgets
 import menu
 import tags
-from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent
+from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag
 
 
 
@@ -138,7 +138,7 @@ class Collapsible(Node):
 	def render(self):
 		self.expand_collapse_button.text = (
 			("-" if self.expanded else "+") +
-			(" " * (self.win.indent_length - 1)))
+			(" " * (self.indent_length - 1)))
 		return self.expand_collapse_button.tags() + [indent()] + (self.render_items() if self.expanded else [newline()]) + [dedent()]
 	
 	def toggle(self):
@@ -323,8 +323,11 @@ class Root(Syntaxed):
 	def __init__(self, items):
 		super(Root, self).__init__()
 		self.setch('items', items)
-		self.syntaxes = [[t("root of all evil:"), nl(), ch("items")]]
-	
+		self.syntaxes = [[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]]
+
+	@property
+	def indent_length(self):
+		return self._indent_length
 
 class While(Syntaxed):
 	def __init__(self,condition,statements):
