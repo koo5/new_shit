@@ -12,7 +12,7 @@ functon project takes a list of tags created by root.tags()
 
 from tags import *
 
-
+"optimization: switch from dicts(one keyed) to tuples"
 def squash(a):
 	"""merges a list of dicts into a single dict
 	(currently just dicts containing a single value)
@@ -34,6 +34,9 @@ def project(tags, indent_spaces, debug):
 
 
 	for tag in tags:
+		if isinstance(tag, NewlineTag):
+			tag = TextTag("\n")
+		
 		if isinstance(tag, AttTag):
 			atts.append(tag.attribute)
 		if isinstance(tag, NodeTag):
@@ -55,12 +58,14 @@ def project(tags, indent_spaces, debug):
 		if isinstance(tag, TextTag):
 			for i, char in enumerate(tag.text):
 				if char == "\n":
+					lines.append([])
+					line = lines[len(lines)-1]
+
 					for i in range(indent * indent_spaces):
 						#keeps the attributes of the last node,
 						#but lets see..
 						line.append((" ", squash(atts)))
-					lines.append([])
-					line = lines[len(lines)-1]
+
 				else:
 					atts.append({"char_index": i})
 					line.append((char, squash(atts)))

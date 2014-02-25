@@ -9,6 +9,7 @@ TwoDTag
 wish: structured scribbles
 """
 
+#import cProfile
 import pygame, sys
 from pygame import gfxdraw, font, image, display
 from logger import log, ping
@@ -18,15 +19,12 @@ from test_root import test_root
 
 lines = []
 cached_root_surface = None
+tags=[]
 def render():
-	global lines,cached_root_surface
-	
+	global lines,cached_root_surface,tags
+	log("render")	
 	tags = root.tags()
-	#print tags
-	lines = project.project(tags, root.indent_length, 
-		root.items['settings']['projection_debug'].value)
-	#print self.lines
-	#self.lines = project.project(project.test_tags, self.indent_spaces)
+	lines = project.project(tags, root.indent_length, root.items['settings']['projection_debug'].value)
 	cached_root_surface = draw_root()
 
 def under_cursor():
@@ -71,15 +69,26 @@ def keypress(event):
 		top_keypress(event)
 		
 	render()
+"""
+def fast_render():
+	global lines,cached_root_surface
+	log("render")	
+	tags = root.tags()
+	#lines = project.project(tags, root.indent_length, root.items['settings']['projection_debug'].value)
+	cached_root_surface = draw_root()
+"""
 
 def process_event(event):
+	global screen_surface
 	if event.type == pygame.QUIT:
 		bye()
 	if event.type == pygame.KEYDOWN:
 		keypress(event)
 	if event.type == pygame.VIDEORESIZE:
-		log("yea")
-
+		log("resize")
+ 		screen_surface = pygame.display.set_mode(event.dict['size'],pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE)
+ 		render()
+ 
 def invert_color(c, max=255):
 	if root.items.items['settings'].items['invert colors'].value:	
 		print "inv ",c
@@ -91,13 +100,13 @@ def invert_color(c, max=255):
 
 def draw_root():
 	s = pygame.Surface(screen_surface.get_size())
+	bg = bg_color()
+	s = screen_surface
 	for row, line in enumerate(lines):
 		for col, char in enumerate(line):
 			x = font_width * col
 			y = font_height * row
-			#sur = font.render(char[0],True,(0,255,0),(0,0,255))
-			sur = font.render(char[0],True,invert_color(char[1]['color']),bg_color())
-			#print invert_color(char[1]['color']),bg_color()
+			sur = font.render(char[0],False,invert_color(char[1]['color']),bg)
 			s.blit(sur,(x,y))
 	return s
 
@@ -116,11 +125,12 @@ def bg_color():
 	return invert_color((r,g,b))
 
 def draw_bg():
-	screen_surface.fill((255,0,0))#bg_color())
+	#screen_surface.fill((255,0,0))#bg_color())
+	pass
 	
 def draw():
 	draw_bg()
-	#draw_root()
+#	draw_root()
 	screen_surface.blit(cached_root_surface,(0,0))
 	draw_cursor()
 	pygame.display.flip()
@@ -156,12 +166,17 @@ root.items['settings']['fullscreen'].push_handlers(on_change = toggle_fullscreen
 
 pygame.time.set_timer(pygame.USEREVENT, 100)
 
-while __name__ == "__main__":
-	try:
-		loop()
+def main():
+	while True:
+		try:
+			loop()
 #	except KeyboardInterrupt() as e: #add timer
 #		pygame.display.iconify()
 #		raise e
-	except Exception() as e:
-		pygame.display.iconify()
-		raise e
+		except Exception() as e:
+			pygame.display.iconify()
+			raise e
+
+if __name__ == "__main__":
+#	cProfile.run('main')
+	main()

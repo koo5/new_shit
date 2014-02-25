@@ -1,21 +1,25 @@
 
 intro
 ===
-requires pyglet: pip install --user pyglet
+#requires pygame: 
+apt-get install python-pygame
+#or
+pip install --user pygame
 
-talk to us in #lemonparty on freenode
+talk to us in #lemonparty on freenode (hey, we are already 2 there!)
 
-more info: https://docs.google.com/document/d/1NQCoEghY5rGyEx9tRulQlPz8Do1JPA8O-uoLq3tpTJk/edit
+background noise:  http://goo.gl/jesK0R
+
 
 
 
 license
 ===
-see LICENSE.md
-
-see also: 
-http://tarantsov.com/blog/2012/02/the-third-definition-of-open/
-http://wonko.com/post/jsmin-isnt-welcome-on-google-code
+licensing is still a work in progress, to find or develop a suitable
+license.  for now, see this experiment: https://github.com/koo5/Free-Man-License
+your contributions will be regarded as shared with this future license.
+(in legalese: all your contributions are MINE, untill the license is developed
+into proper legalese)
 
 
 
