@@ -9,15 +9,17 @@ TwoDTag
 wish: structured scribbles
 """
 
-import pygame
+import pygame, sys
 from pygame import gfxdraw, font, image, display
-import logger
+from logger import log, ping
 import project
 from test_root import test_root
 
+
 lines = []
+cached_root_surface = None
 def render():
-	global lines
+	global lines,cached_root_surface
 	
 	tags = root.tags()
 	#print tags
@@ -25,7 +27,7 @@ def render():
 		root.items['settings']['projection_debug'].value)
 	#print self.lines
 	#self.lines = project.project(project.test_tags, self.indent_spaces)
-
+	cached_root_surface = draw_root()
 
 def under_cursor():
 	return lines[cursor_r][cursor_c][1]["node"]
@@ -48,6 +50,8 @@ def top_keypress(event):
 
 	if k == pygame.K_F11:
 		toggleFullscreen()
+	if k == pygame.K_ESCAPE:
+		bye()
 	if k == pygame.K_UP:
 		cursor_r -= 1
 	if k == pygame.K_DOWN:
@@ -73,30 +77,35 @@ def process_event(event):
 		bye()
 	if event.type == pygame.KEYDOWN:
 		keypress(event)
-
+	if event.type == pygame.VIDEORESIZE:
+		log("yea")
 
 def invert_color(c, max=255):
-	c = list(c)
-	if root.items.items['settings'].items['invert colors']:
-		for i in range(len(c) / 4):
-			for a in range(3):
-				c[a+(4*i)] = max - c[a+(4*i)]
-	return tuple(c)
+	if root.items.items['settings'].items['invert colors'].value:	
+		print "inv ",c
+		c = list(c)
+		for i in range(3):
+			c[i] = max - c[i]
+		c = tuple(c)
+	return c
 
 def draw_root():
+	s = pygame.Surface(screen_surface.get_size())
 	for row, line in enumerate(lines):
 		for col, char in enumerate(line):
 			x = font_width * col
 			y = font_height * row
-			sur = font.render("0",True,(0,255,0),(0,0,255))
-#			sur = font.render(char[0],True,invert_color(char[1]['color']),bg_color())
-			screen_surface.blit(sur,(x,y))
+			#sur = font.render(char[0],True,(0,255,0),(0,0,255))
+			sur = font.render(char[0],True,invert_color(char[1]['color']),bg_color())
+			#print invert_color(char[1]['color']),bg_color()
+			s.blit(sur,(x,y))
+	return s
 
 def draw_cursor():
 	gfxdraw.vline(screen_surface, 
  			font_width * cursor_c, 
     		font_height * cursor_r, 
-    		font_height * cursor_r+1, 
+    		font_height * (cursor_r+1), 
 			invert_color((255,255,255,255)))
 
 def bg_color():
@@ -111,18 +120,20 @@ def draw_bg():
 	
 def draw():
 	draw_bg()
-	draw_root()
+	#draw_root()
+	screen_surface.blit(cached_root_surface,(0,0))
 	draw_cursor()
 	pygame.display.flip()
 
 def bye():
+	log("deading")
 	pygame.display.iconify()
-	exit()
+	sys.exit()
 
 def loop():
 	process_event(pygame.event.wait())
 	draw()
-
+	#ping()
 
 
 
@@ -148,9 +159,9 @@ pygame.time.set_timer(pygame.USEREVENT, 100)
 while __name__ == "__main__":
 	try:
 		loop()
-	except KeyboardInterrupt() as e: #add timer
-		pygame.display.iconify()
-		raise e
+#	except KeyboardInterrupt() as e: #add timer
+#		pygame.display.iconify()
+#		raise e
 	except Exception() as e:
 		pygame.display.iconify()
 		raise e

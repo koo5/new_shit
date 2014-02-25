@@ -18,8 +18,10 @@ def test_root():
 				("background color", Dict([
 					("R", widgets.Number(None, 0)),
 					("G", widgets.Number(None, 0)),
-					("B", widgets.Number(None, 0))]))
-					
+					("B", widgets.Number(None, 0))])),
+				("sdl key repeat", settings.KeyRepeat()),
+
+				
 					
 				])
 			),(

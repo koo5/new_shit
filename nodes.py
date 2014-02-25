@@ -68,13 +68,13 @@ class Node(element.Element):
 		r = []
 		for item in syntax:
 			if isinstance(item, ch):
-				log('expanding child "'+item.name+'" of node '+str(self))
 				if not self.children.has_key(item.name):
+					log('expanding child "'+item.name+'" of node '+str(self))
 					log("doesnt look good")
 				r += self.children[item.name].tags()
 			if isinstance(item, w):
-				log('expanding widget "'+item.name+'" of node '+str(self))
 				if not self.__dict__.has_key(item.name):
+					log('expanding widget "'+item.name+'" of node '+str(self))		
 					log("doesnt look good")
 				r += self.__dict__[item.name].tags()
 			else:
