@@ -3,7 +3,7 @@ from inspect import *
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
-def tb(x):
+def bt(x):
 	bt = getouterframes(currentframe())
 	for f in reversed(bt):
 		a,b,c,d = getargvalues(f[0])

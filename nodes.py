@@ -17,12 +17,12 @@ try:
 except:
 	fuzzywuzzyprocess = None
 
-class NotEvenAChildOrWidgetError(AttributeError):
+class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(AttributeError):
 	def __init__(self, wanted, obj):
 		self.obj = obj
 		self.wanted = wanted
 	def __str__(self):
-		r = "\"%s\" is not an attribute or child of %s" % (self.wanted, self.obj)
+		r = "\"%s\" is not an attribute or child of %s, or maybe property getter raised AtributteError, if the name is found below, it did:" % (self.wanted, self.obj)
 		if fuzzywuzzyprocess:
 			r += ", you might have meant: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, dir(self.obj), limit=10, score_cutoff=50)]) + "..."
 		return r
@@ -40,15 +40,14 @@ class Node(element.Element):
 	def setch(self, key, item):
 		self.children[key] = item
 		item.parent = self
-
+	
 	def __getattr__(self, name):
 		if self.children.has_key(name):
 			return self.children[name]
 		else:
 			#raise AttributeError()
-			raise NotEvenAChildOrWidgetError(name, self)
-
-
+			raise NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(name, self)
+	
 #	def program(self):
 #		if isinstance(self, Program):
 #			return self
@@ -141,7 +140,7 @@ class Collapsible(Node):
 		self.expand_collapse_button.text = (
 			("-" if self.expanded else "+") +
 			(" " * (self.indent_length - 1)))
-		return self.expand_collapse_button.tags() + [indent()] + (self.render_items() if self.expanded else [newline()]) + [dedent()]
+		return self.expand_collapse_button.tags() + [indent()] + (self.render_items() if self.expanded else [nl()]) + [dedent()]
 	
 	def toggle(self):
 		self.expanded = not self.expanded
@@ -161,9 +160,9 @@ class Dict(Collapsible):
 	def render_items(self):
 		r = []
 		for key, item in self.items.iteritems():
-			r.append(t(key+":"))
+			r += [t(key), t(":"), indent(), nl()]
 			r += item.tags()
-			r.append(nl())
+			r += [dedent(), nl()]
 		return r
 #	def __getattr__(self, name):
 #		if self.items.has_key(name):
@@ -327,6 +326,7 @@ class Root(Syntaxed):
 		self.setch('items', items)
 		self.syntaxes = [[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]]
 		self.parent = None
+		self.post_render_move_caret = 0
 
 	@property
 	def indent_length(self):
@@ -511,4 +511,6 @@ class SyntaxNode(Node):
 #class SillySimpleCommandDeclaration()
 
 #class triple
+
+class SemanticGoogle #hehe
 """

@@ -5,6 +5,8 @@ import settings, toolbar
 def test_root():
 	r = Root(Dict([
 			(
+			"test", widgets.Text("banana", "Test me out!")
+			),(
 			"menu", List(
 				[
 				toolbar.SetAllSyntaxesToZero()
@@ -13,11 +15,11 @@ def test_root():
 			"settings", Dict([
 				("font_size", settings.FontSize(18)),
 				("fullscreen", settings.Fullscreen()),
-				("projection_debug", settings.ProjectionDebug()),
+				("projection_debug", widgets.Toggle(None, True)),
 				("invert colors", widgets.Toggle(None, False)),
 				("background color", Dict([
 					("R", widgets.Number(None, 0)),
-					("G", widgets.Number(None, 100)),
+					("G", widgets.Number(None, 30)),
 					("B", widgets.Number(None, 0))])),
 				("sdl key repeat", settings.KeyRepeat()),
 
@@ -89,16 +91,20 @@ eye tracking
 			])
 			)
 			]))
-
+	
 	for p in r.children['items'].items["programs"]: #the Program objects
-		p.syntax_def = r.items.items['modules'][0].statements[0]
-
-	r.fix_relations()
+		p.syntax_def = r.children['items'].items['modules'][0].children['statements'][0]
 
 	return r
 
 
+def mini_test_root():
+	return Root(Dict([
+			(
+			"test", widgets.Text("banana", "Test me out!")
+			)]))
 
+	
 
 
 """

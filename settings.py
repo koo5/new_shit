@@ -31,15 +31,6 @@ class Fullscreen(Setting):
 	def value(self):
 		return self.widget.value
 
-class ProjectionDebug(Setting):
-	def __init__(self):
-		super(ProjectionDebug, self).__init__()
-		self.syntaxes = [[w("widget")]]
-		self.widget = widgets.Toggle(self, False)
-	@property
-	def value(self):
-		return self.widget.value
-
 class KeyRepeat(Setting):
 	def __init__(self):
 		super(KeyRepeat, self).__init__()

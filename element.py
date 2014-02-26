@@ -12,9 +12,9 @@ class Element(event.EventDispatcher):
 		ping()
 		return False
 		
-	def on_mouse_press(self, x, y, button, modifiers):
-		ping()
-		return False
+	#def on_mouse_press(self, x, y, button, modifiers):
+	#	ping()
+	#	return False
 
 	def register_event_types(self, types):
 		for item in types.split(','):
@@ -29,7 +29,7 @@ class Element(event.EventDispatcher):
 
 	@property
 	def root(self):
-		if self.__dict__.has_key('parent'):
+		if self.__dict__.has_key('parent') and self.parent != None:
 			return self.parent.root
 		else:
 			log("root is "+str(self))

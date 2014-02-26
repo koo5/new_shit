@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 
-import pyglet
+import pyglet, pygame
 import element
-from logger import log
+from logger import log, ping
 from tags import TextTag, ColorTag, EndTag
 
 
@@ -19,20 +19,29 @@ class Text(Widget):
 		self.text = text
 		
 	def get_caret_position(self):
-		return self.doc.caret_position - self.doc.positions[self]
+		return self.root.caret_position - self.doc.positions[self]
 		
 	def render(self):
 		return [TextTag(self.text)]
 	
-	def on_text(self, text):
-		pos = self.get_caret_position()
-		log(pos)
-
-		self.text = self.text[:pos] + text + self.text[pos:]
-
-		self.post_render_move_caret = len(text)
-		
-		log(self.text + "len: " + len(self.text))
+	def on_keypress(self, e):
+		pos = e.pos
+		if e.key == pygame.K_BACKSPACE:
+			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
+				self.text = self.text[0:pos -1] + self.text[pos:]
+				log(self.text)
+				self.root.post_render_move_caret = -1
+		elif e.key == pygame.K_DELETE:
+			pass
+		elif e.key == pygame.K_ESCAPE:
+			return False
+		elif e.key == pygame.K_RETURN:
+			return False
+		elif e.uni:
+			self.text = self.text[:pos] + e.uni + self.text[pos:]
+			self.root.post_render_move_caret = len(e.uni)
+		else: return False
+		#log(self.text + "len: " + len(self.text))
 		self.dispatch_event('on_edit', self)
 		return True
 
@@ -75,12 +84,12 @@ class Button(Widget):
 	def on_mouse_press(self, x, y, button, modifiers):
 		ping()
 		self.dispatch_event('on_click', self)
-	def on_text(self, text):
+	def on_keypress(self, e):
 		ping()
-		if text == "\r":
+		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
 			self.dispatch_event('on_click', self)
-		else:
-			self.dispatch_event('on_text',  text)
+			return True
+		
 		
 	def render(self):
 		return TextTag(self.text)

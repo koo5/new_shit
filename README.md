@@ -16,7 +16,7 @@ background noise:  http://goo.gl/jesK0R
 license
 ===
 licensing is still a work in progress, to find or develop a suitable
-license.  for now, see this experiment: https://github.com/koo5/Free-Man-License
+license.  for now, see this experiment: <https://github.com/koo5/Free-Man-License>
 your contributions will be regarded as shared with this future license.
 (in legalese: all your contributions are MINE, untill the license is developed
 into proper legalese)
@@ -40,9 +40,9 @@ menu -> records of user interaction
 
 
 
-coupling to pyglet
+coupling to <del>pyglet</del>pygame
 ===
-* using pyglets event module
+* using <b>pyglets<b> event module (standalone, copied out)
 * frontend uses pyglet (duh)
 * nodes handle pyglet events
 * pyglet makes keypresses into on_text, on_text_motion and on_key_press
@@ -54,3 +54,10 @@ more todo ideas
 * maybe when the language can handle it, move color settings to it,
 add some gradient animation
 * credits
+
+
+
+stuff
+===
+profiling:
+python -m cProfile -s cumulative  new_shit.py 

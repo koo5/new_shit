@@ -22,13 +22,20 @@ def squash(a):
 		r[i.items()[0][0]] = i.items()[0][1]
 	return r
 
+
 def test_squash():
 	if squash([{"a": 1}, {"b": 2}, {"a": 3}]) != {"a": 3, "b": 2}:
 		raise Exception()
 
-def project(tags, indent_spaces, debug):
+def newline(lines, indent, indent_spaces, atts):
+	lines.append([])
+	for i in range(indent * indent_spaces):
+			#keeps the attributes of the last node,
+						#but lets see..
+		lines[-1].append((" ", atts))
+
+def project(tags, indent_spaces, width):
 	lines = [[]]
-	line = lines[0]
 	atts = []
 	indent = 0
 
@@ -41,37 +48,39 @@ def project(tags, indent_spaces, debug):
 			atts.append(tag.attribute)
 		if isinstance(tag, NodeTag):
 			atts.append({"node": tag.node})
-			if debug: line.append(">")#⇾")
+			lines[-1].append(("<",squash(atts+[{'color':(200,0,0)}])))#⇾")
 		if isinstance(tag, ColorTag):
 			atts.append({"color": tag.color})
 		if isinstance(tag, EndTag):
-			if debug: line.append("<")#⇽")
+			lines[-1].append((">",squash(atts+[{'color':(200,0,0)}])))#⇽")
 			atts.pop()
 		if isinstance(tag, IndentTag):
 			indent+=1
 		if isinstance(tag, DedentTag):
 			indent-=1
 		if isinstance(tag, BackspaceTag):
-			if len(line) <> tag.spaces:
+			if len(lines[-1]) < tag.spaces:
 				print "cant backspace that much"
-			line = line[:-tag.spaces]
+			lines[-1] = lines[-1][:-tag.spaces]
 		if isinstance(tag, TextTag):
 			for i, char in enumerate(tag.text):
-				if char == "\n":
-					lines.append([])
-					line = lines[len(lines)-1]
-
-					for i in range(indent * indent_spaces):
-						#keeps the attributes of the last node,
-						#but lets see..
-						line.append((" ", squash(atts)))
-
+				if char == "\n":		
+					newline(lines, indent, indent_spaces, squash(atts))
 				else:
 					atts.append({"char_index": i})
-					line.append((char, squash(atts)))
+					if len(lines[-1]) >= width:
+						newline(lines, indent, indent_spaces, squash(atts))
+					lines[-1].append((char, squash(atts)))
 					atts.pop() #char_index
 
 	return lines
+
+def find(node, lines):
+	for r,line in enumerate(lines):
+		for c,char in enumerate(line):
+			if char[1]['node'] == node:
+				return c, r
+	return None
 
 
 test_tags = [
@@ -93,7 +102,7 @@ test_tags = [
 
 def test_project():
 
-	lines = project(test_tags, indent_spaces = 4, debug=False)
+	lines = project(test_tags, indent_spaces = 4)
 	return lines
 
 
@@ -104,7 +113,7 @@ def render(lines):
 			#render char on screen
 """
 
-test_squash()
-test_project()
+#test_squash()
+#test_project()
 
-print "thumbs up"
+#print "thumbs up"
