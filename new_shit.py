@@ -16,6 +16,7 @@ from logger import bt, log, ping
 import project
 import test_root
 import tags as tags_module
+from utils import assis
 
 flags = pygame.RESIZABLE
 screen_surface = None
@@ -30,15 +31,20 @@ def find(x):
 	l = x.split("/")
 	#ping()
 	return find_in(root.items, l)
+
+import nodes as assnodes
 	
 def find_in(item, path):
+	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, assnodes.Node))
 	#ping()
 	i = tryget(item,path[0])
-	if len(path) == 1 or i == None: return i
-	else: return tryget(i, path[1:])
+	if len(path) == 1 or i == None: return i #thats it! lets go home!
+	else:
+		return find_in(i, path[1:])
 
 def tryget(x,y):
-	#ping()
+	assert(isinstance(x, assnodes.Node))
+	assert(isinstance(y, str))
 	try:
 		return x.y
 	except:
@@ -51,12 +57,24 @@ def tryget(x,y):
 
 
 def render():
-	global lines,cached_root_surface,tags
+	global lines,cached_root_surface
 	log("render")	
-	#tags = ( [tags_module.ColorTag((255,255,0,255))] + project.test_tags + tags_module.EndTag()] )
-	tags = root.tags()
-#	print tags
-	lines = project.project(tags, root.indent_length, screen_surface.get_width() / font_width)
+	project._width = screen_surface.get_width() / font_width
+	project._indent_width = 4
+	lines = project.project(root)
+	
+	assis(lines, list)
+	for l in lines:
+		assis(l, list)
+		for i in l:
+			log(i)
+			assis(i, tuple)
+			assis(i[0], str)
+			assert(len(i[0]) == 1)
+			assis(i[1], dict)
+			assert(i[1]['node'])
+			assert(i[1].has_key('char_index'))
+			
 #	print lines
 	cached_root_surface = draw_root()
 
@@ -181,6 +199,7 @@ def draw_root():
 			y = font_height * row
 			#bt("S")
 #			print char
+			log(char)
 			sur = font.render(
 				char[0],False,
 				invert_color(char[1]['color']),
@@ -201,7 +220,10 @@ def bg_color():
 	r = s['R'].value
 	g = s['G'].value
 	b = s['B'].value
-	return invert_color((r,g,b))
+	res = invert_color((r,g,b))
+	assis(res, tuple)
+	assert(len(res) == 3)
+	return res
 
 def draw_bg():
 	screen_surface.fill((255,0,0))#bg_color())
@@ -226,7 +248,9 @@ def loop():
 
 
 
-pygame.init()
+pygame.display.init()
+pygame.font.init()
+
 pygame.time.set_timer(pygame.USEREVENT, 100)
 
 display.set_icon(image.load('icon32x32.png'))
@@ -234,7 +258,6 @@ display.set_caption('lemon party')
 
 root = test_root.mini_test_root()
 root.fix_relations()
-root._indent_length = 4
 cursor_c = cursor_r = 0
 
 set_mode()

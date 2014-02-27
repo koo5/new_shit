@@ -23,10 +23,9 @@ class Element(event.EventDispatcher):
 	def tags(self):
 		#uh
 		r = self.render()
-		if not isinstance(r, list):
-			r = [r]
-		return [tags.NodeTag(self)] + r + [tags.EndTag()]
-
+		assert( isinstance(r, list))
+		return r
+		
 	@property
 	def root(self):
 		if self.__dict__.has_key('parent') and self.parent != None:

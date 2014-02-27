@@ -62,7 +62,7 @@ class Node(element.Element):
 	def scope(self):
 		pass
 
-
+"""
 	def render_syntax(self, syntax):
 		r = []
 		for item in syntax:
@@ -79,7 +79,7 @@ class Node(element.Element):
 			else:
 				r.append(item)
 		return r
-
+"""
 
 class Syntaxed(Node):
 	def __init__(self):
@@ -89,7 +89,8 @@ class Syntaxed(Node):
 	def syntax(self):
 		return self.syntaxes[self.syntax_index]
 	def render(self):
-		return self.render_syntax(self.syntax)
+#		return self.render_syntax(self.syntax)
+		return self.syntax
 	def prev_syntax(self):
 		self.syntax_index  -= 1
 		if self.syntax_index < 0:
@@ -323,10 +324,12 @@ class ShellCommand(Syntaxed):
 class Root(Syntaxed):
 	def __init__(self, items):
 		super(Root, self).__init__()
-		self.setch('items', items)
-		self.syntaxes = [[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]]
 		self.parent = None
 		self.post_render_move_caret = 0
+		self._indent_length = 4
+		self.setch('items', items)
+		self.syntaxes = [[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]]
+		
 
 	@property
 	def indent_length(self):

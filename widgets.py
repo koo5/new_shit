@@ -92,7 +92,7 @@ class Button(Widget):
 		
 		
 	def render(self):
-		return TextTag(self.text)
+		return [TextTag(self.text)]
 
 class Number(Text):
 	"""Number widget inherits from text, contents are only int()'ed when needed"""	
