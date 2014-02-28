@@ -29,10 +29,11 @@ class Text(Widget):
 		if e.key == pygame.K_BACKSPACE:
 			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 				self.text = self.text[0:pos -1] + self.text[pos:]
-				log(self.text)
+#				log(self.text)
 				self.root.post_render_move_caret = -1
 		elif e.key == pygame.K_DELETE:
-			pass
+			if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
+				self.text = self.text[0:pos] + self.text[pos + 1:]
 		elif e.key == pygame.K_ESCAPE:
 			return False
 		elif e.key == pygame.K_RETURN:

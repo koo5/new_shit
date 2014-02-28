@@ -210,13 +210,58 @@ class VariableRead(Node):
 		self.name = widgets.Text(name)
 	def render(self):
 		return [w('name')]
-
+"""
 class Placeholder(Node):
 	def __init__(self, name="placeholder", type=None, default="None", example="None"):
 		super(Placeholder, self).__init__()
 		self.default = default
 		self.example = example
 		self.textbox = widgets.ShadowedText(self, "", "<<>>")
+		self.menu = menu.Menu(self, [])
+		self.textbox.push_handlers(
+			on_edit=self.on_widget_edit
+			#on_text_motion=self.on_widget_text_motion,
+			)
+
+#		print self," items:"
+#		for name, item in self.__dict__.iteritems():
+#			print " ",name, ": ", item
+	
+	
+	def on_widget_edit(self, widget):
+		if widget == self.textbox:
+			text = self.textbox.text
+			self.menu.items = self.doc.language.menu(self)
+	
+	def render(self):
+		d = (" (default:"+self.default+")") if self.default else ""
+		e = (" (for example:"+self.example+")") if self.example else ""
+
+		x = d + e if self.textbox.is_active() else ""
+
+
+		self.textbox.shadow = "<<" + x + ">>"
+
+		return [w('textbox'), w('menu')]
+
+
+	def on_widget_text_motion(self, motion):
+		#use just shifts?
+		if text == "T":
+			self.menu.sel -= 1
+			return True
+		if text == "N":
+			self.menu.sel += 1
+			return True
+			
+	#def replace(self, replacement):
+	#	parent.children[self.name] = replacement...
+"""	
+	
+class SimplePlaceholder(Node):
+	def __init__(self, type=None):
+		super(Placeholder, self).__init__()
+		self.textbox = widgets.Text(self, "")
 		self.menu = menu.Menu(self, [])
 		self.textbox.push_handlers(
 			on_edit=self.on_widget_edit

@@ -151,6 +151,7 @@ def move_cursor(x):
 def keypress(event):
 	element, pos = under_cursor()
 	event = KeypressEvent(event, pos)
+	log(event)
 	
 	while element != None and not element.on_keypress(event):
 		element = element.parent
