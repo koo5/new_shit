@@ -53,4 +53,8 @@ class TwoDGraphicTag(Tag):
 	def __init__(self, width, height, draw_function):
 		pass
 
+class MenuTag(Tag):
+	def __init__(self, items):
+		self.items = items
+
 

@@ -12,11 +12,14 @@ wish: structured scribbles
 #import cProfile
 import pygame, sys
 from pygame import gfxdraw, font, image, display
+
 from logger import bt, log, ping
 import project
 import test_root
 import tags as tags_module
-
+import color
+from nodes import find
+from menu import Menu
 
 if __debug__:
 	import element as asselement
@@ -24,62 +27,37 @@ if __debug__:
 
 flags = pygame.RESIZABLE
 screen_surface = None
-_cached_invert_color = None
 cached_root_surface = None
+menu = 5
 lines = []
 
 
-def find(x):
-	l = x.split("/")
-	#ping()
-	return find_in(root.items, l)
-
-import nodes as assnodes
-	
-def find_in(item, path):
-	ping()
-	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, asselement.Element))
-	#ping()
-	i = tryget(item,path[0])
-	if len(path) == 1 or i == None: return i #thats it! lets go home!
-	else:
-		return find_in(i, path[1:])
-
-def tryget(x,y):
-	assert(isinstance(x, asselement.Element))
-	assert(isinstance(y, str))
-	try:
-		return x.y
-	except:
-		try:
-			return x[y]
-		except:
-			return None
-			
-
-
-
 def render():
-	global lines,cached_root_surface
+	global lines, menu, cached_root_surface
 	log("render")	
+	colors.cache()
 	project._width = screen_surface.get_width() / font_width
 	project._indent_width = 4
-	lines = project.project(root)
+	screen = project.project(root)
+	lines = screen['lines']
+	menu = Menu(screen['menu'])
 	
-	assert(isinstance(lines, list))
-	for l in lines:
-		assert(isinstance(l, list))
-		for i in l:
-			#log(i)
-			assert(isinstance(i, tuple))
-			assert(isinstance(i[0], str) or isinstance(i[0], unicode))
-			assert(len(i[0]) == 1)
-			assert(isinstance(i[1], dict))
-			assert(i[1]['node'])
-			assert(i[1].has_key('char_index'))
+	if __debug__:
+		assert(isinstance(lines, list))
+		for l in lines:
+			assert(isinstance(l, list))
+			for i in l:
+				#log(i)
+				assert(isinstance(i, tuple))
+				assert(isinstance(i[0], str) or isinstance(i[0], unicode))
+				assert(len(i[0]) == 1)
+				assert(isinstance(i[1], dict))
+				assert(i[1]['node'])
+				assert(i[1].has_key('char_index'))
 			
-#	print lines
 	cached_root_surface = draw_root()
+
+#	print lines
 
 def under_cursor():
 	try:
@@ -150,18 +128,21 @@ def move_cursor(x):
 
 def keypress(event):
 	element, pos = under_cursor()
-	event = KeypressEvent(event, pos)
+
+	e = KeypressEvent(event, pos)
 	log(event)
 	
-	while element != None and not element.on_keypress(event):
+	while element != None and not element.on_keypress(e):
 		element = element.parent
 	
-	if element == None:
-		top_keypress(event)
-	else:	
-		render()
+	if element != None:#somebody handled it
 		move_cursor(root.post_render_move_caret)
 		root.post_render_move_caret = 0
+	elif menu == None or not menu.keypress():
+		top_keypress(event)
+		
+	render()
+
 	
 """
 def fast_render():
@@ -183,33 +164,22 @@ def process_event(event):
 		log("resize")
  		screen_surface = pygame.display.set_mode(event.dict['size'],pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE)
  		render()
+ 	
+ 	if event.type == pygame.EXPOSE:
+		draw()
  
-def invert_color(c, max=255):
-	if _cached_invert_color:
-		print "inv ",c
-		c = list(c)
-		for i in range(3):
-			c[i] = max - c[i]
-		c = tuple(c)
-	return c
 
 def draw_root():
-	global _cached_invert_color
-	_cached_invert_color = find('settings/invert colors/value')
-	s = pygame.Surface(screen_surface.get_size(), 0, screen_surface)
-	bg = bg_color()
-	#s = screen_surface
+	s = pygame.Surface(screen_surface.get_size())
+	s.fill(color.bg)
 	for row, line in enumerate(lines):
 		for col, char in enumerate(line):
 			x = font_width * col
 			y = font_height * row
-			#bt("S")
-#			print char
-	#		log(char)
 			sur = font.render(
 				char[0],False,
-				invert_color(char[1]['color']),
-				bg)
+				char[1]['color'],
+				color.bg)
 			s.blit(sur,(x,y))
 	return s
 
@@ -218,28 +188,18 @@ def draw_cursor():
  			font_width * cursor_c, 
     		font_height * cursor_r, 
     		font_height * (cursor_r+1), 
-			invert_color((255,255,255,255)))
+			color.modify((255,255,255,255)))
 
-def bg_color():
-	s = find('settings/background color/items')
-	if s == None: return (0,0,100)
-	r = s['R'].value
-	g = s['G'].value
-	b = s['B'].value
-	res = invert_color((r,g,b))
-	assert(isinstance(res, tuple))
-	assert(len(res) == 3)
-	return res
-
-def draw_bg():
-	screen_surface.fill((255,0,0))#bg_color())
-	pass
+#def draw_bg():
+#	screen_surface.fill((255,0,0))#bg_color())
+#	pass
 	
 def draw():
-	draw_bg()
-#	draw_root()
+	#draw_bg()
+	#draw_root()
 	screen_surface.blit(cached_root_surface,(0,0))
 	draw_cursor()
+	draw_menu()
 	pygame.display.flip()
 
 def bye():
@@ -249,7 +209,6 @@ def bye():
 
 def loop():
 	process_event(pygame.event.wait())
-	draw()
 	#ping()
 
 

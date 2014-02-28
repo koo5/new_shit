@@ -1,13 +1,16 @@
 from collections import OrderedDict
-
-
 import pygame
+
+
+
 from logger import ping, log
 import element
 import widgets
 import menu
 import tags
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag
+
+
 
 
 
@@ -28,6 +31,38 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 			assert(isinstance(self.obj, Node))
 			r += "children: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, [x for x in self.obj.children], limit=10, score_cutoff=50)]) + "..."
 		return r
+
+
+#Xpath:P
+
+def find(x):
+	l = x.split("/")
+	#ping()
+	return find_in(root.items, l)
+
+def find_in(item, path):
+	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, Element))
+	#ping()
+	i = tryget(item,path[0])
+	if len(path) == 1 or i == None: return i #thats it! lets go home!
+	else:
+		return find_in(i, path[1:])
+
+def tryget(x,y):
+	assert(isinstance(x, Element))
+	assert(isinstance(y, str))
+	try:
+		return x.y
+	except:
+		try:
+			return x[y]
+		except:
+			return None
+			
+
+
+
+
 
 
 class Node(element.Element):
@@ -62,7 +97,19 @@ class Node(element.Element):
 
 
 	def scope(self):
-		pass
+		return [TypeDeclaration(x) for x in [
+			Text, Number, Dict, List, CollapsibleText, Statements,
+			VariableRead, SimplePlaceholder, Clock, SyntaxDef,
+			Program, Module, FunctionDefNode, ShellCommand,
+			Root, While, Note, Todo, Idea, Asignment,
+			IsLessThan, Print, CallNode, If, Array]]
+			
+
+
+class TypeDeclaration(Node):
+	def __init__(self, type):
+		self.type = type
+
 
 """
 	def render_syntax(self, syntax):
@@ -257,47 +304,25 @@ class Placeholder(Node):
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
 """	
-	
-class SimplePlaceholder(Node):
-	def __init__(self, type=None):
-		super(Placeholder, self).__init__()
-		self.textbox = widgets.Text(self, "")
-		self.menu = menu.Menu(self, [])
-		self.textbox.push_handlers(
-			on_edit=self.on_widget_edit
-			#on_text_motion=self.on_widget_text_motion,
-			)
 
-#		print self," items:"
-#		for name, item in self.__dict__.iteritems():
-#			print " ",name, ": ", item
-	
+
+
+class SimplePlaceholder(Node):
+	def __init__(self, types=None):
+		super(SimplePlaceholder, self).__init__()
+		self.textbox = widgets.Text(self, "")
+		self.textbox.push_handlers(
+			on_edit=self.on_widget_edit)
+		self.items = []
 	
 	def on_widget_edit(self, widget):
 		if widget == self.textbox:
 			text = self.textbox.text
-			self.menu.items = self.doc.language.menu(self)
+			self.items = self.scope()
 	
 	def render(self):
-		d = (" (default:"+self.default+")") if self.default else ""
-		e = (" (for example:"+self.example+")") if self.example else ""
-
-		x = d + e if self.textbox.is_active() else ""
-
-
-		self.textbox.shadow = "<<" + x + ">>"
-
-		return [w('textbox'), w('menu')]
-
-
-	def on_widget_text_motion(self, motion):
-		#use just shifts?
-		if text == "T":
-			self.menu.sel -= 1
-			return True
-		if text == "N":
-			self.menu.sel += 1
-			return True
+		assert(isinstance(list, self.items))
+		return [MenuTag(self.items), w('textbox')]
 			
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...

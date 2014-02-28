@@ -1,21 +1,38 @@
-from tags import TextTag, ColorTag, EndTag, NewlineTag
-from widgets import Widget
 
-#a widget for now...the actual rendering..should be thru a special tag i guess
-class Menu(Widget):
-	def __init__(self, parent, items):
-		super(Menu, self).__init__(parent)
-		self.register_event_types('on_click')
-		self.color = (100,230,50,255)
-		self.items = items
-		self.sel = -1
+from pygame import gfxdraw, font
 
-	def render(self):
-		r = []
-		for i, item in enumerate(self.items):
-			color = (255,100,100,255) if self.sel == i else self.color
-			r += [NewlineTag()+ColorTag(color), TextTag(item)]
-		r.append(NewlineTag())
-		return r
+import nodes
+import color
 
 
+class Menu(object):
+	def __init__(self, tag, x, y):
+		self.items = [Item(self, i) for i in tag.items]
+		
+	def draw(self, surf, rect):
+		s = pygame.Surface(rect, SRCALPHA, screen_surface)
+
+		self.fg = (255,255,255,255)
+		self.bg = (0,0,0,100)
+
+		x,y,w,h = rect
+
+		for item in self.items:
+			sur = item.render(self)
+			s.blit(sur,(x,y))
+			y += s.get_height()
+		return s
+
+class Item(object):
+	def __init__(self, menu, value):
+		self.menu = menu
+		self.value = value
+		if isinstance(value, nodes.TypeDeclaration):
+			self.text = str(value.type)
+		else:raise hell
+		
+	def render(self)
+		font.render(self.text, True, self.menu.fg, self.menu.bg)
+				s.blit(sur,(x,y))
+	
+	

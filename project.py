@@ -59,17 +59,23 @@ def attadd(atts, key, val):
 	atts.append((key, val))
 
 def project(root):
-	lines = [[]]
+	screen = {'lines': [[]]}
 	atts = []
 	indent = 0
-	_project(lines,root,atts,indent)
+	_project(screen,root,atts,indent)
 	return lines
 
 #⇾node⇽
-def _project(lines, elem, atts, indent):
+def _project(screen, elem, atts, indent):
+	"""calls elem.tags(), then calls itself recursively on widget,
+	child and element tags.	screen and atts are passed and mutated"""
+	
+	assert(isinstance(elem, asselement.Element))
+	assert(isinstance(screen, dict))
+
+	lines = screen['lines']
 	tags = elem.tags()
 
-	assert(isinstance(elem, asselement.Element))
 	assert(isinstance(tags, list))
 	assert(isinstance(lines, list))
 	assert(isinstance(atts, list))
@@ -84,10 +90,10 @@ def _project(lines, elem, atts, indent):
 		if isinstance(tag, NewlineTag):
 			tag = TextTag("\n")
 
-		if isinstance(tag, ChildTag):
+		elif isinstance(tag, ChildTag):
 			assert(isinstance(elem, assnodes.Node))
 			tag = ElementTag(elem.__getattr__(tag.name)) #get child
-		if isinstance(tag, WidgetTag):
+		elif isinstance(tag, WidgetTag):
 			tag = ElementTag(elem.__dict__[tag.name]) #get widget
 
 	#now real stuff
@@ -98,7 +104,7 @@ def _project(lines, elem, atts, indent):
 			attadd(atts, "color", tag.color)
 
 		elif isinstance(tag, ElementTag):
-			_project(lines, tag.element, atts, indent)
+			_project(screen, tag.element, atts, indent)
 
 		elif isinstance(tag, EndTag):
 			atts.pop()
@@ -124,9 +130,12 @@ def _project(lines, elem, atts, indent):
 					charadd(lines[-1], char, atts)
 				atts.pop()
 				pos += 1
+				
+		elif isinstance(tag, MenuTag):
+			screen['menu'] = tag
 		else:
 			raise Hell
-	return lines
+
 
 def find(node, lines):
 	assert(isinstance(node, asselement.Element))
