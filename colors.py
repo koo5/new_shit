@@ -1,14 +1,16 @@
+_rootitems = "cache me"
 
-_cached_invert_color = False
-_cached_posterize_color = False
+_cached_invert_color = "cache me"
+_cached_posterize_color = "cache me"
 
 bg = "cache me"
 
-def cache()
+def cache(rootitems):
 	global _cached_invert_color, _cached_posterize_color
-	global bg
+	global bg, _rootitems
 	
-	_cached_invert_color = find('settings/invert colors/value')
+	_rootitems = rootitems	
+	_cached_invert_color = _rootitems.find('settings/invert colors/value')
 	_cached_posterize_color = False
 	
 	bg = bg_color()
@@ -30,7 +32,7 @@ def modify(c, max=255):
 	return c
 
 def bg_color():
-	s = find('settings/background color/items')
+	s = _rootitems.find('settings/background color/items')
 	if s == None: return (0,0,100)
 	r = s['R'].value
 	g = s['G'].value

@@ -17,9 +17,9 @@ from logger import bt, log, ping
 import project
 import test_root
 import tags as tags_module
-import color
-from nodes import find
+import colors
 from menu import Menu
+from nodes import find_by_path
 
 if __debug__:
 	import element as asselement
@@ -32,15 +32,18 @@ menu = 5
 lines = []
 
 
+def find(x):
+	return find_by_path(root.items, x)
+
+
 def render():
 	global lines, menu, cached_root_surface
 	log("render")	
-	colors.cache()
+	colors.cache(root.items)
 	project._width = screen_surface.get_width() / font_width
 	project._indent_width = 4
 	screen = project.project(root)
 	lines = screen['lines']
-	menu = Menu(screen['menu'])
 	
 	if __debug__:
 		assert(isinstance(lines, list))
@@ -56,6 +59,9 @@ def render():
 				assert(i[1].has_key('char_index'))
 			
 	cached_root_surface = draw_root()
+	menu = Menu(screen['menu'])
+
+	draw()
 
 #	print lines
 
@@ -80,6 +86,14 @@ def toggle_fullscreen():
 def set_mode():
 	global screen_surface
 	screen_surface = pygame.display.set_mode((800,300), flags + (pygame.FULLSCREEN if find('settings/fullscreen/value') else 0))
+
+def first_nonblank():
+	r = 0
+	for ch,a in lines[cursor_r]:
+		if ch in [" ", u" "]:
+			r += 1
+		else:
+			return r
 
 def top_keypress(event):
 	global cursor_r,cursor_c
@@ -108,7 +122,10 @@ def top_keypress(event):
 		if k == pygame.K_RIGHT:
 			cursor_c += 1
 	if k == pygame.K_HOME:
-		cursor_c = 0
+		if cursor_c != 0:
+			cursor_c = 0
+		else:
+			cursor_c = first_nonblank()
 	if k == pygame.K_END:
 		cursor_c = len(lines[cursor_r])
 
@@ -165,13 +182,14 @@ def process_event(event):
  		screen_surface = pygame.display.set_mode(event.dict['size'],pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE)
  		render()
  	
- 	if event.type == pygame.EXPOSE:
-		draw()
+# 	if event.type == pygame.VIDEOEXPOSE:
+#		ping()
+#		draw()
  
 
 def draw_root():
 	s = pygame.Surface(screen_surface.get_size())
-	s.fill(color.bg)
+	s.fill(colors.bg)
 	for row, line in enumerate(lines):
 		for col, char in enumerate(line):
 			x = font_width * col
@@ -179,20 +197,31 @@ def draw_root():
 			sur = font.render(
 				char[0],False,
 				char[1]['color'],
-				color.bg)
+				colors.bg)
 			s.blit(sur,(x,y))
 	return s
 
+def cursor_xy():
+	return (font_width * cursor_c,
+			font_height * cursor_r,
+			font_height * (cursor_r+1))
+
 def draw_cursor():
+	x, y, y2 = cursor_xy()
 	gfxdraw.vline(screen_surface, 
- 			font_width * cursor_c, 
-    		font_height * cursor_r, 
-    		font_height * (cursor_r+1), 
-			color.modify((255,255,255,255)))
+			x, y, y2,    		
+			colors.modify((255,255,255,255)))
 
 #def draw_bg():
 #	screen_surface.fill((255,0,0))#bg_color())
 #	pass
+
+def draw_menu():
+	x,_,y2 = cursor_xy()
+	menu.draw(screen_surface, font, x, y2,
+		(screen_surface.get_width() - x, screen_surface.get_height() - y2))
+	
+	
 	
 def draw():
 	#draw_bg()
@@ -236,8 +265,8 @@ if find('settings/fullscreen'):
 	find('settings/fullscreen').push_handlers(on_change = toggle_fullscreen)
 #im tempted to define "it()"
 
-if project.find(root.items['test'], lines):
-	cursor_c, cursor_r = project.find(root.items['test'], lines)
+#if project.find(root.items['test'], lines):
+#	cursor_c, cursor_r = project.find(root.items['test'], lines)
 
 
 

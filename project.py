@@ -63,7 +63,7 @@ def project(root):
 	atts = []
 	indent = 0
 	_project(screen,root,atts,indent)
-	return lines
+	return screen
 
 #⇾node⇽
 def _project(screen, elem, atts, indent):

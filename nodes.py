@@ -8,7 +8,7 @@ import element
 import widgets
 import menu
 import tags
-from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag
+from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
 
 
 
@@ -35,13 +35,12 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 
 #Xpath:P
 
-def find(x):
-	l = x.split("/")
-	#ping()
-	return find_in(root.items, l)
+def find_by_path(item, path):
+	l = path.split("/")
+	return find_in(item, l)
 
 def find_in(item, path):
-	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, Element))
+	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, element.Element))
 	#ping()
 	i = tryget(item,path[0])
 	if len(path) == 1 or i == None: return i #thats it! lets go home!
@@ -49,7 +48,7 @@ def find_in(item, path):
 		return find_in(i, path[1:])
 
 def tryget(x,y):
-	assert(isinstance(x, Element))
+	assert(isinstance(x, element.Element))
 	assert(isinstance(y, str))
 	try:
 		return x.y
@@ -74,16 +73,20 @@ class Node(element.Element):
 	def fix_relations(self):
 		self.fix_(self.children)
 
-	def setch(self, key, item):
-		self.children[key] = item
-		item.parent = self
-	
 	def __getattr__(self, name):
 		if self.children.has_key(name):
 			return self.children[name]
 		else:
 			#raise AttributeError()
 			raise NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(name, self)
+
+	def setch(self, key, item):
+		self.children[key] = item
+		item.parent = self
+	
+
+	def find(self, path):
+		return find_by_path(self, path)
 	
 #	def program(self):
 #		if isinstance(self, Program):
@@ -99,10 +102,9 @@ class Node(element.Element):
 	def scope(self):
 		return [TypeDeclaration(x) for x in [
 			Text, Number, Dict, List, CollapsibleText, Statements,
-			VariableRead, SimplePlaceholder, Clock, SyntaxDef,
+			VariableRead, Placeholder, Clock, SyntaxDef,
 			Program, Module, FunctionDefNode, ShellCommand,
-			Root, While, Note, Todo, Idea, Asignment,
-			IsLessThan, Print, CallNode, If, Array]]
+			Root, While, Note, Todo, Idea]]
 			
 
 
@@ -307,13 +309,13 @@ class Placeholder(Node):
 
 
 
-class SimplePlaceholder(Node):
+class Placeholder(Node):
 	def __init__(self, types=None):
-		super(SimplePlaceholder, self).__init__()
+		super(Placeholder, self).__init__()
 		self.textbox = widgets.Text(self, "")
 		self.textbox.push_handlers(
 			on_edit=self.on_widget_edit)
-		self.items = []
+		self.items = self.scope()
 	
 	def on_widget_edit(self, widget):
 		if widget == self.textbox:
@@ -321,7 +323,7 @@ class SimplePlaceholder(Node):
 			self.items = self.scope()
 	
 	def render(self):
-		assert(isinstance(list, self.items))
+		assert(isinstance(self.items, list))
 		return [MenuTag(self.items), w('textbox')]
 			
 	#def replace(self, replacement):
