@@ -15,6 +15,7 @@ class Menu(Widget):
 		for i, item in enumerate(self.items):
 			color = (255,100,100,255) if self.sel == i else self.color
 			r += [NewlineTag()+ColorTag(color), TextTag(item)]
-		r.append(NewlineTag())				
+		r.append(NewlineTag())
+		return r
 
 

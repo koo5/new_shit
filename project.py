@@ -12,7 +12,7 @@ functon project takes a list of tags created by root.tags()
 
 from tags import *
 from logger import ping, log
-from utils import assis
+
 
 if __debug__:
 	import element as asselement
@@ -46,19 +46,17 @@ def newline(lines, indent, atts):
 	for i in range(indent * _indent_width):
 		#keeps the attributes of the last node,
 		#but lets see how this works in the ui..
-		charadd(lines[-1], " ", squash(atts))
+		charadd(lines[-1], " ", atts)
 
 def charadd(line, char, atts):
+	assert(isinstance(atts, list))
 	a = squash(atts)
 	assert(isinstance(a, dict))
 	line.append((char, a))
 
-def attadd(atts, tup):
-	assis(atts, list)
-	assis(tup, tuple)
-	assis(tup[0], str)
-	assert(len(tup) == 2)
-	atts.append(("color", tag.color))
+def attadd(atts, key, val):
+	assert(isinstance(key, str))
+	atts.append((key, val))
 
 def project(root):
 	lines = [[]]
@@ -69,32 +67,38 @@ def project(root):
 
 #⇾node⇽
 def _project(lines, elem, atts, indent):
-	assis(elem, asselement.Element)
 	tags = elem.tags()
+
+	assert(isinstance(elem, asselement.Element))
 	assert(isinstance(tags, list))
 	assert(isinstance(lines, list))
 	assert(isinstance(atts, list))
 	assert(isinstance(indent, int))
 	
-	attadd(atts, "node", node)
+	attadd(atts, "node", elem)
 	pos = -1 # <>
 	
-	for tag in [ColorTag((200,0,0)), TextTag("<"), EndTag()] + nt + [ColorTag((200,0,0)), TextTag(">"), EndTag()]:
+	for tag in [ColorTag((200,0,0)), TextTag("<"), EndTag()] + tags + [ColorTag((200,0,0)), TextTag(">"), EndTag()]:
 
+	#first some replaces
 		if isinstance(tag, NewlineTag):
 			tag = TextTag("\n")
+
+		if isinstance(tag, ChildTag):
+			assert(isinstance(elem, assnodes.Node))
+			tag = ElementTag(elem.__getattr__(tag.name)) #get child
+		if isinstance(tag, WidgetTag):
+			tag = ElementTag(elem.__dict__[tag.name]) #get widget
+
+	#now real stuff
 
 		if isinstance(tag, AttTag):
 			attadd(atts, tag.key, tag.val)
 		elif isinstance(tag, ColorTag):
 			attadd(atts, "color", tag.color)
 
-		elif isinstance(tag, ChildTag):
-			ch = node.__getattr__(tag.name)
-			_project(lines, ch, atts, indent)
-		elif isinstance(tag, WidgetTag):
-			w = node.__dict__[tag.name]
-			_project(lines, w, atts, indent)	
+		elif isinstance(tag, ElementTag):
+			_project(lines, tag.element, atts, indent)
 
 		elif isinstance(tag, EndTag):
 			atts.pop()
@@ -111,49 +115,27 @@ def _project(lines, elem, atts, indent):
 
 		elif isinstance(tag, TextTag):
 			for char in tag.text:
+				attadd(atts, "char_index", pos)
 				if char == "\n":
 					newline(lines, indent, atts)
 				else:
-					attadd("char_index", pos)
 					if len(lines[-1]) >= _width:
 						newline(lines, indent, atts)
-					
-					tup = (char, squash(atts))
-					
-					assert(isinstance(tup[0], str))
-					assert(isinstance(tup[1], dict))
-					
-					charadd(lines[-1], tup)
-					
-					atts.pop() #char_index
-					pos += 1
+					charadd(lines[-1], char, atts)
+				atts.pop()
+				pos += 1
 		else:
 			raise Hell
 	return lines
 
 def find(node, lines):
-	assert(isinstance(node, asselements.Element))
+	assert(isinstance(node, asselement.Element))
 	for r,line in enumerate(lines):
 		for c,char in enumerate(line):
 			if char[1]['node'] == node:
 				return c, r
 	return None
 
-
-test_tags = [
-		NodeTag(1),
-		TextTag("program Hello World:\n"),
-		IndentTag(),
-		NodeTag(2),
-		TextTag("print "),
-		NodeTag(3),
-		TextTag("\"hello world\"\n"),
-		EndTag(),
-		EndTag(),
-		DedentTag(),
-		TextTag("end."),
-		EndTag()
-	]
 
 if __debug__:
 	test_squash()

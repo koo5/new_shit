@@ -1,3 +1,11 @@
+bugs:
+
 no duplication
 asserts
 pylint?
+
+
+
+speed:
+-O
+alternative interpreters?

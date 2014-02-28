@@ -7,7 +7,7 @@ import element
 import widgets
 import menu
 import tags
-from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag
+from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag
 
 
 
@@ -22,9 +22,11 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 		self.obj = obj
 		self.wanted = wanted
 	def __str__(self):
-		r = "\"%s\" is not an attribute or child of %s, or maybe property getter raised AtributteError, if the name is found below, it did:" % (self.wanted, self.obj)
+		r = "\"%s\" is not an attribute or child of %s, or maybe property getter raised AtributteError, if the name is found below, it did (or maybe you called __getitem__ directly, or confused ch() with w()):\n" % (self.wanted, self.obj)
 		if fuzzywuzzyprocess:
-			r += ", you might have meant: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, dir(self.obj), limit=10, score_cutoff=50)]) + "..."
+			r += "attributes, widgets: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, dir(self.obj), limit=10, score_cutoff=50)]) + "...\n"
+			assert(isinstance(self.obj, Node))
+			r += "children: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, [x for x in self.obj.children], limit=10, score_cutoff=50)]) + "..."
 		return r
 
 
@@ -116,14 +118,14 @@ class Text(Node):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 	def render(self):
-		return self.widget.tags()
+		return [cd('widget')]
 
 class Number(Node):
 	def __init__(self, value):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
 	def render(self):
-		return self.widget.tags()
+		return [ch('widget')]
 
 
 
@@ -141,7 +143,7 @@ class Collapsible(Node):
 		self.expand_collapse_button.text = (
 			("-" if self.expanded else "+") +
 			(" " * (self.indent_length - 1)))
-		return self.expand_collapse_button.tags() + [indent()] + (self.render_items() if self.expanded else [nl()]) + [dedent()]
+		return [w('expand_collapse_button')] + [indent()] + (self.render_items() if self.expanded else [nl()]) + [dedent()]
 	
 	def toggle(self):
 		self.expanded = not self.expanded
@@ -162,8 +164,9 @@ class Dict(Collapsible):
 		r = []
 		for key, item in self.items.iteritems():
 			r += [t(key), t(":"), indent(), nl()]
-			r += item.tags()
+			r += [ElementTag(item)]
 			r += [dedent(), nl()]
+		
 		return r
 #	def __getattr__(self, name):
 #		if self.items.has_key(name):
@@ -184,7 +187,7 @@ class List(Collapsible):
 	def render_items(self):
 		r = []
 		for item in self.items:
-			r += item.tags()# + [nl()]
+			r += [ElementTag(item)]# + [nl()]
 		return r
 	def __getitem__(self, i):
 		return self.items[i]
@@ -195,7 +198,7 @@ class CollapsibleText(Collapsible):
 		super(CollapsibleText, self).__init__(value)
 		self.widget = widgets.Text(self, value)
 	def render_items(self):
-		return self.widget.tags()
+		return [w('widget')]
 		
 
 class Statements(List):
@@ -206,7 +209,7 @@ class VariableRead(Node):
 		super(VariableRead, self).__init__()
 		self.name = widgets.Text(name)
 	def render(self):
-		return self.name.tags()
+		return [w('name')]
 
 class Placeholder(Node):
 	def __init__(self, name="placeholder", type=None, default="None", example="None"):
@@ -239,7 +242,7 @@ class Placeholder(Node):
 
 		self.textbox.shadow = "<<" + x + ">>"
 
-		return self.textbox.tags() + self.menu.tags()
+		return [w('textbox'), w('menu')]
 
 
 	def on_widget_text_motion(self, motion):
@@ -282,7 +285,7 @@ class WithDef(Node):
 		self.syntax_def = syntax_def
 		
 	def render(self):
-		return self.render_syntax(self.syntax_def.syntax_def)
+		return self.syntax_def.syntax_def
 
 class Program(WithDef):
 	def __init__(self, statements, name="unnamed", author="banana", date_created="1.1.1.1111"):

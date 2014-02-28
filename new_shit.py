@@ -16,15 +16,17 @@ from logger import bt, log, ping
 import project
 import test_root
 import tags as tags_module
-from utils import assis
+
+
+if __debug__:
+	import element as asselement
+	import nodes as assnodes
 
 flags = pygame.RESIZABLE
 screen_surface = None
-
-lines = []
+_cached_invert_color = None
 cached_root_surface = None
-tags=[]
-
+lines = []
 
 
 def find(x):
@@ -35,7 +37,8 @@ def find(x):
 import nodes as assnodes
 	
 def find_in(item, path):
-	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, assnodes.Node))
+	ping()
+	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, asselement.Element))
 	#ping()
 	i = tryget(item,path[0])
 	if len(path) == 1 or i == None: return i #thats it! lets go home!
@@ -43,7 +46,7 @@ def find_in(item, path):
 		return find_in(i, path[1:])
 
 def tryget(x,y):
-	assert(isinstance(x, assnodes.Node))
+	assert(isinstance(x, asselement.Element))
 	assert(isinstance(y, str))
 	try:
 		return x.y
@@ -63,15 +66,15 @@ def render():
 	project._indent_width = 4
 	lines = project.project(root)
 	
-	assis(lines, list)
+	assert(isinstance(lines, list))
 	for l in lines:
-		assis(l, list)
+		assert(isinstance(l, list))
 		for i in l:
-			log(i)
-			assis(i, tuple)
-			assis(i[0], str)
+			#log(i)
+			assert(isinstance(i, tuple))
+			assert(isinstance(i[0], str) or isinstance(i[0], unicode))
 			assert(len(i[0]) == 1)
-			assis(i[1], dict)
+			assert(isinstance(i[1], dict))
 			assert(i[1]['node'])
 			assert(i[1].has_key('char_index'))
 			
@@ -132,11 +135,11 @@ def top_keypress(event):
 		cursor_c = len(lines[cursor_r])
 
 class KeypressEvent(object):
-	def __init__(s, e, pos):
-		s.uni = e.unicode
-		s.key = e.key
-		s.mod = e.mod
-		s.pos = pos
+	def __init__(self, e, pos):
+		self.uni = e.unicode
+		self.key = e.key
+		self.mod = e.mod
+		self.pos = pos
 	def __repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s, pos=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod), self.pos))
@@ -181,7 +184,7 @@ def process_event(event):
  		render()
  
 def invert_color(c, max=255):
-	if find('settings/invert colors/value'):
+	if _cached_invert_color:
 		print "inv ",c
 		c = list(c)
 		for i in range(3):
@@ -190,7 +193,9 @@ def invert_color(c, max=255):
 	return c
 
 def draw_root():
-	s = pygame.Surface(screen_surface.get_size(),0,screen_surface)
+	global _cached_invert_color
+	_cached_invert_color = find('settings/invert colors/value')
+	s = pygame.Surface(screen_surface.get_size(), 0, screen_surface)
 	bg = bg_color()
 	#s = screen_surface
 	for row, line in enumerate(lines):
@@ -199,7 +204,7 @@ def draw_root():
 			y = font_height * row
 			#bt("S")
 #			print char
-			log(char)
+	#		log(char)
 			sur = font.render(
 				char[0],False,
 				invert_color(char[1]['color']),
@@ -221,7 +226,7 @@ def bg_color():
 	g = s['G'].value
 	b = s['B'].value
 	res = invert_color((r,g,b))
-	assis(res, tuple)
+	assert(isinstance(res, tuple))
 	assert(len(res) == 3)
 	return res
 
@@ -256,7 +261,7 @@ pygame.time.set_timer(pygame.USEREVENT, 100)
 display.set_icon(image.load('icon32x32.png'))
 display.set_caption('lemon party')
 
-root = test_root.mini_test_root()
+root = test_root.test_root()
 root.fix_relations()
 cursor_c = cursor_r = 0
 

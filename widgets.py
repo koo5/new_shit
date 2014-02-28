@@ -4,7 +4,7 @@
 import pyglet, pygame
 import element
 from logger import log, ping
-from tags import TextTag, ColorTag, EndTag
+from tags import TextTag, ColorTag, EndTag, WidgetTag
 
 
 class Widget(element.Element):
@@ -106,7 +106,7 @@ class Number(Text):
 		self.register_event_types('on_change')
 
 	def render(self):
-		return self.minus_button.tags()+[TextTag(self.text)]+self.plus_button.tags()
+		return [WidgetTag('minus_button'), TextTag(self.text), WidgetTag('plus_button')]
 	@property
 	def value(self):
 		return int(self.text)
@@ -136,7 +136,7 @@ class Toggle(Widget):
 		self.register_event_types('on_change')
 		self.value = value
 	def render(self):
-		return TextTag(self.text)
+		return [TextTag(self.text)]
 	@property
 	def text(self):
 		return "checked" if self.value else "unchecked"

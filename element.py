@@ -23,6 +23,7 @@ class Element(event.EventDispatcher):
 	def tags(self):
 		#uh
 		r = self.render()
+#		ping()
 		assert( isinstance(r, list))
 		return r
 		
