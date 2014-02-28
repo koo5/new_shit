@@ -1,3 +1,4 @@
+import pygame
 
 import nodes
 import colors
@@ -8,7 +9,7 @@ class Menu(object):
 		self.items = [Item(self, i) for i in tag.items]
 		
 	def draw(self, scr, font, x, y, size):
-#		s = pygame.Surface((self.rect, pygame.SRCALPHA)
+		#s = pygame.Surface((size[0], size[1]), pygame.SRCALPHA)
 		self.fg = (255,255,255,255)
 		self.bg = (0,0,0,100)
 		
@@ -27,9 +28,9 @@ class Item(object):
 			self.text = str(value.type)
 		else:raise hell
 		
-	def render(self, scr, font, x, y):
-		s = font.render("["+self.text, True, self.menu.fg, self.menu.bg)
-		scr.blit(s,(x,y))
-		return s.get_height()
+	def render(self, s, font, x, y):
+		fs = font.render("["+self.text, True, self.menu.fg, self.menu.bg)
+		s.blit(fs,(x,y))
+		return fs.get_height()
 	
 	

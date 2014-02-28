@@ -38,15 +38,16 @@ class ElementTag(Tag):
 		self.element = element
 
 
-
-class BackspaceTag(Tag):
-	def __init__(self, spaces):
-		self.spaces = spaces
-
+"""
+class BackTabTag(Tag):
+	pass
+class TabTag(Tag):
+	pass
+"""
+	
 class ColorTag(Tag):
 	def __init__(self, color):
 		self.color = color
-
 
 
 class TwoDGraphicTag(Tag):

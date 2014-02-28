@@ -5,9 +5,11 @@ import settings, toolbar
 def test_root():
 	r = Root(Dict([
 			(
-			"info", Note('accesibility done: color inversion, background color and font size. "posterization" (full black or white) is underway. . . .')
+			"info", Dict([
+				("accesibility", Note('done: color inversion, background color and font size. "posterization" (full black or white) is underway. . . .')),
+				("speed", Note("try python -O ( ./faster.sh ), disables assertions, makes things usable"))])
 			),(
-			"test", widgets.Text("banana", "Test me out!")
+			"text widget test", widgets.Text(None, "Test me out!")
 			),(
 			"placeholder test", Placeholder()
 			),(

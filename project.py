@@ -113,12 +113,10 @@ def _project(screen, elem, atts, indent):
 			indent+=1
 		elif isinstance(tag, DedentTag):
 			indent-=1
-
-		elif isinstance(tag, BackspaceTag):
-			if len(lines[-1]) < tag.spaces:
-				log("cant backspace that much")
-			lines[-1] = lines[-1][:-tag.spaces]
-
+		#elif isinstance(tag, BackspaceTag):
+		#	if len(lines[-1]) < tag.spaces:
+		#		log("cant backspace that much")
+		#	lines[-1] = lines[-1][:-tag.spaces]
 		elif isinstance(tag, TextTag):
 			for char in tag.text:
 				attadd(atts, "char_index", pos)

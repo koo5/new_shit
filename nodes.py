@@ -37,12 +37,16 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 
 def find_by_path(item, path):
 	l = path.split("/")
-	return find_in(item, l)
+	r = find_in(item, l)
+	log(r)
+	return r
 
 def find_in(item, path):
+	ping()
 	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, element.Element))
 	#ping()
 	i = tryget(item,path[0])
+	log(i)
 	if len(path) == 1 or i == None: return i #thats it! lets go home!
 	else:
 		return find_in(i, path[1:])
@@ -51,7 +55,8 @@ def tryget(x,y):
 	assert(isinstance(x, element.Element))
 	assert(isinstance(y, str))
 	try:
-		return x.y
+		#import pdb; pdb.set_trace()
+		return getattr(x, y)
 	except:
 		try:
 			return x[y]
@@ -189,9 +194,7 @@ class Collapsible(Node):
 		self.expanded = True
 	
 	def render(self):
-		self.expand_collapse_button.text = (
-			("-" if self.expanded else "+") +
-			(" " * (self.indent_length - 1)))
+		self.expand_collapse_button.text = ("-" if self.expanded else "+")
 		return [w('expand_collapse_button')] + [indent()] + (self.render_items() if self.expanded else [nl()]) + [dedent()]
 	
 	def toggle(self):
