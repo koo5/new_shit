@@ -259,12 +259,23 @@ class CollapsibleText(Collapsible):
 class Statements(List):
 	pass	
 
-class VariableRead(Node):
+
+
+class VariableDeclaration(Node):
 	def __init__(self, name):
-		super(VariableRead, self).__init__()
+		super(VariableDeclaration, self).__init__()
 		self.name = widgets.Text(name)
 	def render(self):
-		return [w('name')]
+		return [t("var"), w('name')]
+
+
+class VariableReference(Node):
+	def __init__(self, declaration):
+		super(VariableReference, self).__init__()
+		self.declaration = declaration
+	def render(self):
+		return [t(self.declaration.name.text)]
+
 """
 class Placeholder(Node):
 	def __init__(self, name="placeholder", type=None, default="None", example="None"):
@@ -319,20 +330,21 @@ class Placeholder(Node):
 	def __init__(self, types=None):
 		super(Placeholder, self).__init__()
 		self.textbox = widgets.Text(self, "")
-		self.textbox.push_handlers(
-			on_edit=self.on_widget_edit)
-		
-	def on_widget_edit(self, widget):
-		if widget == self.textbox:
-			text = self.textbox.text
-			self.items = self.scope()
-	
+
 	def render(self):
-		#print self.items
-		#assert(isinstance(self.items, list))
 		return [t(">>"), w('textbox'), t("<<")]
 		
 	def menu(self):
+		r = []
+		text = self.textbox.text
+
+		#variable declarations
+		for i in self.scope():
+			if isinstance(i, VariableDeclaration):
+				r += [MenuItem(
+					name = i.name, #i.render?
+					value = VariableReference(i))]
+
 		#1: node types
 		return [MenuItem(str(x), x) for x in self.scope()]
 		
