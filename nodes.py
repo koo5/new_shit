@@ -7,6 +7,7 @@ from logger import ping, log
 import element
 import widgets
 import menu
+from menu import MenuItem
 import tags
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
 
@@ -37,23 +38,26 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 
 def find_by_path(item, path):
 	l = path.split("/")
+	l = [int(x) if x.isdigit() else x for x in l]
 	r = find_in(item, l)
-	log(r)
+	#log(r)
 	return r
 
 def find_in(item, path):
-	ping()
+	#ping()
 	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, element.Element))
 	#ping()
 	i = tryget(item,path[0])
-	log(i)
+	#log(i)
+	if i == None:
+		log("not found: " + path[0] + " in " + str(item) + " / " + " / ".join(path))
 	if len(path) == 1 or i == None: return i #thats it! lets go home!
 	else:
 		return find_in(i, path[1:])
 
 def tryget(x,y):
-	assert(isinstance(x, element.Element))
-	assert(isinstance(y, str))
+	assert(isinstance(x, element.Element) or isinstance(x, dict)  or isinstance(x, list))
+	assert(isinstance(y, str) or isinstance(y, int))
 	try:
 		#import pdb; pdb.set_trace()
 		return getattr(x, y)
@@ -79,6 +83,8 @@ class Node(element.Element):
 		self.fix_(self.children)
 
 	def __getattr__(self, name):
+#		assert('children' in dir(self))
+		#log(self)
 		if self.children.has_key(name):
 			return self.children[name]
 		else:
@@ -105,18 +111,10 @@ class Node(element.Element):
 
 
 	def scope(self):
-		return [TypeDeclaration(x) for x in [
-			Text, Number, Dict, List, CollapsibleText, Statements,
-			VariableRead, Placeholder, Clock, SyntaxDef,
-			Program, Module, FunctionDefNode, ShellCommand,
-			Root, While, Note, Todo, Idea]]
+		x = self.root.find("modules/1/statements/items")
+		assert(x != None)
+		return x
 			
-
-
-class TypeDeclaration(Node):
-	def __init__(self, type):
-		self.type = type
-
 
 """
 	def render_syntax(self, syntax):
@@ -228,6 +226,10 @@ class Dict(Collapsible):
 	def __getitem__(self, i):
 		return self.items[i]
 
+	def fix_relations(self):
+		super(Dict, self).fix_relations()
+		self.fix_(self.items)
+
 
 class List(Collapsible):
 	def __init__(self, items):
@@ -242,6 +244,7 @@ class List(Collapsible):
 			r += [ElementTag(item)]# + [nl()]
 		return r
 	def __getitem__(self, i):
+		ping()
 		return self.items[i]
 
 
@@ -318,16 +321,27 @@ class Placeholder(Node):
 		self.textbox = widgets.Text(self, "")
 		self.textbox.push_handlers(
 			on_edit=self.on_widget_edit)
-		self.items = self.scope()
-	
+		
 	def on_widget_edit(self, widget):
 		if widget == self.textbox:
 			text = self.textbox.text
 			self.items = self.scope()
 	
 	def render(self):
-		assert(isinstance(self.items, list))
-		return [MenuTag(self.items), w('textbox')]
+		#print self.items
+		#assert(isinstance(self.items, list))
+		return [t(">>"), w('textbox'), t("<<")]
+		
+	def menu(self):
+		#1: node types
+		return [MenuItem(str(x), x) for x in self.scope()]
+		
+		#2: calls, variables..
+		
+		#filter by self.types:
+		
+			
+			
 			
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
@@ -336,7 +350,7 @@ class Placeholder(Node):
 
 class Clock(Node):
 	def __init__(self):
-		super(Node,self).__init__()
+		super(Clock,self).__init__()
 		self.datetime = __import__("datetime")
 	def render(self):
 		return [t(str(self.datetime.datetime.now()))]
@@ -346,7 +360,16 @@ class Clock(Node):
 #has the syntaxes as part of "class definition" (in __init__, really)
 #WithDef uses another object, "SyntaxDef"
 
-class SyntaxDef(Syntaxed):
+class TypeDeclaration(Node):
+	def __init__(self, type):
+		super(TypeDeclaration, self).__init__()
+		self.type = type
+
+	def render(self):
+		return [t("type declaration:"), t(str(self.type))]
+
+
+class SyntaxDef(Node):
 	def __init__(self, syntax_def):
 		super(SyntaxDef, self).__init__()
 		self.syntax_def = syntax_def
@@ -407,7 +430,9 @@ class Root(Syntaxed):
 		self._indent_length = 4
 		self.setch('items', items)
 		self.syntaxes = [[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]]
-		
+
+	def find(self, path):
+		return find_by_path(self.items.items, path)
 
 	@property
 	def indent_length(self):

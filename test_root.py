@@ -11,7 +11,7 @@ def test_root():
 			),(
 			"text widget test", widgets.Text(None, "Test me out!")
 			),(
-			"placeholder test", Placeholder()
+			"placeholder test", Placeholder(types = [Node])
 			),(
 			"menu", List(
 				[
@@ -87,6 +87,8 @@ eye tracking
 				Module(Statements([
 					SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end.")])
 				]), name = "syntaxes for builtins"),
+				
+				Module(Statements(builtins()), name = "builtins"),
 
 				Module(Statements([
 					Note("stupid, but gotta start somewhere"),
@@ -100,8 +102,19 @@ eye tracking
 	
 	for p in r.children['items'].items["programs"]: #the Program objects
 		p.syntax_def = r.children['items'].items['modules'][0].children['statements'][0]
-
+	
+	r.fix_relations()
+	
 	return r
+
+
+def builtins():
+	return [TypeDeclaration(x) for x in [
+			Text, Number, Dict, List, CollapsibleText, Statements,
+			VariableRead, Placeholder, Clock, SyntaxDef,
+			Program, Module, FunctionDefNode, ShellCommand,
+			Root, While, Note, Todo, Idea]]
+
 
 
 def mini_test_root():

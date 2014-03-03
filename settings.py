@@ -47,7 +47,7 @@ class KeyRepeat(Setting):
 		self.rate.push_handlers(on_change = self.on_widget_edit)
 		self.delay.push_handlers(on_change = self.on_widget_edit)
 		
-		self.on_widget_edit("banana")
+#		self.on_widget_edit("banana")
 		
 	def on_widget_edit(self, widget):
 		#self.dispatch_event('on_change', self)

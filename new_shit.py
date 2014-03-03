@@ -28,16 +28,15 @@ if __debug__:
 flags = pygame.RESIZABLE
 screen_surface = None
 cached_root_surface = None
-menu = 5
 lines = []
-
+menu = Menu()
 
 def find(x):
 	return find_by_path(root.items, x)
 
 
 def render():
-	global lines, menu, cached_root_surface
+	global lines, cached_root_surface
 	log("render")	
 	colors.cache(root.items)
 	project._width = screen_surface.get_width() / font_width
@@ -59,17 +58,22 @@ def render():
 				assert(i[1].has_key('char_index'))
 			
 	cached_root_surface = draw_root()
-	menu = Menu(screen['menu'])
-
+	
 	draw()
 
 #	print lines
 
 def under_cursor():
 	try:
-		return (lines[cursor_r][cursor_c][1]["node"], lines[cursor_r][cursor_c][1]["char_index"])
+		return lines[cursor_r][cursor_c][1]["node"]
 	except:
-		return None, None
+		return None
+
+def element_char_index():
+	try:
+		return lines[cursor_r][cursor_c][1]["char_index"]
+	except:
+		return None
 
 """
 	def on_mouse_press(self, x, y, button, modifiers):
@@ -95,6 +99,14 @@ def first_nonblank():
 		else:
 			return r
 
+def and_sides(event):
+	if event.all[pygame.K_LEFT]: move_cursor(-1)
+	if event.all[pygame.K_RIGHT]: move_cursor(1)
+
+def and_updown(event):
+	if event.all[pygame.K_UP]: updown_cursor(-1)
+	if event.all[pygame.K_DOWN]: updown_cursor(1)
+
 def top_keypress(event):
 	global cursor_r,cursor_c
 
@@ -105,13 +117,17 @@ def top_keypress(event):
 	if k == pygame.K_ESCAPE:
 		bye()
 	if k == pygame.K_UP:
-		cursor_r -= 1
+		updown_cursor(-1)
+		and_sides(event)
 	if k == pygame.K_DOWN:
-		cursor_r += 1
+		updown_cursor(+1)
+		and_sides(event)
 	if k == pygame.K_LEFT:
 		move_cursor(-1)
+		and_updown(event)
 	if k == pygame.K_RIGHT:
 		move_cursor(+1)
+		and_updown(event)
 	if event.mod & pygame.KMOD_CTRL:
 		if k == pygame.K_UP:
 			cursor_r -= 1
@@ -135,6 +151,7 @@ class KeypressEvent(object):
 		self.key = e.key
 		self.mod = e.mod
 		self.pos = pos
+		self.all = pygame.key.get_pressed()
 	def __repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s, pos=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod), self.pos))
@@ -143,8 +160,13 @@ def move_cursor(x):
 	global cursor_c
 	cursor_c += x
 
+def updown_cursor(count):
+	global cursor_r
+	cursor_r += count
+
+
 def keypress(event):
-	element, pos = under_cursor()
+	element, pos = under_cursor(), element_char_index()
 
 	e = KeypressEvent(event, pos)
 	log(event)
@@ -156,9 +178,11 @@ def keypress(event):
 		move_cursor(root.post_render_move_caret)
 		root.post_render_move_caret = 0
 	elif menu == None or not menu.keypress():
-		top_keypress(event)
+		top_keypress(e)
 		
 	render()
+	if under_cursor():
+		menu.items = under_cursor().menu()
 
 	
 """
@@ -217,7 +241,8 @@ def draw_cursor():
 #	pass
 
 def draw_menu():
-	x,_,y2 = cursor_xy()
+	#x,_,y2 = cursor_xy()
+	x, y2 = screen_surface.get_width() / 2,0
 	menu.draw(screen_surface, font, x, y2,
 		(screen_surface.get_width() - x, screen_surface.get_height() - y2))
 	
@@ -247,11 +272,11 @@ pygame.font.init()
 
 pygame.time.set_timer(pygame.USEREVENT, 100)
 
-display.set_icon(image.load('icon32x32.png'))
+display.set_icon(image.load('icon32x32.png')) #doesnt work..why?
 display.set_caption('lemon party')
 
 root = test_root.test_root()
-root.fix_relations()
+
 cursor_c = cursor_r = 0
 
 set_mode()
@@ -263,6 +288,11 @@ render()
 
 if find('settings/fullscreen'):	
 	find('settings/fullscreen').push_handlers(on_change = toggle_fullscreen)
+	
+set = find("settings/sdl key repeat")
+if set:
+	set.on_widget_edit(666)
+	
 #im tempted to define "it()"
 
 #if project.find(root.items['test'], lines):

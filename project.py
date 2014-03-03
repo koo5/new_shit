@@ -129,8 +129,8 @@ def _project(screen, elem, atts, indent):
 				atts.pop()
 				pos += 1
 				
-		elif isinstance(tag, MenuTag):
-			screen['menu'] = tag
+		#elif isinstance(tag, MenuTag):
+		#	screen['menu'] = tag
 		else:
 			raise Hell
 

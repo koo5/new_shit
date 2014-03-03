@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from menu import MenuItem
 import event
 from logger import log, ping
 import tags
@@ -40,7 +41,7 @@ class Element(event.EventDispatcher):
 		return self.parent.indent_length
 			
 	def fix_relations(self):
-		self.fix_(self.widgets)
+		pass
 	
 	def fix_(self, items):
 		for k,i in items.iteritems():
@@ -48,15 +49,21 @@ class Element(event.EventDispatcher):
 			i.fix_relations()	
 	
 
-	def is_active(self):
-		return False
+#	def is_active(self):
+#		return False
+
+	def menu(self):
+		return [MenuItem(str(self), 4)]
+
 
 	#def position(self):
 	#	return self.doc.positions[self]
 	
-"""	def replace_with(self, item):
+	"""	def replace_with(self, item):
 		self.parent.children[
 				self.parent.children.values.index(self)
 			] = item
-"""
+	"""
 	
+	#def menu(self):
+	#	
