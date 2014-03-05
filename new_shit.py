@@ -128,10 +128,6 @@ def top_keypress(event):
 		move_cursor(+1)
 		and_updown(event)
 	if event.mod & pygame.KMOD_CTRL:
-		if k == pygame.K_UP:
-			cursor_r -= 1
-		if k == pygame.K_DOWN:
-			cursor_r += 1
 		if k == pygame.K_LEFT:
 			cursor_c -= 1
 		if k == pygame.K_RIGHT:
@@ -176,7 +172,7 @@ def keypress(event):
 	if element != None:#somebody handled it
 		move_cursor(root.post_render_move_caret)
 		root.post_render_move_caret = 0
-	elif menu == None or not menu.keypress():
+	elif menu == None or not menu.keypress(e):
 		top_keypress(e)
 		
 	render()

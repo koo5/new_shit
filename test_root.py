@@ -78,7 +78,7 @@ eye tracking
 				Idea("""pick up the templating work, use an existing templating library, switch to formatted_from_text, implement functions dealing with the text with attributes if necessary"""),
 				Todo("save/load nodes", priority=10),
 				Todo("salvage the logger thingy...printing does get tedious...but its so damn quick")
-				])
+				], False)
 			),
 			
 			#),(

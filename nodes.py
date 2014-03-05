@@ -177,12 +177,12 @@ class Number(Node):
 
 
 class Collapsible(Node):
-	def __init__(self, items):
+	def __init__(self, items, expanded=True):
 		super(Collapsible, self).__init__()
 		self.items = items #do this first or bad things will happen (and i forgot why)
 		self.expand_collapse_button = widgets.Button(self)
 		self.expand_collapse_button.push_handlers(on_click=self.on_widget_click)
-		self.expanded = True
+		self.expanded = expanded
 	
 	def render(self):
 		self.expand_collapse_button.text = ("-" if self.expanded else "+")
@@ -225,8 +225,8 @@ class Dict(Collapsible):
 
 
 class List(Collapsible):
-	def __init__(self, items):
-		super(List, self).__init__(items)
+	def __init__(self, items, expanded=True):
+		super(List, self).__init__(items, expanded)
 		assert(isinstance(items, list))
 		for item in self.items:
 			item.parent = self
