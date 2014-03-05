@@ -5,13 +5,13 @@ import settings, toolbar
 def test_root():
 	r = Root(Dict([
 			(
-			"info", Dict([
-				("accesibility", Note('done: color inversion, background color and font size. "posterization" (full black or white) is underway. . . .')),
-				("speed", Note("try python -O ( ./faster.sh ), disables assertions, makes things usable"))])
+			"placeholder test", Placeholder(types = [Node])
 			),(
 			"text widget test", widgets.Text(None, "Test me out!")
 			),(
-			"placeholder test", Placeholder(types = [Node])
+			"info", Dict([
+				("accesibility", Note('done: color inversion, background color and font size. "posterization" (full black or white) is underway. . . .')),
+				("speed", Note("try python -O ( ./faster.sh ), disables assertions, makes things usable"))])
 			),(
 			"menu", List(
 				[
@@ -20,7 +20,7 @@ def test_root():
 			),(
 			"settings", Dict([
 				("font_size", settings.FontSize(18)),
-				("fullscreen", settings.Fullscreen()),
+				("fullscreen", widgets.Toggle(None, False)),
 				("projection_debug", widgets.Toggle(None, True)),
 				("invert colors", widgets.Toggle(None, False)),
 				("background color", Dict([
@@ -121,6 +121,7 @@ eye tracking
 
 
 def builtins():
+	#todo:define the tree structure here
 	return [NodeTypeDeclaration(x) for x in [
 			Text, Number, Dict, List, CollapsibleText, Statements,
 			VariableReference, Placeholder, Clock, SyntaxDef,

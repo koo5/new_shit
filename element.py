@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from menu import MenuItem
+from menu import MenuItem,InfoItem
 import event
 from logger import log, ping
 import tags
@@ -53,7 +53,7 @@ class Element(event.EventDispatcher):
 #		return False
 
 	def menu(self):
-		return [MenuItem(str(self), 4)]
+		return [InfoItem(str(self))]
 
 
 	#def position(self):

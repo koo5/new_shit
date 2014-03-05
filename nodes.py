@@ -6,8 +6,7 @@ import pygame
 from logger import ping, log
 import element
 import widgets
-import menu
-from menu import MenuItem
+from menu import MenuItem, InfoItem
 import tags
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
 
@@ -109,12 +108,6 @@ class Node(element.Element):
 #				print self, "has no parent"
 #				return None
 
-
-	def scope(self):
-		x = self.root.find("modules/1/statements/items")
-		assert(x != None)
-		return x
-			
 
 """
 	def render_syntax(self, syntax):
@@ -244,7 +237,7 @@ class List(Collapsible):
 			r += [ElementTag(item)]# + [nl()]
 		return r
 	def __getitem__(self, i):
-		ping()
+#		ping()
 		return self.items[i]
 
 
@@ -276,53 +269,14 @@ class VariableReference(Node):
 	def render(self):
 		return [t(self.declaration.name.text)]
 
-"""
-class Placeholder(Node):
-	def __init__(self, name="placeholder", type=None, default="None", example="None"):
-		super(Placeholder, self).__init__()
-		self.default = default
-		self.example = example
-		self.textbox = widgets.ShadowedText(self, "", "<<>>")
-		self.menu = menu.Menu(self, [])
-		self.textbox.push_handlers(
-			on_edit=self.on_widget_edit
-			#on_text_motion=self.on_widget_text_motion,
-			)
 
-#		print self," items:"
-#		for name, item in self.__dict__.iteritems():
-#			print " ",name, ": ", item
-	
-	
-	def on_widget_edit(self, widget):
-		if widget == self.textbox:
-			text = self.textbox.text
-			self.menu.items = self.doc.language.menu(self)
-	
+class SomethingNew(Node):
+	def __init__(self, text):
+		super(SomethingNew, self).__init__()
+		self.text = text
 	def render(self):
-		d = (" (default:"+self.default+")") if self.default else ""
-		e = (" (for example:"+self.example+")") if self.example else ""
+		return [t("?"),t(text), t("?")]
 
-		x = d + e if self.textbox.is_active() else ""
-
-
-		self.textbox.shadow = "<<" + x + ">>"
-
-		return [w('textbox'), w('menu')]
-
-
-	def on_widget_text_motion(self, motion):
-		#use just shifts?
-		if text == "T":
-			self.menu.sel -= 1
-			return True
-		if text == "N":
-			self.menu.sel += 1
-			return True
-			
-	#def replace(self, replacement):
-	#	parent.children[self.name] = replacement...
-"""	
 
 
 
@@ -333,31 +287,56 @@ class Placeholder(Node):
 
 	def render(self):
 		return [t(">>"), w('textbox'), t("<<")]
-		
+
+
+	#to be moved to node
+	def scope(self):
+		x = self.root.find("modules/1/statements/items")
+		assert(x != None)
+		return x
+
+	
 	def menu(self):
-		r = []
 		text = self.textbox.text
+		r = [InfoItem("insert:")]
+		it = PlaceholderMenuItem
+		r += [it(Text(text))]
+
+		if text.isdigit():
+			r += [it(Number(text))]
+
+		r += [it(SomethingNew(text))]
 
 		#variable declarations
 		for i in self.scope():
 			if isinstance(i, VariableDeclaration):
-				r += [MenuItem(
-					name = i.name, #i.render?
-					value = VariableReference(i))]
+				r += [it(VariableReference(i))]
 
 		#1: node types
-		return [MenuItem(str(x), x) for x in self.scope()]
+		r += [it(x) for x in self.scope()]
 		
 		#2: calls, variables..
 		
 		#filter by self.types:
 		
-			
-			
+		#preferred types:
+		#r += expand_types(self.types)
+		#all types
+		#r += expand_types('all') - expand_types(self.types)
+
+		return r	
 			
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
 	
+
+class PlaceholderMenuItem(MenuItem):
+	def __init__(self, value):		
+		self.value = value
+		if isinstance(value, NodeTypeDeclaration):
+			self.text = "insert " + str(value.type)
+		else:
+			self.text = str(value)
 	
 
 #design:
@@ -508,6 +487,7 @@ class Grid(Node):
 	
 
 
+
 """
 
 class Asignment(Templated):
@@ -647,3 +627,53 @@ class SyntaxNode(Node):
 
 class SemanticGoogle #hehe
 """
+
+
+"""
+class Placeholder(Node):
+	def __init__(self, name="placeholder", type=None, default="None", example="None"):
+		super(Placeholder, self).__init__()
+		self.default = default
+		self.example = example
+		self.textbox = widgets.ShadowedText(self, "", "<<>>")
+		self.menu = menu.Menu(self, [])
+		self.textbox.push_handlers(
+			on_edit=self.on_widget_edit
+			#on_text_motion=self.on_widget_text_motion,
+			)
+
+#		print self," items:"
+#		for name, item in self.__dict__.iteritems():
+#			print " ",name, ": ", item
+	
+	
+	def on_widget_edit(self, widget):
+		if widget == self.textbox:
+			text = self.textbox.text
+			self.menu.items = self.doc.language.menu(self)
+	
+	def render(self):
+		d = (" (default:"+self.default+")") if self.default else ""
+		e = (" (for example:"+self.example+")") if self.example else ""
+
+		x = d + e if self.textbox.is_active() else ""
+
+
+		self.textbox.shadow = "<<" + x + ">>"
+
+		return [w('textbox'), w('menu')]
+
+
+	def on_widget_text_motion(self, motion):
+		#use just shifts?
+		if text == "T":
+			self.menu.sel -= 1
+			return True
+		if text == "N":
+			self.menu.sel += 1
+			return True
+			
+	#def replace(self, replacement):
+	#	parent.children[self.name] = replacement...
+"""	
+

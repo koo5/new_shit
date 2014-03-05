@@ -17,7 +17,7 @@ class FontSize(Setting):
 	@property
 	def value(self):
 		return int(self.widget.text)
-
+"""
 class Fullscreen(Setting):
 	def __init__(self):
 		super(Fullscreen, self).__init__()
@@ -30,7 +30,7 @@ class Fullscreen(Setting):
 	@property
 	def value(self):
 		return self.widget.value
-
+"""
 class KeyRepeat(Setting):
 	def __init__(self):
 		super(KeyRepeat, self).__init__()

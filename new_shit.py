@@ -59,7 +59,6 @@ def render():
 			
 	cached_root_surface = draw_root()
 	
-	draw()
 
 #	print lines
 
@@ -89,7 +88,7 @@ def toggle_fullscreen():
 
 def set_mode():
 	global screen_surface
-	screen_surface = pygame.display.set_mode((800,300), flags + (pygame.FULLSCREEN if find('settings/fullscreen/value') else 0))
+	screen_surface = pygame.display.set_mode((1000,500), flags + (pygame.FULLSCREEN if find('settings/fullscreen/value') else 0))
 
 def first_nonblank():
 	r = 0
@@ -169,8 +168,8 @@ def keypress(event):
 	element, pos = under_cursor(), element_char_index()
 
 	e = KeypressEvent(event, pos)
-	log(event)
-	
+#	log(event)
+#	
 	while element != None and not element.on_keypress(e):
 		element = element.parent
 	
@@ -183,6 +182,7 @@ def keypress(event):
 	render()
 	if under_cursor():
 		menu.items = under_cursor().menu()
+	draw()
 
 	
 """
@@ -205,6 +205,8 @@ def process_event(event):
 		log("resize")
  		screen_surface = pygame.display.set_mode(event.dict['size'],pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE)
  		render()
+		draw()
+
  	
 # 	if event.type == pygame.VIDEOEXPOSE:
 #		ping()
@@ -286,17 +288,19 @@ font_width, font_height = font.size("X")
 
 render()
 
-if find('settings/fullscreen'):	
-	find('settings/fullscreen').push_handlers(on_change = toggle_fullscreen)
+t = find('settings/fullscreen')
+if t:
+	t.push_handlers(on_change = toggle_fullscreen)
 	
-set = find("settings/sdl key repeat")
-if set:
-	set.on_widget_edit(666)
-	
-#im tempted to define "it()"
+t = find("settings/sdl key repeat")
+if t:
+	t.on_widget_edit(666)
 
-#if project.find(root.items['test'], lines):
-#	cursor_c, cursor_r = project.find(root.items['test'], lines)
+t = project.find(find('placeholder test'), lines)
+if t:
+	cursor_c, cursor_r = t
+
+draw()
 
 
 
