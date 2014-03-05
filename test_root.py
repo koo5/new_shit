@@ -79,7 +79,19 @@ eye tracking
 				Todo("save/load nodes", priority=10),
 				Todo("salvage the logger thingy...printing does get tedious...but its so damn quick")
 				])
-			),(
+			),
+			
+			#),(
+			
+			#"gridtest",Grid(
+			#	items = 'notes/items',
+			#	grid = [
+			#	[0,1,2,3],
+			#	[4,5,6,None]])
+			
+			#),(
+			
+			(
 			"clock",Clock()
 			),(
 			"modules", List([
@@ -109,9 +121,9 @@ eye tracking
 
 
 def builtins():
-	return [TypeDeclaration(x) for x in [
+	return [NodeTypeDeclaration(x) for x in [
 			Text, Number, Dict, List, CollapsibleText, Statements,
-			VariableRead, Placeholder, Clock, SyntaxDef,
+			VariableReference, Placeholder, Clock, SyntaxDef,
 			Program, Module, FunctionDefNode, ShellCommand,
 			Root, While, Note, Todo, Idea]]
 

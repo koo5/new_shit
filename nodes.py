@@ -360,25 +360,18 @@ class Placeholder(Node):
 	
 	
 
-class Clock(Node):
-	def __init__(self):
-		super(Clock,self).__init__()
-		self.datetime = __import__("datetime")
-	def render(self):
-		return [t(str(self.datetime.datetime.now()))]
-
 #design:
 #the difference between Syntaxed and WithDef is that Syntaxed
 #has the syntaxes as part of "class definition" (in __init__, really)
 #WithDef uses another object, "SyntaxDef"
 
-class TypeDeclaration(Node):
+class NodeTypeDeclaration(Node):
 	def __init__(self, type):
-		super(TypeDeclaration, self).__init__()
+		super(NodeTypeDeclaration, self).__init__()
 		self.type = type
 
 	def render(self):
-		return [t("type declaration:"), t(str(self.type))]
+		return [t("node type declaration:"), t(str(self.type))]
 
 
 class SyntaxDef(Node):
@@ -491,6 +484,28 @@ class Idea(Note):
 		self.syntaxes = [[t("idea: "), w("text")]]
 		self.text = widgets.Text(self, text)
 
+
+
+
+
+class Clock(Node):
+	def __init__(self):
+		super(Clock,self).__init__()
+		self.datetime = __import__("datetime")
+	def render(self):
+		return [t(str(self.datetime.datetime.now()))]
+
+
+class Grid(Node):
+	def __init__(self, items, grid):
+		super(Grid,self).__init__()
+		self.items = items
+		self.grid = grid
+		
+	def render(self):
+		return [TwoDGraphicTag(self)]
+		
+	
 
 
 """
