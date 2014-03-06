@@ -163,7 +163,7 @@ class Text(Node):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 	def render(self):
-		return [cd('widget')]
+		return [w('widget')]
 
 class Number(Node):
 	def __init__(self, value):
@@ -240,6 +240,11 @@ class List(Collapsible):
 #		ping()
 		return self.items[i]
 
+	def replace_child(self, child, new):
+		ping()
+		assert(child in self.items)
+		self.items[self.items.index(child)] = new
+		new.parent = self
 
 class CollapsibleText(Collapsible):
 	def __init__(self, value):
@@ -326,9 +331,22 @@ class Placeholder(Node):
 
 		return r	
 			
-	#def replace(self, replacement):
-	#	parent.children[self.name] = replacement...
-	
+
+	def menu_item_selected(self, item):
+		if not isinstance(item, PlaceholderMenuItem):
+			log("not PlaceholderMenuItem")
+			return
+		v = item.value
+		if v == None:
+			log("no value")
+		elif isinstance(v, NodeTypeDeclaration):
+			x = v.type()
+		elif isinstance(v, Node):
+			x = v
+#		elif isinstance(v, type):
+#			x = v()
+		self.parent.replace_child(self, x)
+
 
 class PlaceholderMenuItem(MenuItem):
 	def __init__(self, value):		

@@ -55,6 +55,8 @@ class Element(event.EventDispatcher):
 	def menu(self):
 		return [InfoItem(str(self))]
 
+	def menu_item_selected(self, item):
+		ping()
 
 	#def position(self):
 	#	return self.doc.positions[self]

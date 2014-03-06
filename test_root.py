@@ -5,7 +5,7 @@ import settings, toolbar
 def test_root():
 	r = Root(Dict([
 			(
-			"placeholder test", Placeholder(types = [Node])
+			"placeholder test", Statements([Placeholder(types = [Node]),Placeholder(types = [Node])])
 			),(
 			"text widget test", widgets.Text(None, "Test me out!")
 			),(

@@ -185,12 +185,14 @@ def keypress(event):
 	if element != None:#somebody handled it
 		move_cursor(root.post_render_move_caret)
 		root.post_render_move_caret = 0
+
 	elif menu == None or not menu.keypress(e):
 		top_keypress(e)
 		
 	render()
 	if under_cursor():
-		menu.items = under_cursor().menu()
+		menu.element = under_cursor()
+		menu.items = menu.element.menu()
 	draw()
 
 	

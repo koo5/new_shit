@@ -30,6 +30,10 @@ class Menu(object):
 			if e.key == pygame.K_DOWN:
 				self.move(1)
 				return True
+			if e.key == pygame.K_RETURN:
+				log(self.items[self.sel])
+				self.element.menu_item_selected(self.items[self.sel])
+				return True
 				
 
 	def move(self,y):
