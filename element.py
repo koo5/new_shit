@@ -53,10 +53,15 @@ class Element(event.EventDispatcher):
 #		return False
 
 	def menu(self):
-		return [InfoItem(str(self))]
+		#return [InfoItem(str(self))]
+		if self.parent:
+			return self.parent.menu()
+		else:
+			return []
 
 	def menu_item_selected(self, item):
-		ping()
+		if self.parent:
+			return self.parent.menu_item_selected(item)
 
 	#def position(self):
 	#	return self.doc.positions[self]

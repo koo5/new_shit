@@ -280,7 +280,7 @@ class SomethingNew(Node):
 		super(SomethingNew, self).__init__()
 		self.text = text
 	def render(self):
-		return [t("?"),t(text), t("?")]
+		return [t("?"),t(self.text), t("?")]
 
 
 
