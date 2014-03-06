@@ -289,7 +289,9 @@ pygame.font.init()
 
 pygame.time.set_timer(pygame.USEREVENT, 100)
 
-display.set_icon(image.load('icon32x32.png')) #doesnt work..why?
+icon = image.load('icon32x32.png')
+print icon
+display.set_icon(icon) #doesnt work..why?
 display.set_caption('lemon party')
 
 root = test_root.test_root()

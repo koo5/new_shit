@@ -459,7 +459,7 @@ class Note(Syntaxed):
 class Todo(Note):
 	def __init__(self, text="", priority = 1):
 		super(Todo,self).__init__(text)
-		self.syntaxes = [[t("todo:"), w("text"), w("priority_widget")]]
+		self.syntaxes = [[ColorTag(self.color), t("todo:"), EndTag(), w("text"), w("priority_widget")]]
 		self.text = widgets.Text(self, text)
 		self.priority_widget = widgets.Number(self, priority)
 		self.priority_widget.push_handlers(
@@ -471,8 +471,9 @@ class Todo(Note):
 		return self.priority_widget.value
 
 	def on_priority_change(self, widget):
-		self.color=(255,255-self.priority * 10,255-self.priority * 10,255)
-		#total brightness decreases as priority increases..such are the paradoxes of our lives
+		self.syntaxes[0][0].color=(255,255-self.priority * 10,255-self.priority * 10,255)
+		#brightness decreases as priority increases..such are the paradoxes of our lives..
+
 
 class Idea(Note):
 	def __init__(self, text=""):
