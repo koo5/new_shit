@@ -150,7 +150,7 @@ class KeypressEvent(object):
 		h = find("settings/webos hack")
 		if h:
 			if h.value:
-				if self.mod == 0b100000000000001:
+				if self.mod == 0b100000000000000:
 					if self.key == pygame.K_r:
 						self.key = pygame.K_UP
 					if self.key == pygame.K_c:
@@ -296,14 +296,27 @@ cursor_c = cursor_r = 0
 
 set_mode()
 
-font = font.SysFont('monospace', 24)
-font_width, font_height = font.size("X")
+font_width = font_height = font = None
+def change_font_size(setting):
+	global font, font_width, font_height
+	t = find('settings/font size')
+	if t:
+		s = t.value
+	else:
+		s = 8
+	font = pygame.font.SysFont('monospace', s)
+	font_width, font_height = font.size("X")
 
+change_font_size(None)
 render()
 
 t = find('settings/fullscreen')
 if t:
 	t.push_handlers(on_change = toggle_fullscreen)
+
+t = find('settings/font size')
+if t:
+	t.push_handlers(on_change = change_font_size)
 	
 t = find("settings/sdl key repeat")
 if t:

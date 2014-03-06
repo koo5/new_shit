@@ -13,6 +13,10 @@ class FontSize(Setting):
 		super(FontSize, self).__init__()
 		self.syntaxes = [[w("widget")]]
 		self.widget = widgets.Number(self, value)
+		self.widget.push_handlers(on_change = self.on_widget_edit)
+	def on_widget_edit(self, widget):
+		self.dispatch_event('on_change', self)
+
 
 	@property
 	def value(self):

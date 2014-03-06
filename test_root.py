@@ -20,7 +20,7 @@ def test_root():
 			),(
 			"settings", Dict([
 				("webos hack", widgets.Toggle(None, False)),
-				("font_size", settings.FontSize(18)),
+				("font size", settings.FontSize(18)),
 				("fullscreen", widgets.Toggle(None, False)),
 				("projection_debug", widgets.Toggle(None, True)),
 				("invert colors", widgets.Toggle(None, False)),
