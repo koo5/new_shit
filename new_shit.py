@@ -60,26 +60,25 @@ def render():
 	cached_root_surface = draw_root()
 	
 
-#	print lines
+def by_xy((x,y)):
+	c = x / font_width
+	r = y / font_height
+	return c,r
 
-def under_cursor():
+def under_cr((c,r)):
 	try:
-		return lines[cursor_r][cursor_c][1]["node"]
+		return lines[r][c][1]["node"]
 	except:
 		return None
+
+def under_cursor():
+	return under_cr((cursor_c, cursor_r))
 
 def element_char_index():
 	try:
 		return lines[cursor_r][cursor_c][1]["char_index"]
 	except:
 		return None
-
-"""
-	def on_mouse_press(self, x, y, button, modifiers):
-		pos = self.layout.get_position_from_point(x,y)
-		self.on(pos).dispatch_event('on_mouse_press', x, y, button, modifiers)
-		self.rerender()
-"""
 
 def toggle_fullscreen():
 	log("!fullscreen")
@@ -147,6 +146,20 @@ class KeypressEvent(object):
 		self.mod = e.mod
 		self.pos = pos
 		self.all = pygame.key.get_pressed()
+		
+		h = find("settings/webos hack")
+		if h:
+			if h.value:
+				if self.mod == 0b100000000000001:
+					if self.key == pygame.K_r:
+						self.key = pygame.K_UP
+					if self.key == pygame.K_c:
+						self.key = pygame.K_DOWN
+					if self.key == pygame.K_d:
+						self.key = pygame.K_LEFT
+					if self.key == pygame.K_g:
+						self.key = pygame.K_RIGHT
+		
 	def __repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s, pos=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod), self.pos))
@@ -181,28 +194,32 @@ def keypress(event):
 	draw()
 
 	
-"""
-def fast_render():
-	global lines,cached_root_surface
-	log("render")	
-	tags = root.tags()
-	#lines = project.project(tags, root.indent_length, root.items['settings']['projection_debug'].value)
-	cached_root_surface = draw_root()
-"""
+
+def mousedown(e):
+#	log(e.button)
+	n = under_cr(by_xy(e.pos))
+	if n:
+		n.on_mouse_press(e.button)
+		render()
+		draw()
+
 
 def process_event(event):
 	global screen_surface
 	if event.type == pygame.QUIT:
 		bye()
+
 	if event.type == pygame.KEYDOWN:
 		keypress(event)
+
+	if event.type == pygame.MOUSEBUTTONDOWN:
+		mousedown(event)
 		
 	if event.type == pygame.VIDEORESIZE:
 		log("resize")
  		screen_surface = pygame.display.set_mode(event.dict['size'],pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE)
  		render()
 		draw()
-
  	
 # 	if event.type == pygame.VIDEOEXPOSE:
 #		ping()

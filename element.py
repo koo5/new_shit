@@ -13,9 +13,9 @@ class Element(event.EventDispatcher):
 		ping()
 		return False
 		
-	#def on_mouse_press(self, x, y, button, modifiers):
-	#	ping()
-	#	return False
+	def on_mouse_press(self, button):
+		ping()
+		return False
 
 	def register_event_types(self, types):
 		for item in types.split(','):

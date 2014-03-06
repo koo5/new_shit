@@ -82,7 +82,7 @@ class Button(Widget):
 		self.register_event_types('on_click, on_text')
 		self.color = (255,150,150,255)
 		self.text = text
-	def on_mouse_press(self, x, y, button, modifiers):
+	def on_mouse_press(self, button):
 		ping()
 		self.dispatch_event('on_click', self)
 	def on_keypress(self, e):
@@ -97,9 +97,10 @@ class Button(Widget):
 
 class Number(Text):
 	"""Number widget inherits from text, contents are only int()'ed when needed"""	
-	def __init__(self, parent, text):
+	def __init__(self, parent, text, limits=(None,None)):
 		super(Number, self).__init__(parent, text)
 		self.text = str(text)
+		self.limits = limits
 		self.minus_button = Button(self, "-")
 		self.plus_button = Button(self, "+")
 		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
@@ -113,12 +114,14 @@ class Number(Text):
 		return int(self.text)
 
 	def inc(self):
-		self.text = str(int(self.text)+1)
-		self.dispatch_event('on_change', self)
+		if self.limits[1] == None or self.limits[1] > int(self.text):
+			self.text = str(int(self.text)+1)
+			self.dispatch_event('on_change', self)
 	
 	def dec(self):
-		self.text = str(int(self.text)-1)
-		self.dispatch_event('on_change', self)
+		if self.limits[0] == None or self.limits[0] < int(self.text):
+			self.text = str(int(self.text)-1)
+			self.dispatch_event('on_change', self)
 	
 	def on_widget_click(self,widget):
 		if widget == self.minus_button:
@@ -130,6 +133,12 @@ class Number(Text):
 			self.inc()
 		if text == "-":
 			self.dec()
+	def on_mouse_press(self, button):
+		if button == 4:
+			self.inc()
+		if button == 5:
+			self.dec()
+
 				
 class Toggle(Widget):
 	def __init__(self, parent, value):
@@ -141,9 +150,9 @@ class Toggle(Widget):
 	@property
 	def text(self):
 		return "checked" if self.value else "unchecked"
-	def on_mouse_press(self, x, y, button, modifiers):
+	def on_mouse_press(self, button):
 		self.value = not self.value
-		self.dispatch_event('on_edit', self)
+		#self.dispatch_event('on_change', self)
 		
 
 

@@ -196,8 +196,8 @@ class Collapsible(Node):
 			self.toggle()
 
 class Dict(Collapsible):
-	def __init__(self, tuples):
-		super(Dict, self).__init__(OrderedDict(tuples))
+	def __init__(self, tuples, expanded=True):
+		super(Dict, self).__init__(OrderedDict(tuples), expanded)
 		#Dict is created from a list of pairs ("key", value)
 
 		for key, item in self.items.iteritems():

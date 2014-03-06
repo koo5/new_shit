@@ -11,7 +11,7 @@ def test_root():
 			),(
 			"info", Dict([
 				("accesibility", Note('done: color inversion, background color and font size. "posterization" (full black or white) is underway. . . .')),
-				("speed", Note("try python -O ( ./faster.sh ), disables assertions, makes things usable"))])
+				("speed", Note("try python -O ( ./faster.sh ), disables assertions, makes things usable"))], False)
 			),(
 			"menu", List(
 				[
@@ -19,14 +19,15 @@ def test_root():
 				])#,compact = True
 			),(
 			"settings", Dict([
+				("webos hack", widgets.Toggle(None, False)),
 				("font_size", settings.FontSize(18)),
 				("fullscreen", widgets.Toggle(None, False)),
 				("projection_debug", widgets.Toggle(None, True)),
 				("invert colors", widgets.Toggle(None, False)),
 				("background color", Dict([
-					("R", widgets.Number(None, 0)),
-					("G", widgets.Number(None, 30)),
-					("B", widgets.Number(None, 0))])),
+					("R", widgets.Number(None, 0, (0, 255))),
+					("G", widgets.Number(None, 0, (0, 255))),
+					("B", widgets.Number(None, 0, (0, 255)))])),
 				("sdl key repeat", settings.KeyRepeat()),
 
 				

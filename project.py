@@ -12,7 +12,7 @@ functon project takes a list of tags created by root.tags()
 
 from tags import *
 from logger import ping, log
-
+import colors
 
 if __debug__:
 	import element as asselement
@@ -74,17 +74,14 @@ def _project(screen, elem, atts, indent):
 	assert(isinstance(screen, dict))
 
 	lines = screen['lines']
-	tags = elem.tags()
 
-	assert(isinstance(tags, list))
 	assert(isinstance(lines, list))
 	assert(isinstance(atts, list))
 	assert(isinstance(indent, int))
 	
-	attadd(atts, "node", elem)
 	pos = -1 # <>
 	
-	for tag in [ColorTag((200,0,0)), TextTag("<"), EndTag()] + tags + [ColorTag((200,0,0)), TextTag(">"), EndTag()]:
+	for tag in [AttTag("node", elem), ColorTag((200,0,0)), TextTag("<"), EndTag()] + elem.tags() + [ColorTag((200,0,0)), TextTag(">"), EndTag(), EndTag()]:
 
 	#first some replaces
 		if isinstance(tag, NewlineTag):
@@ -101,7 +98,7 @@ def _project(screen, elem, atts, indent):
 		if isinstance(tag, AttTag):
 			attadd(atts, tag.key, tag.val)
 		elif isinstance(tag, ColorTag):
-			attadd(atts, "color", tag.color)
+			attadd(atts, "color", colors.modify(tag.color))
 
 		elif isinstance(tag, ElementTag):
 			_project(screen, tag.element, atts, indent)
