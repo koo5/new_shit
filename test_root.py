@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nodes import *
 import settings, toolbar
+import the_doc
 
 def test_root():
 	r = Root(Dict([
@@ -79,7 +80,8 @@ def test_root():
 				]), name = "some functions")
 				
 			], False)
-			#),(the_doc.the_doc()
+			),(
+			"docs", the_doc.the_doc()
 			)
 			]))
 	
@@ -109,14 +111,4 @@ def mini_test_root():
 
 	
 
-
-"""
-
-
-#Что это?
-
-systemic changes to consider:
-		projectured needs to be tried out and evaluated for a possible use as the base of lemon.
-		maybe also emacs
-"""
 
