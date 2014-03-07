@@ -41,8 +41,7 @@ def render():
 	colors.cache(root.items)
 	project._width = screen_surface.get_width() / font_width
 	project._indent_width = 4
-	screen = project.project(root)
-	lines = screen['lines']
+	lines = project.project(root)
 	
 	if __debug__:
 		assert(isinstance(lines, list))
@@ -193,6 +192,9 @@ def keypress(event):
 	if under_cursor():
 		menu.element = under_cursor()
 		menu.items = menu.element.menu()
+	else:
+		menu.element = None
+		menu.items = []
 	draw()
 
 	
@@ -260,8 +262,10 @@ def draw_cursor():
 def draw_menu():
 	#x,_,y2 = cursor_xy()
 	x, y2 = screen_surface.get_width() / 2,0
-	menu.draw(screen_surface, font, x, y2,
-		(screen_surface.get_width() - x, screen_surface.get_height() - y2))
+	menu.draw(screen_surface,
+		{'font':font, 'width':font_width, 'height':font_height},
+		x, y2, #position
+		(screen_surface.get_width() - x, screen_surface.get_height() - y2)) #size
 	
 	
 	

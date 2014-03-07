@@ -9,6 +9,7 @@ from tags import TextTag, ColorTag, EndTag, WidgetTag
 
 class Widget(element.Element):
 	def __init__(self, parent):
+		super(Widget, self).__init__()
 		self.parent = parent
 
 class Text(Widget):
@@ -73,8 +74,8 @@ class ShadowedText(Text):
 				TextTag(self.shadow[len(self.text):]),
 				EndTag()]
 
-	def len(self):
-		return len(self.text+self.shadow[len(self.text)])
+#	def len(self):
+#		return len(self.text+self.shadow[len(self.text)])
 		
 class Button(Widget):
 	def __init__(self, parent, text="[      ]"):#🔳🔳🔳🔳]"):

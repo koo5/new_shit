@@ -6,10 +6,10 @@ import pygame
 from logger import ping, log
 import element
 import widgets
-from menu import MenuItem, InfoItem
+from menu import MenuItem, InfoMenuItem
 import tags
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
-
+import project
 
 
 
@@ -47,9 +47,11 @@ def find_in(item, path):
 	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, element.Element))
 	#ping()
 	i = tryget(item,path[0])
-	#log(i)
+	#ping()
 	if i == None:
-		log("not found: " + path[0] + " in " + str(item) + " / " + " / ".join(path))
+		log("not found: " + str(path[0]) + " in " + str(item) + " / " + " / ".join([str(x) for x in path]))
+		#if isinstance(path[0], int):
+		#	log("out of range? len("+str(item)+") == "+str(len(item)))
 	if len(path) == 1 or i == None: return i #thats it! lets go home!
 	else:
 		return find_in(i, path[1:])
@@ -148,17 +150,18 @@ class Syntaxed(Node):
 			self.syntax_index = len(self.syntaxes)-1
 	def on_keypress(self, e):
 		if pygame.KMOD_CTRL & e.mod:
-			if e.key == pygame.K_UP:
+			if e.key == pygame.K_PAGEUP:
 				self.prev_syntax()
 				log("prev")
-			if e.key == pygame.K_DOWN:
+			if e.key == pygame.K_PAGEDOWN:
 				self.next_syntax()
 				log("next")
 
 
-#literals
+
 
 class Text(Node):
+	"""string literal"""
 	def __init__(self, value):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
@@ -166,17 +169,20 @@ class Text(Node):
 		return [w('widget')]
 
 class Number(Node):
+	"""number literal"""
 	def __init__(self, value):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
 	def render(self):
-		return [ch('widget')]
+		return [w('widget')]
 
 
 
 
 
 class Collapsible(Node):
+	"""Collapsible - List or Dict - dont have a title, a top unindented line. They are just
+	the items...now"""
 	def __init__(self, items, expanded=True):
 		super(Collapsible, self).__init__()
 		self.items = items #do this first or bad things will happen (and i forgot why)
@@ -190,6 +196,10 @@ class Collapsible(Node):
 	
 	def toggle(self):
 		self.expanded = not self.expanded
+		if self.expanded:
+			print "expand"
+		else:
+			print "collapse"
 
 	def on_widget_click(self, widget):
 		if widget is self.expand_collapse_button:
@@ -288,10 +298,12 @@ class SomethingNew(Node):
 class Placeholder(Node):
 	def __init__(self, types=None):
 		super(Placeholder, self).__init__()
-		self.textbox = widgets.Text(self, "")
+		self.textbox = widgets.ShadowedText(self, "", "write here")
+		self.brackets_color = (0,255,0)
+		self.textbox.brackets_color = (255,255,0)
 
 	def render(self):
-		return [t(">>"), w('textbox'), t("<<")]
+		return [w('textbox')]
 
 
 	#to be moved to node
@@ -303,7 +315,7 @@ class Placeholder(Node):
 	
 	def menu(self):
 		text = self.textbox.text
-		r = [InfoItem("insert:")]
+		r = [InfoMenuItem("insert:")]
 		it = PlaceholderMenuItem
 		r += [it(Text(text))]
 
@@ -312,14 +324,23 @@ class Placeholder(Node):
 
 		r += [it(SomethingNew(text))]
 
-		#variable declarations
+		#variables, functions
 		for i in self.scope():
 			if isinstance(i, VariableDeclaration):
 				r += [it(VariableReference(i))]
+			if isinstance(i, FunctionDefinition):
+				r += [it(FunctionCall(i))]
 
 		#1: node types
-		r += [it(x) for x in self.scope()]
+		#r += [it(x) for x in self.scope()]
+
+#		r += [it(Program(Statements([Placeholder()])))] #fix SyntaxDef
+		r += [it(Module(Statements([Placeholder()])))]
 		
+		r += [it(While(Placeholder(), Statements([Placeholder()])))]
+		
+		r += [it(Note(text)), it(Todo(text)), it(Idea(text))]
+				
 		#2: calls, variables..
 		
 		#filter by self.types:
@@ -347,21 +368,38 @@ class Placeholder(Node):
 #			x = v()
 		self.parent.replace_child(self, x)
 
-
+# hack here, to make a menu item renderable by project.project
 class PlaceholderMenuItem(MenuItem):
 	def __init__(self, value):		
 		self.value = value
-		if isinstance(value, NodeTypeDeclaration):
-			self.text = "insert " + str(value.type)
-		else:
-			self.text = str(value)
-	
+		self.brackets_color = (0,0,255)
+		#(and so needs brackets_color)
+		
+	#PlaceholderMenuItem is not an Element, but still has tags(),
+	#called by project.project called from draw()
+	def tags(self):
+		return [ColorTag((0,255,0)),w('value'), t(" - "+str(self.value.__class__.__name__)), EndTag()]
+		#and abusing "w" for "widget" here...not just here...
+
+	def draw(self, menu, s, font, x, y):
+		#replicating draw_root, but for now..
+		lines = project.project(self)
+		for row, line in enumerate(lines):
+			for col, char in enumerate(line):
+				chx = x + font['width'] * col
+				chy = y + font['height'] * row
+				sur = font['font'].render(
+					char[0],False,
+					char[1]['color'],
+					menu.bg)
+				s.blit(sur,(chx,chy))
+		return sur.get_width(), sur.get_height()
+
 
 #design:
 #the difference between Syntaxed and WithDef is that Syntaxed
 #has the syntaxes as part of "class definition" (in __init__, really)
 #WithDef uses another object, "SyntaxDef"
-
 class NodeTypeDeclaration(Node):
 	def __init__(self, type):
 		super(NodeTypeDeclaration, self).__init__()
@@ -409,14 +447,21 @@ class Module(Syntaxed):
 		self.syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
 		
 
-class FunctionDefNode(Syntaxed):
+class FunctionDefinition(Syntaxed):
 	def __init__(self, syntax, body):
-		super(FunctionDefNode, self).__init__()
+		super(FunctionDefinition, self).__init__()
 		assert isinstance(body, Statements)
+		assert isinstance(syntax, SyntaxDef)
 		self.setch('body', body)
-		self.setch('syntax', SyntaxDef(syntax))
+		self.setch('syntax', syntax)
 		self.syntaxes = [[t("function definition:"), ch("syntax"), t("body:"), ch("body")]]
 
+class FunctionCall(Syntaxed):
+	def __init__(self, definition):
+		super(FunctionCall, self).__init__()
+		assert isinstance(definition, FunctionDefinition)
+		self.definition = definition
+		self.syntaxes = [[t("call"), w("definition")]]
 
 class ShellCommand(Syntaxed):
 	def __init__(self, command):
@@ -449,6 +494,8 @@ class While(Syntaxed):
 		self.setch('condition', condition)
 		self.setch('statements', statements)
 
+	#def new():
+	#	return While(Placeholder(),Statements([Placeholder()]))
 
 class Note(Syntaxed):
 	def __init__(self, text=""):
@@ -508,6 +555,40 @@ class Grid(Node):
 
 
 """
+could start working on:
+
+class Terminal(Syntaxed):
+	def __init__(self):
+		self.setch('history', List([]))
+		self.setch('command', Placeholder())
+		self.run_button = widgets.Button(self, "run")
+		self.syntaxes = [[t("history:"), ch('history'), t('command'), ch('command'), w('run_button')]
+
+	def on_keypress(self, e):
+		if pygame.KMOD_CTRL & e.mod:
+			if e.key == pygame.K_RETURN:
+				self.history.append(self.command.eval()...
+			
+
+	
+
+class triple
+	this would be three SomethingNew's - subject predicate object
+
+wolframalpha
+	input text
+	get back results
+
+or tap into eulergui datagui functionality
+
+class SemanticizedGoogle
+	nah, huge and stupid
+
+
+
+
+
+outdated stuff and comments here:
 
 class Asignment(Templated):
 	def __init__(self, left, right):
@@ -642,9 +723,6 @@ class SyntaxNode(Node):
 
 #class SillySimpleCommandDeclaration()
 
-#class triple
-
-class SemanticGoogle #hehe
 """
 
 

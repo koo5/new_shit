@@ -101,14 +101,17 @@ eye tracking
 					SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end.")])
 				]), name = "syntaxes for builtins"),
 				
-				Module(Statements(builtins()), name = "builtins"),
+				#Module(Statements(builtins()), name = "builtins"),
 
 				Module(Statements([
 					Note("stupid, but gotta start somewhere"),
-					FunctionDefNode(
+					FunctionDefinition(
 						syntax = SyntaxDef([t("disable screensaver")]), 
 						body = Statements([ShellCommand("xset s off")]))
-				]), name = "commands to command you PC around")
+				]), name = "some functions")
+				
+				
+				
 			], False)
 			)
 			]))
@@ -119,7 +122,7 @@ eye tracking
 	r.fix_relations()
 	
 	return r
-
+#prototypes?
 
 def builtins():
 	#todo:define the tree structure here

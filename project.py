@@ -58,31 +58,31 @@ def attadd(atts, key, val):
 	assert(isinstance(key, str))
 	atts.append((key, val))
 
-def project(root):
-	screen = {'lines': [[]]}
+def project(root, visualize_elements = True):
 	atts = []
 	indent = 0
-	_project(screen,root,atts,indent)
-	return screen
+	lines = [[]]
+	_project(lines,root,atts,indent, visualize_elements)
+	return lines
 
-#⇾node⇽
-def _project(screen, elem, atts, indent):
+def _project(lines, elem, atts, indent, visualize_elements):
 	"""calls elem.tags(), then calls itself recursively on widget,
 	child and element tags.	screen and atts are passed and mutated"""
 	
-	assert(isinstance(elem, asselement.Element))
-	assert(isinstance(screen, dict))
-
-	lines = screen['lines']
-
+	assert(isinstance(elem, asselement.Element) or isinstance(elem, assnodes.PlaceholderMenuItem))
 	assert(isinstance(lines, list))
 	assert(isinstance(atts, list))
 	assert(isinstance(indent, int))
 	
-	pos = -1 # <>
+	pos = -1 # because of the "<"
 	
-	for tag in [AttTag("node", elem), ColorTag((200,0,0)), TextTag("<"), EndTag()] + elem.tags() + [ColorTag((200,0,0)), TextTag(">"), EndTag(), EndTag()]:
-
+	tags = elem.tags()
+	
+	if visualize_elements:
+		tags = ([AttTag("node", elem), ColorTag(elem.brackets_color), TextTag("<"), EndTag()] + 
+		tags + [ColorTag(elem.brackets_color), TextTag(">"), EndTag(), EndTag()])
+	
+	for tag in tags:
 	#first some replaces
 		if isinstance(tag, NewlineTag):
 			tag = TextTag("\n")
@@ -94,15 +94,15 @@ def _project(screen, elem, atts, indent):
 			tag = ElementTag(elem.__dict__[tag.name]) #get widget
 
 	#now real stuff
+		#recurse
+		if isinstance(tag, ElementTag):
+			_project(lines, tag.element, atts, indent, visualize_elements)
 
-		if isinstance(tag, AttTag):
+		#attributes
+		elif isinstance(tag, AttTag):
 			attadd(atts, tag.key, tag.val)
 		elif isinstance(tag, ColorTag):
 			attadd(atts, "color", colors.modify(tag.color))
-
-		elif isinstance(tag, ElementTag):
-			_project(screen, tag.element, atts, indent)
-
 		elif isinstance(tag, EndTag):
 			atts.pop()
 
@@ -129,7 +129,7 @@ def _project(screen, elem, atts, indent):
 		#elif isinstance(tag, MenuTag):
 		#	screen['menu'] = tag
 		else:
-			raise Hell
+			raise hell
 
 
 def find(node, lines):
@@ -144,3 +144,4 @@ def find(node, lines):
 if __debug__:
 	test_squash()
 
+#⇾node⇽

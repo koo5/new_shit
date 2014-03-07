@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from menu import MenuItem,InfoItem
+from menu import InfoMenuItem
 import event
 from logger import log, ping
 import tags
@@ -8,6 +8,7 @@ import tags
 class Element(event.EventDispatcher):
 	def __init__(self):
 		super(Element, self).__init__()
+		self.brackets_color = (200,0,0)
 	
 	def on_keypress(self, event):
 		ping()
@@ -53,11 +54,8 @@ class Element(event.EventDispatcher):
 #		return False
 
 	def menu(self):
-		#return [InfoItem(str(self))]
-		if self.parent:
-			return self.parent.menu()
-		else:
-			return []
+		return ([InfoMenuItem("element: " + str(self))] + 
+				(self.parent.menu() if self.parent else []))
 
 	def menu_item_selected(self, item):
 		if self.parent:
