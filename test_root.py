@@ -5,38 +5,35 @@ import settings, toolbar
 def test_root():
 	r = Root(Dict([
 			(
-			"placeholder test", Statements([Placeholder(types = [Node]),Placeholder(types = [Node])])
-			),(
-			"text widget test", widgets.Text(None, "Test me out!")
-			),(
-			"info", Dict([
-				("accesibility", Note('done: color inversion, background color and font size. "posterization" (full black or white) is underway. . . .')),
-				("speed", Note("try python -O ( ./faster.sh ), disables assertions, makes things usable"))], False)
-			),(
-			"menu", List(
+#			"placeholder test", Statements([Placeholder(types = [Node]),Placeholder(types = [Node])])
+#			),(
+#			"text widget test", widgets.Text(None, "Test me out!")
+#			),(
+#			"intro", Text("""hello...""")
+#			),(
+			"toolbar", List(
 				[
-				toolbar.SetAllSyntaxesToZero()
-				])#,compact = True
+				toolbar.SetAllSyntaxesToZero(),
+				Clock()
+				#save, load
+				], False)
 			),(
 			"settings", Dict([
 				("webos hack", widgets.Toggle(None, False)),
 				("font size", settings.FontSize(18)),
-				("fullscreen", widgets.Toggle(None, False)),
-				("projection_debug", widgets.Toggle(None, True)),
+				#("fullscreen", widgets.Toggle(None, False)),
+				#("projection_debug", widgets.Toggle(None, True)),
 				("invert colors", widgets.Toggle(None, False)),
 				("background color", Dict([
 					("R", widgets.Number(None, 0, (0, 255))),
 					("G", widgets.Number(None, 0, (0, 255))),
 					("B", widgets.Number(None, 0, (0, 255)))])),
 				("sdl key repeat", settings.KeyRepeat()),
-
-				
-					
 				], False)
 			),(
 			"programs", List([
 				Program(Statements([
-					Placeholder()#,
+					Placeholder([], "statement")#,
 					#FunctionDefinition(name = Text("substring")),
 					#Asignment(Text("a"), Number(1)),
 					#Asignment(Text("b"), Number(5)), 
@@ -49,20 +46,10 @@ def test_root():
 					#	Statements([Print(Text("hi!\n"))]))
 				#	For(VariableDeclaration("item")
 						
-				]))])
-			),(
-			"notes", List([
-				Todo("strip leading tabs from text of Notes"),
-				Todo("""bool, syntaxed, how?
-				True and False separate atoms with syntaxes?
-				
-				"""),
-				Todo("nodeize the doc"),
-				Todo("revive old code nodes"),
-				
-				Todo("save/load nodes")
-				], False)
-			),
+				]), "hello world2", "koo5")]) #semanticize koo5:)
+			#),(
+			
+			#),
 			
 			#),(
 			
@@ -74,8 +61,7 @@ def test_root():
 			
 			#),(
 			
-			(
-			"clock",Clock()
+			#(
 			),(
 			"modules", List([
 			
@@ -93,6 +79,7 @@ def test_root():
 				]), name = "some functions")
 				
 			], False)
+			#),(the_doc.the_doc()
 			)
 			]))
 	

@@ -14,6 +14,10 @@ import project
 
 
 
+
+#fuzzywuzzy , to help make sense of the error messages brought about by the __getattr__ madness
+#would work without fuzzywuzzy, but its a nice training, this module will later be handy anyway
+
 try:
 	import fuzzywuzzy #pip install --user fuzzyfuzzy
 	from fuzzywuzzy import process as fuzzywuzzyprocess
@@ -33,35 +37,53 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 		return r
 
 
-#Xpath:P
+
+
+
+
+#homebrew Xpath, for finding elements of the tree...what do?
+#how it relates to the __getattr__ madness is unknown as of yet
+
 
 def find_by_path(item, path):
 	l = path.split("/")
-	l = [int(x) if x.isdigit() else x for x in l]
+	for i, x in enumerate(l):
+		if x.isdigit():
+			l[i] = int(x)
+		elif "=" in x:
+			spl = x.split("=")
+			l[i] = {spl[0]:spl[1]}
+		#else its a string.
 	r = find_in(item, l)
 	#log(r)
 	return r
 
 def find_in(item, path):
 	#ping()
-	assert(isinstance(item, list) or isinstance(item, dict) or isinstance(item, element.Element))
-	#ping()
+	assert(isinstance(item, (list, dict, element.Element)))
 	i = tryget(item,path[0])
-	#ping()
 	if i == None:
 		log("not found: " + str(path[0]) + " in " + str(item) + " / " + " / ".join([str(x) for x in path]))
-		#if isinstance(path[0], int):
-		#	log("out of range? len("+str(item)+") == "+str(len(item)))
-	if len(path) == 1 or i == None: return i #thats it! lets go home!
+		if isinstance(path[0], int):
+			log("out of range?")
+	if len(path) == 1 or i == None:
+		return i #thats it! lets go home!
 	else:
-		return find_in(i, path[1:])
+		return find_in(i, path[1:]) #recurse
 
 def tryget(x,y):
-	assert(isinstance(x, element.Element) or isinstance(x, dict)  or isinstance(x, list))
-	assert(isinstance(y, str) or isinstance(y, int))
+	assert(isinstance(y, (str, int, dict)))
 	try:
-		#import pdb; pdb.set_trace()
-		return getattr(x, y)
+		
+		if isinstance(y, dict):
+			k,v = dict.iteritems()[0]
+			for item in x.items:
+				if k in dir(item):
+					if v == getattr(item, k):
+						return item
+		
+		else:
+			return getattr(x, y)
 	except:
 		try:
 			return x[y]
@@ -72,7 +94,11 @@ def tryget(x,y):
 
 
 
-
+#a node is more than an element, it keeps track of its children with a dict.
+#in the editor, nodes can be cut'n'pasted around on their own, which wouldnt
+#make sense for widgets
+#everything is lumped together here, real ast nodes with clock and sticky notes,
+#tho some nodes broke away into toolbar.py settings.py menu.py and the_doc.py
 
 class Node(element.Element):
 	def __init__(self):
@@ -494,7 +520,10 @@ class Root(Syntaxed):
 		self.post_render_move_caret = 0
 		self._indent_length = 4
 		self.setch('items', items)
-		self.syntaxes = [[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]]
+		self.syntaxes = [
+			[ColorTag((255,255,255,255)), ch("items"), EndTag()],
+			[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]
+			]
 
 	def find(self, path):
 		return find_by_path(self.items.items, path)

@@ -330,7 +330,8 @@ t = find("settings/sdl key repeat")
 if t:
 	t.on_widget_edit(666)
 
-t = project.find(find('placeholder test/0'), lines)
+#t = project.find(find('placeholder test/0'), lines)
+t = project.find(find('programs/0'), lines)
 if t:
 	cursor_c, cursor_r = t
 
