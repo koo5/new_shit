@@ -186,7 +186,7 @@ class Number(Node):
 	def render(self):
 		return [w('widget')]
 
-
+#bool
 
 
 
@@ -559,6 +559,9 @@ class Clock(Node):
 		return [t(str(self.datetime.datetime.now()))]
 
 
+#not sure im gonna finish this one..it was supposed to be something like sticky notes,
+#an alternative view of "notes"
+#however, semanticizing or organizing into nodes all documentation is still a priority
 class Grid(Node):
 	def __init__(self, items, grid):
 		super(Grid,self).__init__()
@@ -567,10 +570,6 @@ class Grid(Node):
 		
 	def render(self):
 		return [TwoDGraphicTag(self)]
-		
-	
-
-
 
 """
 could start working on:
@@ -792,3 +791,15 @@ class Placeholder(Node):
 	#	parent.children[self.name] = replacement...
 """	
 
+
+		
+class Credits(Syntaxed):
+
+	def __init__(self):
+		super(Credits, self).__init__()
+		self.syntaxes = [[t("this project would suck much more without:")],
+						 [t("theplic - made me write the doc")],
+						 [t("gremble - actually understood the whole idea")],
+ 						 [t("AnkhMorporkian - his coding frenzy brought about the projection system")],
+ 						 [t("rszeno - had endless patience")],
+						 [t("...")]]

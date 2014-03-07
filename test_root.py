@@ -59,26 +59,8 @@ eye tracking
 
 """),
 				Todo("procrastinate more"),
-				CollapsibleText(
-					"""
-<AnkhMorporkian_> it's probably a bad idea to have newline as its own class. it'd be better to maintain it in the document class, since you have to have that anyways when you're using it.
-<AnkhMorporkian> i understand why the nodes handle their own rendering, but I don't see why simple text characters should be.
-<sirdancealot_> i wanted to have it uniform, to avoid special handling of str inside the template render
-					"""),
-
-				CollapsibleText(
-					"""
-#couple options:
-	store the positions of characters in an array ourselves - 
-		hmm, this actually sounds pretty simple, might be dumping pyglets documents one day
-	store positions in attributes char by char
-		for everything
-		for just active.. nope...clicks...
-	settled for one position for each element now
-					"""),
-				Idea("""pick up the templating work, use an existing templating library, switch to formatted_from_text, implement functions dealing with the text with attributes if necessary"""),
 				Todo("save/load nodes", priority=10),
-				Todo("salvage the logger thingy...printing does get tedious...but its so damn quick")
+				Credits()
 				], False)
 			),
 			
@@ -146,11 +128,10 @@ def mini_test_root():
 """
 
 
-	#Что это?
-	new todo list:
-	systemic changes to consider:
+#Что это?
+
+systemic changes to consider:
 		projectured needs to be tried out and evaluated for a possible use as the base of lemon.
-
-
-
+		maybe also emacs
 """
+
