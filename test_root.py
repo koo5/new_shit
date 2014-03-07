@@ -52,15 +52,15 @@ def test_root():
 				]))])
 			),(
 			"notes", List([
-				Todo("""big themes: 
-voice recognition (samson?)
-eye tracking
-
-
-"""),
-				Todo("procrastinate more"),
-				Todo("save/load nodes", priority=10),
-				Credits()
+				Todo("strip leading tabs from text of Notes"),
+				Todo("""bool, syntaxed, how?
+				True and False separate atoms with syntaxes?
+				
+				"""),
+				Todo("nodeize the doc"),
+				Todo("revive old code nodes"),
+				
+				Todo("save/load nodes")
 				], False)
 			),
 			
@@ -91,8 +91,6 @@ eye tracking
 						syntax = SyntaxDef([t("disable screensaver")]), 
 						body = Statements([ShellCommand("xset s off")]))
 				]), name = "some functions")
-				
-				
 				
 			], False)
 			)

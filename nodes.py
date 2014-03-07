@@ -792,14 +792,3 @@ class Placeholder(Node):
 """	
 
 
-		
-class Credits(Syntaxed):
-
-	def __init__(self):
-		super(Credits, self).__init__()
-		self.syntaxes = [[t("this project would suck much more without:")],
-						 [t("theplic - made me write the doc")],
-						 [t("gremble - actually understood the whole idea")],
- 						 [t("AnkhMorporkian - his coding frenzy brought about the projection system")],
- 						 [t("rszeno - had endless patience")],
-						 [t("...")]]
