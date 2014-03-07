@@ -99,6 +99,16 @@ class Node(element.Element):
 
 	def find(self, path):
 		return find_by_path(self, path)
+
+	def replace_child(self, child, new):
+		ping()
+		print self.children
+		assert(child in self.children.values())
+		for k,v in self.children.iteritems():
+			if v == child:
+				self.children[k] = new
+		new.parent = self
+
 	
 #	def program(self):
 #		if isinstance(self, Program):
@@ -296,11 +306,14 @@ class SomethingNew(Node):
 
 
 class Placeholder(Node):
-	def __init__(self, types=None):
+	def __init__(self, types=None, description = "write here"):
 		super(Placeholder, self).__init__()
-		self.textbox = widgets.ShadowedText(self, "", "write here")
+		self.types = types
+		self.description = description
+		self.textbox = widgets.ShadowedText(self, "", self.description)
 		self.brackets_color = (0,255,0)
 		self.textbox.brackets_color = (255,255,0)
+
 
 	def render(self):
 		return [w('textbox')]
@@ -317,10 +330,11 @@ class Placeholder(Node):
 		text = self.textbox.text
 		r = [InfoMenuItem("insert:")]
 		it = PlaceholderMenuItem
-		r += [it(Text(text))]
 
 		if text.isdigit():
 			r += [it(Number(text))]
+
+		r += [it(Text(text))]
 
 		r += [it(SomethingNew(text))]
 
@@ -337,7 +351,8 @@ class Placeholder(Node):
 #		r += [it(Program(Statements([Placeholder()])))] #fix SyntaxDef
 		r += [it(Module(Statements([Placeholder()])))]
 		
-		r += [it(While(Placeholder(), Statements([Placeholder()])))]
+		r += [it(While(Placeholder([], "condition"), 
+						Statements([Placeholder([], "statement")])))]
 		
 		r += [it(Note(text)), it(Todo(text)), it(Idea(text))]
 				
@@ -383,17 +398,20 @@ class PlaceholderMenuItem(MenuItem):
 
 	def draw(self, menu, s, font, x, y):
 		#replicating draw_root, but for now..
+		#project._width = ..
 		lines = project.project(self)
+		area = pygame.Rect((x,y,0,0))
 		for row, line in enumerate(lines):
 			for col, char in enumerate(line):
 				chx = x + font['width'] * col
-				chy = y + font['height'] * row
+				chy = (y+2) + font['height'] * row
 				sur = font['font'].render(
 					char[0],False,
 					char[1]['color'],
 					menu.bg)
 				s.blit(sur,(chx,chy))
-		return sur.get_width(), sur.get_height()
+				area = area.union((chx, chy, sur.get_rect().w, sur.get_rect().h+2))
+		return area
 
 
 #design:

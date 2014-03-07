@@ -17,10 +17,11 @@ class Menu(object):
 		for i, item in enumerate(self.items):
 #			log(str(item))
 			assert(isinstance(item, MenuItem))
-			w,h = item.draw(self, scr, font, x, y)
+			area = item.draw(self, scr, font, x, y)
 			if i == self.sel:
-				pygame.draw.rect(scr, self.fg, (x, y, w,h), 1)
-			y += h
+				pygame.draw.rect(scr, self.fg, (x, y, area.w, area.h), 1)
+			y += area.h
+			print area.h
 			
 	def keypress(self, e):
 		if e.mod & pygame.KMOD_CTRL:
@@ -51,4 +52,4 @@ class InfoMenuItem(MenuItem):
 	def draw(self, menu, s, font, x, y):
 		fs = font['font'].render(self.text, True, (200,200,200), menu.bg)
 		s.blit(fs,(x,y))
-		return fs.get_width(), fs.get_height()
+		return fs.get_rect()
