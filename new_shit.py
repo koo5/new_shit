@@ -38,7 +38,7 @@ def find(x):
 def render():
 	global lines, cached_root_surface
 	log("render")	
-	colors.cache(root.items['settings'])
+	colors.cache(root.items['settings']['colors'])
 	project._width = screen_surface.get_width() / font_width
 	project._indent_width = 4
 	lines = project.project(root)
@@ -331,7 +331,8 @@ if t:
 	t.on_widget_edit(666)
 
 #t = project.find(find('placeholder test/0'), lines)
-t = project.find(find('docs/4'), lines)
+#t = project.find(find('docs/4'), lines)
+t = project.find(find('programs/0/statements/0'), lines)
 if t:
 	cursor_c, cursor_r = t
 

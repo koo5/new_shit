@@ -12,28 +12,6 @@ def test_root():
 #			),(
 #			"intro", Text("""hello...""")
 #			),(
-			"toolbar", List(
-				[
-				toolbar.SetAllSyntaxesToZero(),
-				Clock()
-				#save, load
-				], False)
-			),(
-			"docs", the_doc.the_doc()
-			),(
-			"settings", Dict([
-				("webos hack", widgets.Toggle(None, False)),
-				("font size", settings.FontSize(18)),
-				#("fullscreen", widgets.Toggle(None, False)),
-				#("projection_debug", widgets.Toggle(None, True)),
-				("invert colors", widgets.Toggle(None, False)),
-				("background color", Dict([
-					("R", widgets.Number(None, 0, (0, 255))),
-					("G", widgets.Number(None, 0, (0, 255))),
-					("B", widgets.Number(None, 0, (0, 255)))])),
-				("sdl key repeat", settings.KeyRepeat()),
-				], False)
-			),(
 			"programs", List([
 				Program(Statements([
 					Placeholder([], "statement")#,
@@ -66,23 +44,50 @@ def test_root():
 			
 			#(
 			),(
-			"modules", List([
-			
-				Module(Statements([
-					SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end.")])
-				]), name = "syntaxes for builtins"),
-				
-				#Module(Statements(builtins()), name = "builtins"),
+			"modules",
+				List([			
+					Module(Statements([
+						SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end.")])
+					]), name = "syntaxes for builtins"),
+					
+					#Module(Statements(builtins()), name = "builtins"),
 
-				Module(Statements([
-					Note("stupid, but gotta start somewhere"),
-					FunctionDefinition(
-						syntax = SyntaxDef([t("disable screensaver")]), 
-						body = Statements([ShellCommand("xset s off")]))
-				]), name = "some functions")
-				
-			], False)
+					Module(Statements([
+						Note("stupid, but gotta start somewhere"),
+						FunctionDefinition(
+							syntax = SyntaxDef([t("disable screensaver")]), 
+							body = Statements([ShellCommand("xset s off")]))
+					]), name = "some functions"),
+					
+					Placeholder([Module], "new module") 
+				], False)
+			),(
+			"toolbar", List(
+				[
+				toolbar.SetAllSyntaxesToZero(),
+				Clock()
+				#save, load
+				], False)
+			),(
+			"docs", the_doc.the_doc()
+			),(
+			"settings", Dict([
+				("webos hack", widgets.Toggle(None, False)),
+				("font size", settings.FontSize(18)),
+				#("fullscreen", widgets.Toggle(None, False)),
+				("colors", Dict([
+					("monochrome", widgets.Toggle(None, True)),
+					("invert", widgets.Toggle(None, False)),
+					("background", Dict([
+						("R", widgets.Number(None, 0, (0, 255))),
+						("G", widgets.Number(None, 0, (0, 255))),
+						("B", widgets.Number(None, 0, (0, 255)))]))
+				])),
+				("sdl key repeat", settings.KeyRepeat()),
+				], False)
 			)
+
+			
 			]))
 	
 	for p in r.children['items'].items["programs"]: #the Program objects

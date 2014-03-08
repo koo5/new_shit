@@ -18,9 +18,23 @@ def the_doc():
 				Todo("revive old code nodes"),
 				Todo("curb hardcoded colors"),
 				Todo("multiline text editor"),
-				Todo("modify event.py to not send self to uninterested event handlers"),
+				Todo("""modify event.py to not send self to uninterested event handlers
+				..try catch
+				actually, a lot of that module isnt needed at all
+				"""),
 				Todo("save/load nodes")
 			),
+					
+			Chapter("notes", """
+				compilation > interpreter, for this bootstrap
+				this thing may be falling apart, but lets see if it can compile itself
+				1 interaction
+				2 model, syntax 
+				how to extend the syntax system,
+				requirements:
+					input: possible syntaxes of each: True, False, Number
+					output:
+			"""),
 					
 			Chapter("funky wishes", """
 			voice recognition (samson?)

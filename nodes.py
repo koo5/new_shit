@@ -390,8 +390,10 @@ class Placeholder(Node):
 	
 	def menu(self):
 		text = self.textbox.text
-		r = [InfoMenuItem("insert:")]
+		#r = [InfoMenuItem("insert:")]
 		it = PlaceholderMenuItem
+
+		r = []
 
 		if text.isdigit():
 			r += [it(Number(text))]
@@ -417,6 +419,9 @@ class Placeholder(Node):
 						Statements([Placeholder([], "statement")])))]
 		
 		r += [it(Note(text)), it(Todo(text)), it(Idea(text))]
+
+		r += [it(Assignment(Placeholder([SomethingNew, VariableDeclaration]),
+							Placeholder([VariableDeclaration, 'expression'])))]
 				
 		#2: calls, variables..
 		
@@ -427,8 +432,20 @@ class Placeholder(Node):
 		#all types
 		#r += expand_types('all') - expand_types(self.types)
 
+		#sort:
+		
+		r.sort(key = self.fits)
+		
+
 		return r	
-			
+		
+		
+	def fits(self, item):
+		for t in self.types:
+			if isinstance(item, t):
+				return 1
+		return 0
+		
 
 	def menu_item_selected(self, item):
 		if not isinstance(item, PlaceholderMenuItem):
@@ -624,63 +641,21 @@ class Clock(Node):
 		return [t(str(self.datetime.datetime.now()))]
 
 
-#not sure im gonna finish this one..it was supposed to be something like sticky notes,
-#an alternative view of "notes"
-#however, semanticizing or organizing into nodes all documentation is still a priority
-class Grid(Node):
-	def __init__(self, items, grid):
-		super(Grid,self).__init__()
-		self.items = items
-		self.grid = grid
-		
-	def render(self):
-		return [TwoDGraphicTag(self)]
+class Assignment(Syntaxed):
+	def __init__(self, left, right):
+		super(Assignment,self).__init__()
+		assert(isinstance(left, Node))
+		assert(isinstance(right, Node))
+		self.syntaxes=[[ch("left"), t(" = "), ch("right")],
+					[t("set "), ch("left"), t(" to "), ch("right")],
+					[t("have "), ch("left"), t(" be "), ch("right")]]
+		self.setch('left', left)
+		self.setch('right', right)
+
+
 
 """
-could start working on:
 
-class Terminal(Syntaxed):
-	def __init__(self):
-		self.setch('history', List([]))
-		self.setch('command', Placeholder())
-		self.run_button = widgets.Button(self, "run")
-		self.syntaxes = [[t("history:"), ch('history'), t('command'), ch('command'), w('run_button')]
-
-	def on_keypress(self, e):
-		if pygame.KMOD_CTRL & e.mod:
-			if e.key == pygame.K_RETURN:
-				self.history.append(self.command.eval()...
-			
-
-	
-
-class triple
-	this would be three SomethingNew's - subject predicate object
-
-wolframalpha
-	input text
-	get back results
-
-or tap into eulergui datagui functionality
-
-class SemanticizedGoogle
-	nah, huge and stupid
-
-
-
-
-
-outdated stuff and comments here:
-
-class Asignment(Templated):
-	def __init__(self, left, right):
-		super(Asignment,self).__init__()
-		self.templates=[template([child("left"), t(" = "), child("right")]),
-				template([t("set "), child("left"), t(" to "), child("right")]),
-				template([t("have "), child("left"), t(" be "), child("right")])]
-		self.set('left', left)
-		self.set('right', right)
-		
 class IsLessThan(Templated):
 	def __init__(self, left, right):
 		super(IsLessThan,self).__init__()
@@ -854,6 +829,55 @@ class Placeholder(Node):
 			
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
+
+
+could start working on:
+
+#not sure im gonna finish this one..it was supposed to be something like sticky notes,
+#an alternative view of "notes"
+#however, semanticizing or organizing into nodes all documentation is still a priority
+class Grid(Node):
+	def __init__(self, items, grid):
+		super(Grid,self).__init__()
+		self.items = items
+		self.grid = grid
+		
+	def render(self):
+		return [TwoDGraphicTag(self)]
+
+
+class Terminal(Syntaxed):
+	def __init__(self):
+		self.setch('history', List([]))
+		self.setch('command', Placeholder())
+		self.run_button = widgets.Button(self, "run")
+		self.syntaxes = [[t("history:"), ch('history'), t('command'), ch('command'), w('run_button')]
+
+	def on_keypress(self, e):
+		if pygame.KMOD_CTRL & e.mod:
+			if e.key == pygame.K_RETURN:
+				self.history.append(self.command.eval()...
+			
+
+	
+
+class triple
+	this would be three SomethingNew's - subject predicate object
+
+wolframalpha
+	input text
+	get back results
+
+or tap into eulergui datagui functionality
+
+class SemanticizedGoogle
+	nah, huge and stupid
+
+
+
+
+
+
 """	
 
 

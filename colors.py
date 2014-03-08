@@ -3,10 +3,10 @@ invert = monochrome = bg = "cache me"
 def cache(settings):
 	global invert, monochrome, bg
 	
-	invert = settings.find('invert colors/value')
+	invert = settings.find('invert/value')
 	monochrome = settings.find('monochrome/value')
 		
-	s = settings.find('background color/items')
+	s = settings.find('background/items')
 	if s:
 		bg = s['R'].value, s['G'].value, s['B'].value
 	else:
