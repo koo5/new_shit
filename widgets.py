@@ -151,9 +151,15 @@ class Toggle(Widget):
 	@property
 	def text(self):
 		return "checked" if self.value else "unchecked"
-	def on_mouse_press(self, button):
+	def toggle(self):
 		self.value = not self.value
-		#self.dispatch_event('on_change', self)
+		self.dispatch_event('on_change', self)
+	def on_mouse_press(self, button):
+		self.toggle()
+	def on_keypress(self, e):
+		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
+			self.toggle()
+			return True
 		
 
 

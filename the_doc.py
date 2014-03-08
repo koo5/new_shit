@@ -171,8 +171,7 @@ class NodeReference(Syntaxed):
 		self.path.push_handlers(on_edit = self.refresh)
 		self.refresh_button.push_handlers(on_click = self.refresh)
 		self.node = self.refresh_button
-		#self.refresh('__init__')
-		
+
 	def refresh(self, widget):
 		self.node = self.root.find(self.path.text)
 		if self.node == None:

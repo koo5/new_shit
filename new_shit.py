@@ -32,13 +32,13 @@ lines = []
 menu = Menu()
 
 def find(x):
-	return find_by_path(root.items, x)
+	return root.find(x)
 
 
 def render():
 	global lines, cached_root_surface
 	log("render")	
-	colors.cache(root.items)
+	colors.cache(root.items['settings'])
 	project._width = screen_surface.get_width() / font_width
 	project._indent_width = 4
 	lines = project.project(root)
@@ -331,7 +331,7 @@ if t:
 	t.on_widget_edit(666)
 
 #t = project.find(find('placeholder test/0'), lines)
-t = project.find(find('programs/0'), lines)
+t = project.find(find('docs/4'), lines)
 if t:
 	cursor_c, cursor_r = t
 

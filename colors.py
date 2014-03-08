@@ -1,44 +1,30 @@
-_rootitems = "cache me"
+invert = monochrome = bg = "cache me"
 
-_cached_invert_color = "cache me"
-_cached_posterize_color = "cache me"
-
-bg = "cache me"
-
-def cache(rootitems):
-	global _cached_invert_color, _cached_posterize_color
-	global bg, _rootitems
+def cache(settings):
+	global invert, monochrome, bg
 	
-	_rootitems = rootitems	
-	_cached_invert_color = _rootitems.find('settings/invert colors/value')
-	_cached_posterize_color = False
+	invert = settings.find('invert colors/value')
+	monochrome = settings.find('monochrome/value')
+		
+	s = settings.find('background color/items')
+	if s:
+		bg = s['R'].value, s['G'].value, s['B'].value
+	else:
+		bg = (0,0,0)
+		
+	bg = modify(bg)
 	
-	bg = bg_color()
+	assert(isinstance(bg, tuple))
+	assert(len(bg) == 3)
+
 
 def modify(c, max=255):
 
-	if _cached_posterize_color:
-		c = list(c)
-		for i in range(3):
-			c[i] = c[i] * 255
-		c = tuple(c)
+	if monochrome and c != (0,0,0):
+		c = (255,255,255)
 
-	if _cached_invert_color:
-		c = list(c)
-		for i in range(3):
-			c[i] = max - c[i]
-		c = tuple(c)
-
+	if invert:
+		c = (max - c[0], max - c[1], max - c[2])
+		
 	return c
-
-def bg_color():
-	s = _rootitems.find('settings/background color/items')
-	if s == None: return (0,0,100)
-	r = s['R'].value
-	g = s['G'].value
-	b = s['B'].value
-	res = modify((r,g,b))
-	assert(isinstance(res, tuple))
-	assert(len(res) == 3)
-	return res
 

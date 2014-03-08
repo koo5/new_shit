@@ -29,7 +29,7 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 		self.obj = obj
 		self.wanted = wanted
 	def __str__(self):
-		r = "\"%s\" is not an attribute or child of %s, or maybe property getter raised AtributteError, if the name is found below, it did (or maybe you called __getitem__ directly, or confused ch() with w()):\n" % (self.wanted, self.obj)
+		r = "\"%s\" is not an attribute or child of %s, or maybe property getter raised AtributteError, or maybe you called __getitem__ directly, or confused ch() with w().\n" % (self.wanted, self.obj)
 		if fuzzywuzzyprocess:
 			r += "attributes, widgets: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, dir(self.obj), limit=10, score_cutoff=50)]) + "...\n"
 			assert(isinstance(self.obj, Node))
@@ -44,61 +44,78 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 #homebrew Xpath, for finding elements of the tree...what do?
 #how it relates to the __getattr__ madness is unknown as of yet
 
+def parse_path(path):
+	path = path.split("/")
+	r = []
+	for i in path:
+		if i.isdigit():
+			r.append(int(i))
+		elif "=" in i:
+			spl = i.split("=")
+			r.append({spl[0]:spl[1]})
+		elif len(i) > 0:
+			r.append(i)
+	return r
 
 def find_by_path(item, path):
-	l = path.split("/")
-	for i, x in enumerate(l):
-		if x.isdigit():
-			l[i] = int(x)
-		elif "=" in x:
-			spl = x.split("=")
-			l[i] = {spl[0]:spl[1]}
-		#else its a string.
-	r = find_in(item, l)
+	r = find_in(item, parse_path(path))
 
 	if r == None:
-		log("not found: " + str(item) + " / " +  path)
+		log("not found: " + path + " in " +  str(item))
 
 	#log(r)
 	return r
 
-def find_in(item, path):
-	#ping()
-	assert(isinstance(item, (list, dict, element.Element)))
-	i = tryget(item,path[0])
-	if i == None:
-		log("not found: " + str(path[0]) + " in " + str(item) + " / " + " / ".join([str(x) for x in path]))
-		if isinstance(path[0], int):
-			log("out of range?")
-	if len(path) == 1 or i == None:
-		return i #thats it! lets go home!
-	else:
-		return find_in(i, path[1:]) #recurse
-
-def tryget(x,y):
-	assert(isinstance(y, (str, int, dict)))
-
-	if isinstance(y, dict):
+def find_in(haystack, path):
+	ping()
+	print_errors = False
+	assert(isinstance(haystack, (list, dict, element.Element)))
+	if len(path) == 0:
+		return haystack
+		
+	needle = path[0]
+	r = None
+	
+	if isinstance(needle, dict):
+		k,v = needle.items()[0]
 		try:
-			k,v = y.items()[0]
-			for item in x.items:
+			for child in haystack.items:
 				try:
-					if getattr(item, k) == v
-						return item
-				except:
+					if getattr(child, k) == v:
+						ch = find_in(child, rest)
+						if ch: r = ch
+				except Exception as e:
+					if print_errors: print e
 					pass
-		except:
-			return None
-	else:
+		except Exception as e:
+			if print_errors: print e
+			pass
+	
+	if isinstance(needle, str):
 		try:
-			return getattr(x, y)
-		except:
+			r = getattr(haystack, needle)
+		except Exception as e:
+			if print_errors: print e
 			try:
-				return x[y]
-			except:
-				return None
+				r = haystack[needle]
+			except Exception as e:
+				if print_errors: print e
+				pass
 			
+	if isinstance(needle, int):
+		try:
+			r = haystack[needle]
+		except Exception as e:
+			if print_errors: print e
+			pass
 
+	if r != None and len(path) > 1:
+		return find_in(r, path[1:])
+	else:
+		return r
+
+
+#	if isinstance(needle, int): log("out of range?")
 
 
 
@@ -545,7 +562,7 @@ class Root(Syntaxed):
 			]
 
 	def find(self, path):
-		return find_by_path(self.items.items, path)
+		return find_by_path(self.items, path)
 
 	@property
 	def indent_length(self):
