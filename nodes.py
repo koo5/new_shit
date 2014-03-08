@@ -55,6 +55,10 @@ def find_by_path(item, path):
 			l[i] = {spl[0]:spl[1]}
 		#else its a string.
 	r = find_in(item, l)
+
+	if r == None:
+		log("not found: " + str(item) + " / " +  path)
+
 	#log(r)
 	return r
 
@@ -73,22 +77,26 @@ def find_in(item, path):
 
 def tryget(x,y):
 	assert(isinstance(y, (str, int, dict)))
-	try:
-		
-		if isinstance(y, dict):
-			k,v = dict.iteritems()[0]
-			for item in x.items:
-				if k in dir(item):
-					if v == getattr(item, k):
-						return item
-		
-		else:
-			return getattr(x, y)
-	except:
+
+	if isinstance(y, dict):
 		try:
-			return x[y]
+			k,v = y.items()[0]
+			for item in x.items:
+				try:
+					if getattr(item, k) == v
+						return item
+				except:
+					pass
 		except:
 			return None
+	else:
+		try:
+			return getattr(x, y)
+		except:
+			try:
+				return x[y]
+			except:
+				return None
 			
 
 
@@ -107,7 +115,7 @@ class Node(element.Element):
 		self.children = {}
 
 	def fix_relations(self):
-		self.fix_(self.children)
+		self.fix_(self.children.values())
 
 	def __getattr__(self, name):
 #		assert('children' in dir(self))
@@ -189,10 +197,11 @@ class Syntaxed(Node):
 			if e.key == pygame.K_PAGEUP:
 				self.prev_syntax()
 				log("prev")
+				return True
 			if e.key == pygame.K_PAGEDOWN:
 				self.next_syntax()
 				log("next")
-
+				return True
 
 
 
@@ -219,12 +228,12 @@ class Number(Node):
 class Collapsible(Node):
 	"""Collapsible - List or Dict - dont have a title, a top unindented line. They are just
 	the items...now"""
-	def __init__(self, items, expanded=True):
-		super(Collapsible, self).__init__()
-		self.items = items #do this first or bad things will happen (and i forgot why)
+	def __init__(self, expanded=True, vertical=True):
+		super(Collapsible, self).__init__()	
 		self.expand_collapse_button = widgets.Button(self)
 		self.expand_collapse_button.push_handlers(on_click=self.on_widget_click)
 		self.expanded = expanded
+		self.vertical = vertical
 	
 	def render(self):
 		self.expand_collapse_button.text = ("-" if self.expanded else "+")
@@ -243,9 +252,10 @@ class Collapsible(Node):
 
 class Dict(Collapsible):
 	def __init__(self, tuples, expanded=True):
-		super(Dict, self).__init__(OrderedDict(tuples), expanded)
+		super(Dict, self).__init__(expanded)
 		#Dict is created from a list of pairs ("key", value)
-
+		self.items = OrderedDict(tuples)
+		
 		for key, item in self.items.iteritems():
 			item.parent = self
 
@@ -267,20 +277,23 @@ class Dict(Collapsible):
 
 	def fix_relations(self):
 		super(Dict, self).fix_relations()
-		self.fix_(self.items)
+		self.fix_(self.items.values())
 
 
 class List(Collapsible):
-	def __init__(self, items, expanded=True):
-		super(List, self).__init__(items, expanded)
+	def __init__(self, items, expanded=True, vertical=True):
+		super(List, self).__init__(expanded, vertical)
 		assert(isinstance(items, list))
+		self.items = items #do this first or bad things will happen (and i forgot why)
+		
 		for item in self.items:
 			item.parent = self
 
 	def render_items(self):
 		r = []
 		for item in self.items:
-			r += [ElementTag(item)]# + [nl()]
+			r += [ElementTag(item)]
+			if self.vertical: r+= [nl()] 
 		return r
 	def __getitem__(self, i):
 #		ping()
@@ -291,6 +304,12 @@ class List(Collapsible):
 		assert(child in self.items)
 		self.items[self.items.index(child)] = new
 		new.parent = self
+
+
+	def fix_relations(self):
+		super(List, self).fix_relations()
+		self.fix_(self.items)
+
 
 class CollapsibleText(Collapsible):
 	def __init__(self, value):

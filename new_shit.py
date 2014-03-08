@@ -294,7 +294,7 @@ pygame.font.init()
 pygame.time.set_timer(pygame.USEREVENT, 100)
 
 icon = image.load('icon32x32.png')
-print icon
+#print icon
 display.set_icon(icon) #doesnt work..why?
 display.set_caption('lemon party')
 

@@ -19,6 +19,8 @@ def test_root():
 				#save, load
 				], False)
 			),(
+			"docs", the_doc.the_doc()
+			),(
 			"settings", Dict([
 				("webos hack", widgets.Toggle(None, False)),
 				("font size", settings.FontSize(18)),
@@ -80,8 +82,6 @@ def test_root():
 				]), name = "some functions")
 				
 			], False)
-			),(
-			"docs", the_doc.the_doc()
 			)
 			]))
 	

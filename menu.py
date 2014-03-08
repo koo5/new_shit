@@ -21,7 +21,7 @@ class Menu(object):
 			if i == self.sel:
 				pygame.draw.rect(scr, self.fg, (x, y, area.w, area.h), 1)
 			y += area.h
-			print area.h
+#			print area.h
 			
 	def keypress(self, e):
 		if e.mod & pygame.KMOD_CTRL:

@@ -35,6 +35,8 @@ class Element(event.EventDispatcher):
 			return self.parent.root
 		else:
 			log("root is "+str(self))
+			print self.__class__.__name__ 
+			#assert(self.__class__.__name__ == "Root")
 			return self
 			
 	@property
@@ -45,7 +47,7 @@ class Element(event.EventDispatcher):
 		pass
 	
 	def fix_(self, items):
-		for k,i in items.iteritems():
+		for i in items:
 			i.parent = self
 			i.fix_relations()	
 	
