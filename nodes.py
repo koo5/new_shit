@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import pygame
-
+from pyDatalog import pyDatalog
 
 
 from logger import ping, log
@@ -462,8 +462,6 @@ class Placeholder(Node):
 #			x = v()
 		self.parent.replace_child(self, x)
 
-pyDatalog.create_terms('works_as')
-+works_as(Assignment, 'expression')
 
 # hack here, to make a menu item renderable by project.project
 class PlaceholderMenuItem(MenuItem):
@@ -883,4 +881,32 @@ class SemanticizedGoogle
 
 """	
 
+"""
+pyDatalog.create_terms('works_as')
+works_as(Assignment, 'expression')
+works_as(Number, 'expression')
+works_as(Bool, 'bool')
+works_as(Equals, 'bool')
+works_as('expression', 'statement')
+works_as(X, Y): works_as(X, Z) and works_as(Z, Y)
+would_work_as(
+---------------------------------------------------------
+Assignment, assignment
+assignment, statement
+Number number
+Bool bool
+number expression
+bool expression
+Equality bool
+would_work_as(number, bool)?
+would_work_as(X, Y):-
+	would_work_as(Z, Y),
+	in_syntax(Z,X).
+	
+	would_work_as(
+works_as('expression', 'statement')
+works_as(X, Y): works_as(X, Z) and works_as(Z, Y)
 
+
+
+"""

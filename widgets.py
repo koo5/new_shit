@@ -68,7 +68,7 @@ class Button(Widget):
 		#ping()
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
 			self.parent.button_pressed(self)
-		else return False
+		else: return False
 		
 	def render(self):
 		return [TextTag(self.text)]
