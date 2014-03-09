@@ -79,41 +79,41 @@ class Number(Text):
 	contents are only int()'ed when needed"""	
 	def __init__(self, parent, text, limits=(None,None)):
 		super(Number, self).__init__(parent, text)
-		self.text = str(text)
 		self.limits = limits
 		self.minus = Button(self, "-")
 		self.plus = Button(self, "+")
+		self.text = Text(self, str(text))
 
 	def render(self):
-		return [WidgetTag('minus_button'), TextTag(" "+self.text+" "), WidgetTag('plus_button')]
+		return [WidgetTag('minus'), WidgetTag('text'), WidgetTag('plus')]
+	
 	@property
 	def value(self):
-		return int(self.text)
+		return int(self.text.text)
 	@value.setter
 	def value(self, new):
-		self.text
+		self.text.text = str(new)
+		self.parent.number_changed(self)
 	
 	def inc(self):
-		if self.limits[1] == None or self.limits[1] > int(self.text):
-			self.text = str(int(self.text)+1)
-			self.dispatch_event('on_change', self)
+		if self.limits[1] == None or self.limits[1] > self.value:
+			self.value += 1
 	
 	def dec(self):
-		if self.limits[0] == None or self.limits[0] < int(self.text):
-			self.text = str(int(self.text)-1)
-			self.dispatch_event('on_change', self)
+		if self.limits[0] == None or self.limits[0] < self.value:
+			self.value -= 1
 	
-	def on_widget_click(self,widget):
-		if widget == self.minus_button:
+	def button_pressed(self, widget):
+		if widget == self.minus:
 			self.dec()
-		if widget == self.plus_button:
+		if widget == self.plus:
 			self.inc()
-	def on_widget_text(self,text):
-		if text == "+":
+	def on_keypress(self, e):
+		if e.uni == u"+":
 			self.inc()
-		if text == "-":
+		if e.uni == u"-":
 			self.dec()
-	def on_mouse_press(self, button):
+	def on_mouse(self, button):
 		if button == 4:
 			self.inc()
 		if button == 5:
