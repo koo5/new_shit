@@ -9,7 +9,14 @@ class Element(pyDatalog.Mixin):
 	def __init__(self):
 		super(Element, self).__init__()
 		self.brackets_color = (200,0,0)
-	
+
+	def register_event_types(self, types):
+		pass
+	def push_handlers(self, *args, **kwargs):
+		pass
+	def dispatch_event(self, event_type, *args):
+		pass
+
 	def on_keypress(self, event):
 		ping()
 		return False
