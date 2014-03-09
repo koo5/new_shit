@@ -35,6 +35,11 @@ def the_doc():
 					input: possible syntaxes of each: True, False, Number
 					output:
 			"""),
+			Chapter("user interaction", """
+				something between structured and textual?
+				i feel there must be cursor, move from one
+				space between elements to the next
+			"""),
 					
 			Chapter("funky wishes", """
 			voice recognition (samson?)

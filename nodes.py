@@ -445,7 +445,7 @@ class Placeholder(Node):
 			if isinstance(item, t):
 				return 1
 		return 0
-		
+		 
 
 	def menu_item_selected(self, item):
 		if not isinstance(item, PlaceholderMenuItem):
@@ -461,6 +461,9 @@ class Placeholder(Node):
 #		elif isinstance(v, type):
 #			x = v()
 		self.parent.replace_child(self, x)
+
+pyDatalog.create_terms('works_as')
++works_as(Assignment, 'expression')
 
 # hack here, to make a menu item renderable by project.project
 class PlaceholderMenuItem(MenuItem):

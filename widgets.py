@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 
-import pyglet, pygame
+import pygame
 import element
 from logger import log, ping
 from tags import TextTag, ColorTag, EndTag, WidgetTag
-
+import colors
 
 class Widget(element.Element):
 	def __init__(self, parent):
@@ -15,12 +15,8 @@ class Widget(element.Element):
 class Text(Widget):
 	def __init__(self, parent, text):
 		super(Text, self).__init__(parent)
-		self.register_event_types('on_edit')
 		self.color = (150,150,255,255)
 		self.text = text
-		
-	def get_caret_position(self):
-		return self.root.caret_position - self.doc.positions[self]
 		
 	def render(self):
 		return [TextTag(self.text)]
@@ -44,76 +40,59 @@ class Text(Widget):
 			self.root.post_render_move_caret = len(e.uni)
 		else: return False
 		#log(self.text + "len: " + len(self.text))
-		self.dispatch_event('on_edit', self)
+		self.parent.text_changed(self)
 		return True
-
-	
-	def on_text_motion(self, motion, select=False):
-		ping()
-		if motion == pyglet.window.key.MOTION_BACKSPACE:
-			position = self.get_caret_position()
-			if position > 0:
-				self.text = self.text[:position-1]+self.text[position:]
-			self.dispatch_event('on_edit', self)
-			self.win.post_render_move_caret = -1
-		else:
-			return False
-		return True
-
 
 class ShadowedText(Text):
-
 	def __init__(self, parent, text, shadow):
-
 		super(ShadowedText, self).__init__(parent, text)
 		self.shadow = shadow
 
 	def render(self):
-		return [TextTag(self.text),
-				ColorTag((130,130,130,255)),
-				TextTag(self.shadow[len(self.text):]),
-				EndTag()]
+		return ([TextTag(self.text)] +
+					([ColorTag((130,130,130,255)),
+					TextTag(self.shadow[len(self.text):]),
+					EndTag()] 
+				if len(self.text) == 0 and colors.monochrome else []))
 
-#	def len(self):
-#		return len(self.text+self.shadow[len(self.text)])
-		
+
 class Button(Widget):
-	def __init__(self, parent, text="[      ]"):#🔳🔳🔳🔳]"):
+	def __init__(self, parent, text="[button]"):#🔳🔳🔳🔳]"):
 		super(Button, self).__init__(parent)
-		self.register_event_types('on_click, on_text')
 		self.color = (255,150,150,255)
 		self.text = text
 	def on_mouse_press(self, button):
 		ping()
-		self.dispatch_event('on_click', self)
+		self.parent.button_pressed(self)
 	def on_keypress(self, e):
-		ping()
+		#ping()
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
-			self.dispatch_event('on_click', self)
-			return True
-		
+			self.parent.button_pressed(self)
+		else return False
 		
 	def render(self):
 		return [TextTag(self.text)]
 
+
 class Number(Text):
-	"""Number widget inherits from text, contents are only int()'ed when needed"""	
+	"""Number widget inherits from text.
+	contents are only int()'ed when needed"""	
 	def __init__(self, parent, text, limits=(None,None)):
 		super(Number, self).__init__(parent, text)
 		self.text = str(text)
 		self.limits = limits
-		self.minus_button = Button(self, "-")
-		self.plus_button = Button(self, "+")
-		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
-		self.plus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
-		self.register_event_types('on_change')
+		self.minus = Button(self, "-")
+		self.plus = Button(self, "+")
 
 	def render(self):
-		return [WidgetTag('minus_button'), TextTag(self.text+" "), WidgetTag('plus_button')]
+		return [WidgetTag('minus_button'), TextTag(" "+self.text+" "), WidgetTag('plus_button')]
 	@property
 	def value(self):
 		return int(self.text)
-
+	@value.setter
+	def value(self, new):
+		self.text
+	
 	def inc(self):
 		if self.limits[1] == None or self.limits[1] > int(self.text):
 			self.text = str(int(self.text)+1)
