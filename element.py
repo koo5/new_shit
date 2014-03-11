@@ -34,9 +34,9 @@ class Element(event.EventDispatcher):
 		if self.__dict__.has_key('parent') and self.parent != None:
 			return self.parent.root
 		else:
-			log("root is "+str(self))
-			print self.__class__.__name__ 
-			#assert(self.__class__.__name__ == "Root")
+			#log("root is "+str(self))
+#			print self.__class__.__name__ 
+			assert(self.__class__.__name__ == "Root")
 			return self
 			
 	@property
@@ -52,12 +52,9 @@ class Element(event.EventDispatcher):
 			i.fix_relations()	
 	
 
-#	def is_active(self):
-#		return False
-
 	def menu(self):
-		return ([InfoMenuItem("element: " + str(self))] + 
-				(self.parent.menu() if self.parent else []))
+		return ((self.parent.menu() if self.parent else []) +
+				[InfoMenuItem("element: " + str(self))])
 
 	def menu_item_selected(self, item):
 		if self.parent:
@@ -66,11 +63,6 @@ class Element(event.EventDispatcher):
 	#def position(self):
 	#	return self.doc.positions[self]
 	
-	"""	def replace_with(self, item):
-		self.parent.children[
-				self.parent.children.values.index(self)
-			] = item
-	"""
-	
-	#def menu(self):
-	#	
+
+#	def is_active(self):
+#		return False
