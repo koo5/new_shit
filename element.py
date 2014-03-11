@@ -11,7 +11,7 @@ class Element(event.EventDispatcher):
 		self.brackets_color = (200,0,0)
 	
 	def on_keypress(self, event):
-		ping()
+#		ping()
 		return False
 		
 	def on_mouse_press(self, button):

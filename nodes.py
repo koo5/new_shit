@@ -15,6 +15,17 @@ import project
 
 
 
+
+
+import pyswip
+prolog = pyswip.Prolog()
+prolog.consult("wat.pl")
+node_works_as = pyswip.Functor("node_works_as", 2)
+
+
+
+
+
 #fuzzywuzzy , to help make sense of the error messages brought about by the __getattr__ madness
 #would work without fuzzywuzzy, but its a nice training, this module will later be handy anyway
 
@@ -67,7 +78,7 @@ def find_by_path(item, path):
 	return r
 
 def find_in(haystack, path):
-	ping()
+	#ping()
 	print_errors = False
 	assert(isinstance(haystack, (list, dict, element.Element)))
 	if len(path) == 0:
@@ -160,6 +171,13 @@ class Node(element.Element):
 				self.children[k] = new
 		new.parent = self
 
+
+
+	#to be moved to node
+	def scope_nodetypes(self):
+		x = self.root.find("modules/1/statements/items")
+		assert(x != None)
+		return x
 	
 #	def program(self):
 #		if isinstance(self, Program):
@@ -238,7 +256,13 @@ class Number(Node):
 	def render(self):
 		return [w('widget')]
 
-#bool
+class Bool(Node):
+	"""bool literal"""
+	def __init__(self, value):
+		super(Bool, self).__init__()
+		self.widget = widgets.Toggle(self, value)
+	def render(self):
+		return [w('widget')]
 
 
 
@@ -370,6 +394,8 @@ class SomethingNew(Node):
 class Placeholder(Node):
 	def __init__(self, types=None, description = "write here"):
 		super(Placeholder, self).__init__()
+		if types == None or len(types) == 0:
+			types = ['all']
 		self.types = types
 		self.description = description
 		self.textbox = widgets.ShadowedText(self, "", self.description)
@@ -379,13 +405,6 @@ class Placeholder(Node):
 
 	def render(self):
 		return [w('textbox')]
-
-
-	#to be moved to node
-	def scope(self):
-		x = self.root.find("modules/1/statements/items")
-		assert(x != None)
-		return x
 
 	
 	def menu(self):
@@ -402,26 +421,41 @@ class Placeholder(Node):
 
 		r += [it(SomethingNew(text))]
 
+		protos = {
+		'module': Module(Statements([Placeholder()])),
+		'while': While(Placeholder([], "bool"), 
+						Statements([Placeholder([], "statement")])),
+		'bool': Bool(False),
+		'note': Note(text),
+		'todo': Todo(text),
+		'idea': Idea(text),
+		'assignment': Assignment(Placeholder([SomethingNew, VariableDeclaration]),Placeholder([VariableDeclaration, 'expression']))
+		}
+
+
+		X = pyswip.Variable()
+		for t in self.types:
+			q = pyswip.Query(node_works_as(X, t))
+			while q.nextSolution():
+				v = str(X.value)
+				print v
+				r += [it(protos[v])]
+		q.closeQuery()
+
+#Program(Statements([Placeholder()])))] #fix SyntaxDef
 		#variables, functions
-		for i in self.scope():
-			if isinstance(i, VariableDeclaration):
-				r += [it(VariableReference(i))]
-			if isinstance(i, FunctionDefinition):
-				r += [it(FunctionCall(i))]
+#		for i in self.scope():
+#			if isinstance(i, VariableDeclaration):
+#				r += [it(VariableReference(i))]
+#			if isinstance(i, FunctionDefinition):
+#				r += [it(FunctionCall(i))]
 
 		#1: node types
 		#r += [it(x) for x in self.scope()]
 
-#		r += [it(Program(Statements([Placeholder()])))] #fix SyntaxDef
-		r += [it(Module(Statements([Placeholder()])))]
-		
-		r += [it(While(Placeholder([], "condition"), 
-						Statements([Placeholder([], "statement")])))]
-		
-		r += [it(Note(text)), it(Todo(text)), it(Idea(text))]
+#add best
+#add all
 
-		r += [it(Assignment(Placeholder([SomethingNew, VariableDeclaration]),
-							Placeholder([VariableDeclaration, 'expression'])))]
 				
 		#2: calls, variables..
 		
@@ -434,7 +468,9 @@ class Placeholder(Node):
 
 		#sort:
 		
-		r.sort(key = self.fits)
+		#r.sort(key = self.fits)
+		
+		
 		
 
 		return r	
@@ -879,5 +915,53 @@ class SemanticizedGoogle
 
 
 """	
+
+"""
+pyDatalog.create_terms('link, can_reach, X, Y, Z, Number, Text, CollapsibleText')
++link(Number, Text)
++link(Text, CollapsibleText)
+link(X,Y) <= link(Y,X)
+
+
+# can Y be reached from X ?
+can_reach(X,Y) <= link(X,Y) # direct link
+# via Z
+can_reach(X,Y) <= link(X,Z) & can_reach(Z,Y) & (X!=Y)
+
+
+print (can_reach(Number,Y))
+
+
+#pyDatalog.create_terms('works_as')
+#works_as(Assignment, 'assignment')
+#sum([])
+
+
+works_as(Number, 'expression')
++works_as(Bool, 'bool')
++works_as(Equals, 'bool')
++works_as('expression', 'statement')
++works_as(X, Y): works_as(X, Z) and works_as(Z, Y)
++would_work_as(
++---------------------------------------------------------
++Assignment, assignment
++assignment, statement
++Number number
++Bool bool
++number expression
++bool expression
++Equality bool
++would_work_as(number, bool)?
++would_work_as(X, Y):-
++       would_work_as(Z, Y),
++       in_syntax(Z,X).
++
++       would_work_as(
++works_as('expression', 'statement')
++works_as(X, Y): works_as(X, Z) and works_as(Z, Y)
+
+
+"""
+
 
 

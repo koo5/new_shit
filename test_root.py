@@ -50,7 +50,7 @@ def test_root():
 						SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end.")])
 					]), name = "syntaxes for builtins"),
 					
-					#Module(Statements(builtins()), name = "builtins"),
+					Module(Statements(builtins()), name = "builtins"),
 
 					Module(Statements([
 						Note("stupid, but gotta start somewhere"),
@@ -99,11 +99,10 @@ def test_root():
 #prototypes?
 
 def builtins():
-	#todo:define the tree structure here
 	return [NodeTypeDeclaration(x) for x in [
 			Text, Number, Dict, List, CollapsibleText, Statements,
 			VariableReference, Placeholder, Clock, SyntaxDef,
-			Program, Module, FunctionDefNode, ShellCommand,
+			Program, Module, ShellCommand,
 			Root, While, Note, Todo, Idea]]
 
 

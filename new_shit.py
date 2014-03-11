@@ -318,9 +318,10 @@ def change_font_size(setting):
 change_font_size(None)
 render()
 
-t = find('settings/fullscreen')
-if t:
-	t.push_handlers(on_change = toggle_fullscreen)
+
+#t = find('settings/fullscreen')
+#if t:
+#	t.push_handlers(on_change = toggle_fullscreen)
 
 t = find('settings/font size')
 if t:
