@@ -12,6 +12,9 @@ wish: structured scribbles
 #import cProfile
 import pygame, sys
 from pygame import gfxdraw, font, image, display
+import argparse
+
+
 
 from logger import bt, log, ping
 import project
@@ -24,6 +27,15 @@ from nodes import find_by_path
 if __debug__:
 	import element as asselement
 	import nodes as assnodes
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--mono', action='store_true',
+                   help='no colors, just black and white')
+args = parser.parse_args()
+
+
 
 flags = pygame.RESIZABLE
 screen_surface = None
@@ -86,7 +98,7 @@ def toggle_fullscreen():
 
 def set_mode():
 	global screen_surface
-	screen_surface = pygame.display.set_mode((1000,500), flags + (pygame.FULLSCREEN if find('settings/fullscreen/value') else 0))
+	screen_surface = pygame.display.set_mode((1000,500), flags)# + (pygame.FULLSCREEN)) if find('settings/fullscreen/value') else 0))
 
 def first_nonblank():
 	r = 0
@@ -298,11 +310,16 @@ icon = image.load('icon32x32.png')
 display.set_icon(icon) #doesnt work..why?
 display.set_caption('lemon party')
 
+
+
 root = test_root.test_root()
-
 cursor_c = cursor_r = 0
-
 set_mode()
+
+
+find('settings/colors/monochrome').value = args.mono
+
+
 
 font_width = font_height = font = None
 def change_font_size(setting):

@@ -20,9 +20,17 @@ import project
 import pyswip
 prolog = pyswip.Prolog()
 prolog.consult("wat.pl")
-node_works_as = pyswip.Functor("node_works_as", 2)
+pl_node_works_as = pyswip.Functor("node_works_as", 2)
 
-
+def works_as(y):
+	r = []
+	X = pyswip.Variable()
+	q = pyswip.Query(pl_node_works_as(X, y))
+	while q.nextSolution():
+		r += [str(X.value)]
+	q.closeQuery()
+	print r
+	return r
 
 
 
@@ -78,8 +86,8 @@ def find_by_path(item, path):
 	return r
 
 def find_in(haystack, path):
-	#ping()
-	print_errors = False
+	debug = False
+	if debug: ping()
 	assert(isinstance(haystack, (list, dict, element.Element)))
 	if len(path) == 0:
 		return haystack
@@ -96,28 +104,28 @@ def find_in(haystack, path):
 						ch = find_in(child, rest)
 						if ch: r = ch
 				except Exception as e:
-					if print_errors: print e
+					if debug: print e
 					pass
 		except Exception as e:
-			if print_errors: print e
+			if debug: print e
 			pass
 	
 	if isinstance(needle, str):
 		try:
 			r = getattr(haystack, needle)
 		except Exception as e:
-			if print_errors: print e
+			if debug: print e
 			try:
 				r = haystack[needle]
 			except Exception as e:
-				if print_errors: print e
+				if debug: print e
 				pass
 			
 	if isinstance(needle, int):
 		try:
 			r = haystack[needle]
 		except Exception as e:
-			if print_errors: print e
+			if debug: print e
 			pass
 
 	if r != None and len(path) > 1:
@@ -417,32 +425,30 @@ class Placeholder(Node):
 		if text.isdigit():
 			r += [it(Number(text))]
 
-		r += [it(Text(text))]
-
+		#r += [it(Text(text))]
 		r += [it(SomethingNew(text))]
 
 		protos = {
 		'module': Module(Statements([Placeholder()])),
 		'while': While(Placeholder([], "bool"), 
-						Statements([Placeholder([], "statement")])),
+						Statements([Placeholder(['statement'], "statement")])),
 		'bool': Bool(False),
+		'text': Text(text),
+		'number': Number(text),
 		'note': Note(text),
 		'todo': Todo(text),
 		'idea': Idea(text),
-		'assignment': Assignment(Placeholder([SomethingNew, VariableDeclaration]),Placeholder([VariableDeclaration, 'expression']))
+		'assignment': Assignment(Placeholder([SomethingNew, VariableDeclaration]),Placeholder([VariableDeclaration, 'expression'])),
+		'program': Program(Statements([Placeholder(['statement'])])),
+		'islessthan': IsLessThan(Placeholder(['number']),Placeholder(['number']))
 		}
-
-
-		X = pyswip.Variable()
+		#for k,v in protos.iteritems():
+		#	v.parent = self
+		protos['program'].syntax_def = self.root.find('modules/items/0/statements/items/0')
+		
 		for t in self.types:
-			q = pyswip.Query(node_works_as(X, t))
-			while q.nextSolution():
-				v = str(X.value)
-				print v
-				r += [it(protos[v])]
-		q.closeQuery()
+				r += [it(protos[v]) for v in works_as(t)]
 
-#Program(Statements([Placeholder()])))] #fix SyntaxDef
 		#variables, functions
 #		for i in self.scope():
 #			if isinstance(i, VariableDeclaration):
@@ -560,10 +566,10 @@ class WithDef(Node):
 
 class Program(WithDef):
 	def __init__(self, statements, name="unnamed", author="banana", date_created="1.1.1.1111"):
-		super(Program, self).__init__(syntax_def = "fix")
+		super(Program, self).__init__(syntax_def = None)
 		
 		assert isinstance(statements, Statements)
-		self.sys=__import__("sys")
+		#self.sys=__import__("sys")
 
 		self.setch('statements', statements)
 		self.setch('name', widgets.Text(self, name))
@@ -689,16 +695,33 @@ class Assignment(Syntaxed):
 		self.setch('right', right)
 
 
+class RootTypeDeclaration(Syntaxed):
+	def __init__(self):
+		super(RootTypeDeclaration, self).__init__()
+		self.syntaxes=[[t("Values have types, every type derives from RootType.")]]
 
-"""
 
-class IsLessThan(Templated):
+class Subtype(Syntaxed):
+	def __init__(self, left, right):
+		super(Subtype,self).__init__()
+		assert(isinstance(left, SomethingNew))
+		assert(right.__class__.tolower() in works_as('type'))
+		self.syntaxes=[[ch("left"), t("is a kind of"), ch("right")]]
+		self.setch('left', left)
+		self.setch('right', right)
+
+
+
+class IsLessThan(Syntaxed):
 	def __init__(self, left, right):
 		super(IsLessThan,self).__init__()
 
-		self.templates=[template([child("left"), t(" < "), child("right")])]
-		self.set('left', left)
-		self.set('right', right)
+		self.syntaxes=[[ch("left"), t(" < "), ch("right")]]
+		self.setch('left', left)
+		self.setch('right', right)
+
+
+"""
 		
 
 class Print(Templated):

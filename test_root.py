@@ -6,15 +6,18 @@ import the_doc
 def test_root():
 	r = Root(Dict([
 			(
-#			"placeholder test", Statements([Placeholder(types = [Node]),Placeholder(types = [Node])])
-#			),(
-#			"text widget test", widgets.Text(None, "Test me out!")
-#			),(
-#			"intro", Text("""hello...""")
-#			),(
+			#"placeholder test", Statements([Placeholder(types = [Node]),Placeholder(types = [Node])])
+			#),(
+			#"text widget test", widgets.Text(None, "Test me out!")
+			#),(
+			#"intro", Text("""hello...""")
+			#),(
 			"programs", List([
-				Program(Statements([
-					Placeholder([], "statement")#,
+				Program(Statements([Placeholder(['statement'])]))
+			])
+			
+				#Program(Statements([
+					#Placeholder([], "statement")#,
 					#FunctionDefinition(name = Text("substring")),
 					#Asignment(Text("a"), Number(1)),
 					#Asignment(Text("b"), Number(5)), 
@@ -26,8 +29,8 @@ def test_root():
 					#If(IsLessThan(VariableRead("a"), Number(4)),
 					#	Statements([Print(Text("hi!\n"))]))
 				#	For(VariableDeclaration("item")
-						
-				]), "hello world2", "koo5")]) #semanticize koo5:)
+				#]), "hello world2", "koo5")]) #semanticize koo5:)
+			
 			#),(
 			
 			#),
@@ -62,21 +65,22 @@ def test_root():
 					Placeholder([Module], "new module") 
 				], False)
 			),(
-			"toolbar", List(
+			"docs", the_doc.the_doc()
+			),(
+
+			"tools", List(
 				[
 				toolbar.SetAllSyntaxesToZero(),
 				Clock()
 				#save, load
 				], False)
 			),(
-			"docs", the_doc.the_doc()
-			),(
 			"settings", Dict([
 				("webos hack", widgets.Toggle(None, False)),
 				("font size", settings.FontSize(18)),
 				#("fullscreen", widgets.Toggle(None, False)),
 				("colors", Dict([
-					("monochrome", widgets.Toggle(None, True)),
+					("monochrome", widgets.Toggle(None, False)),
 					("invert", widgets.Toggle(None, False)),
 					("background", Dict([
 						("R", widgets.Number(None, 0, (0, 255))),
@@ -84,13 +88,15 @@ def test_root():
 						("B", widgets.Number(None, 0, (0, 255)))]))
 				])),
 				("sdl key repeat", settings.KeyRepeat()),
-				], False)
+				], True)
 			)
 
 			
 			]))
 	
-	for p in r.children['items'].items["programs"]: #the Program objects
+	for p in r.children['items'].items["programs"]:
+		#the Program objects
+		print p
 		p.syntax_def = r.children['items'].items['modules'][0].children['statements'][0]
 	
 	r.fix_relations()

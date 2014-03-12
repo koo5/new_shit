@@ -93,7 +93,7 @@ def the_doc():
 		
 		)
 		,ReadmeGenerator()
-	])
+	], False)
 
 
 

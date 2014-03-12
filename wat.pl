@@ -1,4 +1,6 @@
 
+node(roottype).
+node(subtype).
 node(while).
 node(note).
 node(todo).
@@ -8,8 +10,16 @@ node(module).
 node(bool).
 node(number).
 node(text).
+node(program).
+node(islessthan).
 
-#works_as(number, expression).
+works_as(islessthan, expression).
+
+works_as(roottype, type).
+works_as(subtype, type).
+
+works_as(text, expression).
+works_as(number, expression).
 works_as(bool, expression).
 works_as(expression, statement).
 works_as(while, statement).
@@ -28,6 +38,9 @@ works_ass(X, Y):-
 
 node_works_as(X, Y):-
 	works_ass(X, Y),
+	node(X).
+
+node_works_as(X, X):-
 	node(X).
 
 /*
