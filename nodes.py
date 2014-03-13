@@ -400,11 +400,12 @@ class SomethingNew(Node):
 
 
 class Placeholder(Node):
-	def __init__(self, types=None, description = "write here"):
+	def __init__(self, types=None, description = None):
 		super(Placeholder, self).__init__()
 		if types == None or len(types) == 0:
 			types = ['all']
 		self.types = types
+		if description == None: description = str(types)
 		self.description = description
 		self.textbox = widgets.ShadowedText(self, "", self.description)
 		self.brackets_color = (0,255,0)
@@ -438,12 +439,14 @@ class Placeholder(Node):
 		'note': Note(text),
 		'todo': Todo(text),
 		'idea': Idea(text),
-		'assignment': Assignment(Placeholder([SomethingNew, VariableDeclaration]),Placeholder([VariableDeclaration, 'expression'])),
+		'assignment': Assignment(Placeholder([SomethingNew, VariableReference]),Placeholder([VariableReference, 'expression'])),
 		'program': Program(Statements([Placeholder(['statement'])])),
-		'islessthan': IsLessThan(Placeholder(['number']),Placeholder(['number']))
+		'islessthan': IsLessThan()
 		}
+		
 		#for k,v in protos.iteritems():
 		#	v.parent = self
+		
 		protos['program'].syntax_def = self.root.find('modules/items/0/statements/items/0')
 		
 		for t in self.types:
@@ -712,13 +715,22 @@ class Subtype(Syntaxed):
 
 
 
-class IsLessThan(Syntaxed):
-	def __init__(self, left, right):
-		super(IsLessThan,self).__init__()
 
+class NewStyle(Syntaxed):
+	def __init__(self):
+		super(NewStyle,self).__init__()
+		self.types = {}
+	
+	def child(self, name, types):
+		self.setch(name, Placeholder(types))
+		self.types[name] = types
+
+class IsLessThan(NewStyle):
+	def __init__(self):
+		super(IsLessThan,self).__init__()
 		self.syntaxes=[[ch("left"), t(" < "), ch("right")]]
-		self.setch('left', left)
-		self.setch('right', right)
+		self.child('left', ['number'])
+		self.child('right', ['number'])
 
 
 """
