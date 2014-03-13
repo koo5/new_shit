@@ -450,7 +450,22 @@ class Placeholder(Node):
 		protos['program'].syntax_def = self.root.find('modules/items/0/statements/items/0')
 		
 		for t in self.types:
-				r += [it(protos[v]) for v in works_as(t)]
+			for v in works_as(t):
+				x = protos[v]
+				if isinstance(x, Syntaxed):
+					for s in x.syntaxes:
+						#print s
+						tag = s[0]
+						if isinstance(tag, tags.TextTag):
+							if text in tag.text:
+								print x
+								if not protos[v] in [i.value for i in r]:
+									r += [it(x)]
+
+		for t in self.types:
+			for v in works_as(t):
+				if not protos[v] in [i.value for i in r]:
+					r += [it(protos[v])]
 
 		#variables, functions
 #		for i in self.scope():
