@@ -349,7 +349,7 @@ class List(Collapsible):
 		return self.items[i]
 
 	def replace_child(self, child, new):
-		ping()
+		#ping()
 		assert(child in self.items)
 		self.items[self.items.index(child)] = new
 		new.parent = self

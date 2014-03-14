@@ -14,7 +14,8 @@ import pygame, sys
 from pygame import gfxdraw, font, image, display
 import argparse
 
-
+pygame.display.init()
+pygame.font.init()
 
 from logger import bt, log, ping
 import project
@@ -23,6 +24,8 @@ import tags as tags_module
 import colors
 from menu import Menu
 from nodes import find_by_path
+import nodes
+
 
 if __debug__:
 	import element as asselement
@@ -33,6 +36,8 @@ if __debug__:
 parser = argparse.ArgumentParser()
 parser.add_argument('--mono', action='store_true',
                    help='no colors, just black and white')
+parser.add_argument('--webos', action='store_true',
+                   help='webos keys hack')
 args = parser.parse_args()
 
 
@@ -293,6 +298,8 @@ def bye():
 	log("deading")
 	pygame.display.iconify()
 	sys.exit()
+	#the fuck..
+	nodes.pyswip.prolog._original_sys_exit()
 
 def loop():
 	process_event(pygame.event.wait())
@@ -300,8 +307,6 @@ def loop():
 
 
 
-pygame.display.init()
-pygame.font.init()
 
 pygame.time.set_timer(pygame.USEREVENT, 100)
 
