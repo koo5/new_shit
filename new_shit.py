@@ -58,7 +58,7 @@ def render():
 	global lines, cached_root_surface
 	log("render")	
 	cache_colors()
-	project._width = screen_surface.get_width() / font_width
+	project._width = screen_surface.get_width() / font_width / 2
 	project._indent_width = 4
 	lines = project.project(root)
 	

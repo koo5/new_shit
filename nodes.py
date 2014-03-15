@@ -397,6 +397,125 @@ class SomethingNew(Node):
 
 
 
+class placeholder(object):
+	def __init__(self, types=None):
+		super(Placeholder, self).__init__()
+		if types == None or len(types) == 0:
+			types = ['all']
+		self.types = types
+		self.description = str(types)
+		self.brackets_color = (0,255,0)
+
+	def menu(self):
+		text = self.textbox.text
+		#r = [InfoMenuItem("insert:")]
+		it = PlaceholderMenuItem
+
+		r = []
+
+		if text.isdigit():
+			r += [it(Number(text))]
+
+		#r += [it(Text(text))]
+		r += [it(SomethingNew(text))]
+
+		protos = {
+		'module': Module(Statements([Placeholder()])),
+		'while': While(Placeholder([], "bool"), 
+						Statements([Placeholder(['statement'], "statement")])),
+		'bool': Bool(False),
+		'text': Text(text),
+		'number': Number(text),
+		'note': Note(text),
+		'todo': Todo(text),
+		'idea': Idea(text),
+		'assignment': Assignment(Placeholder([SomethingNew, VariableReference]),Placeholder([VariableReference, 'expression'])),
+		'program': Program(Statements([Placeholder(['statement'])])),
+		'islessthan': IsLessThan()
+		}
+		
+		#for k,v in protos.iteritems():
+		#	v.parent = self
+		
+		protos['program'].syntax_def = self.root.find('modules/items/0/statements/items/0') #mess
+		
+		#first add nodes with matching text in syntax
+		for t in self.types:
+			for v in works_as(t):
+				x = protos[v]
+				if isinstance(x, Syntaxed):
+					for s in x.syntaxes:
+						#print s
+						tag = s[0]
+						if isinstance(tag, tags.TextTag):
+							if text in tag.text:
+								print x
+								if not protos[v] in [i.value for i in r]:
+									r += [it(x)]
+									#todo: highlight the matching text, somehow
+
+		#now add all remaining nodes
+		for t in self.types:
+			for v in works_as(t):
+				if not protos[v] in [i.value for i in r]:
+					r += [it(protos[v])]
+
+		#variables, functions
+#		for i in self.scope():
+#			if isinstance(i, VariableDeclaration):
+#				r += [it(VariableReference(i))]
+#			if isinstance(i, FunctionDefinition):
+#				r += [it(FunctionCall(i))]
+
+		#1: node types
+		#r += [it(x) for x in self.scope()]
+
+#add best
+#add all
+
+				
+		#2: calls, variables..
+		
+		#filter by self.types:
+		
+		#preferred types:
+		#r += expand_types(self.types)
+		#all types
+		#r += expand_types('all') - expand_types(self.types)
+
+		#sort:
+		
+		#r.sort(key = self.fits)
+		
+		
+		
+
+		return r	
+		
+		
+	def fits(self, item):
+		for t in self.types:
+			if isinstance(item, t):
+				return 1
+		return 0
+		
+
+	def menu_item_selected(self, item):
+		if not isinstance(item, PlaceholderMenuItem):
+			log("not PlaceholderMenuItem")
+			return
+		v = item.value
+		if v == None:
+			log("no value")
+		elif isinstance(v, NodeTypeDeclaration):
+			x = v.type()
+		elif isinstance(v, Node):
+			x = v
+#		elif isinstance(v, type):
+#			x = v()
+		self.parent.replace_child(self, x)
+
+
 class Placeholder(Node):
 	def __init__(self, types=None, description = None):
 		super(Placeholder, self).__init__()
