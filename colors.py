@@ -1,7 +1,7 @@
-invert = monochrome = bg = "cache me"
+#invert = monochrome = bg = "cache me"
 
 def cache(settings):
-	global invert, monochrome, bg
+	global invert, monochrome, bg, fg, cursor
 	
 	invert = settings.find('invert/value')
 	monochrome = settings.find('monochrome/value')
@@ -16,6 +16,9 @@ def cache(settings):
 	
 	assert(isinstance(bg, tuple))
 	assert(len(bg) == 3)
+
+	cursor = fg = modify((255,255,255))
+	
 
 
 def modify(c, max=255):

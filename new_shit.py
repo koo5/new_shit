@@ -46,16 +46,18 @@ flags = pygame.RESIZABLE
 screen_surface = None
 cached_root_surface = None
 lines = []
-menu = Menu()
+
 
 def find(x):
 	return root.find(x)
 
+def cache_colors():
+	colors.cache(root.items['settings']['colors'])
 
 def render():
 	global lines, cached_root_surface
 	log("render")	
-	colors.cache(root.items['settings']['colors'])
+	cache_colors()
 	project._width = screen_surface.get_width() / font_width
 	project._indent_width = 4
 	lines = project.project(root)
@@ -270,7 +272,7 @@ def draw_cursor():
 	x, y, y2 = cursor_xy()
 	gfxdraw.vline(screen_surface, 
 			x, y, y2,    		
-			colors.modify((255,255,255,255)))
+			colors.modify(colors.cursor))
 
 #def draw_bg():
 #	screen_surface.fill((255,0,0))#bg_color())
@@ -278,7 +280,7 @@ def draw_cursor():
 
 def draw_menu():
 	#x,_,y2 = cursor_xy()
-	x, y2 = screen_surface.get_width() / 2,0
+	x, y2 = screen_surface.get_width() / 2, 0
 	menu.draw(screen_surface,
 		{'font':font, 'width':font_width, 'height':font_height},
 		x, y2, #position
@@ -298,8 +300,7 @@ def bye():
 	log("deading")
 	pygame.display.iconify()
 	sys.exit()
-	#the fuck..
-	nodes.pyswip.prolog._original_sys_exit()
+	nodes.pyswip.prolog._original_sys_exit()	#the fuck..
 
 def loop():
 	process_event(pygame.event.wait())
@@ -308,16 +309,15 @@ def loop():
 
 
 
-pygame.time.set_timer(pygame.USEREVENT, 100)
-
-icon = image.load('icon32x32.png')
-#print icon
-display.set_icon(icon) #doesnt work..why?
 display.set_caption('lemon party')
+icon = image.load('icon32x32.png')
+display.set_icon(icon)
 
 
 
 root = test_root.test_root()
+cache_colors()
+menu = Menu()
 cursor_c = cursor_r = 0
 set_mode()
 
@@ -363,6 +363,7 @@ draw()
 
 
 
+pygame.time.set_timer(pygame.USEREVENT, 100) #poll for SIGINT
 def main():
 	while True:
 		try:

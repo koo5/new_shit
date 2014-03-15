@@ -10,9 +10,7 @@ from menu import MenuItem, InfoMenuItem
 import tags
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
 import project
-
-
-
+import colors
 
 
 
@@ -34,6 +32,7 @@ def works_as(y):
 
 
 
+
 #fuzzywuzzy , to help make sense of the error messages brought about by the __getattr__ madness
 #would work without fuzzywuzzy, but its a nice training, this module will later be handy anyway
 
@@ -42,6 +41,9 @@ try:
 	from fuzzywuzzy import process as fuzzywuzzyprocess
 except:
 	fuzzywuzzyprocess = None
+
+
+
 
 class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(AttributeError):
 	def __init__(self, wanted, obj):
@@ -54,8 +56,6 @@ class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(Attribute
 			assert(isinstance(self.obj, Node))
 			r += "children: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, [x for x in self.obj.children], limit=10, score_cutoff=50)]) + "..."
 		return r
-
-
 
 
 
@@ -133,8 +133,6 @@ def find_in(haystack, path):
 	else:
 		return r
 
-
-#	if isinstance(needle, int): log("out of range?")
 
 
 
@@ -547,7 +545,7 @@ class PlaceholderMenuItem(MenuItem):
 				sur = font['font'].render(
 					char[0],False,
 					char[1]['color'],
-					menu.bg)
+					colors.bg)
 				s.blit(sur,(chx,chy))
 				area = area.union((chx, chy, sur.get_rect().w, sur.get_rect().h+2))
 		return area
