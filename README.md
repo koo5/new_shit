@@ -1,13 +1,22 @@
+getting started
+===
+#requires pygame, swi-prolog and pyswip: 
+apt-get install python-pygame swi-prolog
+#and
+pip install --user pyswip
+
+run new_shit.py, or faster.sh if things are slow for you (disables assertions)
+if the latest commit doesnt run, git checkout HEAD^ until you find one that does
+
+once the program starts, you can press right arrow to get over the [statement] placeholder, 
+a menu should appear, you can type something in. the menu reacts to CTRL with up and down 
+arrow and RETURN. that kinda shows everything there is to the program at the moment!
+
+
 
 intro
 ===
-#requires pygame: 
-apt-get install python-pygame
-#or
-pip install --user pygame
-
 talk to us in #lemonparty on freenode (hey, we are already 2 there!)
-
 background noise:  http://goo.gl/jesK0R
 
 
@@ -21,39 +30,6 @@ your contributions will be regarded as shared with this future license.
 (in legalese: all your contributions are MINE, untill the license is developed
 into proper legalese)
 
-
-
-bzbzbz
-===
-
-"""
-node
-astnode
-dummy
-widget
-token
-tag
-"""
-
-menu -> records of user interaction
-
-
-
-
-coupling to <del>pyglet</del>pygame
-===
-* using <b>pyglets<b> event module (standalone, copied out)
-* frontend uses pyglet (duh)
-* nodes handle pyglet events
-* pyglet makes keypresses into on_text, on_text_motion and on_key_press
-* frontend is divisible from backend, just pass around tags and events
-
-
-more todo ideas
-===
-* maybe when the language can handle it, move color settings to it,
-add some gradient animation
-* credits
 
 
 
