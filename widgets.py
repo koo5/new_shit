@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-import pyglet, pygame
+import pygame
 import element
 from logger import log, ping
 from tags import TextTag, ColorTag, EndTag, WidgetTag
