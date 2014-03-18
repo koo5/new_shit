@@ -23,9 +23,15 @@ def the_doc():
 				actually, a lot of that module isnt needed at all
 				"""),
 				Todo("save/load nodes")
+				
 			),
 					
 			Chapter("notes", """
+				dont pursue the NodeReference "xpath" stuff, leave it for lemon. although:
+				https://code.google.com/p/asq/
+				
+				connection to jena: http://code.google.com/p/python-graphite/
+				
 				compilation > interpreter, for this bootstrap
 				this thing may be falling apart, but lets see if it can compile itself
 				1 interaction
