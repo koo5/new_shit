@@ -364,16 +364,19 @@ class List(Collapsible):
 #		elif e.key == pygame.K_DELETE:
 		if e.key == pygame.K_RETURN:
 			ping()
-			for i, item in enumerate(self.items):
-				print i, item, item._render_start_line, item._render_start_char
-				
-				if (item._render_start_line >= e.cursor[1] and
-					item._render_start_char >= e.cursor[0]):
-					p = Placeholder(self.types)
-					p.parent = self
-					self.items.insert(i, p)
-					break
+			pos = self.insert_pos(e.cursor)
+			p = Placeholder(self.types)
+			p.parent = self
+			self.items.insert(pos, p)
 			return True
+
+	def insert_pos(self, (char, line)):
+		for i, item in enumerate(self.items):
+			#print i, item, item._render_start_line, item._render_start_char			
+			if (item._render_start_line >= line and
+				item._render_start_char >= char):
+				return i
+		return i + 1
 
 
 

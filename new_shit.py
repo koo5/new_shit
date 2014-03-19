@@ -193,20 +193,8 @@ def updown_cursor(count):
 
 
 def keypress(event):
-	element, pos = under_cursor(), element_char_index()
-
-	e = KeypressEvent(event, pos, (cursor_c, cursor_r))
-#	log(event)
-#	
-	while element != None and not element.on_keypress(e):
-		element = element.parent
-	
-	if element != None:#somebody handled it
-		move_cursor(root.post_render_move_caret)
-		root.post_render_move_caret = 0
-
-	elif menu == None or not menu.keypress(e):
-		top_keypress(e)
+	pos = element_char_index()
+	handle(KeypressEvent(event, pos, (cursor_c, cursor_r)))
 		
 	render()
 	if under_cursor():
@@ -217,6 +205,19 @@ def keypress(event):
 		menu.items = []
 	draw()
 
+def handle(e):
+	if menu != None and menu.keypress(e):
+		return
+
+	element = under_cursor()
+	while element != None and not element.on_keypress(e):
+		element = element.parent	
+	if element != None:#some element handled it
+		move_cursor(root.post_render_move_caret)
+		root.post_render_move_caret = 0
+		return
+
+	top_keypress(e)
 	
 
 def mousedown(e):
