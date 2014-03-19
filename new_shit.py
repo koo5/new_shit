@@ -158,12 +158,13 @@ def top_keypress(event):
 		cursor_c = len(lines[cursor_r])
 
 class KeypressEvent(object):
-	def __init__(self, e, pos):
+	def __init__(self, e, pos, cursor):
 		self.uni = e.unicode
 		self.key = e.key
 		self.mod = e.mod
 		self.pos = pos
 		self.all = pygame.key.get_pressed()
+		self.cursor = cursor
 		
 		h = find("settings/webos hack")
 		if h:
@@ -194,7 +195,7 @@ def updown_cursor(count):
 def keypress(event):
 	element, pos = under_cursor(), element_char_index()
 
-	e = KeypressEvent(event, pos)
+	e = KeypressEvent(event, pos, (cursor_c, cursor_r))
 #	log(event)
 #	
 	while element != None and not element.on_keypress(e):

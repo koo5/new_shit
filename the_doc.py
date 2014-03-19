@@ -11,6 +11,7 @@ def the_doc():
 		Chapter("development", 
 			Chapter("todo",	
 				Todo("strip leading tabs from text of Notes"),
+				Todo("scrolling"),
 				Todo("""bool, syntaxed, how? enum,
 				True and False separate atoms with syntaxes?
 				"""),

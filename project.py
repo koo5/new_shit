@@ -96,6 +96,9 @@ def _project(lines, elem, atts, indent, visualize_elements):
 	#now real stuff
 		#recurse
 		if isinstance(tag, ElementTag):
+			tag.element._render_start_line = len(lines) - 1
+			tag.element._render_start_char = len(lines[-1])
+			
 			_project(lines, tag.element, atts, indent, visualize_elements)
 
 		#attributes
