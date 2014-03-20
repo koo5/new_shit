@@ -155,7 +155,6 @@ def make_protos(root, text):
 		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),
 		'functiondefinition': FunctionDefinition(FunctionSignature([Placeholder(['argumentdefinition', 'text'])]), Statements([Text("body")])),
 		'argumentdefinition': ArgumentDefinition()
-		#'functioncall': 
 		}
 		
 	r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
@@ -210,10 +209,14 @@ class Node(element.Element):
 
 
 	#to be moved to node
-	def scope_nodetypes(self):
-		x = self.root.find("modules/1/statements/items")
-		assert(x != None)
-		return x
+	def scope(self):
+		r = []
+		for m in self.root.find("modules/items"):
+			print m
+			if isinstance(m, Module):
+				r += m.find("statements/items")
+		assert(r != None)
+		return r
 	
 #	def program(self):
 #		if isinstance(self, Program):
@@ -483,21 +486,26 @@ class Placeholder(Node):
 		#first the preferred types
 		for t in self.types:
 			for v in works_as(t):
-				x = protos[v]
-				if isinstance(x, Syntaxed):
-					for s in x.syntaxes:
-						#print s
-						tag = s[0]
-						if isinstance(tag, tags.TextTag):
-							if text in tag.text:
-								print x
-								if not protos[v] in [i.value for i in r]:
-									r += [it(x)]
+				if protos.has_key(v):
+					x = protos[v]
+					if isinstance(x, Syntaxed):
+						for s in x.syntaxes:
+							#print s
+							tag = s[0]
+							if isinstance(tag, tags.TextTag):
+								if text in tag.text:
+									print x
+									if not protos[v] in [i.value for i in r]:
+										r += [it(x)]
+				elif v == 'functioncall':
+					for i in self.scope():
+						if isinstance(i, FunctionDefinition):
+							r += [it(FunctionCall(i))]
 
 		#then add the rest
 		for t in self.types:
 			for v in works_as(t):
-				if not protos[v] in [i.value for i in r]:
+				if protos.has_key(v) and not protos[v] in [i.value for i in r]:
 					r += [it(protos[v])]
 
 		#variables, functions
@@ -802,15 +810,15 @@ class FunctionCall(Syntaxed):
 		super(FunctionCall, self).__init__()
 		assert isinstance(definition, FunctionDefinition)
 		self.definition = definition
-		self.arguments = List([Placeholder() for x in range(self.definition.signature.items.items)], vertical=False) #todo:filter out Texts
+		self.arguments = List([Placeholder() for x in range(len(self.definition.signature.items.items))], vertical=False) #todo:filter out Texts
 
 	def render(self):
 		r = [t('(call)')]
 		for i in self.definition.signature.items:
 			if isinstance(i, Text):
-				r += [i]
+				r += [t(i.widget.text)]
 			elif isinstance(i, ArgumentDefinition):
-				r += [self.arguments.items[i]]
+				r += [ElementTag(self.arguments.items[i])]
 
 		return r
 

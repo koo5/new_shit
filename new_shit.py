@@ -340,8 +340,6 @@ def change_font_size(setting):
 	font_width, font_height = font.size("X")
 
 change_font_size(None)
-render()
-
 
 #t = find('settings/fullscreen')
 #if t:
@@ -362,12 +360,15 @@ if t:
 #List should have its own menu
 
 t = find("programs/items/0")
+print t.menu()
+print t.menu()[0].value
 t.menu_item_selected(
 	[i for i in t.menu() 
 		if (isinstance(i, nodes.PlaceholderMenuItem) 
 		and isinstance(i.value, nodes.Program))][0])
 
 
+render()
 
 
 #t = project.find(find('placeholder test/0'), lines)
