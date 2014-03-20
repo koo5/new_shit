@@ -136,6 +136,33 @@ def find_in(haystack, path):
 
 
 
+
+
+
+def make_protos(root, text):
+	r = {'module': Module(Statements([Placeholder()])),
+		'while': While(Placeholder([], "bool"), 
+						Statements([Placeholder(['statement'], "statement")])),
+		'bool': Bool(False),
+		'text': Text(text),
+		'number': Number(text),
+		'note': Note(text),
+		'todo': Todo(text),
+		'idea': Idea(text),
+		'assignment': Assignment(Placeholder([SomethingNew, VariableReference]),Placeholder([VariableReference, 'expression'])),
+		'program': Program(Statements([Placeholder(['statement'])])),
+		'islessthan': IsLessThan(),
+		'type': Type(SomethingNew(text), SomethingNew("?"))
+		}
+		
+	r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
+
+	return r
+
+
+
+
+
 #a node is more than an element, it keeps track of its children with a dict.
 #in the editor, nodes can be cut'n'pasted around on their own, which wouldnt
 #make sense for widgets
@@ -417,7 +444,7 @@ class SomethingNew(Node):
 		return [t("?"),t(self.text), t("?")]
 
 
-#make placeholder contain multiple nodes...textboxes...on one line
+#make placeholder contain multiple nodes...textboxes...on one line?
 class Placeholder(Node):
 	def __init__(self, types=None, description = None):
 		super(Placeholder, self).__init__()
@@ -430,10 +457,8 @@ class Placeholder(Node):
 		self.brackets_color = (0,255,0)
 		self.textbox.brackets_color = (255,255,0)
 
-
 	def render(self):
 		return [w('textbox')]
-
 	
 	def menu(self):
 		text = self.textbox.text
@@ -448,26 +473,11 @@ class Placeholder(Node):
 		#r += [it(Text(text))]
 		r += [it(SomethingNew(text))]
 
-		protos = {
-		'module': Module(Statements([Placeholder()])),
-		'while': While(Placeholder([], "bool"), 
-						Statements([Placeholder(['statement'], "statement")])),
-		'bool': Bool(False),
-		'text': Text(text),
-		'number': Number(text),
-		'note': Note(text),
-		'todo': Todo(text),
-		'idea': Idea(text),
-		'assignment': Assignment(Placeholder([SomethingNew, VariableReference]),Placeholder([VariableReference, 'expression'])),
-		'program': Program(Statements([Placeholder(['statement'])])),
-		'islessthan': IsLessThan()
-		}
-		
+		protos = make_protos(self.root, text)
 		#for k,v in protos.iteritems():
 		#	v.parent = self
 		
-		protos['program'].syntax_def = self.root.find('modules/items/0/statements/items/0')
-		
+		#first the preferred types
 		for t in self.types:
 			for v in works_as(t):
 				x = protos[v]
@@ -481,6 +491,7 @@ class Placeholder(Node):
 								if not protos[v] in [i.value for i in r]:
 									r += [it(x)]
 
+		#then add the rest
 		for t in self.types:
 			for v in works_as(t):
 				if not protos[v] in [i.value for i in r]:
@@ -512,9 +523,6 @@ class Placeholder(Node):
 		#sort:
 		
 		#r.sort(key = self.fits)
-		
-		
-		
 
 		return r	
 		
@@ -723,7 +731,7 @@ class RootTypeDeclaration(Syntaxed):
 
 class Type(Syntaxed):
 	def __init__(self, left, right):
-		super(Subtype,self).__init__()
+		super(Type,self).__init__()
 		assert(isinstance(left, SomethingNew))
 		#assert(right.__class__.tolower() in works_as('type'))
 		self.syntaxes=[[ch("left"), t("is a kind of"), ch("right")]]
@@ -769,10 +777,10 @@ class ArgumentDefinition(NewStyle):
 
 
 class FunctionSignature(NewStyle):
-	def __init__(self):
+	def __init__(self, items):
 		super(FunctionSignature, self).__init__()
 		self.syntaxes=[[ch("items")]]
-		self.setch('items', Statements(expanded=True, vertical=False, types=['argumentdefinition', 'text'])
+		self.setch('items', Statements(items, expanded=True, vertical=False, types=['argumentdefinition', 'text']))
 
 #class PythonFunctionCall
 #class LemonFunctionCall
@@ -791,7 +799,7 @@ class FunctionCall(Syntaxed):
 		super(FunctionCall, self).__init__()
 		assert isinstance(definition, FunctionDefinition)
 		self.definition = definition
-		self.arguments = List([Placeholder() for vertical=False)
+		self.arguments = List([Placeholder() for x in range(self.definition.signature.items.items)], vertical=False) #todo:filter out Texts
 
 	def render(self):
 		r = [t('(call)')]

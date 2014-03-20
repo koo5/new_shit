@@ -350,10 +350,20 @@ render()
 t = find('settings/font size')
 if t:
 	t.push_handlers(on_change = change_font_size)
-	
-t = find("settings/sdl key repeat")
-if t:
-	t.on_widget_edit(666)
+
+
+#new test root here?
+#https://code.google.com/p/asq/
+#List should have its own menu
+
+t = find("programs/items/0")
+t.menu_item_selected(
+	[i for i in t.menu() 
+		if (isinstance(i, nodes.PlaceholderMenuItem) 
+		and isinstance(i.value, nodes.Program))][0])
+
+
+
 
 #t = project.find(find('placeholder test/0'), lines)
 #t = project.find(find('docs/4'), lines)

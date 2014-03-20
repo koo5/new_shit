@@ -12,8 +12,8 @@ def test_root():
 			#),(
 			#"intro", Text("""hello...""")
 			#),(
-			"programs", List([
-				Program(Statements([Placeholder(['statement'])]))
+			"programs", List([Placeholder(types=['program'])
+				
 			])
 			
 				#Program(Statements([
@@ -58,7 +58,7 @@ def test_root():
 					Module(Statements([
 						Note("stupid, but gotta start somewhere"),
 						FunctionDefinition(
-							syntax = SyntaxDef([t("disable screensaver")]), 
+							signature = FunctionSignature([Text("disable screensaver")]), 
 							body = Statements([ShellCommand("xset s off")]))
 					]), name = "some functions"),
 					
@@ -85,7 +85,7 @@ def test_root():
 					("background", Dict([
 						("R", widgets.Number(None, 0, (0, 255))),
 						("G", widgets.Number(None, 0, (0, 255))),
-						("B", widgets.Number(None, 0, (0, 255)))]))
+						("B", widgets.Number(None, 0, (0, 255)))], False))
 				])),
 				("sdl key repeat", settings.KeyRepeat()),
 				], True)
@@ -94,10 +94,6 @@ def test_root():
 			
 			]))
 	
-	for p in r.children['items'].items["programs"]:
-		#the Program objects
-		print p
-		p.syntax_def = r.children['items'].items['modules'][0].children['statements'][0]
 	
 	r.fix_relations()
 	
