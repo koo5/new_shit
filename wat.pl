@@ -1,5 +1,10 @@
 
-node(type).
+node(typedeclaration).
+node(typereference).
+node(argumentdefinition).
+node(functionsignature).
+node(functiondefinition).
+node(functioncall).
 node(while).
 node(note).
 node(todo).
@@ -15,7 +20,8 @@ node(islessthan).
 works_as(islessthan, expression).
 
 works_as(type, statement).
-
+works_as(functiondefinition, statement).
+#works_as(functioncall, expression).
 works_as(text, expression).
 works_as(number, expression).
 works_as(bool, expression).

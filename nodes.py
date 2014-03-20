@@ -152,7 +152,10 @@ def make_protos(root, text):
 		'assignment': Assignment(Placeholder([SomethingNew, VariableReference]),Placeholder([VariableReference, 'expression'])),
 		'program': Program(Statements([Placeholder(['statement'])])),
 		'islessthan': IsLessThan(),
-		'type': Type(SomethingNew(text), SomethingNew("?"))
+		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),
+		'functiondefinition': FunctionDefinition(FunctionSignature([Placeholder(['argumentdefinition', 'text'])]), Statements([Text("body")])),
+		'argumentdefinition': ArgumentDefinition()
+		#'functioncall': 
 		}
 		
 	r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
@@ -729,9 +732,9 @@ class RootTypeDeclaration(Syntaxed):
 		self.syntaxes=[[t("Values have types, every type derives from RootType.")]]
 
 
-class Type(Syntaxed):
+class TypeDeclaration(Syntaxed):
 	def __init__(self, left, right):
-		super(Type,self).__init__()
+		super(TypeDeclaration,self).__init__()
 		assert(isinstance(left, SomethingNew))
 		#assert(right.__class__.tolower() in works_as('type'))
 		self.syntaxes=[[ch("left"), t("is a kind of"), ch("right")]]
@@ -741,7 +744,7 @@ class Type(Syntaxed):
 class TypeReference(Node):
 	def __init__(self, target):
 		super(TypeReference, self).__init__()
-		assert(isinstance(target, Type))
+		assert(isinstance(target, TypeDeclaration))
 		self.target = target
 		
 	def render(self):
@@ -770,7 +773,7 @@ class IsLessThan(NewStyle):
 
 class ArgumentDefinition(NewStyle):
 	def __init__(self):
-		super(IsLessThan,self).__init__()
+		super(ArgumentDefinition, self).__init__()
 		self.syntaxes=[[ch("name"), t(" - "), ch("type")]]
 		self.child('name', ['text'])
 		self.child('type', ['typereference'])
