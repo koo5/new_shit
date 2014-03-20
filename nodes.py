@@ -622,29 +622,6 @@ class Module(Syntaxed):
 		self.name = widgets.Text(self, name)
 		self.syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
 		
-
-#class ArgumentDefinition(Node): (name, type)
-#class FunctionSignature
-#class PythonFunctionCall
-#class LemonFunctionCall
-		
-
-class FunctionDefinition(Syntaxed):
-	def __init__(self, syntax, body):
-		super(FunctionDefinition, self).__init__()
-		assert isinstance(body, Statements)
-		assert isinstance(syntax, SyntaxDef)
-		self.setch('body', body)
-		self.setch('syntax', syntax)
-		self.syntaxes = [[t("function definition:"), ch("syntax"), t("body:"), ch("body")]]
-
-class FunctionCall(Syntaxed):
-	def __init__(self, definition):
-		super(FunctionCall, self).__init__()
-		assert isinstance(definition, FunctionDefinition)
-		self.definition = definition
-		self.syntaxes = [[t("call"), w("definition")]]
-
 class ShellCommand(Syntaxed):
 	def __init__(self, command):
 		super(ShellCommand, self).__init__()
@@ -744,16 +721,23 @@ class RootTypeDeclaration(Syntaxed):
 		self.syntaxes=[[t("Values have types, every type derives from RootType.")]]
 
 
-class Subtype(Syntaxed):
+class Type(Syntaxed):
 	def __init__(self, left, right):
 		super(Subtype,self).__init__()
 		assert(isinstance(left, SomethingNew))
-		assert(right.__class__.tolower() in works_as('type'))
+		#assert(right.__class__.tolower() in works_as('type'))
 		self.syntaxes=[[ch("left"), t("is a kind of"), ch("right")]]
 		self.setch('left', left)
 		self.setch('right', right)
 
-
+class TypeReference(Node):
+	def __init__(self, target):
+		super(TypeReference, self).__init__()
+		assert(isinstance(target, Type))
+		self.target = target
+		
+	def render(self):
+		return self.target.left.text
 
 
 class NewStyle(Syntaxed):
@@ -772,6 +756,52 @@ class IsLessThan(NewStyle):
 		self.child('left', ['number'])
 		self.child('right', ['number'])
 
+
+
+
+
+class ArgumentDefinition(NewStyle):
+	def __init__(self):
+		super(IsLessThan,self).__init__()
+		self.syntaxes=[[ch("name"), t(" - "), ch("type")]]
+		self.child('name', ['text'])
+		self.child('type', ['typereference'])
+
+
+class FunctionSignature(NewStyle):
+	def __init__(self):
+		super(FunctionSignature, self).__init__()
+		self.syntaxes=[[ch("items")]]
+		self.setch('items', Statements(expanded=True, vertical=False, types=['argumentdefinition', 'text'])
+
+#class PythonFunctionCall
+#class LemonFunctionCall
+
+class FunctionDefinition(Syntaxed):
+	def __init__(self, signature, body):
+		super(FunctionDefinition, self).__init__()
+		assert isinstance(body, Statements)
+		assert isinstance(signature, FunctionSignature)
+		self.setch('body', body)
+		self.setch('signature', signature)
+		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
+
+class FunctionCall(Syntaxed):
+	def __init__(self, definition):
+		super(FunctionCall, self).__init__()
+		assert isinstance(definition, FunctionDefinition)
+		self.definition = definition
+		self.arguments = List([Placeholder() for vertical=False)
+
+	def render(self):
+		r = [t('(call)')]
+		for i in self.definition.signature.items:
+			if isinstance(i, Text):
+				r += [i]
+			elif isinstance(i, ArgumentDefinition):
+				r += [self.arguments.items[i]]
+
+		return r
 
 """
 		
