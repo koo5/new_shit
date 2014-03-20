@@ -351,6 +351,11 @@ t = find('settings/font size')
 if t:
 	t.push_handlers(on_change = change_font_size)
 
+t = find("settings/sdl key repeat")
+if t:
+	t.on_widget_edit(666)
+ 
+
 
 #new test root here?
 #https://code.google.com/p/asq/

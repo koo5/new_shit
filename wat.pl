@@ -1,6 +1,5 @@
 
-node(roottype).
-node(subtype).
+node(type).
 node(while).
 node(note).
 node(todo).
@@ -15,8 +14,7 @@ node(islessthan).
 
 works_as(islessthan, expression).
 
-works_as(roottype, type).
-works_as(subtype, type).
+works_as(type, statement).
 
 works_as(text, expression).
 works_as(number, expression).
