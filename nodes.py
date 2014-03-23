@@ -149,7 +149,7 @@ def make_protos(root, text):
 		'note': Note(text),
 		'todo': Todo(text),
 		'idea': Idea(text),
-		'assignment': Assignment(Placeholder([SomethingNew, VariableReference]),Placeholder([VariableReference, 'expression'])),
+		'assignment': Assignment(Placeholder(['somethingnew', 'variablereference']),Placeholder(['variablereference', 'expression'])),
 		'program': Program(Statements([Placeholder(['statement'])])),
 		'islessthan': IsLessThan(),
 		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),

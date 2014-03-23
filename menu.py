@@ -20,6 +20,8 @@ class Menu(object):
 			item.rect = (x,ypos, item_area.w, item_area.h)
 			if i == self.sel:
 				pygame.draw.rect(scr, colors.fg, (x, ypos, item_area.w, item_area.h), 1)
+			else:
+				pygame.draw.rect(scr, (0,0,150), (x, ypos, item_area.w, item_area.h), 1)
 			menu_area = menu_area.union((0, ypos, item_area.w, item_area.h))
 			ypos += item_area.h
 #			print area.h
@@ -33,10 +35,10 @@ class Menu(object):
 			if e.key == pygame.K_DOWN:
 				self.move(1)
 				return True
-			if e.key == pygame.K_RETURN:
-				log(self.items[self.sel])
-				self.element.menu_item_selected(self.items[self.sel])
-				return True
+		if e.key == pygame.K_SPACE :
+			log(self.items[self.sel])
+			self.element.menu_item_selected(self.items[self.sel])
+			return True
 				
 
 	def move(self,y):

@@ -30,7 +30,7 @@ works_as(while, statement).
 works_as(note, statement).
 works_as(todo, statement).
 works_as(idea, statement).
-works_as(assignment, statment).
+works_as(assignment, statement).
 works_as(statement, all).
 works_as(module, all).
 

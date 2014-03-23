@@ -1,8 +1,8 @@
 getting started
 ===
-#requires pygame, swi-prolog and pyswip: 
+requires pygame, swi-prolog and pyswip: 
 apt-get install python-pygame swi-prolog
-#and
+and
 pip install --user pyswip
 
 run new_shit.py, or faster.sh if things are slow for you (disables assertions)
@@ -24,11 +24,11 @@ background noise:  http://goo.gl/jesK0R
 
 license
 ===
-licensing is still a work in progress, to find or develop a suitable
-license.  for now, see this experiment: <https://github.com/koo5/Free-Man-License>
+licensing is still undecided, i may choose some standard open source license or
+continue developing this experiment: <https://github.com/koo5/Free-Man-License>
 your contributions will be regarded as shared with this future license.
-(in legalese: all your contributions are MINE, untill the license is developed
-into proper legalese)
+(in legalese: all your contributions are MINE, untill the license is chosen / 
+developed into proper legalese). I could set up <http://www.clahub.com/> ?
 
 
 

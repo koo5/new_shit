@@ -28,6 +28,8 @@ def the_doc():
 			),
 					
 			Chapter("notes", """
+				lemon the language vs lemon the desktop environment..
+			
 				dont pursue the NodeReference "xpath" stuff, leave it for lemon. although:
 				https://code.google.com/p/asq/
 				
