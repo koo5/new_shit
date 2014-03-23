@@ -3,6 +3,7 @@ import pygame
 
 
 
+from dotdict import dotdict
 from logger import ping, log
 import element
 import widgets
@@ -176,6 +177,7 @@ class Node(element.Element):
 		super(Node, self).__init__()
 		self.color = (0,255,0,255)
 		self.children = {}
+		self.runtime = dotdict()
 
 	def fix_relations(self):
 		self.fix_(self.children.values())
@@ -411,6 +413,9 @@ class List(Collapsible):
 				return i
 		return i + 1
 
+	def eval():
+		for i in self.items:
+			
 
 
 class CollapsibleText(Collapsible):
@@ -631,7 +636,26 @@ class Program(WithDef):
 		self.setch('name', widgets.Text(self, name))
 		self.setch('author', widgets.Text(self, author))
 		self.setch('date_created', widgets.Text(self, date_created))
-			
+		self.run_button = widgets.Button(self, "run!")
+		self.run_button.push_handlers(on_click = self.on_run_click)
+		self.results = ""
+		
+	def on_run_click(self, widget):
+		self.run()
+	
+	def on_keypress(self, e):
+		if e.key == pygame.K_RETURN and e.mod == pygame.KMOD_CTRL:
+			self.run()
+			return True
+	
+	def run(self):
+		self.results = ' Results:"' + str(self.eval()) + '"'
+	
+	def eval():
+		return self.statements.eval()
+
+		
+
 
 class Module(Syntaxed):
 	def __init__(self, statements, name="unnamed"):
@@ -733,6 +757,9 @@ class Assignment(Syntaxed):
 		self.setch('left', left)
 		self.setch('right', right)
 
+	def go(self):
+		if isinstance(self.left, SomethingNew):
+			self.runtime.value = 
 
 class RootTypeDeclaration(Syntaxed):
 	def __init__(self):

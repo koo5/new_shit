@@ -16,9 +16,10 @@ arrow and RETURN. that kinda shows everything there is to the program at the mom
 
 intro
 ===
-talk to us in #lemonparty on freenode (hey, we are already 2 there!)
+talk to us in irc://irc.freenode.net#lemonparty
 background noise:  http://goo.gl/jesK0R
-
+documentation is slowly transfering into lemon,
+but its all just development notes at the moment
 
 
 

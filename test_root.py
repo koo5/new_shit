@@ -50,7 +50,7 @@ def test_root():
 			"modules",
 				List([			
 					Module(Statements([
-						SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end.")])
+						SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end."), w("run_button"), w("results")])
 					]), name = "syntaxes for builtins"),
 					
 					Module(Statements(builtins()), name = "builtins"),

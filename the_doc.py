@@ -28,6 +28,11 @@ def the_doc():
 			),
 					
 			Chapter("notes", """
+				http://www.irisa.fr/LIS/softwares/squall/
+			
+				ctrl+enter immediate evaluation
+				
+			
 				lemon the language vs lemon the desktop environment..
 			
 				dont pursue the NodeReference "xpath" stuff, leave it for lemon. although:
