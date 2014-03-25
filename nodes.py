@@ -1,5 +1,7 @@
 from collections import OrderedDict
 import pygame
+from compiler.ast import flatten
+
 
 
 
@@ -138,6 +140,18 @@ def find_in(haystack, path):
 
 
 
+class val(list):
+	def val(self):
+		return [][-1]
+
+
+
+
+class Value(object):
+	def __init__(self, value):
+		self.value = value
+
+
 
 
 def make_protos(root, text):
@@ -219,6 +233,17 @@ class Node(element.Element):
 				r += m.find("statements/items")
 		assert(r != None)
 		return r
+
+	def flatten(self):
+		for v in self.children.itervalues():
+			print self
+			assert(isinstance(v, Node))
+		return [self] + [v.flatten() for v in self.children.itervalues()]
+
+	def eval(self):
+		self.runtime.value.append(Value(None))
+		return self.runtime.value.val
+
 	
 #	def program(self):
 #		if isinstance(self, Program):
@@ -280,25 +305,31 @@ class Syntaxed(Node):
 				return True
 
 
+class Literal(Node):
+	def __init__(self):
+		super(Literal, self).__init__()	
+	def eval(self):
+		self.runtime.value.append(Value(self.get_value()))
+		return self.runtime.value.val
+	def get_value(self):
+		return self.widget.text
 
-class Text(Node):
-	"""string literal"""
+
+class Text(Literal):
 	def __init__(self, value):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 	def render(self):
 		return [w('widget')]
 
-class Number(Node):
-	"""number literal"""
+class Number(Literal):
 	def __init__(self, value):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
 	def render(self):
 		return [w('widget')]
 
-class Bool(Node):
-	"""bool literal"""
+class Bool(Literal):
 	def __init__(self, value):
 		super(Bool, self).__init__()
 		self.widget = widgets.Toggle(self, value)
@@ -361,6 +392,8 @@ class Dict(Collapsible):
 		super(Dict, self).fix_relations()
 		self.fix_(self.items.values())
 
+	def flatten(self):
+		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]
 
 class List(Collapsible):
 	def __init__(self, items, expanded=True, vertical=True, types=['all']):
@@ -413,9 +446,12 @@ class List(Collapsible):
 				return i
 		return i + 1
 
-	def eval():
+	def eval(self):
 		for i in self.items:
+			i.eval()
 			
+	def flatten(self):
+		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
 
 
 class CollapsibleText(Collapsible):
@@ -633,25 +669,28 @@ class Program(WithDef):
 		#self.sys=__import__("sys")
 
 		self.setch('statements', statements)
-		self.setch('name', widgets.Text(self, name))
-		self.setch('author', widgets.Text(self, author))
-		self.setch('date_created', widgets.Text(self, date_created))
+		self.setch('name', Text(name))
+		self.setch('author', Text(author))
+		self.setch('date_created', Text(date_created))
 		self.run_button = widgets.Button(self, "run!")
 		self.run_button.push_handlers(on_click = self.on_run_click)
-		self.results = ""
+		self.results = widgets.Text(self, "")
 		
 	def on_run_click(self, widget):
 		self.run()
 	
 	def on_keypress(self, e):
-		if e.key == pygame.K_RETURN and e.mod == pygame.KMOD_CTRL:
+		if e.key == pygame.K_F5:
 			self.run()
 			return True
 	
 	def run(self):
-		self.results = ' Results:"' + str(self.eval()) + '"'
+		for i in self.root.flatten():
+			i.runtime.value = val()
+		
+		self.results.text = ' Results:"' + str(self.eval()) + '"'
 	
-	def eval():
+	def eval(self):
 		return self.statements.eval()
 
 		
@@ -690,6 +729,9 @@ class Root(Syntaxed):
 	def indent_length(self):
 		return self._indent_length
 
+	def flatten(self):
+		return flatten([self] + self.items.flatten())
+
 class While(Syntaxed):
 	def __init__(self,condition,statements):
 		super(While,self).__init__()
@@ -698,6 +740,9 @@ class While(Syntaxed):
 						 [t("repeat if"), ch("condition"), t("is true:"), nl(), ch("statements"), t("go back up..")]]
 		self.setch('condition', condition)
 		self.setch('statements', statements)
+
+	#def eval(self):
+		
 
 	#def new():
 	#	return While(Placeholder(),Statements([Placeholder()]))
@@ -757,9 +802,9 @@ class Assignment(Syntaxed):
 		self.setch('left', left)
 		self.setch('right', right)
 
-	def go(self):
-		if isinstance(self.left, SomethingNew):
-			self.runtime.value = 
+	#def go(self):
+	#	if isinstance(self.left, SomethingNew):
+	#		self.runtime.value = 
 
 class RootTypeDeclaration(Syntaxed):
 	def __init__(self):
@@ -802,8 +847,11 @@ class IsLessThan(NewStyle):
 		self.child('left', ['number'])
 		self.child('right', ['number'])
 
-
-
+	def eval():
+		l,r = self.left.eval(), self.right.eval()
+		assert(isinstance(l, Value))
+		assert(isinstance(r, Value))
+		self.runtime.value.append(Value(l < r))
 
 
 class ArgumentDefinition(NewStyle):

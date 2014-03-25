@@ -13,6 +13,7 @@ functon project takes a list of tags created by root.tags()
 from tags import *
 from logger import ping, log
 import colors
+from nodes import Node
 
 if __debug__:
 	import element as asselement
@@ -80,7 +81,13 @@ def _project(lines, elem, atts, indent, visualize_elements):
 	
 	if visualize_elements:
 		tags = ([AttTag("node", elem), ColorTag(elem.brackets_color), TextTag("<"), EndTag()] + 
-		tags + [ColorTag(elem.brackets_color), TextTag(">"), EndTag(), EndTag()])
+		tags + [ColorTag(elem.brackets_color), TextTag(">"), EndTag()])
+		if isinstance(elem, Node):
+			if elem.runtime.has_key("value"):
+				tags += [ColorTag((255,155,0)), TextTag("[")]
+				tags += [TextTag(', '.join([str(x.value) for x in elem.runtime.value]))]
+				tags += [TextTag("]"), EndTag()]
+		tags +=  [EndTag()]
 	
 	for tag in tags:
 	#first some replaces
