@@ -38,6 +38,17 @@ def the_doc():
 				"""),
 			
 			Chapter("notes", """
+				children as a separate class, avoid __getattr__ magic, allow use of pyDatalog?
+				class children
+					_dict
+					__getattr__
+					_types
+			
+				"""),
+			
+			Chapter("notes", """
+			
+			
 				(CNL)
 				http://www.irisa.fr/LIS/softwares/squall/
 			

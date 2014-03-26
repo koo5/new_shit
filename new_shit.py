@@ -311,7 +311,7 @@ def loop():
 
 
 
-display.set_caption('lemon party')
+display.set_caption('lemon v 0.0 unfinished insane prototype')
 icon = image.load('icon32x32.png')
 display.set_icon(icon)
 
