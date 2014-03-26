@@ -80,14 +80,21 @@ def _project(lines, elem, atts, indent, visualize_elements):
 	tags = elem.tags()
 	
 	if visualize_elements:
-		tags = ([AttTag("node", elem), ColorTag(elem.brackets_color), TextTag("<"), EndTag()] + 
-		tags + [ColorTag(elem.brackets_color), TextTag(">"), EndTag()])
+		tags = [AttTag("node", elem), ColorTag(elem.brackets_color), TextTag("<"), EndTag()] + tags
+		
+		#value
 		if isinstance(elem, Node):
-			if elem.runtime.has_key("value"):
+			if elem.runtime.has_key("value") and elem.runtime.has_key("evaluated"):
+				if elem.runtime.has_key("unimplemented"):
+					text = "unimplemented"
+				else:
+					text = ', '.join([str(x.value) for x in elem.runtime.value])
 				tags += [ColorTag((255,155,0)), TextTag("[")]
-				tags += [TextTag(', '.join([str(x.value) for x in elem.runtime.value]))]
+				tags += [TextTag(text)]
 				tags += [TextTag("]"), EndTag()]
-		tags +=  [EndTag()]
+		
+		tags += [ColorTag(elem.brackets_color), TextTag(">"), EndTag()]
+		tags += [EndTag()]
 	
 	for tag in tags:
 	#first some replaces

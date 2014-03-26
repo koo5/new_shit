@@ -27,7 +27,18 @@ def the_doc():
 				
 			),
 					
+			Chapter("Assignment", """
+				VariableReference will always reference the declaration ( function argument,
+				not an Assignment. so, Assignment will add value to the declaration node,
+				menu will not show assignments. we could return to c-style assignment-as-expression
+				with a nice wording, like <while <<a>, now becoming <b>,> is <5>...
+				
+				Assignment to SomethingNew..can lets see how it works as a special case
+				
+				"""),
+			
 			Chapter("notes", """
+				(CNL)
 				http://www.irisa.fr/LIS/softwares/squall/
 			
 				ctrl+enter immediate evaluation

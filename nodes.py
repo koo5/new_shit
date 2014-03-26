@@ -241,7 +241,10 @@ class Node(element.Element):
 		return [self] + [v.flatten() for v in self.children.itervalues()]
 
 	def eval(self):
+
 		self.runtime.value.append(Value(None))
+		self.runtime.evaluated = True
+		self.runtime.unimplemented = True
 		return self.runtime.value.val
 
 	
@@ -310,6 +313,7 @@ class Literal(Node):
 		super(Literal, self).__init__()	
 	def eval(self):
 		self.runtime.value.append(Value(self.get_value()))
+		self.runtime.evaluated = True
 		return self.runtime.value.val
 	def get_value(self):
 		return self.widget.text
@@ -449,6 +453,7 @@ class List(Collapsible):
 	def eval(self):
 		for i in self.items:
 			i.eval()
+		self.runtime.evaluated = True
 			
 	def flatten(self):
 		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
@@ -686,13 +691,14 @@ class Program(WithDef):
 	
 	def run(self):
 		for i in self.root.flatten():
+			i.runtime.clear()
 			i.runtime.value = val()
 		
 		self.results.text = ' Results:"' + str(self.eval()) + '"'
 	
 	def eval(self):
+		self.runtime.evaluated = True
 		return self.statements.eval()
-
 		
 
 
@@ -741,8 +747,8 @@ class While(Syntaxed):
 		self.setch('condition', condition)
 		self.setch('statements', statements)
 
-	#def eval(self):
-		
+	def eval(self):
+		self.runtime.evaluated = True	
 
 	#def new():
 	#	return While(Placeholder(),Statements([Placeholder()]))
@@ -780,9 +786,6 @@ class Idea(Note):
 		self.text = widgets.Text(self, text)
 
 
-
-
-
 class Clock(Node):
 	def __init__(self):
 		super(Clock,self).__init__()
@@ -790,6 +793,11 @@ class Clock(Node):
 	def render(self):
 		return [t(str(self.datetime.datetime.now()))]
 
+	def eval(self):
+		self.runtime.evaluated = True
+		self.runtime.value.append(Value(self.get_value()))
+		return self.runtime.value.val
+		
 
 class Assignment(Syntaxed):
 	def __init__(self, left, right):
@@ -802,7 +810,8 @@ class Assignment(Syntaxed):
 		self.setch('left', left)
 		self.setch('right', right)
 
-	#def go(self):
+	#def eval(self):
+	#see the_doc
 	#	if isinstance(self.left, SomethingNew):
 	#		self.runtime.value = 
 
