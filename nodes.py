@@ -554,6 +554,21 @@ class Placeholder(Node):
 				if protos.has_key(v) and not protos[v] in [i.value for i in r]:
 					r += [it(protos[v])]
 
+		#enumerators:
+		#	scope:
+		#		variables, functions
+		#			
+	
+		"""
+		if type == 'pythonidentifier'
+			PythonIdentifier.enumerate(self)
+
+		if type == 'google'
+			Google.enumerate(self)
+		
+		"""
+	
+
 		#variables, functions
 #		for i in self.scope():
 #			if isinstance(i, VariableDeclaration):
@@ -877,10 +892,27 @@ class FunctionSignature(NewStyle):
 		self.syntaxes=[[ch("items")]]
 		self.setch('items', Statements(items, expanded=True, vertical=False, types=['argumentdefinition', 'text']))
 
-#class PythonFunctionCall
+#class Pytho
+nFunctionCall
 #class LemonFunctionCall
 
 class FunctionDefinition(Syntaxed):
+	def __init__(self, signature, body):
+		super(FunctionDefinition, self).__init__()
+		assert isinstance(body, Statements)
+		assert isinstance(signature, FunctionSignature)
+		self.setch('body', body)
+		self.setch('signature', signature)
+		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
+
+class PythonImport
+	name
+
+class pythonIdentifier
+
+
+PythonFunctionDefinition(
+class PythonFunctionDefinition(Syntaxed):
 	def __init__(self, signature, body):
 		super(FunctionDefinition, self).__init__()
 		assert isinstance(body, Statements)

@@ -5,9 +5,18 @@ from logger import ping,log
 
 
 class Menu(object):
+	@property
+	def items(self):
+		return self._items
+	@items.setter
+	def items(self, value):
+		if self.sel > len(value) - 1:
+			self.sel = len(value) - 1
+		self._items = value
+	
 	def __init__(self):
 		self.sel = 0
-		self.items = [InfoMenuItem("hello")]
+		self._items = [InfoMenuItem("hello")]
 		
 	def draw(self, scr, font, x, y, size):
 		#s = pygame.Surface((size[0], size[1]), pygame.SRCALPHA)
@@ -25,7 +34,7 @@ class Menu(object):
 			menu_area = menu_area.union((0, ypos, item_area.w, item_area.h))
 			ypos += item_area.h
 #			print area.h
-		pygame.draw.rect(scr, colors.fg, (x,y,menu_area.w,menu_area.h), 1)
+		#pygame.draw.rect(scr, (100,100,100), (x,y,menu_area.w,menu_area.h), 1)
 			
 	def keypress(self, e):
 		if e.mod & pygame.KMOD_CTRL:
@@ -35,7 +44,9 @@ class Menu(object):
 			if e.key == pygame.K_DOWN:
 				self.move(1)
 				return True
-		if e.key == pygame.K_SPACE :
+		if e.key == pygame.K_SPACE:
+			print self.sel
+			
 			log(self.items[self.sel])
 			self.element.menu_item_selected(self.items[self.sel])
 			return True
