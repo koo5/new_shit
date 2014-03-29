@@ -125,37 +125,48 @@ def and_updown(event):
 
 def top_keypress(event):
 	global cursor_r,cursor_c
-
 	k = event.key
-
-	if k == pygame.K_F11:
-		toggle_fullscreen()
-	if k == pygame.K_ESCAPE:
-		bye()
-	if k == pygame.K_UP:
-		updown_cursor(-1)
-		and_sides(event)
-	if k == pygame.K_DOWN:
-		updown_cursor(+1)
-		and_sides(event)
-	if k == pygame.K_LEFT:
-		move_cursor(-1)
-		and_updown(event)
-	if k == pygame.K_RIGHT:
-		move_cursor(+1)
-		and_updown(event)
-	if event.mod & pygame.KMOD_CTRL:
-		if k == pygame.K_LEFT:
+	
+	if pygame.KMOD_CTRL & event.mod:
+		if event.uni == '+':
+			find('settings/font size/widget').value += 1
+			change_font_size(666)
+		elif event.uni == '-':
+			find('settings/font size/widget').value -= 1
+			change_font_size(666)
+		elif k == pygame.K_LEFT:
 			cursor_c -= 1
-		if k == pygame.K_RIGHT:
+		elif k == pygame.K_RIGHT:
 			cursor_c += 1
-	if k == pygame.K_HOME:
-		if cursor_c != 0:
-			cursor_c = 0
 		else:
-			cursor_c = first_nonblank()
-	if k == pygame.K_END:
-		cursor_c = len(lines[cursor_r])
+			return False
+	else:
+		if k == pygame.K_F11:
+			toggle_fullscreen()
+		elif k == pygame.K_ESCAPE:
+			bye()
+		elif k == pygame.K_UP:
+			updown_cursor(-1)
+			and_sides(event)
+		elif k == pygame.K_DOWN:
+			updown_cursor(+1)
+			and_sides(event)
+		elif k == pygame.K_LEFT:
+			move_cursor(-1)
+			and_updown(event)
+		elif k == pygame.K_RIGHT:
+			move_cursor(+1)
+			and_updown(event)
+		elif k == pygame.K_HOME:
+			if cursor_c != 0:
+				cursor_c = 0
+			else:
+				cursor_c = first_nonblank()
+		elif k == pygame.K_END:
+			cursor_c = len(lines[cursor_r])
+		else:
+			return False
+	return True
 
 class KeypressEvent(object):
 	def __init__(self, e, pos, cursor):
@@ -206,6 +217,9 @@ def keypress(event):
 	draw()
 
 def handle(e):
+	if top_keypress(e):
+		return
+	
 	if menu != None and menu.keypress(e):
 		return
 
@@ -216,9 +230,6 @@ def handle(e):
 		move_cursor(root.post_render_move_caret)
 		root.post_render_move_caret = 0
 		return
-
-	top_keypress(e)
-	
 
 def mousedown(e):
 #	log(e.button)
@@ -331,15 +342,16 @@ find('settings/colors/monochrome').value = args.mono
 font_width = font_height = font = None
 def change_font_size(setting):
 	global font, font_width, font_height
-	t = find('settings/font size')
+	t = find('settings/font size/widget')
 	if t:
 		s = t.value
 	else:
 		s = 8
 	font = pygame.font.SysFont('monospace', s)
 	font_width, font_height = font.size("X")
+	print "font size:", s
 
-change_font_size(None)
+change_font_size(666)
 
 #t = find('settings/fullscreen')
 #if t:

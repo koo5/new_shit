@@ -169,7 +169,8 @@ def make_protos(root, text):
 		'islessthan': IsLessThan(),
 		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),
 		'functiondefinition': FunctionDefinition(FunctionSignature([Placeholder(['argumentdefinition', 'text'])]), Statements([Text("body")])),
-		'argumentdefinition': ArgumentDefinition()
+		'argumentdefinition': ArgumentDefinition(),
+		'triple': Triple.make_proto()
 		}
 		
 	r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
@@ -534,25 +535,39 @@ class Placeholder(Node):
 			for v in works_as(t):
 				if protos.has_key(v):
 					x = protos[v]
+					menuitem = it(x)
+					r += [menuitem]
+					
 					if isinstance(x, Syntaxed):
 						for s in x.syntaxes:
 							#print s
 							tag = s[0]
 							if isinstance(tag, tags.TextTag):
 								if text in tag.text:
-									print x
-									if not protos[v] in [i.value for i in r]:
-										r += [it(x)]
+									menuitem.score += 1
+									#print x
+									#if not protos[v] in [i.value for i in r]:
+										
 				elif v == 'functioncall':
 					for i in self.scope():
 						if isinstance(i, FunctionDefinition):
 							r += [it(FunctionCall(i))]
+				
+				elif v == 'termreference':
+					for i in self.scope():
+						if isinstance(i, Triple):
+							r += [it(i.subject)]
+							r += [it(i.object)]
+				
+				elif v == 'dbpediaterm':
+							r += [it(x) for x in DbpediaTerm.enumerate()]
+		
 
 		#then add the rest
-		for t in self.types:
-			for v in works_as(t):
-				if protos.has_key(v) and not protos[v] in [i.value for i in r]:
-					r += [it(protos[v])]
+		#for t in self.types:
+		#	for v in works_as(t):
+		#		if protos.has_key(v) and not protos[v] in [i.value for i in r]:
+		#			r += [it(protos[v])]
 
 		#enumerators:
 		#	scope:
@@ -625,6 +640,7 @@ class Placeholder(Node):
 class PlaceholderMenuItem(MenuItem):
 	def __init__(self, value):		
 		self.value = value
+		self.score = 0
 		self.brackets_color = (0,0,255)
 		#(and so needs brackets_color)
 		
@@ -892,8 +908,7 @@ class FunctionSignature(NewStyle):
 		self.syntaxes=[[ch("items")]]
 		self.setch('items', Statements(items, expanded=True, vertical=False, types=['argumentdefinition', 'text']))
 
-#class Pytho
-nFunctionCall
+#class PythonFunctionCall
 #class LemonFunctionCall
 
 class FunctionDefinition(Syntaxed):
@@ -905,21 +920,6 @@ class FunctionDefinition(Syntaxed):
 		self.setch('signature', signature)
 		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
 
-class PythonImport
-	name
-
-class pythonIdentifier
-
-
-PythonFunctionDefinition(
-class PythonFunctionDefinition(Syntaxed):
-	def __init__(self, signature, body):
-		super(FunctionDefinition, self).__init__()
-		assert isinstance(body, Statements)
-		assert isinstance(signature, FunctionSignature)
-		self.setch('body', body)
-		self.setch('signature', signature)
-		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
 
 class FunctionCall(Syntaxed):
 	def __init__(self, definition):
@@ -937,6 +937,37 @@ class FunctionCall(Syntaxed):
 				r += [ElementTag(self.arguments.items[i])]
 
 		return r
+
+class Triple(Syntaxed):
+	def __init__(self, subject, predicate, object):
+		super(Triple, self).__init__()
+		self.setch('subject', subject)
+		self.setch('predicate', predicate)
+		self.setch('object', object)
+		self.syntaxes = [[ch("subject"), ch("predicate"), ch("object")]]
+	@staticmethod
+	def make_proto():
+		return Triple(Placeholder(['term', 'somethingnew']),Placeholder(['term', 'somethingnew']),Placeholder(['term', 'somethingnew'])),
+
+
+
+"""
+class PythonImport
+	name
+
+class pythonIdentifier
+
+
+PythonFunctionDefinition(
+class PythonFunctionDefinition(Syntaxed):
+	def __init__(self, signature, body):
+		super(FunctionDefinition, self).__init__()
+		assert isinstance(body, Statements)
+		assert isinstance(signature, FunctionSignature)
+		self.setch('body', body)
+		self.setch('signature', signature)
+		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
+"""
 
 """
 		

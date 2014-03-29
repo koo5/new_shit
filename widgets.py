@@ -113,7 +113,9 @@ class Number(Text):
 	@property
 	def value(self):
 		return int(self.text)
-
+	@value.setter
+	def value(self, v):
+		self.text = str(v)
 	def inc(self):
 		if self.limits[1] == None or self.limits[1] > int(self.text):
 			self.text = str(int(self.text)+1)

@@ -18,9 +18,9 @@ class FontSize(Setting):
 		self.dispatch_event('on_change', self)
 
 
-	@property
-	def value(self):
-		return int(self.widget.text)
+#	@property
+#	def value(self):
+#		return int(self.widget.text)
 """
 class Fullscreen(Setting):
 	def __init__(self):
