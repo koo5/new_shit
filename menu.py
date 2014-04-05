@@ -35,7 +35,14 @@ class Menu(object):
 			ypos += item_area.h
 #			print area.h
 		#pygame.draw.rect(scr, (100,100,100), (x,y,menu_area.w,menu_area.h), 1)
-			
+	
+	def help(self):
+		return [HelpMenuItem(t) for t in [
+		"ctrl + up, down: menu movement",
+		"space: menu selection"]]
+
+	
+	
 	def keypress(self, e):
 		if e.mod & pygame.KMOD_CTRL:
 			if e.key == pygame.K_UP:
@@ -66,8 +73,14 @@ class MenuItem(object):
 class InfoMenuItem(MenuItem):
 	def __init__(self, text):
 		self.text = "(" + text + ")"
+		self.color = (200,200,200)
 
 	def draw(self, menu, s, font, x, y):
-		fs = font['font'].render(self.text, True, (200,200,200), colors.bg)
+		fs = font['font'].render(self.text, True, self.color, colors.bg)
 		s.blit(fs,(x,y))
 		return fs.get_rect()
+
+class HelpMenuItem(InfoMenuItem):
+	def __init__(self, text):
+		self.text = text
+		self.color = (255,255,255)

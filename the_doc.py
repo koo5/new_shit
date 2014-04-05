@@ -27,6 +27,16 @@ def the_doc():
 				
 			),
 					
+			Chapter("Introduction", """
+				
+				syntax of the language is defined by two things: the preferred types
+				passed to Placeholders by nodes, and by wat.pl, where a hierarchy is
+				defined. In future it would ideally all be in one place.
+				
+				
+				
+				"""),
+			
 			Chapter("Assignment", """
 				VariableReference will always reference the declaration ( function argument,
 				not an Assignment. so, Assignment will add value to the declaration node,

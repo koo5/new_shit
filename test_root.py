@@ -53,7 +53,13 @@ def test_root():
 						SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end."), w("run_button"), w("results")])
 					]), name = "syntaxes for builtins"),
 					
-					Module(Statements(builtins()), name = "builtins"),
+					Module(Statements(['all'],
+						[NodeTypeDeclaration(x) for x in [
+							Text, Number, Dict, List, CollapsibleText, Statements,
+							VariableReference, Placeholder, Clock, SyntaxDef,
+							Program, Module, ShellCommand,
+							Root, While, Note, Todo, Idea]]
+					), name = "builtins"),
 
 					Module(Statements([
 						Note("stupid, but gotta start somewhere"),
@@ -98,23 +104,3 @@ def test_root():
 	r.fix_relations()
 	
 	return r
-#prototypes?
-
-def builtins():
-	return [NodeTypeDeclaration(x) for x in [
-			Text, Number, Dict, List, CollapsibleText, Statements,
-			VariableReference, Placeholder, Clock, SyntaxDef,
-			Program, Module, ShellCommand,
-			Root, While, Note, Todo, Idea]]
-
-
-
-def mini_test_root():
-	return Root(Dict([
-			(
-			"test", widgets.Text("banana", "Test me out!")
-			)]))
-
-	
-
-

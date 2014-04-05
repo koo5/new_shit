@@ -9,7 +9,6 @@ TwoDTag
 wish: structured scribbles
 """
 
-#import cProfile
 import pygame, sys
 from pygame import gfxdraw, font, image, display
 import argparse
@@ -123,6 +122,11 @@ def and_updown(event):
 	if event.all[pygame.K_UP]: updown_cursor(-1)
 	if event.all[pygame.K_DOWN]: updown_cursor(1)
 
+def top_help():
+	return [HelpMenuItem(t) for t in [
+	"ctrl + +,-: font size",
+	"up, down, left, right, home, end: move cursor"]]
+
 def top_keypress(event):
 	global cursor_r,cursor_c
 	k = event.key
@@ -177,18 +181,20 @@ class KeypressEvent(object):
 		self.all = pygame.key.get_pressed()
 		self.cursor = cursor
 		
-		h = find("settings/webos hack")
-		if h:
-			if h.value:
-				if self.mod == 0b100000000000000:
-					if self.key == pygame.K_r:
-						self.key = pygame.K_UP
-					if self.key == pygame.K_c:
-						self.key = pygame.K_DOWN
-					if self.key == pygame.K_d:
-						self.key = pygame.K_LEFT
-					if self.key == pygame.K_g:
-						self.key = pygame.K_RIGHT
+		hack = find("settings/webos hack")
+		if hack and hack.value:
+			self.webos_hack()
+	
+	def webos_hack(self):
+		if self.mod == 0b100000000000000:
+			if self.key == pygame.K_r:
+				self.key = pygame.K_UP
+			if self.key == pygame.K_c:
+				self.key = pygame.K_DOWN
+			if self.key == pygame.K_d:
+				self.key = pygame.K_LEFT
+			if self.key == pygame.K_g:
+				self.key = pygame.K_RIGHT
 		
 	def __repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s, pos=%s)" %
@@ -214,6 +220,9 @@ def keypress(event):
 	else:
 		menu.element = None
 		menu.items = []
+	menu.items.append(menu.help())
+	menu.items.append(top_help())
+	
 	draw()
 
 def handle(e):
@@ -398,13 +407,12 @@ def main():
 	while True:
 		try:
 			loop()
-#	except KeyboardInterrupt() as e: #add timer
-#		pygame.display.iconify()
-#		raise e
+	#	except KeyboardInterrupt() as e: #add timer
+	#		pygame.display.iconify()
+	#		raise e
 		except Exception() as e:
 			pygame.display.iconify()
 			raise e
 
 if __name__ == "__main__":
-#	cProfile.run('main')
 	main()

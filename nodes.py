@@ -165,7 +165,7 @@ def make_protos(root, text):
 		'todo': Todo(text),
 		'idea': Idea(text),
 		'assignment': Assignment(Placeholder(['somethingnew', 'variablereference']),Placeholder(['variablereference', 'expression'])),
-		'program': Program(Statements([Placeholder(['statement'])])),
+		'program': Program(Statements(['statement'])),
 		'islessthan': IsLessThan(),
 		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),
 		'functiondefinition': FunctionDefinition(FunctionSignature([Placeholder(['argumentdefinition', 'text'])]), Statements([Text("body")])),
@@ -469,35 +469,152 @@ class CollapsibleText(Collapsible):
 		
 
 class Statements(List):
-	pass	
+	def __init__(self, types = ['all'], items = []):
+		List.__init__(self, expanded=True, vertical=True, types=types, items = items)
+		#super(Statements, self).__init__(items = [], expanded=True, vertical=True, types)
 
 
+class NodeCollider(List):
+	def __init__(self, types=['all'], description = None):
+		List.__init__(self, expanded=True, vertical=True, types=types, items = [])
+		self.types = types
+		if description == None: description = str(types)
+		self.description = description
+		self.textbox = widgets.ShadowedText(self, "", self.description)
+		self.brackets_color = (0,255,0)
+		self.textbox.brackets_color = (255,255,0)
 
-class VariableDeclaration(Node):
-	def __init__(self, name):
-		super(VariableDeclaration, self).__init__()
-		self.name = widgets.Text(name)
 	def render(self):
-		return [t("var"), w('name')]
+		return [w('textbox')]
+	
+	def menu(self):
+		text = self.textbox.text
+		#r = [InfoMenuItem("insert:")]
+		it = PlaceholderMenuItem
+
+		r = []
+
+		if text.isdigit():
+			r += [it(Number(text))]
+
+		#r += [it(Text(text))]
+		r += [it(SomethingNew(text))]
+
+		protos = make_protos(self.root, text)
+		#for k,v in protos.iteritems():
+		#	v.parent = self
+		
+		#first the preferred types
+		for t in self.types:
+			for v in works_as(t):
+				if protos.has_key(v):
+					x = protos[v]
+					menuitem = it(x)
+					r += [menuitem]
+					
+					if isinstance(x, Syntaxed):
+						for s in x.syntaxes:
+							#print s
+							tag = s[0]
+							if isinstance(tag, tags.TextTag):
+								if text in tag.text:
+									menuitem.score += 1
+									#print x
+									#if not protos[v] in [i.value for i in r]:
+										
+				elif v == 'functioncall':
+					for i in self.scope():
+						if isinstance(i, FunctionDefinition):
+							r += [it(FunctionCall(i))]
+				
+				elif v == 'termreference':
+					for i in self.scope():
+						if isinstance(i, Triple):
+							r += [it(i.subject)]
+							r += [it(i.object)]
+				
+				elif v == 'dbpediaterm':
+							r += [it(x) for x in DbpediaTerm.enumerate()]
+		
+
+		#then add the rest
+		#for t in self.types:
+		#	for v in works_as(t):
+		#		if protos.has_key(v) and not protos[v] in [i.value for i in r]:
+		#			r += [it(protos[v])]
+
+		#enumerators:
+		#	scope:
+		#		variables, functions
+		#			
+	
+		"""
+		if type == 'pythonidentifier'
+			PythonIdentifier.enumerate(self)
+
+		if type == 'google'
+			Google.enumerate(self)
+		
+		"""
+	
+
+		#variables, functions
+#		for i in self.scope():
+#			if isinstance(i, VariableDeclaration):
+#				r += [it(VariableReference(i))]
+#			if isinstance(i, FunctionDefinition):
+#				r += [it(FunctionCall(i))]
+
+		#1: node types
+		#r += [it(x) for x in self.scope()]
+
+#add best
+#add all
+
+				
+		#2: calls, variables..
+		
+		#filter by self.types:
+		
+		#preferred types:
+		#r += expand_types(self.types)
+		#all types
+		#r += expand_types('all') - expand_types(self.types)
+
+		#sort:
+		
+		#r.sort(key = self.fits)
+
+		return r	
+		
+		
+	def fits(self, item):
+		for t in self.types:
+			if isinstance(item, t):
+				return 1
+		return 0
+		
+
+	def menu_item_selected(self, item):
+		if not isinstance(item, PlaceholderMenuItem):
+			log("not PlaceholderMenuItem")
+			return
+		v = item.value
+		if v == None:
+			log("no value")
+		elif isinstance(v, NodeTypeDeclaration):
+			x = v.type()
+		elif isinstance(v, Node):
+			x = v
+#		elif isinstance(v, type):
+#			x = v()
+		self.parent.replace_child(self, x)
 
 
-class VariableReference(Node):
-	def __init__(self, declaration):
-		super(VariableReference, self).__init__()
-		self.declaration = declaration
-	def render(self):
-		return [t(self.declaration.name.text)]
 
 
-class SomethingNew(Node):
-	def __init__(self, text):
-		super(SomethingNew, self).__init__()
-		self.text = text
-	def render(self):
-		return [t("?"),t(self.text), t("?")]
 
 
-#make placeholder contain multiple nodes...textboxes...on one line?
 class Placeholder(Node):
 	def __init__(self, types=None, description = None):
 		super(Placeholder, self).__init__()
@@ -668,6 +785,32 @@ class PlaceholderMenuItem(MenuItem):
 		return area
 
 
+
+class VariableDeclaration(Node):
+	def __init__(self, name):
+		super(VariableDeclaration, self).__init__()
+		self.name = widgets.Text(name)
+	def render(self):
+		return [t("var"), w('name')]
+
+
+class VariableReference(Node):
+	def __init__(self, declaration):
+		super(VariableReference, self).__init__()
+		self.declaration = declaration
+	def render(self):
+		return [t(self.declaration.name.text)]
+
+
+class SomethingNew(Node):
+	def __init__(self, text):
+		super(SomethingNew, self).__init__()
+		self.text = text
+	def render(self):
+		return [t("?"),t(self.text), t("?")]
+
+
+
 #design:
 #the difference between Syntaxed and WithDef is that Syntaxed
 #has the syntaxes as part of "class definition" (in __init__, really)
@@ -695,6 +838,7 @@ class WithDef(Node):
 		self.syntax_def = syntax_def
 		
 	def render(self):
+		print self
 		return self.syntax_def.syntax_def
 
 class Program(WithDef):
@@ -906,7 +1050,7 @@ class FunctionSignature(NewStyle):
 	def __init__(self, items):
 		super(FunctionSignature, self).__init__()
 		self.syntaxes=[[ch("items")]]
-		self.setch('items', Statements(items, expanded=True, vertical=False, types=['argumentdefinition', 'text']))
+		self.setch('items', Statements(types=['argumentdefinition', 'text'], items = items))
 
 #class PythonFunctionCall
 #class LemonFunctionCall
