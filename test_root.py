@@ -4,18 +4,10 @@ import settings, toolbar
 import the_doc
 
 def test_root():
-	r = Root(Dict([
-			(
-			#"placeholder test", Statements([Placeholder(types = [Node]),Placeholder(types = [Node])])
-			#),(
-			#"text widget test", widgets.Text(None, "Test me out!")
-			#),(
-			#"intro", Text("""hello...""")
-			#),(
-			"programs", List([Placeholder(types=['program'])
-				
-			])
-			
+	r = Root()
+	r.add(("programs", List(types=['program'])))
+
+	#r["programs"].add(
 				#Program(Statements([
 					#Placeholder([], "statement")#,
 					#FunctionDefinition(name = Text("substring")),
@@ -46,13 +38,16 @@ def test_root():
 			#),(
 			
 			#(
-			),(
-			"modules",
-				List([			
-					Module(Statements([
-						SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end."), w("run_button"), w("results")])
-					]), name = "syntaxes for builtins"),
-					
+
+	r.add(("modules", List(types = ['module'])))
+
+	syntaxdefs = Module("syntaxes for builtins")
+	r["modules"].add(syntaxdefs)
+	syntaxdefs.add(
+		SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end."), w("run_button"), w("results")])
+	)
+
+	"""
 					Module(Statements(['all'],
 						[NodeTypeDeclaration(x) for x in [
 							Text, Number, Dict, List, CollapsibleText, Statements,
@@ -60,47 +55,52 @@ def test_root():
 							Program, Module, ShellCommand,
 							Root, While, Note, Todo, Idea]]
 					), name = "builtins"),
+	"""
 
-					Module(Statements([
-						Note("stupid, but gotta start somewhere"),
-						FunctionDefinition(
-							signature = FunctionSignature([Text("disable screensaver")]), 
-							body = Statements([ShellCommand("xset s off")]))
-					]), name = "some functions"),
-					
-					Placeholder([Module], "new module") 
-				], False)
-			),(
-			"docs", the_doc.the_doc()
-			),(
+	stuff = Module("stuff")
+	[stuff.add(x) for x in [
+		Note("stupid, but gotta start somewhere"),
+		FunctionDefinition(
+			signature = FunctionSignature([Text("disable screensaver")]),
+			body = Statements([ShellCommand("xset s off")]))
+		]]
+	r.add((["stuff"], stuff))
 
-			"tools", List(
-				[
-				toolbar.SetAllSyntaxesToZero(),
-				Clock()
-				#save, load
-				], False)
-			),(
-			"settings", Dict([
-				("webos hack", widgets.Toggle(None, False)),
-				("font size", settings.FontSize(18)),
-				#("fullscreen", widgets.Toggle(None, False)),
-				("colors", Dict([
-					("monochrome", widgets.Toggle(None, False)),
-					("invert", widgets.Toggle(None, False)),
-					("background", Dict([
-						("R", widgets.Number(None, 0, (0, 255))),
-						("G", widgets.Number(None, 0, (0, 255))),
-						("B", widgets.Number(None, 0, (0, 255)))], False))
-				])),
-				("sdl key repeat", settings.KeyRepeat()),
-				], True)
-			)
+	"""
+	docs = Module("docs")
+	r["docs"].add(docs)
+	docs.add(("docs", the_doc.the_doc())
+	docs.add(("tools", List()))
+	docs["tools"].add(x) for x in [
+		toolbar.SetAllSyntaxesToZero(),
+		Clock()
+		#save, load
+		]
 
-			
-			]))
-	
-	
+	"""
+
+	settings = Dict()
+	[settings.add(x) for x in [
+		("webos hack", widgets.Toggle(None, False)),
+		("font size", settings.FontSize(18)),
+		("colors", Dict()),
+		("sdl key repeat", settings.KeyRepeat())]]
+
+	[settings["colors"].add(x) for x in [
+		("monochrome", widgets.Toggle(None, False)),
+		("invert", widgets.Toggle(None, False)),
+		("background", Dict())
+	]]
+
+	"""
+	settings["colors"][""]
+	[
+				("R", widgets.Number(None, 0, (0, 255))),
+				("G", widgets.Number(None, 0, (0, 255))),
+				("B", widgets.Number(None, 0, (0, 255)))], False))
+		]
+	"""
+
 	r.fix_relations()
 	
 	return r

@@ -155,17 +155,16 @@ class Value(object):
 
 
 def make_protos(root, text):
-	r = {'module': Module(Statements([Placeholder()])),
-		'while': While(Placeholder([], "bool"), 
-						Statements([Placeholder(['statement'], "statement")])),
+	r = {'module': Module(),
+		'while': While(),
 		'bool': Bool(False),
 		'text': Text(text),
 		'number': Number(text),
 		'note': Note(text),
 		'todo': Todo(text),
 		'idea': Idea(text),
-		'assignment': Assignment(Placeholder(['somethingnew', 'variablereference']),Placeholder(['variablereference', 'expression'])),
-		'program': Program(Statements(['statement'])),
+		#'assignment': Assignment(Placeholder(['somethingnew', 'variablereference']),Placeholder(['variablereference', 'expression'])),
+		'program': Program(),
 		'islessthan': IsLessThan(),
 		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),
 		'functiondefinition': FunctionDefinition(FunctionSignature([Placeholder(['argumentdefinition', 'text'])]), Statements([Text("body")])),
@@ -174,7 +173,8 @@ def make_protos(root, text):
 		}
 		
 	r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
-
+	assert(isinstance(r['program'].syntax_def, SyntaxDef))
+	
 	return r
 
 
@@ -369,7 +369,7 @@ class Collapsible(Node):
 			self.toggle()
 
 class Dict(Collapsible):
-	def __init__(self, tuples, expanded=True):
+	def __init__(self, tuples=[], expanded=True):
 		super(Dict, self).__init__(expanded)
 		#Dict is created from a list of pairs ("key", value)
 		self.items = OrderedDict(tuples)
@@ -400,15 +400,18 @@ class Dict(Collapsible):
 	def flatten(self):
 		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]
 
+	def add(self, (key, val)):
+		assert(not self.items.has_key(key))
+		self.items[key] = val
+		assert(isinstance(key, str))
+		assert(isinstance(val, Node))
+		val.parent = self
+
 class List(Collapsible):
-	def __init__(self, items, expanded=True, vertical=True, types=['all']):
+	def __init__(self, types=['all'], expanded=True, vertical=True):
 		super(List, self).__init__(expanded, vertical)
-		assert(isinstance(items, list))
-		self.items = items #do this first or bad things will happen (and i forgot why)
 		self.types = types
-		
-		for item in self.items:
-			item.parent = self
+		self.items = []
 
 	def render_items(self):
 		r = []
@@ -416,36 +419,30 @@ class List(Collapsible):
 			r += [ElementTag(item)]
 			if self.vertical: r+= [nl()] 
 		return r
+
 	def __getitem__(self, i):
-#		ping()
 		return self.items[i]
-
-	def replace_child(self, child, new):
-		#ping()
-		assert(child in self.items)
-		self.items[self.items.index(child)] = new
-		new.parent = self
-
 
 	def fix_relations(self):
 		super(List, self).fix_relations()
 		self.fix_(self.items)
 
-
 	def on_keypress(self, e):
-#		if e.key == pygame.K_BACKSPACE:
-#		elif e.key == pygame.K_DELETE:
+		item_index = self.insertion_pos(e.cursor)
+		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
+			if len(self.items) > item_index:
+				del self.items[item_index]
+		#???
 		if e.key == pygame.K_RETURN:
-			ping()
-			pos = self.insert_pos(e.cursor)
-			p = Placeholder(self.types)
+			pos = self.insertion_pos(e.cursor)
+			p = NodeCollider(self.types)
 			p.parent = self
 			self.items.insert(pos, p)
 			return True
 
-	def insert_pos(self, (char, line)):
+	def insertion_pos(self, (char, line)):
 		for i, item in enumerate(self.items):
-			#print i, item, item._render_start_line, item._render_start_char			
+			#print i, item, item._render_start_line, item._render_start_char
 			if (item._render_start_line >= line and
 				item._render_start_char >= char):
 				return i
@@ -459,6 +456,15 @@ class List(Collapsible):
 	def flatten(self):
 		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
 
+	def replace_child(self, child, new):
+		assert(child in self.items)
+		self.items[self.items.index(child)] = new
+		new.parent = self
+
+	def add(self, item):
+		self.items.append(item)
+		assert(isinstance(item, Node))
+		item.parent = self
 
 class CollapsibleText(Collapsible):
 	def __init__(self, value):
@@ -470,8 +476,9 @@ class CollapsibleText(Collapsible):
 
 class Statements(List):
 	def __init__(self, types = ['all'], items = []):
-		List.__init__(self, expanded=True, vertical=True, types=types, items = items)
-		#super(Statements, self).__init__(items = [], expanded=True, vertical=True, types)
+		assert(isinstance(types, list))
+		log("Statements(), my types are"+str(types))
+		List.__init__(self, types=types, expanded=True, vertical=True)
 
 
 class NodeCollider(List):
@@ -842,13 +849,11 @@ class WithDef(Node):
 		return self.syntax_def.syntax_def
 
 class Program(WithDef):
-	def __init__(self, statements, name="unnamed", author="banana", date_created="1.1.1.1111"):
+	def __init__(self, name="unnamed", author="banana", date_created="1.1.1.1111"):
 		super(Program, self).__init__(syntax_def = None)
-		
-		assert isinstance(statements, Statements)
 		#self.sys=__import__("sys")
 
-		self.setch('statements', statements)
+		self.setch('statements', Statements(['statement']))
 		self.setch('name', Text(name))
 		self.setch('author', Text(author))
 		self.setch('date_created', Text(date_created))
@@ -858,7 +863,10 @@ class Program(WithDef):
 		
 	def on_run_click(self, widget):
 		self.run()
-	
+
+	def menu(self):
+		return [HelpMenuItem("f5: run")] + super(Program).menu()
+
 	def on_keypress(self, e):
 		if e.key == pygame.K_F5:
 			self.run()
@@ -878,10 +886,9 @@ class Program(WithDef):
 
 
 class Module(Syntaxed):
-	def __init__(self, statements, name="unnamed"):
+	def __init__(self, name="unnamed"):
 		super(Module, self).__init__()
-		assert isinstance(statements, Statements)
-		self.setch('statements', statements)
+		self.setch('statements', Statements(['all']))
 		self.name = widgets.Text(self, name)
 		self.syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
 		
@@ -892,16 +899,22 @@ class ShellCommand(Syntaxed):
 		self.syntaxes = [[t("run shell command:"), w("command")]]
 
 class Root(Syntaxed):
-	def __init__(self, items):
+	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
 		self.post_render_move_caret = 0
 		self._indent_length = 4
-		self.setch('items', items)
+		self.setch('items', Dict())
 		self.syntaxes = [
 			[ColorTag((255,255,255,255)), ch("items"), EndTag()],
 			[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]
 			]
+
+	def add(self, item):
+		self.items.add(item)
+
+	def __getitem__(self, i):
+		return self.items[i]
 
 	def find(self, path):
 		return find_by_path(self.items, path)
@@ -919,13 +932,15 @@ class While(Syntaxed):
 
 		self.syntaxes = [[t("while"), ch("condition"), t("do:"), nl(), ch("statements")],
 						 [t("repeat if"), ch("condition"), t("is true:"), nl(), ch("statements"), t("go back up..")]]
-		self.setch('condition', condition)
-		self.setch('statements', statements)
+		self.setch('condition',
+			NodeCollider(["expression"]))
+		self.setch('statements',
+			Statements(["statement"]))
 
 	def eval(self):
 		self.runtime.evaluated = True	
 
-	#def new():
+	#def now():#prototype
 	#	return While(Placeholder(),Statements([Placeholder()]))
 
 class Note(Syntaxed):

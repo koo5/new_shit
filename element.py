@@ -50,7 +50,6 @@ class Element(event.EventDispatcher):
 		for i in items:
 			i.parent = self
 			i.fix_relations()	
-	
 
 	def menu(self):
 		return ((self.parent.menu() if self.parent else []) +
