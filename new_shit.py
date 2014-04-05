@@ -214,12 +214,12 @@ def keypress(event):
 	handle(KeypressEvent(event, pos, (cursor_c, cursor_r)))
 		
 	render()
-	if under_cursor():
-		menu.element = under_cursor()
-		menu.items = menu.element.menu()
-	else:
-		menu.element = None
-		menu.items = []
+	e = under_cursor()
+	menu.items = []
+	while e != None:
+		menu.items += e.menu()
+		e = e.parent
+	menu.element = e
 	menu.items += menu.help()
 	menu.items += top_help()
 	
@@ -395,9 +395,9 @@ render()
 
 #t = project.find(find('placeholder test/0'), lines)
 #t = project.find(find('docs/4'), lines)
-#t = project.find(find('programs/0/statements/0'), lines)
-#if t:
-#	cursor_c, cursor_r = t
+t = project.find(find('programs'), lines)
+if t:
+	cursor_c, cursor_r = t
 
 draw()
 

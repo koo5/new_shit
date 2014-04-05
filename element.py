@@ -49,11 +49,10 @@ class Element(event.EventDispatcher):
 	def fix_(self, items):
 		for i in items:
 			i.parent = self
-			i.fix_relations()	
+			i.fix_relations()
 
 	def menu(self):
-		return ((self.parent.menu() if self.parent else []) +
-				[InfoMenuItem("element: " + str(self))])
+		return [InfoMenuItem("element: " + str(self))]
 
 	def menu_item_selected(self, item):
 		if self.parent:

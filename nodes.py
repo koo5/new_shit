@@ -482,143 +482,52 @@ class Statements(List):
 		List.__init__(self, types=types, expanded=True, vertical=True)
 
 
-class NodeCollider(List):
-	def __init__(self, types=['all'], description = None):
-		List.__init__(self, expanded=True, vertical=True, types=types, items = [])
+class NodeCollider(Node):
+	def __init__(self, types=['all']):
+		super(NodeCollider, self).__init__()
 		self.types = types
-		if description == None: description = str(types)
-		self.description = description
-		self.textbox = widgets.ShadowedText(self, "", self.description)
-		self.brackets_color = (0,255,0)
-		self.textbox.brackets_color = (255,255,0)
+		self.items = []
+		self.add(Placeholder(types))
 
 	def render(self):
-		return [w('textbox')]
-	
+		r = [t("[")]
+		for item in self.items:
+			r += [ElementTag(item)]
+		r += [t("]")]
+		return r
+
+	def __getitem__(self, i):
+		return self.items[i]
+
+	def fix_relations(self):
+		super(NodeCollider, self).fix_relations()
+		self.fix_(self.items)
+
+	def on_keypress(self, e):
+		item_index = self.insertion_pos(e.cursor)
+		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
+			if len(self.items) > item_index:
+				del self.items[item_index]
+
+	def insertion_pos(self, (char, line)):
+		i = -1
+		for i, item in enumerate(self.items):
+			#print i, item, item._render_start_line, item._render_start_char
+			if (item._render_start_line >= line and
+				item._render_start_char >= char):
+				return i
+		return i + 1
+
+	def flatten(self):
+		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
+
+	def add(self, item):
+		self.items.append(item)
+		assert(isinstance(item, Node))
+		item.parent = self
+
 	def menu(self):
-		text = self.textbox.text
-		#r = [InfoMenuItem("insert:")]
-		it = PlaceholderMenuItem
-
-		r = []
-
-		if text.isdigit():
-			r += [it(Number(text))]
-
-		#r += [it(Text(text))]
-		r += [it(SomethingNew(text))]
-
-		protos = make_protos(self.root, text)
-		#for k,v in protos.iteritems():
-		#	v.parent = self
-		
-		#first the preferred types
-		for t in self.types:
-			for v in works_as(t):
-				if protos.has_key(v):
-					x = protos[v]
-					menuitem = it(x)
-					r += [menuitem]
-					
-					if isinstance(x, Syntaxed):
-						for s in x.syntaxes:
-							#print s
-							tag = s[0]
-							if isinstance(tag, tags.TextTag):
-								if text in tag.text:
-									menuitem.score += 1
-									#print x
-									#if not protos[v] in [i.value for i in r]:
-										
-				elif v == 'functioncall':
-					for i in self.scope():
-						if isinstance(i, FunctionDefinition):
-							r += [it(FunctionCall(i))]
-				
-				elif v == 'termreference':
-					for i in self.scope():
-						if isinstance(i, Triple):
-							r += [it(i.subject)]
-							r += [it(i.object)]
-				
-				elif v == 'dbpediaterm':
-							r += [it(x) for x in DbpediaTerm.enumerate()]
-		
-
-		#then add the rest
-		#for t in self.types:
-		#	for v in works_as(t):
-		#		if protos.has_key(v) and not protos[v] in [i.value for i in r]:
-		#			r += [it(protos[v])]
-
-		#enumerators:
-		#	scope:
-		#		variables, functions
-		#			
-	
-		"""
-		if type == 'pythonidentifier'
-			PythonIdentifier.enumerate(self)
-
-		if type == 'google'
-			Google.enumerate(self)
-		
-		"""
-	
-
-		#variables, functions
-#		for i in self.scope():
-#			if isinstance(i, VariableDeclaration):
-#				r += [it(VariableReference(i))]
-#			if isinstance(i, FunctionDefinition):
-#				r += [it(FunctionCall(i))]
-
-		#1: node types
-		#r += [it(x) for x in self.scope()]
-
-#add best
-#add all
-
-				
-		#2: calls, variables..
-		
-		#filter by self.types:
-		
-		#preferred types:
-		#r += expand_types(self.types)
-		#all types
-		#r += expand_types('all') - expand_types(self.types)
-
-		#sort:
-		
-		#r.sort(key = self.fits)
-
-		return r	
-		
-		
-	def fits(self, item):
-		for t in self.types:
-			if isinstance(item, t):
-				return 1
-		return 0
-		
-
-	def menu_item_selected(self, item):
-		if not isinstance(item, PlaceholderMenuItem):
-			log("not PlaceholderMenuItem")
-			return
-		v = item.value
-		if v == None:
-			log("no value")
-		elif isinstance(v, NodeTypeDeclaration):
-			x = v.type()
-		elif isinstance(v, Node):
-			x = v
-#		elif isinstance(v, type):
-#			x = v()
-		self.parent.replace_child(self, x)
-
-
+		return super(NodeCollider, self).menu() + [InfoMenuItem("magic goes here")]
 
 
 
@@ -736,7 +645,7 @@ class Placeholder(Node):
 		
 		#r.sort(key = self.fits)
 
-		return r	
+		return super(Placeholder, self).menu() + r
 		
 		
 	def fits(self, item):
@@ -932,7 +841,7 @@ class Root(Syntaxed):
 		return flatten([self] + self.items.flatten())
 
 class While(Syntaxed):
-	def __init__(self,condition,statements):
+	def __init__(self):
 		super(While,self).__init__()
 
 		self.syntaxes = [[t("while"), ch("condition"), t("do:"), nl(), ch("statements")],
