@@ -23,7 +23,7 @@ class Menu(object):
 		menu_area = pygame.Rect(0,0,0,0)
 		ypos = y
 		for i, item in enumerate(self.items):
-#			log(str(item))
+			log(str(item))
 			assert(isinstance(item, MenuItem))
 			item_area = item.draw(self, scr, font, x, ypos)
 			item.rect = (x,ypos, item_area.w, item_area.h)
@@ -63,6 +63,7 @@ class Menu(object):
 		self.sel += y
 		if self.sel < 0: self.sel = 0
 		if self.sel >= len(self.items): self.sel = len(self.items) - 1
+		print len(self.items)
 
 #on mousedown or (mousemove if mouse is down):
 #	self.sel = item under mouse
@@ -84,3 +85,4 @@ class HelpMenuItem(InfoMenuItem):
 	def __init__(self, text):
 		self.text = text
 		self.color = (255,255,255)
+

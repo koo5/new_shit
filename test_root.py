@@ -64,7 +64,7 @@ def test_root():
 			signature = FunctionSignature([Text("disable screensaver")]),
 			body = Statements([ShellCommand("xset s off")]))
 		]]
-	r.add((["stuff"], stuff))
+	r.add(("stuff", stuff))
 
 	"""
 	docs = Module("docs")
@@ -79,14 +79,14 @@ def test_root():
 
 	"""
 
-	settings = Dict()
-	[settings.add(x) for x in [
+	settings_mod = Dict()
+	[settings_mod.add(x) for x in [
 		("webos hack", widgets.Toggle(None, False)),
 		("font size", settings.FontSize(18)),
 		("colors", Dict()),
 		("sdl key repeat", settings.KeyRepeat())]]
 
-	[settings["colors"].add(x) for x in [
+	[settings_mod["colors"].add(x) for x in [
 		("monochrome", widgets.Toggle(None, False)),
 		("invert", widgets.Toggle(None, False)),
 		("background", Dict())
@@ -100,6 +100,7 @@ def test_root():
 				("B", widgets.Number(None, 0, (0, 255)))], False))
 		]
 	"""
+	r.add(("settings", settings_mod))
 
 	r.fix_relations()
 	

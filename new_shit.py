@@ -21,7 +21,7 @@ import project
 import test_root
 import tags as tags_module
 import colors
-from menu import Menu
+from menu import Menu, HelpMenuItem
 from nodes import find_by_path
 import nodes
 
@@ -220,8 +220,8 @@ def keypress(event):
 	else:
 		menu.element = None
 		menu.items = []
-	menu.items.append(menu.help())
-	menu.items.append(top_help())
+	menu.items += menu.help()
+	menu.items += top_help()
 	
 	draw()
 
@@ -380,6 +380,7 @@ if t:
 #https://code.google.com/p/asq/
 #List should have its own menu
 
+"""
 t = find("programs/items/0")
 print t.menu()
 print t.menu()[0].value
@@ -387,16 +388,16 @@ t.menu_item_selected(
 	[i for i in t.menu() 
 		if (isinstance(i, nodes.PlaceholderMenuItem) 
 		and isinstance(i.value, nodes.Program))][0])
-
+"""
 
 render()
 
 
 #t = project.find(find('placeholder test/0'), lines)
 #t = project.find(find('docs/4'), lines)
-t = project.find(find('programs/0/statements/0'), lines)
-if t:
-	cursor_c, cursor_r = t
+#t = project.find(find('programs/0/statements/0'), lines)
+#if t:
+#	cursor_c, cursor_r = t
 
 draw()
 

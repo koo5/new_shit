@@ -404,7 +404,7 @@ class Dict(Collapsible):
 		assert(not self.items.has_key(key))
 		self.items[key] = val
 		assert(isinstance(key, str))
-		assert(isinstance(val, Node))
+		assert(isinstance(val, element.Element))
 		val.parent = self
 
 class List(Collapsible):
@@ -441,6 +441,7 @@ class List(Collapsible):
 			return True
 
 	def insertion_pos(self, (char, line)):
+		i = -1
 		for i, item in enumerate(self.items):
 			#print i, item, item._render_start_line, item._render_start_char
 			if (item._render_start_line >= line and
@@ -891,7 +892,11 @@ class Module(Syntaxed):
 		self.setch('statements', Statements(['all']))
 		self.name = widgets.Text(self, name)
 		self.syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
-		
+
+	def add(self, item):
+		self.statements.add(item)
+
+
 class ShellCommand(Syntaxed):
 	def __init__(self, command):
 		super(ShellCommand, self).__init__()
