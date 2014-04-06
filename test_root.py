@@ -56,7 +56,7 @@ def test_root():
 							Root, While, Note, Todo, Idea]]
 					), name = "builtins"),
 	"""
-
+	"""
 	stuff = Module("stuff")
 	[stuff.add(x) for x in [
 		Note("stupid, but gotta start somewhere"),
@@ -65,7 +65,7 @@ def test_root():
 			body = Statements([ShellCommand("xset s off")]))
 		]]
 	r.add(("stuff", stuff))
-
+	"""
 	"""
 	docs = Module("docs")
 	r["docs"].add(docs)

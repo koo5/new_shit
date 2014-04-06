@@ -167,7 +167,7 @@ def make_protos(root, text):
 		'program': Program(),
 		'islessthan': IsLessThan(),
 		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),
-		'functiondefinition': FunctionDefinition(FunctionSignature([Placeholder(['argumentdefinition', 'text'])]), Statements([Text("body")])),
+		'functiondefinition': FunctionDefinition(),
 		'argumentdefinition': ArgumentDefinition(),
 		'triple': Triple.make_proto()
 		}
@@ -476,11 +476,8 @@ class CollapsibleText(Collapsible):
 		
 
 class Statements(List):
-	def __init__(self, types = ['all'], items = []):
-		assert(isinstance(types, list))
-		log("Statements(), my types are"+str(types))
-		List.__init__(self, types=types, expanded=True, vertical=True)
-
+	def __init__(self):
+		List.__init__(self, types=['statement'], expanded=True, vertical=True)
 
 class NodeCollider(Node):
 	def __init__(self, types=['all']):
@@ -763,7 +760,7 @@ class Program(WithDef):
 		super(Program, self).__init__(syntax_def = None)
 		#self.sys=__import__("sys")
 
-		self.setch('statements', Statements(['statement']))
+		self.setch('statements', Statements())
 		self.setch('name', Text(name))
 		self.setch('author', Text(author))
 		self.setch('date_created', Text(date_created))
@@ -798,7 +795,7 @@ class Program(WithDef):
 class Module(Syntaxed):
 	def __init__(self, name="unnamed"):
 		super(Module, self).__init__()
-		self.setch('statements', Statements(['all']))
+		self.setch('statements', Statements())
 		self.name = widgets.Text(self, name)
 		self.syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
 
@@ -848,8 +845,7 @@ class While(Syntaxed):
 						 [t("repeat if"), ch("condition"), t("is true:"), nl(), ch("statements"), t("go back up..")]]
 		self.setch('condition',
 			NodeCollider(["expression"]))
-		self.setch('statements',
-			Statements(["statement"]))
+		self.setch('statements',Statements())
 
 	def eval(self):
 		self.runtime.evaluated = True	
@@ -976,21 +972,19 @@ class ArgumentDefinition(NewStyle):
 
 
 class FunctionSignature(NewStyle):
-	def __init__(self, items):
+	def __init__(self):
 		super(FunctionSignature, self).__init__()
-		self.syntaxes=[[ch("items")]]
-		self.setch('items', Statements(types=['argumentdefinition', 'text'], items = items))
+		self.syntaxes=[[t("function:"),ch("items")]]
+		self.setch('items', List(types=['argumentdefinition', 'text']))
 
 #class PythonFunctionCall
 #class LemonFunctionCall
 
 class FunctionDefinition(Syntaxed):
-	def __init__(self, signature, body):
+	def __init__(self):
 		super(FunctionDefinition, self).__init__()
-		assert isinstance(body, Statements)
-		assert isinstance(signature, FunctionSignature)
-		self.setch('body', body)
-		self.setch('signature', signature)
+		self.setch('body', Statements())
+		self.setch('signature', FunctionSignature())
 		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
 
 
