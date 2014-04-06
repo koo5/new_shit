@@ -17,13 +17,14 @@ class Menu(object):
 	def __init__(self):
 		self.sel = 0
 		self._items = [InfoMenuItem("hello")]
+		self.element = None
 		
 	def draw(self, scr, font, x, y, size):
 		#s = pygame.Surface((size[0], size[1]), pygame.SRCALPHA)
 		menu_area = pygame.Rect(0,0,0,0)
 		ypos = y
 		for i, item in enumerate(self.items):
-			log(str(item))
+			#log(str(item))
 			assert(isinstance(item, MenuItem))
 			item_area = item.draw(self, scr, font, x, ypos)
 			item.rect = (x,ypos, item_area.w, item_area.h)
@@ -44,6 +45,7 @@ class Menu(object):
 	
 	
 	def keypress(self, e):
+		ping()
 		if e.mod & pygame.KMOD_CTRL:
 			if e.key == pygame.K_UP:
 				self.move(-1)
@@ -59,10 +61,11 @@ class Menu(object):
 				
 
 	def move(self,y):
+		ping()
 		self.sel += y
 		if self.sel < 0: self.sel = 0
 		if self.sel >= len(self.items): self.sel = len(self.items) - 1
-		print len(self.items)
+		print len(self.items), self.sel
 
 #on mousedown or (mousemove if mouse is down):
 #	self.sel = item under mouse

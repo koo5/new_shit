@@ -215,13 +215,15 @@ def keypress(event):
 		
 	render()
 	e = under_cursor()
-	menu.items = []
-	while e != None:
-		menu.items += e.menu()
-		e = e.parent
-	menu.element = e
-	menu.items += menu.help()
-	menu.items += top_help()
+	if e != menu.element:
+		log("menu change")
+		menu.element = e
+		menu.items = []
+		while e != None:
+			menu.items += e.menu()
+			e = e.parent
+		menu.items += menu.help()
+		menu.items += top_help()
 	
 	draw()
 
