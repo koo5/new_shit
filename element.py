@@ -43,10 +43,10 @@ class Element(event.EventDispatcher):
 	def indent_length(self):
 		return self.parent.indent_length
 			
-	def fix_relations(self):
+	def fix_parents(self):
 		pass
 	
-	def fix_(self, items):
+	def _fix_parents(self, items):
 		for i in items:
 			i.parent = self
 			i.fix_relations()

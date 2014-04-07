@@ -1,5 +1,5 @@
-from collections import OrderedDict
 import pygame
+from collections import OrderedDict
 from compiler.ast import flatten
 
 
@@ -36,116 +36,9 @@ def works_as(y):
 
 
 
-#fuzzywuzzy , to help make sense of the error messages brought about by the __getattr__ madness
-#would work without fuzzywuzzy, but its a nice training, this module will later be handy anyway
-
-try:
-	import fuzzywuzzy #pip install --user fuzzyfuzzy
-	from fuzzywuzzy import process as fuzzywuzzyprocess
-except:
-	fuzzywuzzyprocess = None
-
-
-
-
-class NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(AttributeError):
-	def __init__(self, wanted, obj):
-		self.obj = obj
-		self.wanted = wanted
-	def __str__(self):
-		r = "\"%s\" is not an attribute or child of %s, or maybe property getter raised AtributteError, or maybe you called __getitem__ directly, or confused ch() with w().\n" % (self.wanted, self.obj)
-		if fuzzywuzzyprocess:
-			r += "attributes, widgets: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, dir(self.obj), limit=10, score_cutoff=50)]) + "...\n"
-			assert(isinstance(self.obj, Node))
-			r += "children: " + ", ".join([i for i,v in fuzzywuzzyprocess.extractBests(self.wanted, [x for x in self.obj.children], limit=10, score_cutoff=50)]) + "..."
-		return r
-
-
-
-
-#homebrew Xpath, for finding elements of the tree...what do?
-#how it relates to the __getattr__ madness is unknown as of yet
-
-def parse_path(path):
-	path = path.split("/")
-	r = []
-	for i in path:
-		if i.isdigit():
-			r.append(int(i))
-		elif "=" in i:
-			spl = i.split("=")
-			r.append({spl[0]:spl[1]})
-		elif len(i) > 0:
-			r.append(i)
-	return r
-
-def find_by_path(item, path):
-	r = find_in(item, parse_path(path))
-
-	if r == None:
-		log("not found: " + path + " in " +  str(item))
-
-	#log(r)
-	return r
-
-def find_in(haystack, path):
-	debug = False
-	if debug: ping()
-	assert(isinstance(haystack, (list, dict, element.Element)))
-	if len(path) == 0:
-		return haystack
-		
-	needle = path[0]
-	r = None
-	
-	if isinstance(needle, dict):
-		k,v = needle.items()[0]
-		try:
-			for child in haystack.items:
-				try:
-					if getattr(child, k) == v:
-						ch = find_in(child, rest)
-						if ch: r = ch
-				except Exception as e:
-					if debug: print e
-					pass
-		except Exception as e:
-			if debug: print e
-			pass
-	
-	if isinstance(needle, str):
-		try:
-			r = getattr(haystack, needle)
-		except Exception as e:
-			if debug: print e
-			try:
-				r = haystack[needle]
-			except Exception as e:
-				if debug: print e
-				pass
-			
-	if isinstance(needle, int):
-		try:
-			r = haystack[needle]
-		except Exception as e:
-			if debug: print e
-			pass
-
-	if r != None and len(path) > 1:
-		return find_in(r, path[1:])
-	else:
-		return r
-
-
-
-
-
 class val(list):
 	def val(self):
-		return [][-1]
-
-
-
+		return self[-1]
 
 class Value(object):
 	def __init__(self, value):
@@ -154,145 +47,82 @@ class Value(object):
 
 
 
-
 #a node is more than an element, it keeps track of its children with a dict.
 #in the editor, nodes can be cut'n'pasted around on their own, which wouldnt
 #make sense for widgets
 #everything is lumped together here, real ast nodes with clock and sticky notes,
-#tho some nodes broke away into toolbar.py settings.py menu.py and the_doc.py
+#tho some nodes broke away into toolbar.py settings.py and the_doc.py
+
+class Children(dotdict):
+	pass
+
 
 class Node(element.Element):
 	def __init__(self):
 		super(Node, self).__init__()
 		self.color = (0,255,0,255)
-		self.children = {}
+		self.ch = Children()
 		self.runtime = dotdict()
 
-	def fix_relations(self):
-		self.fix_(self.children.values())
+	def fix_parents(self):
+		self._fix_parents(self.ch.values())
 
-	def __getattr__(self, name):
-#		assert('children' in dir(self))
-		#log(self)
-		if self.children.has_key(name):
-			return self.children[name]
-		else:
-			#raise AttributeError()
-			raise NotEvenAChildOrWidgetOrMaybePropretyGetterRaisedAnAttributeError(name, self)
-
-	def setch(self, key, item):
-		self.children[key] = item
+	def setch(self, name, item):
+		assert(isinstance(name, str))
+		assert(isinstance(item, Node))
 		item.parent = self
-	
-
-	def find(self, path):
-		return find_by_path(self, path)
+		self.ch[name] = item
 
 	def replace_child(self, child, new):
-		assert(child in self.children.values())
+		assert(child in self.ch.values())
+		assert(isinstance(new, Node))
 		for k,v in self.children.iteritems():
 			if v == child:
 				self.children[k] = new
 		new.parent = self
 
-
 	def scope(self):
 		r = []
 
-		if self.parent != None and isinstance(self.parent, Statements):
+		if isinstance(self.parent, Statements):
 			r += self.parent.above(self)
 
 		r += self.parent.scope()
 
 		assert(r != None)
+		assert(flatten(r) == r)
 		return r
 
 	def flatten(self):
-		for v in self.children.itervalues():
-			print self
-			assert(isinstance(v, Node))
-		return [self] + [v.flatten() for v in self.children.itervalues()]
+		assert(isinstance(v, Node) for v in self.ch.itervalues())
+		return [self] + [v.flatten() for v in self.ch.itervalues()]
 
 	def eval(self):
-
 		self.runtime.value.append(Value(None))
 		self.runtime.evaluated = True
-		self.runtime.unimplemented = True
+		self.runtime.implemented = False
 		return self.runtime.value.val
 
-	
-#	def program(self):
-#		if isinstance(self, Program):
-#			return self
-#		else:
-#			if self.parent != None:
-#				return self.parent.program()
-#			else:
-#				print self, "has no parent"
-#				return None
-
-
-"""
-	def render_syntax(self, syntax):
-		r = []
-		for item in syntax:
-			if isinstance(item, ch):
-				if not self.children.has_key(item.name):
-					log('expanding child "'+item.name+'" of node '+str(self))
-					log("doesnt look good")
-				r += self.children[item.name].tags()
-			if isinstance(item, w):
-				if not self.__dict__.has_key(item.name):
-					log('expanding widget "'+item.name+'" of node '+str(self))		
-					log("doesnt look good")
-				r += self.__dict__[item.name].tags()
+	def program(self):
+		if isinstance(self, Program):
+			return self
+		else:
+			if self.parent != None:
+				return self.parent.program()
 			else:
-				r.append(item)
-		return r
-"""
+				print self, "has no parent"
+				return None
 
-class Syntaxed(Node):
-	def __init__(self):
-		super(Syntaxed, self).__init__()
-		self.syntax_index = 0
-
-	@property
-	def syntax(self):
-		return self.syntaxes[self.syntax_index]
-
-	def render(self):
-#		return self.render_syntax(self.syntax)
-		return self.syntax
-
-	def prev_syntax(self):
-		self.syntax_index  -= 1
-		if self.syntax_index < 0:
-			self.syntax_index = 0
-
-	def next_syntax(self):
-		self.syntax_index  += 1
-		if self.syntax_index == len(self.syntaxes):
-			self.syntax_index = len(self.syntaxes)-1
-
-	def on_keypress(self, e):
-		if pygame.KMOD_CTRL & e.mod:
-			if e.key == pygame.K_PAGEUP:
-				self.prev_syntax()
-				log("prev")
-				return True
-			if e.key == pygame.K_PAGEDOWN:
-				self.next_syntax()
-				log("next")
-				return True
 
 
 class Literal(Node):
 	def __init__(self):
 		super(Literal, self).__init__()	
 	def eval(self):
-		self.runtime.value.append(Value(self.get_value()))
+		v = Value(self.get_value())
+		self.runtime.value.append(v)
 		self.runtime.evaluated = True
-		return self.runtime.value.val
+		return v
 	def get_value(self):
 		return self.widget.text
 
@@ -358,20 +188,23 @@ class Dict(Collapsible):
 			r += [dedent(), nl()]
 		
 		return r
-#	def __getattr__(self, name):
-#		if self.items.has_key(name):
-#			return self.items[name]
-#		else:
-#			return super(Dict, self).__dict__[name]?
+
+	def __getattr__(self, name):
+		if self.items.has_key(name):
+			return self.items[name]
+		else:
+			raise AttributeError()
+
 	def __getitem__(self, i):
 		return self.items[i]
 
-	def fix_relations(self):
+	def fix_parents(self):
 		super(Dict, self).fix_relations()
-		self.fix_(self.items.values())
+		self._fix_parents(self.items.values())
 
 	def flatten(self):
 		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]
+		#skip Widgets, as in settings
 
 	def add(self, (key, val)):
 		assert(not self.items.has_key(key))
@@ -379,6 +212,7 @@ class Dict(Collapsible):
 		assert(isinstance(key, str))
 		assert(isinstance(val, element.Element))
 		val.parent = self
+
 
 class List(Collapsible):
 	def __init__(self, types=['all'], expanded=True, vertical=True):
@@ -399,9 +233,9 @@ class List(Collapsible):
 	def __getitem__(self, i):
 		return self.items[i]
 
-	def fix_relations(self):
+	def fix_parents(self):
 		super(List, self).fix_relations()
-		self.fix_(self.items)
+		self._fix_parents(self.items)
 
 	def on_keypress(self, e):
 		item_index = self.insertion_pos(e.cursor)
@@ -736,7 +570,7 @@ class VariableReference(Node):
 		super(VariableReference, self).__init__()
 		self.declaration = declaration
 	def render(self):
-		return [t(self.declaration.name.text)]
+		return [t("->"+self.declaration.name.text)]
 
 
 class SomethingNew(Node):
@@ -780,18 +614,93 @@ class WithDef(Node):
 		return self.syntax_def.syntax_def
 
 
+
+
+class Root(Dict):
+	def __init__(self):
+		super(Root, self).__init__()
+		self.parent = None
+		self.post_render_move_caret = 0
+		self.indent_length = 4
+
+	def render(self):
+		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
+
+
+
+
+
+
+class Syntaxed(Node):
+	child_types = {}
+
+	def __init__(self):
+		super(Syntaxed, self).__init__()
+		self.syntax_index = 0
+
+	@property
+	def syntax(self):
+		return self.syntaxes[self.syntax_index]
+
+	def render(self):
+#		return self.render_syntax(self.syntax)
+		return self.syntax
+
+	def prev_syntax(self):
+		self.syntax_index  -= 1
+		if self.syntax_index < 0:
+			self.syntax_index = 0
+
+	def next_syntax(self):
+		self.syntax_index  += 1
+		if self.syntax_index == len(self.syntaxes):
+			self.syntax_index = len(self.syntaxes)-1
+
+	def on_keypress(self, e):
+		if pygame.KMOD_CTRL & e.mod:
+			if e.key == pygame.K_PAGEUP:
+				self.prev_syntax()
+				log("prev")
+				return True
+			if e.key == pygame.K_PAGEDOWN:
+				self.next_syntax()
+				log("next")
+				return True
+
+	@classmethod
+	def new(cls):
+		r = cls()
+		for k, v in cls.child_types.iteritems():
+			if v[0] == 'statements':
+				x = Statements()
+			else:
+				 x = NodeCollider(v)
+			r.children[k] = x
+
+class Module(Syntaxed):
+	syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
+	child_types = {'statements', 'statements'}
+
+	def __init__(self, name="unnamed"):
+		super(Module, self).__init__()
+		self.name = widgets.Text(self, name)
+
+	def add(self, item):
+		self.statements.add(item)
+
 #r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
 #assert(isinstance(r['program'].syntax_def, SyntaxDef))
 class Program(Syntaxed):
-	def __init__(self, name="unnamed", author="banana", date_created="1.1.1.1111"):
+	syntaxes = [[t("program by "), ch("author"), nl(), ch("statements"), t("end."), w("run_button"), w("results")]]
+	child_types = {
+					'statements': ['statements'],
+					'name': ['text'],
+					'author': ['text']}
+
+	def __init__(self):
 		super(Program, self).__init__()
 		#self.sys=__import__("sys")
-		self.syntaxes = [[t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end."), w("run_button"), w("results")]]
 
-		self.setch('statements', Statements())
-		self.setch('name', Text(name))
-		self.setch('author', Text(author))
-		self.setch('date_created', Text(date_created))
 		self.run_button = widgets.Button(self, "run!")
 		self.run_button.push_handlers(on_click = self.on_run_click)
 		self.results = widgets.Text(self, "")
@@ -825,53 +734,16 @@ class Program(Syntaxed):
 				r += m.find("statements/items")
 		return r
 
-
-
-class Module(Syntaxed):
-	def __init__(self, name="unnamed"):
-		super(Module, self).__init__()
-		self.setch('statements', Statements())
-		self.name = widgets.Text(self, name)
-		self.syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
-
 	def add(self, item):
 		self.statements.add(item)
 
 
 class ShellCommand(Syntaxed):
+	syntaxes = [[t("run shell command:"), w("command")]]
+
 	def __init__(self, command):
 		super(ShellCommand, self).__init__()
 		self.command = widgets.Text(self, command)
-		self.syntaxes = [[t("run shell command:"), w("command")]]
-
-class Root(Syntaxed):
-	def __init__(self):
-		super(Root, self).__init__()
-		self.parent = None
-		self.post_render_move_caret = 0
-		self._indent_length = 4
-		self.setch('items', Dict())
-		self.syntaxes = [
-			[ColorTag((255,255,255,255)), ch("items"), EndTag()],
-			[ColorTag((255,255,255,255)), t("root of all evil:"), nl(), ch("items"), EndTag()]
-			]
-
-	def add(self, item):
-		self.items.add(item)
-
-	def __getitem__(self, i):
-		return self.items[i]
-
-	def find(self, path):
-		return find_by_path(self.items, path)
-
-	@property
-	def indent_length(self):
-		return self._indent_length
-
-	def flatten(self):
-		return flatten([self] + self.items.flatten())
-
 
 class While(Syntaxed):
 	def __init__(self):

@@ -22,7 +22,6 @@ import test_root
 import tags as tags_module
 import colors
 from menu import Menu, HelpMenuItem
-from nodes import find_by_path
 import nodes
 
 
