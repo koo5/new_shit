@@ -30,7 +30,7 @@ def works_as(y):
 	while q.nextSolution():
 		r += [str(X.value)]
 	q.closeQuery()
-	print r
+	#print r
 	return r
 
 
@@ -153,6 +153,24 @@ class Value(object):
 
 
 
+def str_to_node(text):
+	r = {'module': Module,
+		'while': While,
+		'bool': Bool,
+		'text': Text,
+		'number': Number,
+		'note': Note,
+		'todo': Todo,
+		'idea': Idea,
+	    'assignment': Assignment,
+		'program': Program,
+		'islessthan': IsLessThan,
+		'typedeclaration': TypeDeclaration,
+		'functiondefinition': FunctionDefinition,
+		'argumentdefinition': ArgumentDefinition,
+	    'functioncall': FunctionCall
+		}
+	return r[text]
 
 def make_protos(root, text):
 	r = {'module': Module(),
@@ -171,10 +189,8 @@ def make_protos(root, text):
 		'argumentdefinition': ArgumentDefinition(),
 		'triple': Triple.make_proto()
 		}
-		
-	r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
-	assert(isinstance(r['program'].syntax_def, SyntaxDef))
-	
+
+
 	return r
 
 
@@ -470,6 +486,11 @@ class List(Collapsible):
 		assert(isinstance(item, Node))
 		item.parent = self
 
+	def newline(self):
+		p = NodeCollider(self.types)
+		p.parent = self
+		self.items.append(p)
+
 class CollapsibleText(Collapsible):
 	def __init__(self, value):
 		super(CollapsibleText, self).__init__(value)
@@ -527,7 +548,25 @@ class NodeCollider(Node):
 		item.parent = self
 
 	def menu(self):
-		return super(NodeCollider, self).menu() + [InfoMenuItem("magic goes here")]
+		r = [InfoMenuItem("magic goes here")]
+
+		for type in self.types:
+			r += [InfoMenuItem("for type "+type)]
+			for w in works_as(type):
+				r += [InfoMenuItem("works as "+w)]
+				n = str_to_node(w)
+				if isinstance(w, Syntaxed):
+					for syntax in n.syntaxes:
+						#matches with current contents?
+						for i in range(min(len(self.items). len(syntax))):
+							if isinstance(syntax[i], tags.TextTag):
+								if isinstance(self.items[i], SomethingNew):
+									r += [InfoMenuItem(str(w))]
+
+
+
+		r += [InfoMenuItem("banana")]
+		return r
 
 	def replace_child(self, child, new):
 		assert(child in self.items)
@@ -763,6 +802,9 @@ class WithDef(Node):
 		assert(isinstance(self.syntax_def, SyntaxDef))
 		return self.syntax_def.syntax_def
 
+
+#r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
+#assert(isinstance(r['program'].syntax_def, SyntaxDef))
 class Program(Syntaxed):
 	def __init__(self, name="unnamed", author="banana", date_created="1.1.1.1111"):
 		super(Program, self).__init__()

@@ -7,6 +7,7 @@ def test_root():
 	r = Root()
 	r.add(("programs", List(types=['program'])))
 	r["programs"].add(Program())
+	r["programs"][0].statements.newline()
 	#r["programs"].add(
 				#Program(Statements([
 					#Placeholder([], "statement")#,
