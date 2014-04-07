@@ -9,7 +9,7 @@ from dotdict import dotdict
 from logger import ping, log
 import element
 import widgets
-from menu import MenuItem, InfoMenuItem
+from menu import MenuItem, InfoMenuItem, HelpMenuItem
 import tags
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
 import project
@@ -215,8 +215,6 @@ class Node(element.Element):
 		return find_by_path(self, path)
 
 	def replace_child(self, child, new):
-		ping()
-		print self.children
 		assert(child in self.children.values())
 		for k,v in self.children.iteritems():
 			if v == child:
@@ -283,20 +281,25 @@ class Syntaxed(Node):
 	def __init__(self):
 		super(Syntaxed, self).__init__()
 		self.syntax_index = 0
+
 	@property
 	def syntax(self):
 		return self.syntaxes[self.syntax_index]
+
 	def render(self):
 #		return self.render_syntax(self.syntax)
 		return self.syntax
+
 	def prev_syntax(self):
 		self.syntax_index  -= 1
 		if self.syntax_index < 0:
 			self.syntax_index = 0
+
 	def next_syntax(self):
 		self.syntax_index  += 1
 		if self.syntax_index == len(self.syntaxes):
 			self.syntax_index = len(self.syntaxes)-1
+
 	def on_keypress(self, e):
 		if pygame.KMOD_CTRL & e.mod:
 			if e.key == pygame.K_PAGEUP:
@@ -369,14 +372,10 @@ class Collapsible(Node):
 			self.toggle()
 
 class Dict(Collapsible):
-	def __init__(self, tuples=[], expanded=True):
+	def __init__(self, expanded=True):
 		super(Dict, self).__init__(expanded)
-		#Dict is created from a list of pairs ("key", value)
-		self.items = OrderedDict(tuples)
+		self.items = OrderedDict()
 		
-		for key, item in self.items.iteritems():
-			item.parent = self
-
 	def render_items(self):
 		r = []
 		for key, item in self.items.iteritems():
@@ -411,6 +410,9 @@ class List(Collapsible):
 	def __init__(self, types=['all'], expanded=True, vertical=True):
 		super(List, self).__init__(expanded, vertical)
 		self.types = types
+		assert(isinstance(types, list))
+		for i in types:
+			assert(isinstance(i, str))
 		self.items = []
 
 	def render_items(self):
@@ -456,6 +458,7 @@ class List(Collapsible):
 			
 	def flatten(self):
 		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
+
 
 	def replace_child(self, child, new):
 		assert(child in self.items)
@@ -526,14 +529,18 @@ class NodeCollider(Node):
 	def menu(self):
 		return super(NodeCollider, self).menu() + [InfoMenuItem("magic goes here")]
 
-
+	def replace_child(self, child, new):
+		assert(child in self.items)
+		self.items[self.items.index(child)] = new
+		new.parent = self
+		p = Placeholder(self.types)
+		p.parent = self
+		self.items.append(p)
 
 
 class Placeholder(Node):
-	def __init__(self, types=None, description = None):
+	def __init__(self, types=['all'], description = None):
 		super(Placeholder, self).__init__()
-		if types == None or len(types) == 0:
-			types = ['all']
 		self.types = types
 		if description == None: description = str(types)
 		self.description = description
@@ -747,18 +754,20 @@ class SyntaxDef(Node):
 		return [t("syntax definition:"), t(str(self.syntax_def))]
 
 class WithDef(Node):
-	def __init__(self, syntax_def):
+	def __init__(self):
 		super(WithDef, self).__init__()
-		self.syntax_def = syntax_def
-		
+		self.syntax_def
+
 	def render(self):
-		print self
+		self.syntax_def = self.root.find("modules/0/0")
+		assert(isinstance(self.syntax_def, SyntaxDef))
 		return self.syntax_def.syntax_def
 
-class Program(WithDef):
+class Program(Syntaxed):
 	def __init__(self, name="unnamed", author="banana", date_created="1.1.1.1111"):
-		super(Program, self).__init__(syntax_def = None)
+		super(Program, self).__init__()
 		#self.sys=__import__("sys")
+		self.syntaxes = [[t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end."), w("run_button"), w("results")]]
 
 		self.setch('statements', Statements())
 		self.setch('name', Text(name))
@@ -772,7 +781,7 @@ class Program(WithDef):
 		self.run()
 
 	def menu(self):
-		return [HelpMenuItem("f5: run")] + super(Program).menu()
+		return [HelpMenuItem("f5: run")]
 
 	def on_keypress(self, e):
 		if e.key == pygame.K_F5:

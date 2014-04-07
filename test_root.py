@@ -6,7 +6,7 @@ import the_doc
 def test_root():
 	r = Root()
 	r.add(("programs", List(types=['program'])))
-
+	r["programs"].add(Program())
 	#r["programs"].add(
 				#Program(Statements([
 					#Placeholder([], "statement")#,
