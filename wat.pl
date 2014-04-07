@@ -1,4 +1,5 @@
 
+node(variablereference).
 node(typedeclaration).
 node(typereference).
 node(argumentdefinition).
@@ -18,7 +19,7 @@ node(program).
 node(islessthan).
 
 works_as(islessthan, expression).
-
+works_as(variablereference, expression).
 works_as(type, statement).
 works_as(functiondefinition, statement).
 works_as(functioncall, expression).

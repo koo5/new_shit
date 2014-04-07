@@ -45,6 +45,7 @@ flags = pygame.RESIZABLE
 screen_surface = None
 cached_root_surface = None
 lines = []
+scroll_lines = 0
 
 
 def find(x):
@@ -55,11 +56,11 @@ def cache_colors():
 
 def render():
 	global lines, cached_root_surface
-	log("render")	
+#	log("render")
 	cache_colors()
 	project._width = screen_surface.get_width() / font_width / 2
 	project._indent_width = 4
-	lines = project.project(root)
+	lines = project.project(root)[scroll_lines:]
 	
 	if __debug__:
 		assert(isinstance(lines, list))
@@ -203,6 +204,9 @@ class KeypressEvent(object):
 def move_cursor(x):
 	global cursor_c
 	cursor_c += x
+	if cursor_c > len(lines[cursor_r]):
+		updown_cursor(1)
+		cursor_c = 0
 
 def updown_cursor(count):
 	global cursor_r
@@ -215,16 +219,15 @@ def keypress(event):
 		
 	render()
 	e = under_cursor()
-	if e != menu.element:
-		log("menu change")
-		menu.element = e
-		menu.items = []
-		while e != None:
-			menu.items += e.menu()
-			e = e.parent
-		menu.items += menu.help()
-		menu.items += top_help()
-	
+	menu.element = e
+	new_items = []
+	while e != None:
+		new_items += e.menu()
+		e = e.parent
+	new_items += menu.help()
+	new_items += top_help()
+	menu.items = new_items
+
 	draw()
 
 def handle(e):

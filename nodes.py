@@ -153,48 +153,6 @@ class Value(object):
 
 
 
-def str_to_node(text):
-	r = {'module': Module,
-		'while': While,
-		'bool': Bool,
-		'text': Text,
-		'number': Number,
-		'note': Note,
-		'todo': Todo,
-		'idea': Idea,
-	    'assignment': Assignment,
-		'program': Program,
-		'islessthan': IsLessThan,
-		'typedeclaration': TypeDeclaration,
-		'functiondefinition': FunctionDefinition,
-		'argumentdefinition': ArgumentDefinition,
-	    'functioncall': FunctionCall
-		}
-	return r[text]
-
-def make_protos(root, text):
-	r = {'module': Module(),
-		'while': While(),
-		'bool': Bool(False),
-		'text': Text(text),
-		'number': Number(text),
-		'note': Note(text),
-		'todo': Todo(text),
-		'idea': Idea(text),
-		#'assignment': Assignment(Placeholder(['somethingnew', 'variablereference']),Placeholder(['variablereference', 'expression'])),
-		'program': Program(),
-		'islessthan': IsLessThan(),
-		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),
-		'functiondefinition': FunctionDefinition(),
-		'argumentdefinition': ArgumentDefinition(),
-		'triple': Triple.make_proto()
-		}
-
-
-	return r
-
-
-
 
 
 #a node is more than an element, it keeps track of its children with a dict.
@@ -238,14 +196,14 @@ class Node(element.Element):
 		new.parent = self
 
 
-
-	#to be moved to node
 	def scope(self):
 		r = []
-		for m in self.root.find("modules/items"):
-			print m
-			if isinstance(m, Module):
-				r += m.find("statements/items")
+
+		if self.parent != None and isinstance(self.parent, Statements):
+			r += self.parent.above(self)
+
+		r += self.parent.scope()
+
 		assert(r != None)
 		return r
 
@@ -503,6 +461,16 @@ class Statements(List):
 	def __init__(self):
 		List.__init__(self, types=['statement'], expanded=True, vertical=True)
 
+	def above(self, item):
+		assert(item in self.items)
+		r = []
+		for i in self.items:
+			if i == item:
+				return r
+			else:
+				r.append(i)
+
+
 class NodeCollider(Node):
 	def __init__(self, types=['all']):
 		super(NodeCollider, self).__init__()
@@ -554,15 +522,15 @@ class NodeCollider(Node):
 			r += [InfoMenuItem("for type "+type)]
 			for w in works_as(type):
 				r += [InfoMenuItem("works as "+w)]
-				n = str_to_node(w)
-				if isinstance(w, Syntaxed):
-					for syntax in n.syntaxes:
-						#matches with current contents?
-						for i in range(min(len(self.items). len(syntax))):
-							if isinstance(syntax[i], tags.TextTag):
-								if isinstance(self.items[i], SomethingNew):
-									r += [InfoMenuItem(str(w))]
-
+				if nodes_by_name.has_key(w):
+					n = nodes_by_name[w]()
+					#todo: use NodeTypeDeclarations instead
+					if isinstance(n, Syntaxed):
+						for syntax in n.syntaxes:
+							for i in range(min(len(self.items), len(syntax))):
+								if isinstance(syntax[i], tags.TextTag):
+									if isinstance(self.items[i], SomethingNew):
+										r += [InfoMenuItem(str(w))]
 
 
 		r += [InfoMenuItem("banana")]
@@ -575,6 +543,12 @@ class NodeCollider(Node):
 		p = Placeholder(self.types)
 		p.parent = self
 		self.items.append(p)
+
+	def eval(self):
+		i = self.items[0]
+		i.eval()
+		self.runtime = i.runtime
+		return self.runtime.value.val
 
 
 class Placeholder(Node):
@@ -638,7 +612,10 @@ class Placeholder(Node):
 				
 				elif v == 'dbpediaterm':
 							r += [it(x) for x in DbpediaTerm.enumerate()]
-		
+
+				elif v == 'variablereference':
+					print "scope:", self.scope()
+
 
 		#then add the rest
 		#for t in self.types:
@@ -841,6 +818,13 @@ class Program(Syntaxed):
 		self.runtime.evaluated = True
 		return self.statements.eval()
 		
+	def scope(self):
+		r = []
+		for m in self.root.find("modules/items"):
+			if isinstance(m, Module):
+				r += m.find("statements/items")
+		return r
+
 
 
 class Module(Syntaxed):
@@ -887,6 +871,7 @@ class Root(Syntaxed):
 
 	def flatten(self):
 		return flatten([self] + self.items.flatten())
+
 
 class While(Syntaxed):
 	def __init__(self):
@@ -951,15 +936,17 @@ class Clock(Node):
 		
 
 class Assignment(Syntaxed):
-	def __init__(self, left, right):
+	def __init__(self):
 		super(Assignment,self).__init__()
-		assert(isinstance(left, Node))
-		assert(isinstance(right, Node))
 		self.syntaxes=[[ch("left"), t(" = "), ch("right")],
 					[t("set "), ch("left"), t(" to "), ch("right")],
 					[t("have "), ch("left"), t(" be "), ch("right")]]
 		self.setch('left', left)
 		self.setch('right', right)
+
+	@staticmethod
+	def make_proto():
+		return Assignment(Placeholder(['somethingnew', 'variablereference']),NodeCollider(['variablereference', 'expression']))
 
 	#def eval(self):
 	#see the_doc
@@ -1351,6 +1338,48 @@ works_as(Number, 'expression')
 
 
 """
+
+
+nodes_by_name = {
+	'module': Module,
+	'while': While,
+	'bool': Bool,
+	'text': Text,
+	'number': Number,
+	'note': Note,
+	'todo': Todo,
+	'idea': Idea,
+    'assignment': Assignment,
+	'program': Program,
+	'islessthan': IsLessThan,
+	'typedeclaration': TypeDeclaration,
+	'functiondefinition': FunctionDefinition,
+	'argumentdefinition': ArgumentDefinition,
+    'functioncall': FunctionCall
+}
+
+
+
+def make_protos(root, text):
+	r = {'module': Module(),
+		'while': While(),
+		'bool': Bool(False),
+		'text': Text(text),
+		'number': Number(text),
+		'note': Note(text),
+		'todo': Todo(text),
+		'idea': Idea(text),
+		'assignment': Assignment.make_proto(),
+		'program': Program(),
+		'islessthan': IsLessThan(),
+		'typedeclaration': TypeDeclaration(SomethingNew(text), SomethingNew("?")),
+		'functiondefinition': FunctionDefinition(),
+		'argumentdefinition': ArgumentDefinition(),
+		'triple': Triple.make_proto()
+		}
+
+
+	return r
 
 
 
