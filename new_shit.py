@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import argparse, sys
+
+import argparse, sys, os
 import pygame
 from pygame import gfxdraw, font, image, display
+
 
 from logger import bt, log, ping
 import project
@@ -13,6 +15,7 @@ import colors
 from menu import Menu, HelpMenuItem
 import nodes, element
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--mono', action='store_true',
                    help='no colors, just black and white')
@@ -20,7 +23,8 @@ parser.add_argument('--webos', action='store_true',
                    help='webos keys hack')
 parser.add_argument('--invert', action='store_true',
                    help='inverted colors')
-
+parser.add_argument('--font_size', action='store_true',
+                   help='inverted colors')
 args = parser.parse_args()
 
 
@@ -30,7 +34,7 @@ pygame.font.init()
 
 s = os.popen('xset -q  | grep "repeat delay"').read().split()
 repeat_delay, repeat_rate = int(s[3]), int(s[6])
-pygame.key.set_repeat(self.delay.value, 1000/self.rate.value)
+pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
 
 
 flags = pygame.RESIZABLE
@@ -39,9 +43,9 @@ cached_root_surface = None
 lines = []
 scroll_lines = 0
 
+
 def render():
 	global lines, cached_root_surface
-#	log("render")
 	cache_colors()
 	project._width = screen_surface.get_width() / font_width / 2
 	project._indent_width = 4
@@ -52,7 +56,6 @@ def render():
 		for l in lines:
 			assert(isinstance(l, list))
 			for i in l:
-				#log(i)
 				assert(isinstance(i, tuple))
 				assert(isinstance(i[0], str) or isinstance(i[0], unicode))
 				assert(len(i[0]) == 1)
@@ -62,7 +65,6 @@ def render():
 			
 	cached_root_surface = draw_root()
 	
-
 def by_xy((x,y)):
 	c = x / font_width
 	r = y / font_height
@@ -83,14 +85,9 @@ def element_char_index():
 	except:
 		return None
 
-def toggle_fullscreen():
-	log("!fullscreen")
-	root.items['settings']['fullscreen'].value = not root.items['settings']['fullscreen'].value
-	set_mode()
-
 def set_mode():
 	global screen_surface
-	screen_surface = pygame.display.set_mode((1000,500), flags)# + (pygame.FULLSCREEN)) if find('settings/fullscreen/value') else 0))
+	screen_surface = pygame.display.set_mode((1000,500), flags)
 
 def first_nonblank():
 	r = 0
@@ -121,11 +118,11 @@ def top_keypress(event):
 	
 	if pygame.KMOD_CTRL & event.mod:
 		if event.uni == '+':
-			find('settings/font size/widget').value += 1
-			change_font_size(666)
+			args.font_size += 1
+			change_font_size()
 		elif event.uni == '-':
-			find('settings/font size/widget').value -= 1
-			change_font_size(666)
+			args.font_size -= 1
+			change_font_size()
 		elif k == pygame.K_LEFT:
 			cursor_c -= 1
 		elif k == pygame.K_RIGHT:
@@ -171,7 +168,7 @@ class KeypressEvent(object):
 		self.all = pygame.key.get_pressed()
 		self.cursor = cursor
 		
-		if settings['webos hack']:
+		if args['webos_hack']:
 			self.webos_hack()
 	
 	def webos_hack(self):
@@ -258,12 +255,8 @@ def process_event(event):
  		screen_surface = pygame.display.set_mode(event.dict['size'],pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE)
  		render()
 		draw()
- 	
-# 	if event.type == pygame.VIDEOEXPOSE:
-#		ping()
-#		draw()
- 
 
+ 	
 def draw_root():
 	s = pygame.Surface(screen_surface.get_size())
 	s.fill(colors.bg)
@@ -298,14 +291,12 @@ def draw_menu():
 	x, y2 = screen_surface.get_width() / 2, 0
 	menu.draw(screen_surface,
 		{'font':font, 'width':font_width, 'height':font_height},
-		x, y2, #position
-		(screen_surface.get_width() - x, screen_surface.get_height() - y2)) #size
-	
-	
-	
+		#position
+		x, y2, 
+		#size
+		(screen_surface.get_width() - x, screen_surface.get_height() - y2)) 
+
 def draw():
-	#draw_bg()
-	#draw_root()
 	screen_surface.blit(cached_root_surface,(0,0))
 	draw_cursor()
 	draw_menu()
@@ -315,73 +306,39 @@ def bye():
 	log("deading")
 	pygame.display.iconify()
 	sys.exit()
-	nodes.pyswip.prolog._original_sys_exit()	#the fuck..
+	nodes.pyswip.prolog._original_sys_exit()#the fuck..
 
 def loop():
 	process_event(pygame.event.wait())
-	#ping()
 
 
 
-
-display.set_caption('lemon v 0.0 unfinished insane prototype')
+display.set_caption('lemon v 0.0 streamlined insane prototype')
 icon = image.load('icon32x32.png')
 display.set_icon(icon)
 
 
 
 root = test_root.test_root()
-cache_colors()
 menu = Menu()
 cursor_c = cursor_r = 0
 set_mode()
 
 
-find('settings/colors/monochrome').value = args.mono
+def cache_colors():
+	colors.cache(args)
+cache_colors()
 
 
+font = pygame.font.SysFont('monospace', args.font_size)
+font_width, font_height = font.size("X")
 
-#font_width = font_height = font = None
-def change_font_size(setting=None):
-	global font, font_width, font_height
-	s = root['settings']['font size'].value
-	font = pygame.font.SysFont('monospace', s)
-	font_width, font_height = font.size("X")
-root['settings']['font size'].push_handlers(on_change = change_font_size)
-change_font_size()
-
-
-t = find("settings/sdl key repeat")
-if t:
-	t.on_widget_edit(666)
- 
-
-
-#new test root here?
-#https://code.google.com/p/asq/
-#List should have its own menu
-
-"""
-t = find("programs/items/0")
-print t.menu()
-print t.menu()[0].value
-t.menu_item_selected(
-	[i for i in t.menu() 
-		if (isinstance(i, nodes.PlaceholderMenuItem) 
-		and isinstance(i.value, nodes.Program))][0])
-"""
 
 render()
 
-
-#t = project.find(find('placeholder test/0'), lines)
-#t = project.find(find('docs/4'), lines)
-t = project.find(find('programs'), lines)
-if t:
-	cursor_c, cursor_r = t
+cursor_c, cursor_r = project.find(root['programs'], lines)
 
 draw()
-
 
 
 pygame.time.set_timer(pygame.USEREVENT, 100) #poll for SIGINT
@@ -389,7 +346,7 @@ def main():
 	while True:
 		try:
 			loop()
-	#	except KeyboardInterrupt() as e: #add timer
+	#	except KeyboardInterrupt() as e:
 	#		pygame.display.iconify()
 	#		raise e
 		except Exception() as e:

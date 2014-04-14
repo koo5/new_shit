@@ -10,6 +10,7 @@ def the_doc():
 	return List([
 		Chapter("development", 
 			Chapter("todo",	
+				Todo("List should have its own menu"),
 				Todo("strip leading tabs from text of Notes"),
 				Todo("scrolling"),
 				Todo("""bool, syntaxed, how? enum,
