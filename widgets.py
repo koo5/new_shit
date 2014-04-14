@@ -162,9 +162,3 @@ class Toggle(Widget):
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
 			self.toggle()
 			return True
-		
-
-
-
-
-

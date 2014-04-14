@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from nodes import *
 import settings, toolbar
-import the_doc
 
 def test_root():
 	r = Root()
 	r.add(("programs", List(types=['program'])))
 	r["programs"].add(Program())
-	r["programs"][0].statements.newline()
+	r["programs"][0].ch.statements.newline()
 	#r["programs"].add(
 				#Program(Statements([
 					#Placeholder([], "statement")#,
@@ -24,22 +23,6 @@ def test_root():
 				#	For(VariableDeclaration("item")
 				#]), "hello world2", "koo5")]) #semanticize koo5:)
 			
-			#),(
-			
-			#),
-			
-			#),(
-			
-			#"gridtest",Grid(
-			#	items = 'notes/items',
-			#	grid = [
-			#	[0,1,2,3],
-			#	[4,5,6,None]])
-			
-			#),(
-			
-			#(
-
 	r.add(("modules", List(types = ['module'])))
 
 	syntaxdefs = Module("syntaxes for builtins")
@@ -67,42 +50,7 @@ def test_root():
 		]]
 	r.add(("stuff", stuff))
 	"""
-	"""
-	docs = Module("docs")
-	r["docs"].add(docs)
-	docs.add(("docs", the_doc.the_doc())
-	docs.add(("tools", List()))
-	docs["tools"].add(x) for x in [
-		toolbar.SetAllSyntaxesToZero(),
-		Clock()
-		#save, load
-		]
 
-	"""
-
-	settings_mod = Dict()
-	[settings_mod.add(x) for x in [
-		("webos hack", widgets.Toggle(None, False)),
-		("font size", settings.FontSize(18)),
-		("colors", Dict()),
-		("sdl key repeat", settings.KeyRepeat())]]
-
-	[settings_mod["colors"].add(x) for x in [
-		("monochrome", widgets.Toggle(None, False)),
-		("invert", widgets.Toggle(None, False)),
-		("background", Dict())
-	]]
-
-	"""
-	settings["colors"][""]
-	[
-				("R", widgets.Number(None, 0, (0, 255))),
-				("G", widgets.Number(None, 0, (0, 255))),
-				("B", widgets.Number(None, 0, (0, 255)))], False))
-		]
-	"""
-	r.add(("settings", settings_mod))
-
-	r.fix_relations()
+	r.fix_parents()
 	
 	return r

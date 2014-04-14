@@ -1,20 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""window should draw:
-projected text
-menu
-cursor
-TwoDTag
-wish: structured scribbles
-"""
-
-import pygame, sys
+import argparse, sys
+import pygame
 from pygame import gfxdraw, font, image, display
-import argparse
-
-pygame.display.init()
-pygame.font.init()
 
 from logger import bt, log, ping
 import project
@@ -22,22 +11,26 @@ import test_root
 import tags as tags_module
 import colors
 from menu import Menu, HelpMenuItem
-import nodes
-
-
-if __debug__:
-	import element as asselement
-	import nodes as assnodes
-
-
+import nodes, element
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mono', action='store_true',
                    help='no colors, just black and white')
 parser.add_argument('--webos', action='store_true',
                    help='webos keys hack')
+parser.add_argument('--invert', action='store_true',
+                   help='inverted colors')
+
 args = parser.parse_args()
 
+
+pygame.display.init()
+pygame.font.init()
+
+
+s = os.popen('xset -q  | grep "repeat delay"').read().split()
+repeat_delay, repeat_rate = int(s[3]), int(s[6])
+pygame.key.set_repeat(self.delay.value, 1000/self.rate.value)
 
 
 flags = pygame.RESIZABLE
@@ -45,13 +38,6 @@ screen_surface = None
 cached_root_surface = None
 lines = []
 scroll_lines = 0
-
-
-def find(x):
-	return root.find(x)
-
-def cache_colors():
-	colors.cache(root.items['settings']['colors'])
 
 def render():
 	global lines, cached_root_surface
@@ -124,8 +110,10 @@ def and_updown(event):
 
 def top_help():
 	return [HelpMenuItem(t) for t in [
-	"ctrl + +,-: font size",
-	"up, down, left, right, home, end: move cursor"]]
+	"ctrl + +,- : font size",
+	"up, down, left, right, home, end : move cursor",
+	"f12 : normalize"
+	]]
 
 def top_keypress(event):
 	global cursor_r,cursor_c
@@ -145,8 +133,10 @@ def top_keypress(event):
 		else:
 			return False
 	else:
-		if k == pygame.K_F11:
-			toggle_fullscreen()
+		if k == pygame.K_F12:
+			for item in root.flatten():
+				if isinstance(item, nodes.Syntaxed):
+					item.view_normalized = not item.view_normalized
 		elif k == pygame.K_ESCAPE:
 			bye()
 		elif k == pygame.K_UP:
@@ -181,8 +171,7 @@ class KeypressEvent(object):
 		self.all = pygame.key.get_pressed()
 		self.cursor = cursor
 		
-		hack = find("settings/webos hack")
-		if hack and hack.value:
+		if settings['webos hack']:
 			self.webos_hack()
 	
 	def webos_hack(self):
@@ -352,27 +341,15 @@ find('settings/colors/monochrome').value = args.mono
 
 
 
-font_width = font_height = font = None
-def change_font_size(setting):
+#font_width = font_height = font = None
+def change_font_size(setting=None):
 	global font, font_width, font_height
-	t = find('settings/font size/widget')
-	if t:
-		s = t.value
-	else:
-		s = 8
+	s = root['settings']['font size'].value
 	font = pygame.font.SysFont('monospace', s)
 	font_width, font_height = font.size("X")
-	print "font size:", s
+root['settings']['font size'].push_handlers(on_change = change_font_size)
+change_font_size()
 
-change_font_size(666)
-
-#t = find('settings/fullscreen')
-#if t:
-#	t.push_handlers(on_change = toggle_fullscreen)
-
-t = find('settings/font size')
-if t:
-	t.push_handlers(on_change = change_font_size)
 
 t = find("settings/sdl key repeat")
 if t:

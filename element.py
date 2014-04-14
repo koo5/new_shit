@@ -39,17 +39,13 @@ class Element(event.EventDispatcher):
 			assert(self.__class__.__name__ == "Root")
 			return self
 			
-	@property
-	def indent_length(self):
-		return self.parent.indent_length
-			
 	def fix_parents(self):
 		pass
 	
 	def _fix_parents(self, items):
 		for i in items:
 			i.parent = self
-			i.fix_relations()
+			i.fix_parents()
 
 	def menu(self):
 		return [InfoMenuItem("element: " + str(self))]

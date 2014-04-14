@@ -186,20 +186,13 @@ class Dict(Collapsible):
 			r += [t(key), t(":"), indent(), nl()]
 			r += [ElementTag(item)]
 			r += [dedent(), nl()]
-		
 		return r
-
-	def __getattr__(self, name):
-		if self.items.has_key(name):
-			return self.items[name]
-		else:
-			raise AttributeError()
 
 	def __getitem__(self, i):
 		return self.items[i]
 
 	def fix_parents(self):
-		super(Dict, self).fix_relations()
+		super(Dict, self).fix_parents()
 		self._fix_parents(self.items.values())
 
 	def flatten(self):
@@ -234,7 +227,7 @@ class List(Collapsible):
 		return self.items[i]
 
 	def fix_parents(self):
-		super(List, self).fix_relations()
+		super(List, self).fix_parents()
 		self._fix_parents(self.items)
 
 	def on_keypress(self, e):
@@ -637,7 +630,13 @@ class Syntaxed(Node):
 	def __init__(self):
 		super(Syntaxed, self).__init__()
 		self.syntax_index = 0
-
+		for name, types in self.child_types.iteritems():
+			if types == 'statements':
+				v = Statements()
+			else:
+				v = Placeholder(types)
+			self.ch[name] = v
+		
 	@property
 	def syntax(self):
 		return self.syntaxes[self.syntax_index]
@@ -679,21 +678,21 @@ class Syntaxed(Node):
 
 class Module(Syntaxed):
 	syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
-	child_types = {'statements', 'statements'}
+	child_types = {'statements': 'statements'}
 
 	def __init__(self, name="unnamed"):
 		super(Module, self).__init__()
 		self.name = widgets.Text(self, name)
 
 	def add(self, item):
-		self.statements.add(item)
+		self.ch.statements.add(item)
 
 #r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
 #assert(isinstance(r['program'].syntax_def, SyntaxDef))
 class Program(Syntaxed):
 	syntaxes = [[t("program by "), ch("author"), nl(), ch("statements"), t("end."), w("run_button"), w("results")]]
 	child_types = {
-					'statements': ['statements'],
+					'statements': 'statements',
 					'name': ['text'],
 					'author': ['text']}
 
