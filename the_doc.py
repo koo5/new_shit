@@ -83,6 +83,11 @@ def the_doc():
 					output:
 			"""),
 					
+			Chapter("type system notes", """
+			http://lambda-the-ultimate.org/node/3145
+			
+			"""),
+
 			Chapter("funky wishes", """
 			voice recognition (samson?)
 			eye tracking
@@ -101,7 +106,8 @@ def the_doc():
 			* frontend uses pygame
 			* nodes handle pygame events (keyboard and mouse)
 			* frontend could be divided from backend, just passing lines and events back and forth
-			""")
+			"""),
+			Quote("""It may be simpler to learn a DSL than an equivalent class library, but many people would prefer learning the class library. Class libraries give you something familiar (paradigm + basic language structures) to hold on to, while a DSL is likely completely new. That perception - that a class library is learnable while a new language is a big risk - is a big stumbling block to LanguageOrientedProgramming. """, URL("http://c2.com/cgi/wiki?StumblingBlocksForDomainSpecificLanguages"))
 			
 					
 		),

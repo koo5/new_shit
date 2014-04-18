@@ -1,4 +1,4 @@
-import pygame
+import pygame, pyswip
 from collections import OrderedDict
 from compiler.ast import flatten
 
@@ -18,27 +18,15 @@ import colors
 
 
 
-import pyswip
-prolog = pyswip.Prolog()
-prolog.consult("wat.pl")
-pl_node_works_as = pyswip.Functor("node_works_as", 2)
-
-def works_as(y):
-	r = []
-	X = pyswip.Variable()
-	q = pyswip.Query(pl_node_works_as(X, y))
-	while q.nextSolution():
-		r += [str(X.value)]
-	q.closeQuery()
-	#print r
-	return r
-
-
 
 
 class val(list):
 	def val(self):
 		return self[-1]
+
+	def append(self, x):
+		super(self, val).append(x)
+		return x
 
 class Value(object):
 	def __init__(self, value):
@@ -115,6 +103,15 @@ class Node(element.Element):
 
 
 
+
+
+
+
+
+
+
+
+
 class Literal(Node):
 	def __init__(self):
 		super(Literal, self).__init__()	
@@ -147,6 +144,18 @@ class Bool(Literal):
 		self.widget = widgets.Toggle(self, value)
 	def render(self):
 		return [w('widget')]
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -191,6 +200,10 @@ class Dict(Collapsible):
 	def __getitem__(self, i):
 		return self.items[i]
 
+	def __setitem__(self, i, v):
+		self.items[i] = v
+		v.parent = self
+
 	def fix_parents(self):
 		super(Dict, self).fix_parents()
 		self._fix_parents(self.items.values())
@@ -225,6 +238,10 @@ class List(Collapsible):
 
 	def __getitem__(self, i):
 		return self.items[i]
+
+	def __setitem__(self, i, v):
+		self.items[i] = v
+		v.parent = self
 
 	def fix_parents(self):
 		super(List, self).fix_parents()
@@ -276,13 +293,6 @@ class List(Collapsible):
 		p.parent = self
 		self.items.append(p)
 
-class CollapsibleText(Collapsible):
-	def __init__(self, value):
-		super(CollapsibleText, self).__init__(value)
-		self.widget = widgets.Text(self, value)
-	def render_items(self):
-		return [w('widget')]
-		
 
 class Statements(List):
 	def __init__(self):
@@ -298,8 +308,27 @@ class Statements(List):
 				r.append(i)
 
 
+class Root(Dict):
+	def __init__(self):
+		super(Root, self).__init__()
+		self.parent = None
+		self.post_render_move_caret = 0
+		self.indent_length = 4
+
+	def render(self):
+		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
+
+
+
+
+
+
+
+
+
+
 class NodeCollider(Node):
-	def __init__(self, types=['all']):
+	def __init__(self, types):
 		super(NodeCollider, self).__init__()
 		self.types = types
 		self.items = []
@@ -379,7 +408,7 @@ class NodeCollider(Node):
 
 
 class Placeholder(Node):
-	def __init__(self, types=['all'], description = None):
+	def __init__(self, types, description = None):
 		super(Placeholder, self).__init__()
 		self.types = types
 		if description == None: description = str(types)
@@ -550,6 +579,14 @@ class PlaceholderMenuItem(MenuItem):
 
 
 
+
+
+
+
+
+
+
+
 class VariableDeclaration(Node):
 	def __init__(self, name):
 		super(VariableDeclaration, self).__init__()
@@ -557,13 +594,21 @@ class VariableDeclaration(Node):
 	def render(self):
 		return [t("var"), w('name')]
 
-
 class VariableReference(Node):
 	def __init__(self, declaration):
 		super(VariableReference, self).__init__()
 		self.declaration = declaration
 	def render(self):
 		return [t("->"+self.declaration.name.text)]
+
+
+class NodeTypeDeclaration(Node):
+	def __init__(self, type):
+		super(NodeTypeDeclaration, self).__init__()
+		self.type = type
+
+	def render(self):
+		return [t("node type declaration:"), t(str(self.type))]
 
 
 class SomethingNew(Node):
@@ -575,19 +620,17 @@ class SomethingNew(Node):
 
 
 
-#design:
-#the difference between Syntaxed and WithDef is that Syntaxed
-#has the syntaxes as part of "class definition" (in __init__, really)
-#WithDef uses another object, "SyntaxDef"
-class NodeTypeDeclaration(Node):
-	def __init__(self, type):
-		super(NodeTypeDeclaration, self).__init__()
-		self.type = type
-
-	def render(self):
-		return [t("node type declaration:"), t(str(self.type))]
 
 
+
+
+
+
+
+
+
+
+#WithDef uses another object, SyntaxDef
 class SyntaxDef(Node):
 	def __init__(self, syntax_def):
 		super(SyntaxDef, self).__init__()
@@ -609,30 +652,31 @@ class WithDef(Node):
 
 
 
-class Root(Dict):
-	def __init__(self):
-		super(Root, self).__init__()
-		self.parent = None
-		self.post_render_move_caret = 0
-		self.indent_length = 4
-
-	def render(self):
-		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
 
 
 
+class EnumType
+name
+list of values
+
+XofY
 
 
+
+indexation type: 
+
+
+
+
+#Syntaxed has syntaxes as part of class definition
 
 class Syntaxed(Node):
-	child_types = {}
-
 	def __init__(self):
 		super(Syntaxed, self).__init__()
 		self.syntax_index = 0
 		for name, types in self.child_types.iteritems():
-			if types == 'statements':
-				v = Statements()
+			if len(types) == 1 and types[0] == ['Statements', 'Dict', 'List']:
+				v = Statements()@@@
 			else:
 				v = Placeholder(types)
 			self.ch[name] = v
@@ -642,28 +686,27 @@ class Syntaxed(Node):
 		return self.syntaxes[self.syntax_index]
 
 	def render(self):
-#		return self.render_syntax(self.syntax)
 		return self.syntax
 
 	def prev_syntax(self):
 		self.syntax_index  -= 1
 		if self.syntax_index < 0:
 			self.syntax_index = 0
+		log("prev")
 
 	def next_syntax(self):
 		self.syntax_index  += 1
 		if self.syntax_index == len(self.syntaxes):
 			self.syntax_index = len(self.syntaxes)-1
+		log("next")
 
 	def on_keypress(self, e):
 		if pygame.KMOD_CTRL & e.mod:
 			if e.key == pygame.K_PAGEUP:
 				self.prev_syntax()
-				log("prev")
 				return True
 			if e.key == pygame.K_PAGEDOWN:
 				self.next_syntax()
-				log("next")
 				return True
 
 	@classmethod
@@ -686,6 +729,24 @@ class Module(Syntaxed):
 
 	def add(self, item):
 		self.ch.statements.add(item)
+
+class DictModule(Syntaxed):
+	syntaxes = [[t("dictmodule"), w("name"), nl(), ch("statements"), t("end.")]]
+	child_types = {'statements': ['Dict']}
+
+	def __init__(self, name="unnamed"):
+		super(DictModule, self).__init__()
+		self.name = widgets.Text(self, name)
+
+	def add(self, item):
+		self.ch.statements.add(item)
+
+	def __getitem__(self, i):
+		return self.ch.statements[i]
+
+	def __setitem__(self, i, v):
+		self.ch.statements[i] = v
+
 
 #r['program'].syntax_def = root.find('modules/items/0/statements/items/0')
 #assert(isinstance(r['program'].syntax_def, SyntaxDef))
@@ -807,13 +868,15 @@ class Clock(Node):
 		
 
 class Assignment(Syntaxed):
+	syntaxes=[[ch("left"), t(" = "), ch("right")],
+			[t("set "), ch("left"), t(" to "), ch("right")],
+			[t("let "), ch("left"), t(" be "), ch("right")]]
+
 	def __init__(self):
+		self.child_types = {'left': [b[SomethingNew], b[VariableReference], b[ArrayIndexation],
+			'right': b['expression']}
 		super(Assignment,self).__init__()
-		self.syntaxes=[[ch("left"), t(" = "), ch("right")],
-					[t("set "), ch("left"), t(" to "), ch("right")],
-					[t("have "), ch("left"), t(" be "), ch("right")]]
-		self.setch('left', left)
-		self.setch('right', right)
+		
 
 	@staticmethod
 	def make_proto():
@@ -848,43 +911,37 @@ class TypeReference(Node):
 	def render(self):
 		return self.target.left.text
 
-
-class NewStyle(Syntaxed):
-	def __init__(self):
-		super(NewStyle,self).__init__()
-		self.types = {}
-	
-	def child(self, name, types):
-		self.setch(name, Placeholder(types))
-		self.types[name] = types
-
-class IsLessThan(NewStyle):
+class IsLessThan(Syntaxed):
+	syntaxes=[[ch("left"), t(" < "), ch("right")]]
 	def __init__(self):
 		super(IsLessThan,self).__init__()
-		self.syntaxes=[[ch("left"), t(" < "), ch("right")]]
-		self.child('left', ['number'])
-		self.child('right', ['number'])
+		self.child_types = {'left': b[Number], 'right': b[Number]}
 
 	def eval():
-		l,r = self.left.eval(), self.right.eval()
+		l,r = self.ch.left.eval(), self.ch.right.eval()
 		assert(isinstance(l, Value))
 		assert(isinstance(r, Value))
-		self.runtime.value.append(Value(l < r))
+		return self.runtime.value.append(Value(l < r))
 
 
-class ArgumentDefinition(NewStyle):
+class ArgumentDefinition(Syntaxed):
+	syntaxes=[[ch("name"), t(" - "), ch("type")]]
 	def __init__(self):
 		super(ArgumentDefinition, self).__init__()
-		self.syntaxes=[[ch("name"), t(" - "), ch("type")]]
 		self.child('name', ['text'])
 		self.child('type', ['typereference'])
 
+class FunctionType(Syntaxed):
+	syntaxes = [[t("function taking"), ch("args"), t("and returning"), ch("result")]]
+	def __init__(
+		self.child_types = {'args': [XofYs(b[Dict], b[ArgumentDefinition])]}
+		super(self, FunctionType).__init__()
 
-class FunctionSignature(NewStyle):
+class FunctionSignature(Syntaxed):
+	syntaxes=[[t("function:"),ch("items"),t(":")]]
 	def __init__(self):
+		self.child_types = {'items': [XofY(b[List], [b[ArgumentDefinition], b[Text]])]}
 		super(FunctionSignature, self).__init__()
-		self.syntaxes=[[t("function:"),ch("items")]]
-		self.setch('items', List(types=['argumentdefinition', 'text']))
 
 #class PythonFunctionCall
 #class LemonFunctionCall
@@ -1211,24 +1268,6 @@ works_as(Number, 'expression')
 """
 
 
-nodes_by_name = {
-	'module': Module,
-	'while': While,
-	'bool': Bool,
-	'text': Text,
-	'number': Number,
-	'note': Note,
-	'todo': Todo,
-	'idea': Idea,
-    'assignment': Assignment,
-	'program': Program,
-	'islessthan': IsLessThan,
-	'typedeclaration': TypeDeclaration,
-	'functiondefinition': FunctionDefinition,
-	'argumentdefinition': ArgumentDefinition,
-    'functioncall': FunctionCall
-}
-
 
 
 def make_protos(root, text):
@@ -1251,6 +1290,44 @@ def make_protos(root, text):
 
 
 	return r
+
+
+class BuiltinType(Node):
+	def __init__(self, type):
+		self.type = type
+
+b = DictModule("builtins")
+
+for x in ['statement', 'typedeclaration', 'expression']:
+	b[x] = TypeClass(x)
+
+for x in [Text, Number, Bool, Dict, List, Statements, Assignment, Program, IsLessThan]:
+	b[x] = b[x.__class__.__name__] = BuiltinType(x)
+
+
+
+
+swis = {}
+
+def swi(x):
+	if not swis.has_key(x):
+		swis[x] = str(x)
+	return swis[x]
+
+prolog = pyswip.Prolog()
+prolog.consult("wat.pl")
+pl_node_works_as = pyswip.Functor("node_works_as", 2)
+
+def works_as(y):
+	r = []
+	X = pyswip.Variable()
+	q = pyswip.Query(pl_node_works_as(X, y))
+	while q.nextSolution():
+		r += [str(X.value)]
+	q.closeQuery()
+	#print r
+	return r
+
 
 
 
