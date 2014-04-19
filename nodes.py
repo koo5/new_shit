@@ -1296,6 +1296,32 @@ class BuiltinType(Node):
 	def __init__(self, type):
 		self.type = type
 
+
+class TypeRef(Node):
+	def __init__(self, decl):
+		self.decl = decl
+
+
+TypeRef(b[Dict]
+
+"""	
+type declarations:
+	definitions:
+		banana is a kind of fruit
+	builtin:
+		Dict
+
+type reference
+
+x is a dict of fruits
+
+class hashmap
+	declaration syntax: a hashmap from [x - type] to [y - type]
+
+	x is a hashmap from int to string
+
+
+
 b = DictModule("builtins")
 
 for x in ['statement', 'typedeclaration', 'expression']:
