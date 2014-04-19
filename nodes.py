@@ -587,19 +587,6 @@ class PlaceholderMenuItem(MenuItem):
 
 
 
-class VariableDeclaration(Node):
-	def __init__(self, name):
-		super(VariableDeclaration, self).__init__()
-		self.name = widgets.Text(name)
-	def render(self):
-		return [t("var"), w('name')]
-
-class VariableReference(Node):
-	def __init__(self, declaration):
-		super(VariableReference, self).__init__()
-		self.declaration = declaration
-	def render(self):
-		return [t("->"+self.declaration.name.text)]
 
 
 class NodeTypeDeclaration(Node):
@@ -650,20 +637,6 @@ class WithDef(Node):
 		return self.syntax_def.syntax_def
 
 
-
-
-
-
-
-class EnumType
-name
-list of values
-
-XofY
-
-
-
-indexation type: 
 
 
 
@@ -928,8 +901,21 @@ class ArgumentDefinition(Syntaxed):
 	syntaxes=[[ch("name"), t(" - "), ch("type")]]
 	def __init__(self):
 		super(ArgumentDefinition, self).__init__()
-		self.child('name', ['text'])
-		self.child('type', ['typereference'])
+		self.child_types = {'name', b['text'], 'type', b['type']}
+
+class CustomNode(Syntaxed):
+	syntaxes = [[ch("syntaxes"), ch("works as"), ch("name")]]
+	def __init__(self):
+		super(CustomNode, self).__init__()
+		self.child_types = {'name', b['text'], 
+			'works as', b['type']}
+
+CustomNode(
+	ch = {'syntaxes':[[ch("name"), t(" - "), ch("type")]]
+	def __init__(self):
+		super(ArgumentDefinition, self).__init__()
+		self.child_types = {'name', b['text'], 'type', b['type']}
+
 
 class FunctionType(Syntaxed):
 	syntaxes = [[t("function taking"), ch("args"), t("and returning"), ch("result")]]
@@ -937,10 +923,17 @@ class FunctionType(Syntaxed):
 		self.child_types = {'args': [XofYs(b[Dict], b[ArgumentDefinition])]}
 		super(self, FunctionType).__init__()
 
+ListType
+ListLiteral
+ListValue?
+
+types are literals
+wherever you point to python class, point to builtin declaration instead
+
 class FunctionSignature(Syntaxed):
 	syntaxes=[[t("function:"),ch("items"),t(":")]]
 	def __init__(self):
-		self.child_types = {'items': [XofY(b[List], [b[ArgumentDefinition], b[Text]])]}
+		self.child_types = {'items': [create(ListType, {'item type': , [b[ArgumentDefinition], b[Text]])]}
 		super(FunctionSignature, self).__init__()
 
 #class PythonFunctionCall
@@ -1292,9 +1285,6 @@ def make_protos(root, text):
 	return r
 
 
-class BuiltinType(Node):
-	def __init__(self, type):
-		self.type = type
 
 
 class TypeRef(Node):
@@ -1319,6 +1309,52 @@ class hashmap
 	declaration syntax: a hashmap from [x - type] to [y - type]
 
 	x is a hashmap from int to string
+
+
+variable declaration:
+	ch("name"), t("is a(n)"), ch("type")
+	child_types = {"name": Text, "type": b['type']}
+	
+class BuiltinType(Node):
+	works_as = b['type']
+	def __init__(self, type):
+		self.type = type
+
+b['number'] = BuiltinType(Number, [[t("number")]])
+b['list'] =  BuiltinType(List, [[t("list of"), ch("items type")]], {"items type": b['type']})
+b['function'] = BuiltinType
+
+
+?
+
+class EnumType
+name
+list of values
+
+XofY
+
+?
+
+indexation type
+
+
+
+OR JUST:
+
+class VariableDeclaration(Node):
+	def __init__(self, name):
+		super(VariableDeclaration, self).__init__()
+		self.name = widgets.Text(name)
+	def render(self):
+		return [t("var"), w('name')]
+
+class VariableReference(Node):
+	def __init__(self, declaration):
+		super(VariableReference, self).__init__()
+		self.declaration = declaration
+	def render(self):
+		return [t("->"+self.declaration.name.text)]
+
 
 
 
@@ -1357,3 +1393,8 @@ def works_as(y):
 
 
 
+roadmap: 
+types - try to figure out or leave for later
+pyswip integration
+functions
+logic
