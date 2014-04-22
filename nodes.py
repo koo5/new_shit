@@ -1,3 +1,7 @@
+#everything is lumped together here, real ast nodes with clock and sticky notes,
+#tho some nodes broke away into toolbar.py settings.py and the_doc.py
+
+
 import pygame, pyswip
 from collections import OrderedDict
 from compiler.ast import flatten
@@ -18,16 +22,6 @@ import colors
 
 
 
-
-
-class val(list):
-	def val(self):
-		return self[-1]
-
-	def append(self, x):
-		super(self, val).append(x)
-		return x
-
 class Value(object):
 	def __init__(self, value):
 		self.value = value
@@ -38,8 +32,6 @@ class Value(object):
 #a node is more than an element, it keeps track of its children with a dict.
 #in the editor, nodes can be cut'n'pasted around on their own, which wouldnt
 #make sense for widgets
-#everything is lumped together here, real ast nodes with clock and sticky notes,
-#tho some nodes broke away into toolbar.py settings.py and the_doc.py
 
 class Children(dotdict):
 	pass
@@ -184,6 +176,11 @@ class Collapsible(Node):
 		if widget is self.expand_collapse_button:
 			self.toggle()
 
+	def eval(self):
+		self.runtime.evaluated = True
+		return self.runtime.value.append(Value(self.items))
+
+
 class Dict(Collapsible):
 	def __init__(self, expanded=True):
 		super(Dict, self).__init__(expanded)
@@ -273,10 +270,10 @@ class List(Collapsible):
 		for i in self.items:
 			i.eval()
 		self.runtime.evaluated = True
+		return self.runtime.value.append(Value([x.runtime.value.val for x in self.items]))
 			
 	def flatten(self):
 		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
-
 
 	def replace_child(self, child, new):
 		assert(child in self.items)
@@ -294,6 +291,8 @@ class List(Collapsible):
 		self.items.append(p)
 
 
+
+
 class Statements(List):
 	def __init__(self):
 		List.__init__(self, types=['statement'], expanded=True, vertical=True)
@@ -306,6 +305,7 @@ class Statements(List):
 				return r
 			else:
 				r.append(i)
+
 
 
 class Root(Dict):
@@ -325,6 +325,13 @@ class Root(Dict):
 
 
 
+"""NodeCollider and Placeholder..megamess atm. should allow adding both node classes
+and expressions with matching types.
+collider has a list of nodes and should allow adding and deleting.
+back to dummy? collider is responsible for menu?
+its probably reasonable to forego all smartness for a start and do just a dumb
+tree editor
+"""
 
 
 class NodeCollider(Node):
@@ -377,7 +384,7 @@ class NodeCollider(Node):
 		for type in self.types:
 			r += [InfoMenuItem("for type "+type)]
 			for w in works_as(type):
-				r += [InfoMenuItem("works as "+w)]
+				r += [InfoMenuItem(w + "works as "+type)]
 				if nodes_by_name.has_key(w):
 					n = nodes_by_name[w]()
 					#todo: use NodeTypeDeclarations instead
@@ -580,24 +587,6 @@ class PlaceholderMenuItem(MenuItem):
 
 
 
-
-
-
-
-
-
-
-
-
-class NodeTypeDeclaration(Node):
-	def __init__(self, type):
-		super(NodeTypeDeclaration, self).__init__()
-		self.type = type
-
-	def render(self):
-		return [t("node type declaration:"), t(str(self.type))]
-
-
 class SomethingNew(Node):
 	def __init__(self, text):
 		super(SomethingNew, self).__init__()
@@ -616,25 +605,10 @@ class SomethingNew(Node):
 
 
 
+type(
 
-#WithDef uses another object, SyntaxDef
-class SyntaxDef(Node):
-	def __init__(self, syntax_def):
-		super(SyntaxDef, self).__init__()
-		self.syntax_def = syntax_def
 
-	def render(self):
-		return [t("syntax definition:"), t(str(self.syntax_def))]
 
-class WithDef(Node):
-	def __init__(self):
-		super(WithDef, self).__init__()
-		self.syntax_def
-
-	def render(self):
-		self.syntax_def = self.root.find("modules/0/0")
-		assert(isinstance(self.syntax_def, SyntaxDef))
-		return self.syntax_def.syntax_def
 
 
 
@@ -860,13 +834,8 @@ class Assignment(Syntaxed):
 	#	if isinstance(self.left, SomethingNew):
 	#		self.runtime.value = 
 
-class RootTypeDeclaration(Syntaxed):
-	def __init__(self):
-		super(RootTypeDeclaration, self).__init__()
-		self.syntaxes=[[t("Values have types, every type derives from RootType.")]]
 
-
-class TypeDeclaration(Syntaxed):
+class Subclass(Syntaxed):
 	def __init__(self, left, right):
 		super(TypeDeclaration,self).__init__()
 		assert(isinstance(left, SomethingNew))
@@ -901,20 +870,7 @@ class ArgumentDefinition(Syntaxed):
 	syntaxes=[[ch("name"), t(" - "), ch("type")]]
 	def __init__(self):
 		super(ArgumentDefinition, self).__init__()
-		self.child_types = {'name', b['text'], 'type', b['type']}
-
-class CustomNode(Syntaxed):
-	syntaxes = [[ch("syntaxes"), ch("works as"), ch("name")]]
-	def __init__(self):
-		super(CustomNode, self).__init__()
-		self.child_types = {'name', b['text'], 
-			'works as', b['type']}
-
-CustomNode(
-	ch = {'syntaxes':[[ch("name"), t(" - "), ch("type")]]
-	def __init__(self):
-		super(ArgumentDefinition, self).__init__()
-		self.child_types = {'name', b['text'], 'type', b['type']}
+		self.child_types = {'name', b['text'], 'type', b['type literal']}
 
 
 class FunctionType(Syntaxed):
@@ -923,17 +879,10 @@ class FunctionType(Syntaxed):
 		self.child_types = {'args': [XofYs(b[Dict], b[ArgumentDefinition])]}
 		super(self, FunctionType).__init__()
 
-ListType
-ListLiteral
-ListValue?
-
-types are literals
-wherever you point to python class, point to builtin declaration instead
-
 class FunctionSignature(Syntaxed):
 	syntaxes=[[t("function:"),ch("items"),t(":")]]
 	def __init__(self):
-		self.child_types = {'items': [create(ListType, {'item type': , [b[ArgumentDefinition], b[Text]])]}
+		self.child_types = {'items': [create(ListType, {'item type': [b[ArgumentDefinition], b[Text]]})]}
 		super(FunctionSignature, self).__init__()
 
 #class PythonFunctionCall
@@ -1261,7 +1210,7 @@ works_as(Number, 'expression')
 """
 
 
-
+"""
 
 def make_protos(root, text):
 	r = {'module': Module(),
@@ -1286,7 +1235,7 @@ def make_protos(root, text):
 
 
 
-
+"""
 class TypeRef(Node):
 	def __init__(self, decl):
 		self.decl = decl
@@ -1325,21 +1274,23 @@ b['list'] =  BuiltinType(List, [[t("list of"), ch("items type")]], {"items type"
 b['function'] = BuiltinType
 
 
-?
-
 class EnumType
 name
 list of values
-
-XofY
-
-?
-
 indexation type
 
+ListType
+ListLiteral
+ListValue?
+
+types are literals
+wherever you point to python class, point to builtin declaration instead
 
 
-OR JUST:
+
+
+
+OR JUST vithout types:
 
 class VariableDeclaration(Node):
 	def __init__(self, name):
@@ -1398,3 +1349,66 @@ types - try to figure out or leave for later
 pyswip integration
 functions
 logic
+
+
+
+class CustomNode(Syntaxed):
+	syntaxes = [[ch("syntaxes"), ch("works as"), ch("name")]]
+	def __init__(self):
+		super(CustomNode, self).__init__()
+		self.child_types = {'name', b['text'], 
+			'works as', b['type']}
+
+CustomNode(
+	ch = {'syntaxes':[[ch("name"), t(" - "), ch("type")]]
+	def __init__(self):
+		super(ArgumentDefinition, self).__init__()
+		self.child_types = {'name', b['text'], 'type', b['type']}
+
+
+
+
+"""
+
+
+
+
+
+#WithDef uses another object, SyntaxDef
+class SyntaxDef(Node):
+	def __init__(self, syntax_def):
+		super(SyntaxDef, self).__init__()
+		self.syntax_def = syntax_def
+
+	def render(self):
+		return [t("syntax definition:"), t(str(self.syntax_def))]
+
+class WithDef(Node):
+	def __init__(self):
+		super(WithDef, self).__init__()
+		self.syntax_def
+
+	def render(self):
+		self.syntax_def = self.root.find("modules/0/0")
+		assert(isinstance(self.syntax_def, SyntaxDef))
+		return self.syntax_def.syntax_def
+
+
+#if custom nodes should be able to have node classes in their syntax, this would be needed
+class NodeTypeDeclaration(Node):
+	def __init__(self, type):
+		super(NodeTypeDeclaration, self).__init__()
+		self.type = type
+
+	def render(self):
+		return [t("node type declaration:"), t(str(self.type))]
+
+
+class val(list):
+	def val(self):
+		return self[-1]
+
+	def append(self, x):
+		super(self, val).append(x)
+		return x
+
