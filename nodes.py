@@ -2,10 +2,11 @@
 #tho some nodes broke away into toolbar.py settings.py and the_doc.py
 
 
-import pygame, pyswip
+import pygame
+
 from collections import OrderedDict
 from compiler.ast import flatten
-
+import weakref
 
 
 
@@ -1319,27 +1320,6 @@ for x in [Text, Number, Bool, Dict, List, Statements, Assignment, Program, IsLes
 
 
 
-
-swis = {}
-
-def swi(x):
-	if not swis.has_key(x):
-		swis[x] = str(x)
-	return swis[x]
-
-prolog = pyswip.Prolog()
-prolog.consult("wat.pl")
-pl_node_works_as = pyswip.Functor("node_works_as", 2)
-
-def works_as(y):
-	r = []
-	X = pyswip.Variable()
-	q = pyswip.Query(pl_node_works_as(X, y))
-	while q.nextSolution():
-		r += [str(X.value)]
-	q.closeQuery()
-	#print r
-	return r
 
 
 
