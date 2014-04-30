@@ -1,12 +1,18 @@
+#beware misleading documentation
+
+
 #everything is lumped together here, real ast nodes with clock and sticky notes,
 #tho some nodes broke away into toolbar.py settings.py and the_doc.py
+#a node is more than an element, it keeps track of its children with a dict.
+#in the editor, nodes can be cut'n'pasted around on their own, which wouldnt
+#make sense for widgets
 
 
 import pygame
 
 from collections import OrderedDict
 from compiler.ast import flatten
-import weakref
+#import weakref
 
 
 
@@ -24,15 +30,16 @@ import colors
 
 
 class Value(object):
-	def __init__(self, value):
+	def __init__(self, value, type):
 		self.value = value
+		self.type = type
+		assert(isinstance(type, TypeRef))
 
-
-
-
-#a node is more than an element, it keeps track of its children with a dict.
-#in the editor, nodes can be cut'n'pasted around on their own, which wouldnt
-#make sense for widgets
+class TypeRef(Node):
+	def __init__(self, target):
+		self.target = target
+		assert(isinstance(target, (BuiltinTypeDef, SubclassDef)))
+		
 
 class Children(dotdict):
 	pass
@@ -106,8 +113,31 @@ class Node(element.Element):
 
 
 class Literal(Node):
-	def __init__(self):
+	def __init__(self,value):
 		super(Literal, self).__init__()	
+		self.value = value
+	def eval(self):
+		self.runtime.value = [self.value]
+		self.runtime.evaluated = True
+		return v
+
+
+
+
+"""values are objects responsible for holding for example
+results of evaluations, in runtime. Abstractly speaking,
+they would be responsible for memory allocation.
+the "type" field contains a TypeRef object
+"""
+
+
+class WidgetedValue(Node):
+	"""these 
+	
+	
+	def __init__(self,value):
+		super(Literal, self).__init__()	
+		self.value = value
 	def eval(self):
 		v = Value(self.get_value())
 		self.runtime.value.append(v)
@@ -117,9 +147,10 @@ class Literal(Node):
 		return self.widget.text
 
 
-class Text(Literal):
+class Text(Value):
 	def __init__(self, value):
 		super(Text, self).__init__()
+		self.type = 
 		self.widget = widgets.Text(self, value)
 	def render(self):
 		return [w('widget')]
@@ -218,7 +249,7 @@ class Dict(Collapsible):
 		val.parent = self
 
 
-class List(Collapsible):
+class ListVal(Collapsible):
 	def __init__(self, types=['all'], expanded=True, vertical=True):
 		super(List, self).__init__(expanded, vertical)
 		self.types = types
@@ -291,7 +322,9 @@ class List(Collapsible):
 		p.parent = self
 		self.items.append(p)
 
-
+bs["listval"] = BuiltinTypeDef([t("list of"), ch("itemtype")], {"itemtype": b[TypeRef]})
+bs["intval"] = BuiltinTypeDef([t("int")])
+bs["textval"] = BuiltinTypeDef([t("text")])
 
 
 class Statements(List):
@@ -1385,6 +1418,7 @@ class NodeTypeDeclaration(Node):
 
 
 class val(list):
+	"""during execution, results of evaluation of every node is appended, so there is a history visible, and the current value is the last one"""
 	def val(self):
 		return self[-1]
 
