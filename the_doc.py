@@ -257,3 +257,25 @@ class Credits(Syntaxed):
  						 [t("rszeno - had endless patience")],
 						 [t("pyglet authors - lemon uses event.py copied from pyglet")],
 						 [t("...")]]
+
+
+
+
+"""
+musings:
+version control:
+f1: propagate change to master
+
+"lenses":
+lense is a custom node
+it is declared in some included module
+we are in a "console" node - basically a statements list,
+ctrl-enter executes current line
+the syntax is "songmeanings" <songmeanings search text>
+before prolog integration, menu can directly offer the songmeanings node. Asks songmeanings search text node for
+autocomplete
+SongmeaningsSearchText is a custom node...
+in the guts, some sort of asynchronous def songmeanings_autocomplete(text) returning SongmeaningsSearchText nodes with data
+or maybe SongmeaningsAuthor, SongmeaningsSong..
+
+

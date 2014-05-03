@@ -35,6 +35,18 @@ class Value(object):
 		self.type = type
 		assert(isinstance(type, TypeRef))
 
+
+class val(list):
+	"""during execution, results of evaluation of every node is appended, so there is a history visible, and the current value is the last one"""
+	def val(self):
+		return self[-1]
+
+	def append(self, x):
+		assert(isinstance(x, Value))
+		super(self, val).append(x)
+		return x
+
+
 class TypeRef(Node):
 	def __init__(self, target):
 		self.target = target
@@ -86,9 +98,7 @@ class Node(element.Element):
 		return [self] + [v.flatten() for v in self.ch.itervalues()]
 
 	def eval(self):
-		self.runtime.value.append(Value(None))
-		self.runtime.evaluated = True
-		self.runtime.implemented = False
+		self.runtime.value.append(self._eval())
 		return self.runtime.value.val
 
 	def program(self):
@@ -113,16 +123,12 @@ class Node(element.Element):
 
 
 class Literal(Node):
+	"""wraps a value into a node"""
 	def __init__(self,value):
 		super(Literal, self).__init__()	
 		self.value = value
-	def eval(self):
-		self.runtime.value = [self.value]
-		self.runtime.evaluated = True
-		return v
-
-
-
+	def _eval(self):
+		return self.value
 
 """values are objects responsible for holding for example
 results of evaluations, in runtime. Abstractly speaking,
@@ -130,16 +136,16 @@ they would be responsible for memory allocation.
 the "type" field contains a TypeRef object
 """
 
-
 class WidgetedValue(Node):
-	"""these 
-	
-	
+	"""these types are currently defined by widgets, which in turn use python types...
+	weird but gonna work
+	in future, some editor object could be created instead
+	"""	
 	def __init__(self,value):
 		super(Literal, self).__init__()	
 		self.value = value
 	def eval(self):
-		v = Value(self.get_value())
+		v = self.widget.value
 		self.runtime.value.append(v)
 		self.runtime.evaluated = True
 		return v
@@ -150,7 +156,7 @@ class WidgetedValue(Node):
 class Text(Value):
 	def __init__(self, value):
 		super(Text, self).__init__()
-		self.type = 
+		self.type = TypeRef(
 		self.widget = widgets.Text(self, value)
 	def render(self):
 		return [w('widget')]
@@ -1415,14 +1421,4 @@ class NodeTypeDeclaration(Node):
 
 	def render(self):
 		return [t("node type declaration:"), t(str(self.type))]
-
-
-class val(list):
-	"""during execution, results of evaluation of every node is appended, so there is a history visible, and the current value is the last one"""
-	def val(self):
-		return self[-1]
-
-	def append(self, x):
-		super(self, val).append(x)
-		return x
 
