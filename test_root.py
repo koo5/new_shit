@@ -31,6 +31,8 @@ def test_root():
 		SyntaxDef([t("program by "), ch("author"), t("created on "), ch("date_created"), nl(), ch("statements"), t("end."), w("run_button"), w("results")])
 	)
 
+	r["modules"].add(nodes.builtins)
+
 	"""
 					Module(Statements(['all'],
 						[NodeTypeDeclaration(x) for x in [

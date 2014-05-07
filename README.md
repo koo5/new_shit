@@ -27,6 +27,10 @@ license
 ===
 licensing is still undecided, i may choose some standard open source license or
 continue developing this experiment: <https://github.com/koo5/Free-Man-License>
+update: i think + CC-NC + an additional license + clahub?
+http://lwn.net/Articles/592503/
+http://www.drdobbs.com/open-source/the-conflict-at-the-heart-of-open-source/240168123
+http://research.microsoft.com/en-us/projects/pex/msr-la.txt
 your contributions will be regarded as shared with this future license.
 (in legalese: all your contributions are MINE, untill the license is chosen / 
 developed into proper legalese). I could set up <http://www.clahub.com/> ?

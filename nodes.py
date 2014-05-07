@@ -1,4 +1,4 @@
-#beware misleading documentation
++#beware misleading documentation
 
 
 #everything is lumped together here, real ast nodes with clock and sticky notes,
@@ -116,10 +116,7 @@ class Node(element.Element):
 
 
 
-
-
-
-
+#???
 
 
 class Literal(Node):
@@ -140,6 +137,8 @@ class WidgetedValue(Node):
 	"""these types are currently defined by widgets, which in turn use python types...
 	weird but gonna work
 	in future, some editor object could be created instead
+	question is how/if code will be divided between python and prolog, if widgets
+	would be responsibility of the editor, indicated by tags..
 	"""	
 	def __init__(self,value):
 		super(Literal, self).__init__()	
@@ -176,7 +175,7 @@ class Bool(Literal):
 		return [w('widget')]
 
 
-
+#???
 
 
 
@@ -360,273 +359,6 @@ class Root(Dict):
 
 
 
-
-
-
-
-
-"""NodeCollider and Placeholder..megamess atm. should allow adding both node classes
-and expressions with matching types.
-collider has a list of nodes and should allow adding and deleting.
-back to dummy? collider is responsible for menu?
-its probably reasonable to forego all smartness for a start and do just a dumb
-tree editor
-"""
-
-
-class NodeCollider(Node):
-	def __init__(self, types):
-		super(NodeCollider, self).__init__()
-		self.types = types
-		self.items = []
-		self.add(Placeholder(types))
-
-	def render(self):
-		r = [t("[")]
-		for item in self.items:
-			r += [ElementTag(item)]
-		r += [t("]")]
-		return r
-
-	def __getitem__(self, i):
-		return self.items[i]
-
-	def fix_relations(self):
-		super(NodeCollider, self).fix_relations()
-		self.fix_(self.items)
-
-	def on_keypress(self, e):
-		item_index = self.insertion_pos(e.cursor)
-		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
-			if len(self.items) > item_index:
-				del self.items[item_index]
-
-	def insertion_pos(self, (char, line)):
-		i = -1
-		for i, item in enumerate(self.items):
-			#print i, item, item._render_start_line, item._render_start_char
-			if (item._render_start_line >= line and
-				item._render_start_char >= char):
-				return i
-		return i + 1
-
-	def flatten(self):
-		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
-
-	def add(self, item):
-		self.items.append(item)
-		assert(isinstance(item, Node))
-		item.parent = self
-
-	def menu(self):
-		r = [InfoMenuItem("magic goes here")]
-
-		for type in self.types:
-			r += [InfoMenuItem("for type "+type)]
-			for w in works_as(type):
-				r += [InfoMenuItem(w + "works as "+type)]
-				if nodes_by_name.has_key(w):
-					n = nodes_by_name[w]()
-					#todo: use NodeTypeDeclarations instead
-					if isinstance(n, Syntaxed):
-						for syntax in n.syntaxes:
-							for i in range(min(len(self.items), len(syntax))):
-								if isinstance(syntax[i], tags.TextTag):
-									if isinstance(self.items[i], SomethingNew):
-										r += [InfoMenuItem(str(w))]
-
-
-		r += [InfoMenuItem("banana")]
-		return r
-
-	def replace_child(self, child, new):
-		assert(child in self.items)
-		self.items[self.items.index(child)] = new
-		new.parent = self
-		p = Placeholder(self.types)
-		p.parent = self
-		self.items.append(p)
-
-	def eval(self):
-		i = self.items[0]
-		i.eval()
-		self.runtime = i.runtime
-		return self.runtime.value.val
-
-
-class Placeholder(Node):
-	def __init__(self, types, description = None):
-		super(Placeholder, self).__init__()
-		self.types = types
-		if description == None: description = str(types)
-		self.description = description
-		self.textbox = widgets.ShadowedText(self, "", self.description)
-		self.brackets_color = (0,255,0)
-		self.textbox.brackets_color = (255,255,0)
-
-	def render(self):
-		return [w('textbox')]
-	
-	def menu(self):
-		text = self.textbox.text
-		#r = [InfoMenuItem("insert:")]
-		it = PlaceholderMenuItem
-
-		r = []
-
-		if text.isdigit():
-			r += [it(Number(text))]
-
-		#r += [it(Text(text))]
-		r += [it(SomethingNew(text))]
-
-		protos = make_protos(self.root, text)
-		#for k,v in protos.iteritems():
-		#	v.parent = self
-		
-		#first the preferred types
-		for t in self.types:
-			for v in works_as(t):
-				if protos.has_key(v):
-					x = protos[v]
-					menuitem = it(x)
-					r += [menuitem]
-					
-					if isinstance(x, Syntaxed):
-						for s in x.syntaxes:
-							#print s
-							tag = s[0]
-							if isinstance(tag, tags.TextTag):
-								if text in tag.text:
-									menuitem.score += 1
-									#print x
-									#if not protos[v] in [i.value for i in r]:
-										
-				elif v == 'functioncall':
-					for i in self.scope():
-						if isinstance(i, FunctionDefinition):
-							r += [it(FunctionCall(i))]
-				
-				elif v == 'termreference':
-					for i in self.scope():
-						if isinstance(i, Triple):
-							r += [it(i.subject)]
-							r += [it(i.object)]
-				
-				elif v == 'dbpediaterm':
-							r += [it(x) for x in DbpediaTerm.enumerate()]
-
-				elif v == 'variablereference':
-					print "scope:", self.scope()
-
-
-		#then add the rest
-		#for t in self.types:
-		#	for v in works_as(t):
-		#		if protos.has_key(v) and not protos[v] in [i.value for i in r]:
-		#			r += [it(protos[v])]
-
-		#enumerators:
-		#	scope:
-		#		variables, functions
-		#			
-	
-		"""
-		if type == 'pythonidentifier'
-			PythonIdentifier.enumerate(self)
-
-		if type == 'google'
-			Google.enumerate(self)
-		
-		"""
-	
-
-		#variables, functions
-#		for i in self.scope():
-#			if isinstance(i, VariableDeclaration):
-#				r += [it(VariableReference(i))]
-#			if isinstance(i, FunctionDefinition):
-#				r += [it(FunctionCall(i))]
-
-		#1: node types
-		#r += [it(x) for x in self.scope()]
-
-#add best
-#add all
-
-				
-		#2: calls, variables..
-		
-		#filter by self.types:
-		
-		#preferred types:
-		#r += expand_types(self.types)
-		#all types
-		#r += expand_types('all') - expand_types(self.types)
-
-		#sort:
-		
-		#r.sort(key = self.fits)
-
-		return super(Placeholder, self).menu() + r
-		
-		
-	def fits(self, item):
-		for t in self.types:
-			if isinstance(item, t):
-				return 1
-		return 0
-		
-
-	def menu_item_selected(self, item):
-		if not isinstance(item, PlaceholderMenuItem):
-			log("not PlaceholderMenuItem")
-			return
-		v = item.value
-		if v == None:
-			log("no value")
-		elif isinstance(v, NodeTypeDeclaration):
-			x = v.type()
-		elif isinstance(v, Node):
-			x = v
-#		elif isinstance(v, type):
-#			x = v()
-		self.parent.replace_child(self, x)
-
-# hack here, to make a menu item renderable by project.project
-class PlaceholderMenuItem(MenuItem):
-	def __init__(self, value):		
-		self.value = value
-		self.score = 0
-		self.brackets_color = (0,0,255)
-		#(and so needs brackets_color)
-		
-	#PlaceholderMenuItem is not an Element, but still has tags(),
-	#called by project.project called from draw()
-	def tags(self):
-		return [ColorTag((0,255,0)),w('value'), t(" - "+str(self.value.__class__.__name__)), EndTag()]
-		#and abusing "w" for "widget" here...not just here...
-
-	def draw(self, menu, s, font, x, y):
-		#replicating draw_root, but for now..
-		#project._width = ..
-		lines = project.project(self)
-		area = pygame.Rect((x,y,0,0))
-		for row, line in enumerate(lines):
-			for col, char in enumerate(line):
-				chx = x + font['width'] * col
-				chy = (y+2) + font['height'] * row
-				sur = font['font'].render(
-					char[0],False,
-					char[1]['color'],
-					colors.bg)
-				s.blit(sur,(chx,chy))
-				area = area.union((chx, chy, sur.get_rect().w, sur.get_rect().h+2))
-		return area
-
-
-
-
 class SomethingNew(Node):
 	def __init__(self, text):
 		super(SomethingNew, self).__init__()
@@ -644,8 +376,6 @@ class SomethingNew(Node):
 
 
 
-
-type(
 
 
 
@@ -712,17 +442,6 @@ class Module(Syntaxed):
 
 	def __init__(self, name="unnamed"):
 		super(Module, self).__init__()
-		self.name = widgets.Text(self, name)
-
-	def add(self, item):
-		self.ch.statements.add(item)
-
-class DictModule(Syntaxed):
-	syntaxes = [[t("dictmodule"), w("name"), nl(), ch("statements"), t("end.")]]
-	child_types = {'statements': ['Dict']}
-
-	def __init__(self, name="unnamed"):
-		super(DictModule, self).__init__()
 		self.name = widgets.Text(self, name)
 
 	def add(self, item):
@@ -953,6 +672,160 @@ class FunctionCall(Syntaxed):
 
 		return r
 
+
+class TypeRef(Node):
+	def __init__(self, decl):
+		self.decl = decl
+
+
+TypeRef(b[Dict]
+
+"""	
+type declarations:
+	definitions:
+		banana is a kind of fruit
+	builtin:
+		Dict
+
+type reference
+
+x is a dict of fruits
+
+class hashmap
+	declaration syntax: a hashmap from [x - type] to [y - type]
+
+	x is a hashmap from int to string
+
+
+variable declaration:
+	ch("name"), t("is a(n)"), ch("type")
+	child_types = {"name": Text, "type": b['type']}
+	
+class BuiltinType(Node):
+	works_as = b['type']
+	def __init__(self, type):
+		self.type = type
+
+b['number'] = BuiltinType(Number, [[t("number")]])
+b['list'] =  BuiltinType(List, [[t("list of"), ch("items type")]], {"items type": b['type']})
+b['function'] = BuiltinType
+
+
+class EnumType
+name
+list of values
+indexation type
+
+ListType
+ListLiteral
+ListValue?
+
+types are literals
+wherever you point to python class, point to builtin declaration instead
+
+
+
+
+
+OR JUST vithout types:
+
+class VariableDeclaration(Node):
+	def __init__(self, name):
+		super(VariableDeclaration, self).__init__()
+		self.name = widgets.Text(name)
+	def render(self):
+		return [t("var"), w('name')]
+
+class VariableReference(Node):
+	def __init__(self, declaration):
+		super(VariableReference, self).__init__()
+		self.declaration = declaration
+	def render(self):
+		return [t("->"+self.declaration.name.text)]
+`well-
+"""
+
+b = {}
+
+
+b['comparable'] = BuiltinTypeDeclaration(name = "comparable")
+b['number'] = Subclass(name = 'number', (b['comparable']))
+b['islessthan'] = BuiltinNodeDeclaration
+
+
+for x in ['statement', 'typedeclaration', 'expression']:
+	b[x] = TypeClass(x)
+
+for x in [Text, Number, Bool, Dict, List, Statements, Assignment, Program, IsLessThan]:
+	b[x] = b[x.__class__.__name__] = BuiltinType(x)
+
+
+
+builtins = Module("builtins")
+builtins.ch.statements.items = list(b)
+
+
+"""
+roadmap: 
+types - try to figure out or leave for later
+ pyswip integration
+functions
+logic
+
+
+
+class CustomNode(Syntaxed):
+	syntaxes = [[ch("syntaxes"), ch("works as"), ch("name")]]
+	def __init__(self):
+		super(CustomNode, self).__init__()
+		self.child_types = {'name', b['text'], 
+			'works as', b['type']}
+
+CustomNode(
+	ch = {'syntaxes':[[ch("name"), t(" - "), ch("type")]]
+	def __init__(self):
+		super(ArgumentDefinition, self).__init__()
+		self.child_types = {'name', b['text'], 'type', b['type']}
+
+
+
+
+"""
+
+
+
+#WithDef uses another object, SyntaxDef
+class SyntaxDef(Node):
+	def __init__(self, syntax_def):
+		super(SyntaxDef, self).__init__()
+		self.syntax_def = syntax_def
+
+	def render(self):
+		return [t("syntax definition:"), t(str(self.syntax_def))]
+
+class WithDef(Node):
+	def __init__(self):
+		super(WithDef, self).__init__()
+		self.syntax_def
+
+	def render(self):
+		self.syntax_def = self.root.find("modules/0/0")
+		assert(isinstance(self.syntax_def, SyntaxDef))
+		return self.syntax_def.syntax_def
+
+
+#if custom nodes should be able to have node classes in their syntax, this would be needed
+class NodeTypeDeclaration(Node):
+	def __init__(self, type):
+		super(NodeTypeDeclaration, self).__init__()
+		self.type = type
+
+	def render(self):
+		return [t("node type declaration:"), t(str(self.type))]
+
+
+
+"""
 class Triple(Syntaxed):
 	def __init__(self, subject, predicate, object):
 		super(Triple, self).__init__()
@@ -966,7 +839,6 @@ class Triple(Syntaxed):
 
 
 
-"""
 class PythonImport
 	name
 
@@ -1276,149 +1148,270 @@ def make_protos(root, text):
 
 
 """
-class TypeRef(Node):
-	def __init__(self, decl):
-		self.decl = decl
-
-
-TypeRef(b[Dict]
-
-"""	
-type declarations:
-	definitions:
-		banana is a kind of fruit
-	builtin:
-		Dict
-
-type reference
-
-x is a dict of fruits
-
-class hashmap
-	declaration syntax: a hashmap from [x - type] to [y - type]
-
-	x is a hashmap from int to string
-
-
-variable declaration:
-	ch("name"), t("is a(n)"), ch("type")
-	child_types = {"name": Text, "type": b['type']}
-	
-class BuiltinType(Node):
-	works_as = b['type']
-	def __init__(self, type):
-		self.type = type
-
-b['number'] = BuiltinType(Number, [[t("number")]])
-b['list'] =  BuiltinType(List, [[t("list of"), ch("items type")]], {"items type": b['type']})
-b['function'] = BuiltinType
-
-
-class EnumType
-name
-list of values
-indexation type
-
-ListType
-ListLiteral
-ListValue?
-
-types are literals
-wherever you point to python class, point to builtin declaration instead
 
 
 
 
 
-OR JUST vithout types:
-
-class VariableDeclaration(Node):
-	def __init__(self, name):
-		super(VariableDeclaration, self).__init__()
-		self.name = widgets.Text(name)
-	def render(self):
-		return [t("var"), w('name')]
-
-class VariableReference(Node):
-	def __init__(self, declaration):
-		super(VariableReference, self).__init__()
-		self.declaration = declaration
-	def render(self):
-		return [t("->"+self.declaration.name.text)]
-
-
-
-
-b = DictModule("builtins")
-
-for x in ['statement', 'typedeclaration', 'expression']:
-	b[x] = TypeClass(x)
-
-for x in [Text, Number, Bool, Dict, List, Statements, Assignment, Program, IsLessThan]:
-	b[x] = b[x.__class__.__name__] = BuiltinType(x)
-
-
-
-
-
-
-
-roadmap: 
-types - try to figure out or leave for later
-pyswip integration
-functions
-logic
-
-
-
-class CustomNode(Syntaxed):
-	syntaxes = [[ch("syntaxes"), ch("works as"), ch("name")]]
-	def __init__(self):
-		super(CustomNode, self).__init__()
-		self.child_types = {'name', b['text'], 
-			'works as', b['type']}
-
-CustomNode(
-	ch = {'syntaxes':[[ch("name"), t(" - "), ch("type")]]
-	def __init__(self):
-		super(ArgumentDefinition, self).__init__()
-		self.child_types = {'name', b['text'], 'type', b['type']}
-
-
-
-
+"""NodeCollider and Placeholder..megamess atm. should allow adding both node classes
+and expressions with matching types.
+collider has a list of nodes and should allow adding and deleting.
+back to dummy? collider is responsible for menu?
+its probably reasonable to forego all smartness for a start and do just a dumb
+tree editor
 """
 
 
-
-
-
-#WithDef uses another object, SyntaxDef
-class SyntaxDef(Node):
-	def __init__(self, syntax_def):
-		super(SyntaxDef, self).__init__()
-		self.syntax_def = syntax_def
+class NodeCollider(Node):
+	def __init__(self, types):
+		super(NodeCollider, self).__init__()
+		self.types = types
+		self.items = []
+		self.add(Placeholder(types))
 
 	def render(self):
-		return [t("syntax definition:"), t(str(self.syntax_def))]
+		r = [t("[")]
+		for item in self.items:
+			r += [ElementTag(item)]
+		r += [t("]")]
+		return r
 
-class WithDef(Node):
-	def __init__(self):
-		super(WithDef, self).__init__()
-		self.syntax_def
+	def __getitem__(self, i):
+		return self.items[i]
+
+	def fix_relations(self):
+		super(NodeCollider, self).fix_relations()
+		self.fix_(self.items)
+
+	def on_keypress(self, e):
+		item_index = self.insertion_pos(e.cursor)
+		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
+			if len(self.items) > item_index:
+				del self.items[item_index]
+
+	def insertion_pos(self, (char, line)):
+		i = -1
+		for i, item in enumerate(self.items):
+			#print i, item, item._render_start_line, item._render_start_char
+			if (item._render_start_line >= line and
+				item._render_start_char >= char):
+				return i
+		return i + 1
+
+	def flatten(self):
+		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
+
+	def add(self, item):
+		self.items.append(item)
+		assert(isinstance(item, Node))
+		item.parent = self
+
+	def menu(self):
+		r = [InfoMenuItem("magic goes here")]
+
+		for type in self.types:
+			r += [InfoMenuItem("for type "+type)]
+			for w in works_as(type):
+				r += [InfoMenuItem(w + "works as "+type)]
+				if nodes_by_name.has_key(w):
+					n = nodes_by_name[w]()
+					#todo: use NodeTypeDeclarations instead
+					if isinstance(n, Syntaxed):
+						for syntax in n.syntaxes:
+							for i in range(min(len(self.items), len(syntax))):
+								if isinstance(syntax[i], tags.TextTag):
+									if isinstance(self.items[i], SomethingNew):
+										r += [InfoMenuItem(str(w))]
+
+
+		r += [InfoMenuItem("banana")]
+		return r
+
+	def replace_child(self, child, new):
+		assert(child in self.items)
+		self.items[self.items.index(child)] = new
+		new.parent = self
+		p = Placeholder(self.types)
+		p.parent = self
+		self.items.append(p)
+
+	def eval(self):
+		i = self.items[0]
+		i.eval()
+		self.runtime = i.runtime
+		return self.runtime.value.val
+
+
+class Placeholder(Node):
+	def __init__(self, types, description = None):
+		super(Placeholder, self).__init__()
+		self.types = types
+		if description == None: description = str(types)
+		self.description = description
+		self.textbox = widgets.ShadowedText(self, "", self.description)
+		self.brackets_color = (0,255,0)
+		self.textbox.brackets_color = (255,255,0)
 
 	def render(self):
-		self.syntax_def = self.root.find("modules/0/0")
-		assert(isinstance(self.syntax_def, SyntaxDef))
-		return self.syntax_def.syntax_def
+		return [w('textbox')]
+	
+	def menu(self):
+		text = self.textbox.text
+		#r = [InfoMenuItem("insert:")]
+		it = PlaceholderMenuItem
+
+		r = []
+
+		if text.isdigit():
+			r += [it(Number(text))]
+
+		#r += [it(Text(text))]
+		r += [it(SomethingNew(text))]
+
+		protos = make_protos(self.root, text)
+		#for k,v in protos.iteritems():
+		#	v.parent = self
+		
+		#first the preferred types
+		for t in self.types:
+			for v in works_as(t):
+				if protos.has_key(v):
+					x = protos[v]
+					menuitem = it(x)
+					r += [menuitem]
+					
+					if isinstance(x, Syntaxed):
+						for s in x.syntaxes:
+							#print s
+							tag = s[0]
+							if isinstance(tag, tags.TextTag):
+								if text in tag.text:
+									menuitem.score += 1
+									#print x
+									#if not protos[v] in [i.value for i in r]:
+										
+				elif v == 'functioncall':
+					for i in self.scope():
+						if isinstance(i, FunctionDefinition):
+							r += [it(FunctionCall(i))]
+				
+				elif v == 'termreference':
+					for i in self.scope():
+						if isinstance(i, Triple):
+							r += [it(i.subject)]
+							r += [it(i.object)]
+				
+				elif v == 'dbpediaterm':
+							r += [it(x) for x in DbpediaTerm.enumerate()]
+
+				elif v == 'variablereference':
+					print "scope:", self.scope()
 
 
-#if custom nodes should be able to have node classes in their syntax, this would be needed
-class NodeTypeDeclaration(Node):
-	def __init__(self, type):
-		super(NodeTypeDeclaration, self).__init__()
-		self.type = type
+		#then add the rest
+		#for t in self.types:
+		#	for v in works_as(t):
+		#		if protos.has_key(v) and not protos[v] in [i.value for i in r]:
+		#			r += [it(protos[v])]
 
-	def render(self):
-		return [t("node type declaration:"), t(str(self.type))]
+		#enumerators:
+		#	scope:
+		#		variables, functions
+		#			
+	
+		"""
+		if type == 'pythonidentifier'
+			PythonIdentifier.enumerate(self)
+
+		if type == 'google'
+			Google.enumerate(self)
+		
+		"""
+	
+
+		#variables, functions
+#		for i in self.scope():
+#			if isinstance(i, VariableDeclaration):
+#				r += [it(VariableReference(i))]
+#			if isinstance(i, FunctionDefinition):
+#				r += [it(FunctionCall(i))]
+
+		#1: node types
+		#r += [it(x) for x in self.scope()]
+
+#add best
+#add all
+
+				
+		#2: calls, variables..
+		
+		#filter by self.types:
+		
+		#preferred types:
+		#r += expand_types(self.types)
+		#all types
+		#r += expand_types('all') - expand_types(self.types)
+
+		#sort:
+		
+		#r.sort(key = self.fits)
+
+		return super(Placeholder, self).menu() + r
+		
+		
+	def fits(self, item):
+		for t in self.types:
+			if isinstance(item, t):
+				return 1
+		return 0
+		
+
+	def menu_item_selected(self, item):
+		if not isinstance(item, PlaceholderMenuItem):
+			log("not PlaceholderMenuItem")
+			return
+		v = item.value
+		if v == None:
+			log("no value")
+		elif isinstance(v, NodeTypeDeclaration):
+			x = v.type()
+		elif isinstance(v, Node):
+			x = v
+#		elif isinstance(v, type):
+#			x = v()
+		self.parent.replace_child(self, x)
+
+# hack here, to make a menu item renderable by project.project
+class PlaceholderMenuItem(MenuItem):
+	def __init__(self, value):		
+		self.value = value
+		self.score = 0
+		self.brackets_color = (0,0,255)
+		#(and so needs brackets_color)
+		
+	#PlaceholderMenuItem is not an Element, but still has tags(),
+	#called by project.project called from draw()
+	def tags(self):
+		return [ColorTag((0,255,0)),w('value'), t(" - "+str(self.value.__class__.__name__)), EndTag()]
+		#and abusing "w" for "widget" here...not just here...
+
+	def draw(self, menu, s, font, x, y):
+		#replicating draw_root, but for now..
+		#project._width = ..
+		lines = project.project(self)
+		area = pygame.Rect((x,y,0,0))
+		for row, line in enumerate(lines):
+			for col, char in enumerate(line):
+				chx = x + font['width'] * col
+				chy = (y+2) + font['height'] * row
+				sur = font['font'].render(
+					char[0],False,
+					char[1]['color'],
+					colors.bg)
+				s.blit(sur,(chx,chy))
+				area = area.union((chx, chy, sur.get_rect().w, sur.get_rect().h+2))
+		return area
+
+
+
 
