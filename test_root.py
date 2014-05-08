@@ -33,16 +33,6 @@ def test_root():
 
 	r["modules"].add(nodes.builtins)
 
-	"""
-					Module(Statements(['all'],
-						[NodeTypeDeclaration(x) for x in [
-							Text, Number, Dict, List, CollapsibleText, Statements,
-							VariableReference, Placeholder, Clock, SyntaxDef,
-							Program, Module, ShellCommand,
-							Root, While, Note, Todo, Idea]]
-					), name = "builtins"),
-	"""
-	"""
 	stuff = Module("stuff")
 	[stuff.add(x) for x in [
 		Note("stupid, but gotta start somewhere"),

@@ -116,6 +116,102 @@ class Node(element.Element):
 
 
 
+
+
+#WithDef uses another object, SyntaxDef
+class SyntaxDef(Node):
+	def __init__(self, syntax_def):
+		super(SyntaxDef, self).__init__()
+		self.syntax_def = syntax_def
+
+	def render(self):
+		return [t("syntax definition:"), t(str(self.syntax_def))]
+
+class WithDef(Node):
+	def __init__(self):
+		super(WithDef, self).__init__()
+		self.syntax_def
+
+	def render(self):
+		self.syntax_def = self.root.find("modules/0/0")
+		assert(isinstance(self.syntax_def, SyntaxDef))
+		return self.syntax_def.syntax_def
+
+
+#Syntaxed has syntaxes as part of class definition
+
+class Syntaxed(Node):
+	def __init__(self):
+		super(Syntaxed, self).__init__()
+		self.syntax_index = 0
+		for name, types in self.child_types.iteritems():
+			if len(types) == 1 and types[0] == ['Statements', 'Dict', 'List']:
+				v = Statements()@@@
+			else:
+				v = Placeholder(types)
+			self.ch[name] = v
+		
+	@property
+	def syntax(self):
+		return self.syntaxes[self.syntax_index]
+
+	def render(self):
+		return self.syntax
+
+	def prev_syntax(self):
+		self.syntax_index  -= 1
+		if self.syntax_index < 0:
+			self.syntax_index = 0
+		log("prev")
+
+	def next_syntax(self):
+		self.syntax_index  += 1
+		if self.syntax_index == len(self.syntaxes):
+			self.syntax_index = len(self.syntaxes)-1
+		log("next")
+
+	def on_keypress(self, e):
+		if pygame.KMOD_CTRL & e.mod:
+			if e.key == pygame.K_PAGEUP:
+				self.prev_syntax()
+				return True
+			if e.key == pygame.K_PAGEDOWN:
+				self.next_syntax()
+				return True
+
+	@classmethod
+	def new(cls):
+		r = cls()
+		for k, v in cls.child_types.iteritems():
+			if v[0] == 'statements':
+				x = Statements()
+			else:
+				 x = NodeCollider(v)
+			r.children[k] = x
+
+
+
+
+
+
+
+class BuiltinNodeDecl(Node):
+	def __init__(self, decl):
+		super(BuiltinNodeDecl, self).__init__()
+		self.decl = decl
+
+	def render(self):
+		return [t("node type declaration:"), t(str(self.decl))]
+
+
+
+
+
+
+
+
+
+
 #???
 
 
@@ -152,7 +248,7 @@ class WidgetedValue(Node):
 		return self.widget.text
 
 
-class Text(Value):
+class TextVal(Value):
 	def __init__(self, value):
 		super(Text, self).__init__()
 		self.type = TypeRef(
@@ -160,14 +256,14 @@ class Text(Value):
 	def render(self):
 		return [w('widget')]
 
-class Number(Literal):
+class NumberVal(Literal):
 	def __init__(self, value):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
 	def render(self):
 		return [w('widget')]
 
-class Bool(Literal):
+class BoolVal(Literal):
 	def __init__(self, value):
 		super(Bool, self).__init__()
 		self.widget = widgets.Toggle(self, value)
@@ -218,7 +314,7 @@ class Collapsible(Node):
 		return self.runtime.value.append(Value(self.items))
 
 
-class Dict(Collapsible):
+class DictVal(Collapsible):
 	def __init__(self, expanded=True):
 		super(Dict, self).__init__(expanded)
 		self.items = OrderedDict()
@@ -327,10 +423,11 @@ class ListVal(Collapsible):
 		p.parent = self
 		self.items.append(p)
 
+"""
 bs["listval"] = BuiltinTypeDef([t("list of"), ch("itemtype")], {"itemtype": b[TypeRef]})
 bs["intval"] = BuiltinTypeDef([t("int")])
 bs["textval"] = BuiltinTypeDef([t("text")])
-
+"""
 
 class Statements(List):
 	def __init__(self):
@@ -374,67 +471,6 @@ class SomethingNew(Node):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-#Syntaxed has syntaxes as part of class definition
-
-class Syntaxed(Node):
-	def __init__(self):
-		super(Syntaxed, self).__init__()
-		self.syntax_index = 0
-		for name, types in self.child_types.iteritems():
-			if len(types) == 1 and types[0] == ['Statements', 'Dict', 'List']:
-				v = Statements()@@@
-			else:
-				v = Placeholder(types)
-			self.ch[name] = v
-		
-	@property
-	def syntax(self):
-		return self.syntaxes[self.syntax_index]
-
-	def render(self):
-		return self.syntax
-
-	def prev_syntax(self):
-		self.syntax_index  -= 1
-		if self.syntax_index < 0:
-			self.syntax_index = 0
-		log("prev")
-
-	def next_syntax(self):
-		self.syntax_index  += 1
-		if self.syntax_index == len(self.syntaxes):
-			self.syntax_index = len(self.syntaxes)-1
-		log("next")
-
-	def on_keypress(self, e):
-		if pygame.KMOD_CTRL & e.mod:
-			if e.key == pygame.K_PAGEUP:
-				self.prev_syntax()
-				return True
-			if e.key == pygame.K_PAGEDOWN:
-				self.next_syntax()
-				return True
-
-	@classmethod
-	def new(cls):
-		r = cls()
-		for k, v in cls.child_types.iteritems():
-			if v[0] == 'statements':
-				x = Statements()
-			else:
-				 x = NodeCollider(v)
-			r.children[k] = x
 
 class Module(Syntaxed):
 	syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
@@ -603,14 +639,14 @@ class Subclass(Syntaxed):
 		self.setch('left', left)
 		self.setch('right', right)
 
-class TypeReference(Node):
+class TypeRef(Node):
 	def __init__(self, target):
-		super(TypeReference, self).__init__()
-		assert(isinstance(target, TypeDeclaration))
+		super(TypeRef, self).__init__()
+		assert(isinstance(target, (BuiltinTypeDeclaration, Subclass))
 		self.target = target
 		
 	def render(self):
-		return self.target.left.text
+		return self.target.name.text
 
 class IsLessThan(Syntaxed):
 	syntaxes=[[ch("left"), t(" < "), ch("right")]]
@@ -632,30 +668,22 @@ class ArgumentDefinition(Syntaxed):
 		self.child_types = {'name', b['text'], 'type', b['type literal']}
 
 
-class FunctionType(Syntaxed):
-	syntaxes = [[t("function taking"), ch("args"), t("and returning"), ch("result")]]
-	def __init__(
-		self.child_types = {'args': [XofYs(b[Dict], b[ArgumentDefinition])]}
-		super(self, FunctionType).__init__()
-
 class FunctionSignature(Syntaxed):
-	syntaxes=[[t("function:"),ch("items"),t(":")]]
-	def __init__(self):
-		self.child_types = {'items': [create(ListType, {'item type': [b[ArgumentDefinition], b[Text]]})]}
-		super(FunctionSignature, self).__init__()
+	syntaxes = [[ch("args")]]
+	def __init__(
+		super(self, FunctionSignature).__init__()
+		self.child_types = {'items': b[ListLit]}
 
-#class PythonFunctionCall
-#class LemonFunctionCall
 
 class FunctionDefinition(Syntaxed):
 	def __init__(self):
 		super(FunctionDefinition, self).__init__()
-		self.setch('body', Statements())
 		self.setch('signature', FunctionSignature())
+		self.setch('body', Statements())
 		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
 
 
-class FunctionCall(Syntaxed):
+class PassedFunctionCall(Syntaxed):
 	def __init__(self, definition):
 		super(FunctionCall, self).__init__()
 		assert isinstance(definition, FunctionDefinition)
@@ -673,12 +701,75 @@ class FunctionCall(Syntaxed):
 		return r
 
 
-class TypeRef(Node):
-	def __init__(self, decl):
-		self.decl = decl
+
+b = {}
 
 
-TypeRef(b[Dict]
+b['comparable'] = BuiltinTypeDecl(name = "comparable")
+b['number'] = Subclass(name = 'number', (b['comparable']))
+
+
+ad = ArgumentDefinition
+tl = TextLit
+
+
+
+b['multiply'] = BuiltinFunctionDecl(
+	name = 'multiply',
+	signature = [ad("left"), tl("*"), ad("right")],
+	arg_types = {'left': b['expression'], 'right': b['expression']},
+	eval = multiply_eval
+
+def multiply_eval(args):
+		l,r = args.left.eval(), args.right.eval()
+		assert(isinstance(l, Value))
+		assert(isinstance(r, Value))
+		res = Value(b['number'], l.value * r.value)
+		return res
+
+class PythonFunctionDecl(
+		self.
+
+class PythonFunctionDecl(Syntaxed):
+	def __init__(self, fun, sig, arg):
+		self.signature = FunctionSignature(sig)
+
+PythonFunctionDecl(
+	operator.div,
+	signature = [ad("left"), tl("/"), ad("right")],
+	arg_types = {'left': b['expression'], 'right': b['expression']})
+
+
+
+
+class FunctionCall(Node):
+	def __init__(self, target):
+		super(FunctionCall, self).__init__()
+		assert isinstance(target, FunctionDefinition)
+		self.target = target
+		self.args = []
+		for v in self.target.arg_types:
+			x = NodeCollider()
+			x.parent = self
+			self.args.append(x)
+
+	def replace_child(self, child, new):
+		x = self.args.find(child)
+		self.args[x] = new
+		new.parent = self
+
+	def render(self):
+		r = [t('(call)')]
+		for i in self.target.signature.items:
+			if isinstance(i, TextLit):
+				r += [t(i.widget.text)]
+			elif isinstance(i, ArgumentDefinition):
+				r += [ElementTag(self.args[i.name])]
+
+		return r
+
+
+
 
 """	
 type declarations:
@@ -720,14 +811,16 @@ ListType
 ListLiteral
 ListValue?
 
+class FunctionType(Syntaxed):
+	syntaxes = [[t("function taking"), ch("args"), t("and returning"), ch("result")]]
+	def __init__(
+		self.child_types = {'args': [XofYs(b[Dict], b[ArgumentDefinition])]}
+		super(self, FunctionType).__init__()
+
 types are literals
 wherever you point to python class, point to builtin declaration instead
 
-
-
-
-
-OR JUST vithout types:
+oR JUST vithout types:
 
 class VariableDeclaration(Node):
 	def __init__(self, name):
@@ -745,12 +838,8 @@ class VariableReference(Node):
 `well-
 """
 
-b = {}
 
-
-b['comparable'] = BuiltinTypeDeclaration(name = "comparable")
-b['number'] = Subclass(name = 'number', (b['comparable']))
-b['islessthan'] = BuiltinNodeDeclaration
+"""
 
 
 for x in ['statement', 'typedeclaration', 'expression']:
@@ -759,10 +848,8 @@ for x in ['statement', 'typedeclaration', 'expression']:
 for x in [Text, Number, Bool, Dict, List, Statements, Assignment, Program, IsLessThan]:
 	b[x] = b[x.__class__.__name__] = BuiltinType(x)
 
+"""
 
-
-builtins = Module("builtins")
-builtins.ch.statements.items = list(b)
 
 
 """
@@ -771,8 +858,26 @@ types - try to figure out or leave for later
  pyswip integration
 functions
 logic
+"""
+
+"""
+tbd:
+class Terminal(Syntaxed):
+	def __init__(self):
+		self.setch('history', List([]))
+		self.setch('command', Placeholder())
+		self.run_button = widgets.Button(self, "run")
+		self.syntaxes = [[t("history:"), ch('history'), t('command'), ch('command'), w('run_button')]
+
+	def on_keypress(self, e):
+		if pygame.KMOD_CTRL & e.mod:
+			if e.key == pygame.K_RETURN:
+				self.history.append(self.command.eval()...
+			
+"""
 
 
+"""
 
 class CustomNode(Syntaxed):
 	syntaxes = [[ch("syntaxes"), ch("works as"), ch("name")]]
@@ -794,38 +899,17 @@ CustomNode(
 
 
 
-#WithDef uses another object, SyntaxDef
-class SyntaxDef(Node):
-	def __init__(self, syntax_def):
-		super(SyntaxDef, self).__init__()
-		self.syntax_def = syntax_def
 
-	def render(self):
-		return [t("syntax definition:"), t(str(self.syntax_def))]
-
-class WithDef(Node):
-	def __init__(self):
-		super(WithDef, self).__init__()
-		self.syntax_def
-
-	def render(self):
-		self.syntax_def = self.root.find("modules/0/0")
-		assert(isinstance(self.syntax_def, SyntaxDef))
-		return self.syntax_def.syntax_def
-
-
-#if custom nodes should be able to have node classes in their syntax, this would be needed
-class NodeTypeDeclaration(Node):
-	def __init__(self, type):
-		super(NodeTypeDeclaration, self).__init__()
-		self.type = type
-
-	def render(self):
-		return [t("node type declaration:"), t(str(self.type))]
-
+"""
+for x in [Statements, Clock, Program, Module, Note, Todo, Idea,
+			ArgumentDefinition, TextLit]:
+	b[x] = BuiltinNodeDecl(x)
+				
+"""
 
 
 """
+outdated:
 class Triple(Syntaxed):
 	def __init__(self, subject, predicate, object):
 		super(Triple, self).__init__()
@@ -839,26 +923,6 @@ class Triple(Syntaxed):
 
 
 
-class PythonImport
-	name
-
-class pythonIdentifier
-
-
-PythonFunctionDefinition(
-class PythonFunctionDefinition(Syntaxed):
-	def __init__(self, signature, body):
-		super(FunctionDefinition, self).__init__()
-		assert isinstance(body, Statements)
-		assert isinstance(signature, FunctionSignature)
-		self.setch('body', body)
-		self.setch('signature', signature)
-		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
-"""
-
-"""
-		
-
 class Print(Templated):
 	def __init__(self,value):
 		super(Print,self).__init__()
@@ -870,14 +934,6 @@ class Print(Templated):
 
 #set backlight brightness to %{number}%
 self.templates = target.call_templates?
-class CallNode(TemplatedNode):
-	def __init__(self, target=):
-		super(CallNode,self).__init__()
-		self.target = target
-		self.arguments = arguments
-	def render(self):
-		self.target
-
 
 class If(Templated):
 	def __init__(self,condition,statements):
@@ -908,51 +964,11 @@ class ArrayItems(Node):
 			self.doc.append(str(item), self)
 			if i != len(self.items):
 				self.doc.append(", ", self)
-			
-		
-class FunctionDefinition(Templated):
-	def __init__(self,signature,statements):
-		super(FunctionDefinition,self).__init__()
 
-		self.templates = [template([t("to "), child("signature"), t(":"),newline(),child("statements")])]
-		self.set('signature', signature)
-		self.set('statements', statements)
+"""
 
-def FunctionArgument(Templated):
-	def __init__(self,name,type):
-		super(FunctionArgument,self).__init__()
-
-		self.templates = [template([t("("),child("name"), t(" - "),child("type"),t(")"),])]
-		self.set('name', name)
-		self.set('type', type)
-
-	
-
-class FunctionSignature(Node):
-	def __init__(self,items):
-		super(FunctionSignature,self).__init__()
-		self.items = items
-	def render(self):
-		for item in self.items:
-			item.render()	
-
-	
-
-class SyntaxNode(Node):
-	def __init__(self, items):
-		self.items = items
-
-
-
-
-#curent todo: add all nodes to the builtins module, with their templates:
-#python classes are in nodes.py, with same names
-#division?
-
-
-
-#why not provide template functionality in Node: this is developing towards other views alla larch, maybe dataflow, maybe some other stuff, so using the inheritance hierarchy for all that will make more sense. I will try to declare a hierarchy inside the l1 declarations in modules
-
+"""
+musings:			
 
 #start adding a knowledge base
 #brick is a kind of thing
@@ -961,75 +977,13 @@ class SyntaxNode(Node):
 #every blue brick
 
 
-#possible todo: ditch pyglets text modules for our own system:
-#easier to make interaction glitch free
-#non text representations: pyglets embedded objects or this
-#is one format for one line enough, or do we need the full thing
-
-
-
 #child, parent -> sub, sup?
 #CarryNode?:)
 
 
 #class SillySimpleCommandDeclaration()
 
-"""
 
-
-"""
-class Placeholder(Node):
-	def __init__(self, name="placeholder", type=None, default="None", example="None"):
-		super(Placeholder, self).__init__()
-		self.default = default
-		self.example = example
-		self.textbox = widgets.ShadowedText(self, "", "<<>>")
-		self.menu = menu.Menu(self, [])
-		self.textbox.push_handlers(
-			on_edit=self.on_widget_edit
-			#on_text_motion=self.on_widget_text_motion,
-			)
-
-#		print self," items:"
-#		for name, item in self.__dict__.iteritems():
-#			print " ",name, ": ", item
-	
-	
-	def on_widget_edit(self, widget):
-		if widget == self.textbox:
-			text = self.textbox.text
-			self.menu.items = self.doc.language.menu(self)
-	
-	def render(self):
-		d = (" (default:"+self.default+")") if self.default else ""
-		e = (" (for example:"+self.example+")") if self.example else ""
-
-		x = d + e if self.textbox.is_active() else ""
-
-
-		self.textbox.shadow = "<<" + x + ">>"
-
-		return [w('textbox'), w('menu')]
-
-
-	def on_widget_text_motion(self, motion):
-		#use just shifts?
-		if text == "T":
-			self.menu.sel -= 1
-			return True
-		if text == "N":
-			self.menu.sel += 1
-			return True
-			
-	#def replace(self, replacement):
-	#	parent.children[self.name] = replacement...
-
-
-could start working on:
-
-#not sure im gonna finish this one..it was supposed to be something like sticky notes,
-#an alternative view of "notes"
-#however, semanticizing or organizing into nodes all documentation is still a priority
 class Grid(Node):
 	def __init__(self, items, grid):
 		super(Grid,self).__init__()
@@ -1040,34 +994,16 @@ class Grid(Node):
 		return [TwoDGraphicTag(self)]
 
 
-class Terminal(Syntaxed):
-	def __init__(self):
-		self.setch('history', List([]))
-		self.setch('command', Placeholder())
-		self.run_button = widgets.Button(self, "run")
-		self.syntaxes = [[t("history:"), ch('history'), t('command'), ch('command'), w('run_button')]
-
-	def on_keypress(self, e):
-		if pygame.KMOD_CTRL & e.mod:
-			if e.key == pygame.K_RETURN:
-				self.history.append(self.command.eval()...
-			
-
-	
-
-class triple
-	this would be three SomethingNew's - subject predicate object
-
 wolframalpha
 	input text
 	get back results
 
-or tap into eulergui datagui functionality
+tap into eulergui datagui functionality (DBpedia)
 
 class SemanticizedGoogle
 	nah, huge and stupid
 
-
+snatch ubuntu scopes
 
 
 
@@ -1075,6 +1011,7 @@ class SemanticizedGoogle
 """	
 
 """
+old stuff:
 pyDatalog.create_terms('link, can_reach, X, Y, Z, Number, Text, CollapsibleText')
 +link(Number, Text)
 +link(Text, CollapsibleText)
@@ -1415,3 +1352,17 @@ class PlaceholderMenuItem(MenuItem):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+builtins = Module("builtins")
+builtins.ch.statements.items = list(b)
