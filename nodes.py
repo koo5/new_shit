@@ -1,4 +1,4 @@
-+#beware misleading documentation
+#beware misleading documentation
 
 
 #everything is lumped together here, real ast nodes with clock and sticky notes,
@@ -29,15 +29,29 @@ import colors
 
 
 
-class Value(object):
-	def __init__(self, value, type):
-		self.value = value
-		self.type = type
-		assert(isinstance(type, TypeRef))
+b = {}
+
+
+
+
+class TypeRef(Node):
+	def __init__(self, target):
+		self.target = target
+		assert(isinstance(target, (BuiltinTypeDef, Subclass)))
+
+
+
+
+
+
+
+
 
 
 class val(list):
-	"""during execution, results of evaluation of every node is appended, so there is a history visible, and the current value is the last one"""
+	"""
+	a list of Values
+	during execution, results of evaluation of every node is appended, so there is a history visible, and the current value is the last one"""
 	def val(self):
 		return self[-1]
 
@@ -45,12 +59,6 @@ class val(list):
 		assert(isinstance(x, Value))
 		super(self, val).append(x)
 		return x
-
-
-class TypeRef(Node):
-	def __init__(self, target):
-		self.target = target
-		assert(isinstance(target, (BuiltinTypeDef, SubclassDef)))
 		
 
 class Children(dotdict):
@@ -145,10 +153,12 @@ class Syntaxed(Node):
 		super(Syntaxed, self).__init__()
 		self.syntax_index = 0
 		for name, types in self.child_types.iteritems():
-			if len(types) == 1 and types[0] == ['Statements', 'Dict', 'List']:
-				v = Statements()@@@
+			if len(types) == 1 and types[0].equals(TypeRef(b[Statements])):
+			
+			#, 'Dict', 'List']:
+				v = Statements()
 			else:
-				v = Placeholder(types)
+				v = NodeCollider(types)
 			self.ch[name] = v
 		
 	@property
@@ -201,77 +211,50 @@ class BuiltinNodeDecl(Node):
 		self.decl = decl
 
 	def render(self):
-		return [t("node type declaration:"), t(str(self.decl))]
+		return [t("builtin node declaration:"), t(str(self.decl))]
 
 
 
 
 
-
-
-
-
-
-#???
-
-
-class Literal(Node):
-	"""wraps a value into a node"""
-	def __init__(self,value):
-		super(Literal, self).__init__()	
-		self.value = value
+class Value(object):
+	#type, pyval
 	def _eval(self):
-		return self.value
-
-"""values are objects responsible for holding for example
-results of evaluations, in runtime. Abstractly speaking,
-they would be responsible for memory allocation.
-the "type" field contains a TypeRef object
-"""
-
+		return self
+	pass
+	
 class WidgetedValue(Node):
-	"""these types are currently defined by widgets, which in turn use python types...
-	weird but gonna work
-	in future, some editor object could be created instead
-	question is how/if code will be divided between python and prolog, if widgets
-	would be responsibility of the editor, indicated by tags..
-	"""	
-	def __init__(self,value):
-		super(Literal, self).__init__()	
-		self.value = value
-	def eval(self):
-		v = self.widget.value
-		self.runtime.value.append(v)
-		self.runtime.evaluated = True
-		return v
-	def get_value(self):
-		return self.widget.text
-
-
-class TextVal(Value):
-	def __init__(self, value):
-		super(Text, self).__init__()
-		self.type = TypeRef(
-		self.widget = widgets.Text(self, value)
+	def __init__(self):
+		super(WidgetedValue, self).__init__()	
+	def pyval(self):
+		return self.widget.value
 	def render(self):
 		return [w('widget')]
 
-class NumberVal(Literal):
+b['text'] = BuiltinTypeDecl('text')
+class TextVal(WidgetedValue):
 	def __init__(self, value):
-		super(Number, self).__init__()
-		self.widget = widgets.Number(self, value)
-	def render(self):
-		return [w('widget')]
+		super(TextVal, self).__init__()
+		self.type = TypeRef(b['text'])
+		self.widget = widgets.Text(self, "")
 
-class BoolVal(Literal):
+b['number'] = BuiltinTypeDecl('number')
+class NumberVal(WidgetedValue):
 	def __init__(self, value):
-		super(Bool, self).__init__()
-		self.widget = widgets.Toggle(self, value)
+		super(NumberVal, self).__init__()
+		self.type = TypeRef(b['number'])
+		self.widget = widgets.Number(self, 0)
+
+b['bool'] = BuiltinTypeDecl('bool')
+class BoolVal(WidgetedValue):
+	def __init__(self, value):
+		super(BoolVal, self).__init__()
+		self.type = TypeRef(b['bool'])
+		self.widget = widgets.Toggle(self, False)
 	def render(self):
 		return [w('widget')]
 
 
-#???
 
 
 
@@ -282,9 +265,7 @@ class BoolVal(Literal):
 
 
 
-
-
-class Collapsible(Node):
+class Collapsible(Value):
 	"""Collapsible - List or Dict - dont have a title, a top unindented line. They are just
 	the items...now"""
 	def __init__(self, expanded=True, vertical=True):
@@ -309,9 +290,10 @@ class Collapsible(Node):
 		if widget is self.expand_collapse_button:
 			self.toggle()
 
-	def eval(self):
-		self.runtime.evaluated = True
-		return self.runtime.value.append(Value(self.items))
+	def _eval(self):
+		for i in self.items:
+			i.eval()
+		return self
 
 
 class DictVal(Collapsible):
@@ -615,7 +597,7 @@ class Assignment(Syntaxed):
 			[t("let "), ch("left"), t(" be "), ch("right")]]
 
 	def __init__(self):
-		self.child_types = {'left': [b[SomethingNew], b[VariableReference], b[ArrayIndexation],
+		self.child_types = {'left': [Typeref(b[SomethingNew]), Typeref(b[VariableReference]), Typeref(b[ArrayIndexation])],
 			'right': b['expression']}
 		super(Assignment,self).__init__()
 		
@@ -642,7 +624,7 @@ class Subclass(Syntaxed):
 class TypeRef(Node):
 	def __init__(self, target):
 		super(TypeRef, self).__init__()
-		assert(isinstance(target, (BuiltinTypeDeclaration, Subclass))
+		assert(isinstance(target, (BuiltinTypeDeclaration, Subclass)))
 		self.target = target
 		
 	def render(self):
@@ -670,17 +652,17 @@ class ArgumentDefinition(Syntaxed):
 
 class FunctionSignature(Syntaxed):
 	syntaxes = [[ch("args")]]
-	def __init__(
+	def __init__(self):
 		super(self, FunctionSignature).__init__()
-		self.child_types = {'items': b[ListLit]}
+		self.child_types = {'items': Typeref(b[ListVal])}
 
 
 class FunctionDefinition(Syntaxed):
+	self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
 	def __init__(self):
 		super(FunctionDefinition, self).__init__()
-		self.setch('signature', FunctionSignature())
-		self.setch('body', Statements())
-		self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
+		self.child_types = {'signature': Typeref(b[FunctionSignature]),
+							'body': Typeref(b[Statements])}
 
 
 class PassedFunctionCall(Syntaxed):
@@ -702,9 +684,6 @@ class PassedFunctionCall(Syntaxed):
 
 
 
-b = {}
-
-
 b['comparable'] = BuiltinTypeDecl(name = "comparable")
 b['number'] = Subclass(name = 'number', (b['comparable']))
 
@@ -712,13 +691,20 @@ b['number'] = Subclass(name = 'number', (b['comparable']))
 ad = ArgumentDefinition
 tl = TextLit
 
-
+class BuiltinFunctionDecl(Syntaxed):
+	def __init__(self, name, signature, arg_types,):
+		super(BuiltinFunctionDecl, self).__init__()
+		self.setch('signature', FunctionSignature(signature))
+		self.arg_types = arg_types
+		self.eval = eval
+		self.name = name
+		self.syntaxes = [[t("builtin function:"), ch("signature"), t(":"+str(eval))]]
 
 b['multiply'] = BuiltinFunctionDecl(
 	name = 'multiply',
 	signature = [ad("left"), tl("*"), ad("right")],
 	arg_types = {'left': b['expression'], 'right': b['expression']},
-	eval = multiply_eval
+	eval = multiply_eval)
 
 def multiply_eval(args):
 		l,r = args.left.eval(), args.right.eval()
@@ -727,18 +713,17 @@ def multiply_eval(args):
 		res = Value(b['number'], l.value * r.value)
 		return res
 
-class PythonFunctionDecl(
-		self.
-
+"""
 class PythonFunctionDecl(Syntaxed):
 	def __init__(self, fun, sig, arg):
-		self.signature = FunctionSignature(sig)
+		self.setch('signature', FunctionSignature(sig))
+		
 
 PythonFunctionDecl(
 	operator.div,
 	signature = [ad("left"), tl("/"), ad("right")],
 	arg_types = {'left': b['expression'], 'right': b['expression']})
-
+"""
 
 
 
