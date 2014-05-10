@@ -25,7 +25,8 @@ but its all just development notes at the moment
 
 license
 ===
-licensing is still undecided, i may choose some standard open source license or
+licensing is still undecided, usual open source business models dont fit lemon.
+i may choose some standard open source license or
 continue developing this experiment: <https://github.com/koo5/Free-Man-License>
 update: i think + CC-NC + an additional license + clahub?
 http://lwn.net/Articles/592503/
