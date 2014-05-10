@@ -34,17 +34,6 @@ b = {}
 
 
 
-class TypeRef(Node):
-	def __init__(self, target):
-		self.target = target
-		assert(isinstance(target, (BuiltinTypeDef, Subclass)))
-
-
-
-
-
-
-
 
 
 
@@ -122,10 +111,6 @@ class Node(element.Element):
 
 
 
-
-
-
-
 #WithDef uses another object, SyntaxDef
 class SyntaxDef(Node):
 	def __init__(self, syntax_def):
@@ -149,12 +134,27 @@ class WithDef(Node):
 #Syntaxed has syntaxes as part of class definition
 
 class Syntaxed(Node):
-	def __init__(self):
+	def __init__(self, children):
 		super(Syntaxed, self).__init__()
 		self.syntax_index = 0
+		self.check()
+		assert(len(children) == len(self.child_types))
+		for i,k,v in enumerate(self.child_types.iteritems()):
+			#todo: check
+			self.setch(k, children[i])
+
+	def check(self):
+		assert(isinstance(self.child_types, dict))
 		for name, types in self.child_types.iteritems():
-			if len(types) == 1 and types[0].equals(TypeRef(b[Statements])):
-			
+			assert(isinstance(name, str))
+			assert(isinstance(types, list))
+			for t in types:
+				assert(isinstance(t, (BuiltinNodeDecl, TypeRef)))
+
+	@classmethod
+	def new(cls):
+		r = cls()
+		if len(types) == 1 and types[0] == b['statements']:
 			#, 'Dict', 'List']:
 				v = Statements()
 			else:
@@ -193,7 +193,7 @@ class Syntaxed(Node):
 	def new(cls):
 		r = cls()
 		for k, v in cls.child_types.iteritems():
-			if v[0] == 'statements':
+			if v[0] == b['statements']:
 				x = Statements()
 			else:
 				 x = NodeCollider(v)
@@ -203,19 +203,38 @@ class Syntaxed(Node):
 
 
 
+class TypeRef(Node):
+	def __init__(self, target):
+		self.target = target
+		assert(isinstance(target, (BuiltinTypeDecl, Subclass)))
+
+
+
+
+
+class BuiltinTypeDecl(Node):
+	def __init__(self, name):
+		super(BuiltinTypeDecl, self).__init__()
+		self.name = name
+
+	def render(self):
+		return [t("builtin type:"), t(name)]
+
+
 
 
 class BuiltinNodeDecl(Node):
-	def __init__(self, decl):
+	def __init__(self, cls):
 		super(BuiltinNodeDecl, self).__init__()
-		self.decl = decl
+		self.cls = cls
 
 	def render(self):
-		return [t("builtin node declaration:"), t(str(self.decl))]
+		return [t("builtin node declaration:"), t(str(self.cls))]
 
 
-
-
+class BuiltinTypeDecl(Node):
+	def __init__(self, name):
+		self.name = name
 
 class Value(object):
 	#type, pyval
@@ -231,21 +250,18 @@ class WidgetedValue(Node):
 	def render(self):
 		return [w('widget')]
 
-b['text'] = BuiltinTypeDecl('text')
 class TextVal(WidgetedValue):
 	def __init__(self, value):
 		super(TextVal, self).__init__()
 		self.type = TypeRef(b['text'])
 		self.widget = widgets.Text(self, "")
-
-b['number'] = BuiltinTypeDecl('number')
 class NumberVal(WidgetedValue):
 	def __init__(self, value):
 		super(NumberVal, self).__init__()
 		self.type = TypeRef(b['number'])
 		self.widget = widgets.Number(self, 0)
 
-b['bool'] = BuiltinTypeDecl('bool')
+
 class BoolVal(WidgetedValue):
 	def __init__(self, value):
 		super(BoolVal, self).__init__()
@@ -411,9 +427,9 @@ bs["intval"] = BuiltinTypeDef([t("int")])
 bs["textval"] = BuiltinTypeDef([t("text")])
 """
 
-class Statements(List):
+class Statements(ListVal):
 	def __init__(self):
-		List.__init__(self, types=['statement'], expanded=True, vertical=True)
+		List.__init__(self, types=[TypeRef(b['statement'])], expanded=True, vertical=True)
 
 	def above(self, item):
 		assert(item in self.items)
@@ -426,7 +442,7 @@ class Statements(List):
 
 
 
-class Root(Dict):
+class Root(DictVal):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
@@ -451,14 +467,11 @@ class SomethingNew(Node):
 
 
 
-
-
-
 class Module(Syntaxed):
 	syntaxes = [[t("module"), w("name"), nl(), ch("statements"), t("end.")]]
-	child_types = {'statements': 'statements'}
 
 	def __init__(self, name="unnamed"):
+		self.child_types = {'statements': [b['statements']]}
 		super(Module, self).__init__()
 		self.name = widgets.Text(self, name)
 
@@ -476,12 +489,13 @@ class Module(Syntaxed):
 #assert(isinstance(r['program'].syntax_def, SyntaxDef))
 class Program(Syntaxed):
 	syntaxes = [[t("program by "), ch("author"), nl(), ch("statements"), t("end."), w("run_button"), w("results")]]
-	child_types = {
-					'statements': 'statements',
-					'name': ['text'],
-					'author': ['text']}
 
 	def __init__(self):
+		self.child_types = {
+					'statements': [b['statements']],
+					'name': [b['text']],
+					'author': [b['text']]}
+
 		super(Program, self).__init__()
 		#self.sys=__import__("sys")
 
@@ -598,7 +612,7 @@ class Assignment(Syntaxed):
 
 	def __init__(self):
 		self.child_types = {'left': [Typeref(b[SomethingNew]), Typeref(b[VariableReference]), Typeref(b[ArrayIndexation])],
-			'right': b['expression']}
+			'right': [b['expression']]}
 		super(Assignment,self).__init__()
 		
 
@@ -613,22 +627,19 @@ class Assignment(Syntaxed):
 
 
 class Subclass(Syntaxed):
-	def __init__(self, left, right):
-		super(TypeDeclaration,self).__init__()
-		assert(isinstance(left, SomethingNew))
+	syntaxes=[[ch("left"), t("is a subclass of"), ch("right")]]
+	def __init__(self):
+		self.child_types = {'left': [b['somethingnew']], 'right':[b['subclass'], b['builtintypedecl']]}
+		super(Subclass,self).__init__()
 		#assert(right.__class__.tolower() in works_as('type'))
-		self.syntaxes=[[ch("left"), t("is a kind of"), ch("right")]]
-		self.setch('left', left)
-		self.setch('right', right)
 
-class TypeRef(Node):
-	def __init__(self, target):
-		super(TypeRef, self).__init__()
-		assert(isinstance(target, (BuiltinTypeDeclaration, Subclass)))
-		self.target = target
-		
-	def render(self):
-		return self.target.name.text
+	@staticmethod
+	def make(left, right):
+		assert(isinstance(left, (NodeCollider, SomethingNew)))
+		r = Subclass()
+		r.setch('left', left)
+		r.setch('right', right)
+		return r
 
 class IsLessThan(Syntaxed):
 	syntaxes=[[ch("left"), t(" < "), ch("right")]]
@@ -643,22 +654,25 @@ class IsLessThan(Syntaxed):
 		return self.runtime.value.append(Value(l < r))
 
 
-class ArgumentDefinition(Syntaxed):
+class TypedArgument(Syntaxed):
 	syntaxes=[[ch("name"), t(" - "), ch("type")]]
 	def __init__(self):
-		super(ArgumentDefinition, self).__init__()
-		self.child_types = {'name', b['text'], 'type', b['type literal']}
+		super(TypedArgument, self).__init__()
+		self.child_types = {
+			'name': [b['somethingnew']],
+			'type': [b['type']]}
 
 
 class FunctionSignature(Syntaxed):
-	syntaxes = [[ch("args")]]
-	def __init__(self):
+	syntaxes = [[ch("sig")]]
+	def __init__(self, sig):
 		super(self, FunctionSignature).__init__()
-		self.child_types = {'items': Typeref(b[ListVal])}
+		assert(isinstance(sig, (Collider, ListVal)))
+		self.child_types = {'sig': [b['function signature list']]}
 
 
 class FunctionDefinition(Syntaxed):
-	self.syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
+	syntaxes = [[t("function definition:"), ch("signature"), t(":\n"), ch("body")]]
 	def __init__(self):
 		super(FunctionDefinition, self).__init__()
 		self.child_types = {'signature': Typeref(b[FunctionSignature]),
@@ -683,35 +697,15 @@ class PassedFunctionCall(Syntaxed):
 		return r
 
 
-
-b['comparable'] = BuiltinTypeDecl(name = "comparable")
-b['number'] = Subclass(name = 'number', (b['comparable']))
-
-
 ad = ArgumentDefinition
-tl = TextLit
+tv = TextVal
 
 class BuiltinFunctionDecl(Syntaxed):
-	def __init__(self, name, signature, arg_types,):
+	def __init__(self, signature, eval):
 		super(BuiltinFunctionDecl, self).__init__()
 		self.setch('signature', FunctionSignature(signature))
-		self.arg_types = arg_types
 		self.eval = eval
-		self.name = name
-		self.syntaxes = [[t("builtin function:"), ch("signature"), t(":"+str(eval))]]
-
-b['multiply'] = BuiltinFunctionDecl(
-	name = 'multiply',
-	signature = [ad("left"), tl("*"), ad("right")],
-	arg_types = {'left': b['expression'], 'right': b['expression']},
-	eval = multiply_eval)
-
-def multiply_eval(args):
-		l,r = args.left.eval(), args.right.eval()
-		assert(isinstance(l, Value))
-		assert(isinstance(r, Value))
-		res = Value(b['number'], l.value * r.value)
-		return res
+  		self.syntaxes = [[t("builtin function:"), ch("signature"), t(":"+str(eval))]]
 
 """
 class PythonFunctionDecl(Syntaxed):
@@ -752,7 +746,7 @@ class FunctionCall(Node):
 				r += [ElementTag(self.args[i.name])]
 
 		return r
-
+#todo: show and hide argument names. syntaxed?
 
 
 
@@ -776,11 +770,7 @@ class hashmap
 variable declaration:
 	ch("name"), t("is a(n)"), ch("type")
 	child_types = {"name": Text, "type": b['type']}
-	
-class BuiltinType(Node):
-	works_as = b['type']
-	def __init__(self, type):
-		self.type = type
+
 
 b['number'] = BuiltinType(Number, [[t("number")]])
 b['list'] =  BuiltinType(List, [[t("list of"), ch("items type")]], {"items type": b['type']})
@@ -1340,10 +1330,44 @@ class PlaceholderMenuItem(MenuItem):
 
 
 
+b['somethingnew'] = BuiltinNodeDecl(SomethingNew)
+b['statements'] = BuiltinNodeDecl(Statements)
+
+b['builtintypedecl'] = BuiltinNodeDecl(BuiltinTypeDecl)
+b['subclass'] = BuiltinNodeDecl(Subclass)
+
+b['comparable'] = BuiltinTypeDecl("comparable")
+b['text'] = BuiltinTypeDecl('text')
+b['number'] = Subclass.make(SomethingNew('number'), TypeRef(b['comparable']))
+b['bool'] = BuiltinTypeDecl('bool')
 
 
+b['multiply'] = BuiltinFunctionDecl(
+	FunctionSignature.make(ListVal.make([
+		TypedArgument.make(
+			SomethingNew.make("left"),
+			TypeRef(b['number'])),
+		,TextVal("*"),
+		TypedArgument.make(
+			SomethingNew.make("right"),
+			TypeRef(b['number'])),
+		], [b['typedargument'], b['textval']]),
+	multiply_eval)
+
+def multiply_eval(args):
+		l,r = args.left.eval(), args.right.eval()
+		assert(isinstance(l, Value))
+		assert(isinstance(r, Value))
+		res = Value(b['number'], l.value * r.value)
+		return res
 
 
+b['statement'] = NodeClass('statement')
+b['expression'] = NodeClass('expression')
+b['type'] = NodeClass('type')
+
+
+b['function signature list'] = Definition("function signature list", TypeRef(b['listval'], [b['typedargument'], b['textval']]))
 
 
 
@@ -1351,3 +1375,12 @@ class PlaceholderMenuItem(MenuItem):
 
 builtins = Module("builtins")
 builtins.ch.statements.items = list(b)
+
+builtins.ch.statements.items += [
+	 WorksAs(b['islessthan'], b['expression'])
+	,worksAs(b['builtintypedecl'], b['type'])
+	,worksAs(b['subclass'], b['type'])
+
+
+
+]
