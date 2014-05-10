@@ -156,10 +156,10 @@ class Syntaxed(Node):
 		r = cls()
 		if len(types) == 1 and types[0] == b['statements']:
 			#, 'Dict', 'List']:
-				v = Statements()
-			else:
-				v = NodeCollider(types)
-			self.ch[name] = v
+			v = Statements()
+		else:
+			v = NodeCollider(types)
+		self.ch[name] = v
 		
 	@property
 	def syntax(self):
