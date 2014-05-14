@@ -54,7 +54,7 @@ def the_doc():
 					_dict
 					__getattr__
 					_types
-			
+
 				"""),
 			
 			Chapter("notes", """
@@ -64,7 +64,10 @@ def the_doc():
 				http://www.irisa.fr/LIS/softwares/squall/
 			
 				ctrl+enter immediate evaluation
-				
+
+				think the editor can be projectional as it is now,
+				will see if it really fits seemless editing. and navigation
+				could be primarily structure-based maybe
 			
 				lemon the language vs lemon the desktop environment..
 			
