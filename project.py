@@ -13,11 +13,11 @@ functon project takes a list of tags created by root.tags()
 from tags import *
 from logger import ping, log
 import colors
-from nodes import Node
+from typed import Node
 
 if __debug__:
 	import element as asselement
-	import nodes as assnodes
+	import typed as assnodes
 
 
 _width = 5 #screen width
@@ -70,7 +70,7 @@ def _project(lines, elem, atts, indent, visualize_elements):
 	"""calls elem.tags(), then calls itself recursively on widget,
 	child and element tags.	screen and atts are passed and mutated"""
 	
-	assert(isinstance(elem, asselement.Element) or isinstance(elem, assnodes.PlaceholderMenuItem))
+	assert(isinstance(elem, asselement.Element))# or isinstance(elem, assnodes.PlaceholderMenuItem))
 	assert(isinstance(lines, list))
 	assert(isinstance(atts, list))
 	assert(isinstance(indent, int))

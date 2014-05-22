@@ -46,7 +46,7 @@ class val(list):
 
 	def append(self, x):
 		assert(isinstance(x, Value))
-		super(self, val).append(x)
+		superval, self).append(x)
 		return x
 		
 
@@ -651,7 +651,7 @@ class TypedArgument(Syntaxed):
 class FunctionSignature(Syntaxed):
 	syntaxes = [[ch("sig")]]
 	def __init__(self, sig):
-		super(self, FunctionSignature).__init__()
+		super(FunctionSignature, self).__init__()
 		assert(isinstance(sig, (Collider, ListVal)))
 		self.child_types = {'sig': [b['function signature list']]}
 

@@ -9,11 +9,10 @@ from pygame import gfxdraw, font, image, display
 
 from logger import bt, log, ping
 import project
-import test_root
 import tags as tags_module
 import colors
 from menu import Menu, HelpMenuItem
-import nodes, element
+import typed, element
 
 
 parser = argparse.ArgumentParser()
@@ -132,7 +131,7 @@ def top_keypress(event):
 	else:
 		if k == pygame.K_F12:
 			for item in root.flatten():
-				if isinstance(item, nodes.Syntaxed):
+				if isinstance(item, typed.Syntaxed):
 					item.view_normalized = not item.view_normalized
 		elif k == pygame.K_ESCAPE:
 			bye()
@@ -306,7 +305,7 @@ def bye():
 	log("deading")
 	pygame.display.iconify()
 	sys.exit()
-	nodes.pyswip.prolog._original_sys_exit()#the fuck..
+
 
 def loop():
 	process_event(pygame.event.wait())
@@ -319,7 +318,7 @@ display.set_icon(icon)
 
 
 
-root = test_root.test_root()
+root = typed.test_root()
 menu = Menu()
 cursor_c = cursor_r = 0
 set_mode()
