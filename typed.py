@@ -1,22 +1,7 @@
-b = {}
-def bi(node):
-	"""build in"""
-	b[node.name] = node
-
-
-
-
-
-#a node is more than an element, it keeps track of its children with a dict.
-#in the editor, nodes can be cut'n'pasted around on their own
-
-
 import pygame
-
 from collections import OrderedDict
 from compiler.ast import flatten
 #import weakref
-
 
 
 from dotdict import dotdict
@@ -67,6 +52,9 @@ class Children(dotdict):
 
 
 class Node(element.Element):
+	"""a node is more than an element, it keeps track of its children with a dict.
+	in the editor, nodes can be cut'n'pasted around on their own
+	"""
 	def __init__(self):
 		super(Node, self).__init__()
 		self.color = (0,255,0,255)
@@ -120,10 +108,13 @@ class Node(element.Element):
 				print self, "has no parent"
 				return None
 
+	@classmethod
+	def fresh(cls, type):
+		r = cls()
+		r.type = type
+		return r
 
 
-
-#Syntaxed has syntaxes as part of class definition
 class Syntaxed(Node):
 	def __init__(self, children):
 		super(Syntaxed, self).__init__()
@@ -171,7 +162,7 @@ class Syntaxed(Node):
 				return True
 
 	@classmethod
-	def fresh(cls):
+	def fresh(cls, type):
 		kids = []
 		#fix:
 		for k, v in cls.child_types.iteritems(): #for each child:
@@ -181,9 +172,17 @@ class Syntaxed(Node):
 			else:
 				a = NodeCollider(v)
 			kids.append(a)
-		return cls(kids)
+		r = cls(kids)
+		r.type = type
+		return r
 
 
+	@property
+	def syntaxes(self):
+		return [self.decl.instance_syntax]
+	@property
+	def child_types(self):
+		return self.decl.instance_slots
 
 
 
@@ -223,9 +222,9 @@ class Collapsible(Node):
 		return self
 
 
-class DictVal(Collapsible):
+class Dict(Collapsible):
 	def __init__(self, expanded=True):
-		super(DictVal, self).__init__(expanded)
+		super(Dict, self).__init__(expanded)
 		self.items = OrderedDict()
 		
 	def render_items(self):
@@ -259,13 +258,11 @@ class DictVal(Collapsible):
 		val.parent = self
 
 
-class ListVal(Collapsible):
-	def __init__(self, types=['all'], expanded=True, vertical=True):
+class List(Collapsible):
+	def __init__(self, type, expanded=True, vertical=True):
 		super(List, self).__init__(expanded, vertical)
-		self.types = types
-		assert(isinstance(types, list))
-		for i in types:
-			assert(isinstance(i, str))
+		self.type = type
+		assert(isinstance(type, ParametricType))
 		self.items = []
 
 	def render_items(self):
@@ -332,24 +329,11 @@ class ListVal(Collapsible):
 		p.parent = self
 		self.items.append(p)
 
+	@property
+	def item_type(self):
+		return self.type.ch.item_type
 
 
-class SimpleType(Node):
-	def __init__(self, decl):
-		super(SimpleType, self).__init__(())
-		self.decl = decl
-	def render(self):
-		return [t(self.name)]
-	def inst(self):
-		return self.instance_class.fresh()
-	@property
-	def name(self):
-		return self.decl.name
-	@property
-	def instance_slots(self):
-		return self.decl.instance_slots
-	def instance_class(self):
-		return self.decl.instance_slots
 
 class SomethingNew(Node):
 	def __init__(self, text):
@@ -357,32 +341,6 @@ class SomethingNew(Node):
 		self.text = text
 	def render(self):
 		return [t("?"),t(self.text), t("?")]
-
-class SomethingNewType(SimpleType):
-	name = 'something new'
-	cls = SomethingNew
-
-
-class BuiltinSimpleTypeDecl(Node):
-	def __init__(self, cls, instance_slots, instance_syntax):
-		super(BuiltinTypeDecl, self).__init__()
-		self.cls = cls
-		self.name = cls.name
-		self.instance_slots = instance_slots
-		self.instance_syntax = instance_syntax
-	def render(self):
-		return [t("builtin type:"), t(str(self.cls.name)), t(","), t(str(self.cls))]
-	def inst(self):
-		return self.cls.fresh()
-
-class ListType(Syntaxed):
-	name = 'list'
-	syntaxes = [[t("list of"), ch("itemtype")]]
-	def __init__(self, children):
-		self.child_types = {'itemtype': b['type']}
-		super(ListType, self).__init__(children)
-
-bi(BuiltinTypeDecl(ListType))
 
 class WidgetedValue(Node):
 	def __init__(self):
@@ -392,29 +350,18 @@ class WidgetedValue(Node):
 	def render(self):
 		return [w('widget')]
 
-
-class NumberVal(WidgetedValue):
+class Number(WidgetedValue):
 	def __init__(self, value):
-		super(NumberVal, self).__init__()
-		self.type = b['number'].inst()
+		super(Number, self).__init__()
 		self.widget = widgets.Number(self, 555)
 
-class NumberType(SimpleType):
-	name = 'number'
-	cls = NumberVal
-	
-bi(BuiltinTypeDecl(NumberType))
-
-
-
-
-
-
-
-
-class Statements(ListVal):
+class Statements(List):
 	def __init__(self):
-		List.__init__(self, types=[b['statement']], expanded=True, vertical=True)
+		List.__init__(self, type=[b['statement']], expanded=True, vertical=True)
+
+	@property
+	def item_type(self):
+		return b['statement']
 
 	def above(self, item):
 		assert(item in self.items)
@@ -425,13 +372,8 @@ class Statements(ListVal):
 			else:
 				r.append(i)
 
-class StatementsType(SimpleType):
-	name = 'statements'
-	cls = Statements
 
-bi(BuiltinTypeDecl(StatementsType))
-
-class Root(DictVal):
+class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
@@ -441,17 +383,9 @@ class Root(DictVal):
 	def render(self):
 		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
 
-
-
-
-
-
-
 class Module(Syntaxed):
-	syntaxes = [[t("module:"), nl(), ch("statements"), t("end.")]]
-
+	
 	def __init__(self, children):
-		self.child_types = {'statements': [b['statements']]}
 		super(Module, self).__init__()
 		self.name = widgets.Text(self, name)
 
@@ -464,18 +398,146 @@ class Module(Syntaxed):
 	def __setitem__(self, i, v):
 		self.ch.statements[i] = v
 
-class ModuleType(SimpleType):
-	name = 'module'
-	cls = Module
 
-bi(BuiltinTypeDecl(ModuleType))
+
+
+
+
+
+
+
+
+
+
+
+
+
+b = {}
+
+
+class SimpleType(Node):
+	def __init__(self, decl):
+		super(SimpleType, self).__init__()
+		self.decl = decl
+	def render(self):
+		return [t(self.name)]
+	def make_inst(self):
+		return self.decl.instance_class.fresh(self)
+
+class ParametricType(Syntaxed):
+	def __init__(self, decl):
+		super(ParametricType, self).__init__()
+		self.decl = decl
+	def make_inst(self):
+		return self.decl.instance_class.fresh()
+	@property
+	def child_types(self):
+		return self.decl.type_slots
+	@property
+	def syntaxes(self):
+		return [self.decl.type_syntax]
+
+
+
+#abstract
+class BuiltinTypeDecl(Node):
+	def __init__(self, instance_class):
+		super(BuiltinTypeDecl , self).__init__()
+		self.instance_class = instance_class
+		b[self.name] = self
+	def render(self):
+		return [t("builtin type:"), t(str(self.instance_class))]
+	@property
+	def name(self):
+		return self.instance_class.__class__.__name__.lower()
+
+class BuiltinSimpleTypeDecl(BuiltinTypeDecl):
+	def make_type(self):
+		return SimpleType(self)
+
+class BuiltinSyntaxedTypeDecl(BuiltinTypeDecl):
+	def __init__(self, instance_class, instance_slots, instance_syntax):
+		super(BuiltinSyntaxedTypeDecl , self).__init__(instance_class)
+		self.instance_slots = instance_slots
+		self.instance_syntax = instance_syntax
+	def make_type(self):
+		return SimpleType(self)
+
+class BuiltinParametricTypeDecl(BuiltinTypeDecl):
+	"""only non Syntaxed types are parametric (just list and dict),
+	so this contains the type instance's syntax and slots"""
+	def __init__(self, instance_class, type_slots, type_syntax):
+		super(BuiltinParametricTypeDecl , self).__init__(instance_class)
+		self.type_slots = type_slots
+		self.type_syntax = type_syntax
+	def make_type(self):
+		return ParametricType(self)
+
+
+
+
+
+
+
+(BuiltinSimpleTypeDecl(x) for x in [Number, SomethingNew, Statements])
+
+
+BuiltinParametricTypeDecl(List,
+                          [t("list of"), ch("itemtype")],
+                          {'itemtype': b['type']})
+BuiltinParametricTypeDecl(Dict,
+                          [t("dict from"), ch("keytype"), t("to"), ch("valtype")],
+                          {'keytype': b['type'], 'valtype': b['type']})
+
+
+
+BuiltinSyntaxedTypeDecl(Module,
+                         [t("module:"), nl(), ch("statements"), t("end.")],
+                         {'statements': [b['statements']]})
+
+
+"""
+class BaseType(Node):
+	def __init__(self):
+		super(BaseType, self).__init__()
+		b['base type'] = self
+BaseType()
+"""
+
+class AbstractType(Node):
+	def __init__(self, name):
+		super(AbstractType, self).__init__()
+		b[name] = self
+
+class IsSubclassOf(Node):
+	def __init__(self, sub, sup):
+		super(IsSubclassOf, self).__init__()
+		b[self] = self
+		self.sup = sup
+		self.sub = sub
+
+
+AbstractType("statement")
+AbstractType("expression")
+
+IsSubclassOf(b["expression"], b["statement"])
+IsSubclassOf(b["number"], b["expression"])
+IsSubclassOf(b["somethingnew"], b["expression"])
+IsSubclassOf(b["list"], b["expression"])
+IsSubclassOf(b["dict"], b["expression"])
+
+"""
+x = b['list'].make_type()
+x.setch('itemtype', b['statement'])
+BuiltinSubclass("statements", x)
+"""
 
 
 
 
 def test_root():
 	r = Root()
-	r.add(("program", b['module'].inst().inst()))
+	r.add(("program", b['module'].make_type().make_inst()))
 	r["program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst().inst()))
 	r["builtins"].ch.statements.items = list(b)
