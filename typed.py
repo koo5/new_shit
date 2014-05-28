@@ -116,23 +116,21 @@ class Node(element.Element):
 
 
 class Syntaxed(Node):
-	def __init__(self, children):
+	def __init__(self, kids):
 		super(Syntaxed, self).__init__()
 		self.syntax_index = 0
 		self.check()
-		assert(len(children) == len(self.child_types))
-		for i,k,v in enumerate(self.child_types.iteritems()):
-			#todo: check
-			self.setch(k, children[i])
+		assert(len(kids) == len(self.child_types))
+		for k in self.child_types.iterkeys():
+			self.setch(k, kids[k])
+			#todo: check type
 
 	def check(self):
 		assert(isinstance(self.child_types, dict))
-		for name, types in self.child_types.iteritems():
+		for name, type in self.child_types.iteritems():
 			assert(isinstance(name, str))
-			assert(isinstance(types, list))
-			for t in types:
-				assert(isinstance(t, (BuiltinNodeDecl, Type)))
-		
+			assert(isinstance(type, (Nodecl, Define))) #what else works as a type?
+
 	@property
 	def syntax(self):
 		return self.syntaxes[self.syntax_index]
@@ -162,18 +160,19 @@ class Syntaxed(Node):
 				return True
 
 	@classmethod
-	def fresh(cls, type):
-		kids = []
+	def fresh(cls, decl):
+		kids = {}
 		#fix:
-		for k, v in cls.child_types.iteritems(): #for each child:
+		for k, v in decl.instance_slots.iteritems(): #for each child:
 			#if there is only one possible node type to instantiate..
-			if v[0] == b['statements']:
-				a = Statements()
+			if v == b['statements']:
+				a = v.inst_fresh()
 			else:
 				a = NodeCollider(v)
-			kids.append(a)
+			assert(isinstance(a, Node))
+			kids[k] = a
 		r = cls(kids)
-		r.type = type
+		r.decl = decl
 		return r
 
 
@@ -259,10 +258,9 @@ class Dict(Collapsible):
 
 
 class List(Collapsible):
-	def __init__(self, type, expanded=True, vertical=True):
+	def __init__(self, expanded=True, vertical=False):
+		#if self.item_type ..
 		super(List, self).__init__(expanded, vertical)
-		self.type = type
-		assert(isinstance(type, ParametricType))
 		self.items = []
 
 	def render_items(self):
@@ -331,7 +329,17 @@ class List(Collapsible):
 
 	@property
 	def item_type(self):
-		return self.type.ch.item_type
+		assert(isinstance(self.decl, ParametricType))
+		return self.decl.ch.itemtype
+
+	def above(self, item):
+		assert(item in self.items)
+		r = []
+		for i in self.items:
+			if i == item:
+				return r
+			else:
+				r.append(i)
 
 
 
@@ -355,23 +363,10 @@ class Number(WidgetedValue):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, 555)
 
-class Statements(List):
-	def __init__(self):
-		List.__init__(self, type=[b['statement']], expanded=True, vertical=True)
-
-	@property
-	def item_type(self):
-		return b['statement']
-
-	def above(self, item):
-		assert(item in self.items)
-		r = []
-		for i in self.items:
-			if i == item:
-				return r
-			else:
-				r.append(i)
-
+class Text(WidgetedValue):
+	def __init__(self, value):
+		super(Text, self).__init__()
+		self.widget = widgets.Text(self, "")
 
 class Root(Dict):
 	def __init__(self):
@@ -385,9 +380,8 @@ class Root(Dict):
 
 class Module(Syntaxed):
 	
-	def __init__(self, children):
-		super(Module, self).__init__()
-		self.name = widgets.Text(self, name)
+	def __init__(self, kids):
+		super(Module, self).__init__(kids)
 
 	def add(self, item):
 		self.ch.statements.add(item)
@@ -404,74 +398,78 @@ class Module(Syntaxed):
 
 
 
+class Type(Node):
+	#target
+
+	def parse(self, somethingnew):
+		pass
+	def menu(self):
+		pass
 
 
 
-
-
-
+class Ref(Node):
+	def __init__(self, target):
+		self.target = target
+	def render(self):
+		return [t('>'), ]
 
 
 b = {}
 
+def bi(node):
+	"""build in"""
+	b[node.name] = node
 
-class SimpleType(Node):
-	def __init__(self, decl):
-		super(SimpleType, self).__init__()
-		self.decl = decl
-	def render(self):
-		return [t(self.name)]
-	def make_inst(self):
-		return self.decl.instance_class.fresh(self)
+
+
 
 class ParametricType(Syntaxed):
-	def __init__(self, decl):
-		super(ParametricType, self).__init__()
+	def __init__(self, kids, decl):
 		self.decl = decl
-	def make_inst(self):
-		return self.decl.instance_class.fresh()
+		super(ParametricType, self).__init__(kids)
 	@property
 	def child_types(self):
 		return self.decl.type_slots
 	@property
 	def syntaxes(self):
 		return [self.decl.type_syntax]
+	def inst_fresh(self):
+		return self.decl.instance_class.fresh(self)
 
 
 
-#abstract
-class BuiltinTypeDecl(Node):
+
+class Nodecl(Node):
 	def __init__(self, instance_class):
-		super(BuiltinTypeDecl , self).__init__()
+		super(Nodecl, self).__init__()
+		instance_class.decl = self
 		self.instance_class = instance_class
-		b[self.name] = self
 	def render(self):
-		return [t("builtin type:"), t(str(self.instance_class))]
+		return [t("builtin node type:"), t(str(self.instance_class))]
 	@property
 	def name(self):
-		return self.instance_class.__class__.__name__.lower()
+		return self.instance_class.__name__.lower()
+	def instantiate(self, kids):
+		return self.instance_class(kids)
+	def inst_fresh(self):
+		return self.instance_class.fresh(self)
 
-class BuiltinSimpleTypeDecl(BuiltinTypeDecl):
-	def make_type(self):
-		return SimpleType(self)
-
-class BuiltinSyntaxedTypeDecl(BuiltinTypeDecl):
-	def __init__(self, instance_class, instance_slots, instance_syntax):
-		super(BuiltinSyntaxedTypeDecl , self).__init__(instance_class)
+class SyntaxedNodecl(Nodecl):
+	def __init__(self, instance_class, instance_syntax, instance_slots):
+		super(SyntaxedNodecl , self).__init__(instance_class)
 		self.instance_slots = instance_slots
 		self.instance_syntax = instance_syntax
-	def make_type(self):
-		return SimpleType(self)
 
-class BuiltinParametricTypeDecl(BuiltinTypeDecl):
-	"""only non Syntaxed types are parametric (just list and dict),
+class ParametricNodecl(Nodecl):
+	"""only non Syntaxed types are parametric now(list and dict),
 	so this contains the type instance's syntax and slots"""
-	def __init__(self, instance_class, type_slots, type_syntax):
-		super(BuiltinParametricTypeDecl , self).__init__(instance_class)
+	def __init__(self, instance_class, type_syntax, type_slots):
+		super(ParametricNodecl, self).__init__(instance_class)
 		self.type_slots = type_slots
 		self.type_syntax = type_syntax
-	def make_type(self):
-		return ParametricType(self)
+	def make_type(self, kids):
+		return ParametricType(kids, self)
 
 
 
@@ -479,21 +477,70 @@ class BuiltinParametricTypeDecl(BuiltinTypeDecl):
 
 
 
-(BuiltinSimpleTypeDecl(x) for x in [Number, SomethingNew, Statements])
 
 
-BuiltinParametricTypeDecl(List,
-                          [t("list of"), ch("itemtype")],
-                          {'itemtype': b['type']})
-BuiltinParametricTypeDecl(Dict,
-                          [t("dict from"), ch("keytype"), t("to"), ch("valtype")],
-                          {'keytype': b['type'], 'valtype': b['type']})
+[bi(Nodecl(x)) for x in [Number, Text, SomethingNew, Type]]
+
+print b
+
+
+class AbstractType(Syntaxed):
+	def __init__(self, kids):
+		super(AbstractType, self).__init__(kids)
+
+class IsSubclassOf(Syntaxed):
+	def __init__(self, kids):
+		super(IsSubclassOf, self).__init__(kids)
+
+class Define(Syntaxed):
+	def __init__(self, kids):
+		super(Define, self).__init__(kids)
+	def inst_fresh(self):
+		return self.ch.type.inst_fresh()
+
+SyntaxedNodecl(AbstractType,
+               [t("abstract type:"), ch("name")],
+               {'name': b['text']})
+
+SyntaxedNodecl(IsSubclassOf,
+               [ch("sub"), t("is a subclass of"), ch("sup")],
+               {'sub': b['type'], 'sup': b['type']})
+
+SyntaxedNodecl(Define,
+               [t("define"), ch("name"), t("as"), ch("type")], #expression?
+               {'name': b['text'], 'type': b['type']})
+
+b['statement'] = AbstractType({'name': Text("statement")})
+b['expression'] =AbstractType({'name': Text("expression")})
+b[0] = IsSubclassOf({'sub': Ref(b["expression"]), 'sup': Ref(b["statement"])})
+#b[1] = IsSubclassOf([Ref(b["number"]), Ref(b["expression"])])
+#b[2] = IsSubclassOf([Ref(b["somethingnew"]), Ref(b["expression"])])
+
+
+b['list'] = ParametricNodecl(List,
+                 [t("list of"), ch("itemtype")],
+                 {'itemtype': b['type']})
+b['dict'] = ParametricNodecl(Dict,
+                 [t("dict from"), ch("keytype"), t("to"), ch("valtype")],
+                 {'keytype': b['type'], 'valtype': b['type']})
+
+
+#IsSubclassOf([Ref(b["list"]), Ref(b["expression"])])
+#IsSubclassOf([Ref(b["dict"]), Ref(b["expression"])])
+
+
+b['statements'] = Define({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': b['statement']})})
+
+b['module'] = SyntaxedNodecl(Module,
+               [t("module:"), nl(), ch("statements"), t("end.")],
+               {'statements': b['statements']})
 
 
 
-BuiltinSyntaxedTypeDecl(Module,
-                         [t("module:"), nl(), ch("statements"), t("end.")],
-                         {'statements': [b['statements']]})
+
+#bi(b["subclass"].instantiate((Text(""))
+
+
 
 
 """
@@ -504,27 +551,6 @@ class BaseType(Node):
 BaseType()
 """
 
-class AbstractType(Node):
-	def __init__(self, name):
-		super(AbstractType, self).__init__()
-		b[name] = self
-
-class IsSubclassOf(Node):
-	def __init__(self, sub, sup):
-		super(IsSubclassOf, self).__init__()
-		b[self] = self
-		self.sup = sup
-		self.sub = sub
-
-
-AbstractType("statement")
-AbstractType("expression")
-
-IsSubclassOf(b["expression"], b["statement"])
-IsSubclassOf(b["number"], b["expression"])
-IsSubclassOf(b["somethingnew"], b["expression"])
-IsSubclassOf(b["list"], b["expression"])
-IsSubclassOf(b["dict"], b["expression"])
 
 """
 x = b['list'].make_type()
@@ -537,11 +563,21 @@ BuiltinSubclass("statements", x)
 
 def test_root():
 	r = Root()
-	r.add(("program", b['module'].make_type().make_inst()))
+	r.add(("program", b['module'].inst_fresh()))
 	r["program"].ch.statements.newline()
-	r.add(("builtins", b['module'].inst().inst()))
+	r.add(("builtins", b['module'].inst_fresh()))
 	r["builtins"].ch.statements.items = list(b)
 
+
+
+"""
+define statements as a list of statement, or
+statements is a subclass of a list of statement?
+number is a subclass of expression.
+IsSubclassOf would act as both a definition and not,
+depending on the type of the first argument
+(number is already defined, statements isnt)
+"""
 
 """
 
