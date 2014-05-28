@@ -84,7 +84,7 @@ class Node(element.Element):
 	def scope(self):
 		r = []
 
-		if isinstance(self.parent, Statements):
+		if isinstance(self.parent, List):
 			r += self.parent.above(self)
 
 		r += self.parent.scope()
@@ -381,6 +381,10 @@ class Root(Dict):
 	def render(self):
 		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
 
+	def scope(self):
+		return []
+
+
 class Module(Syntaxed):
 	
 	def __init__(self, kids):
@@ -673,9 +677,9 @@ mode = eval/pass
 
 
 class NodeCollider(Node):
-	def __init__(self, types):
+	def __init__(self, type):
 		super(NodeCollider, self).__init__()
-		self.types = types
+		self.type = type
 		self.items = []
 		self.add(SomethingNew(""))
 
@@ -733,9 +737,51 @@ class NodeCollider(Node):
 
 	def menu(self):
 		r = [InfoMenuItem("insert:")]
-		#i think ill redo the screen layout as two panes of projection
 
-		
+		#ev = self.slot.evaluated
+		type = self.type
+		#type is Nodecl or Definition or AbstractType or ParametrizedType
+		#first lets search for things in scope that are already of that type
+		scope = self.scope() + self.root["builtins"].ch.statements.items
+		menu = [ColliderMenuItem(x) for x in scope]
 
-		r += [InfoMenuItem("banana")]
+		for i in menu:
+			if i.value.decl.eq(type):
+				v.score += 1
+
+		r += menu + [InfoMenuItem("/insert")]
 		return r
+
+# hack here, to make a menu item renderable by project.project
+#i think ill redo the screen layout as two panes of projection
+class ColliderMenuItem(MenuItem):
+	def __init__(self, value):
+		self.value = value
+		self.score = 0
+		self.brackets_color = (0,0,255)
+		#(and so needs brackets_color)
+
+	#PlaceholderMenuItem is not an Element, but still has tags(),
+	#called by project.project called from draw()
+	def tags(self):
+		return [ColorTag((0,255,0)),w('value'), t(" - "+str(self.value.__class__.__name__)), EndTag()]
+		#and abusing "w" for "widget" here...not just here...
+
+	def draw(self, menu, s, font, x, y):
+		#replicating draw_root, but for now..
+		#project._width = ..
+		lines = project.project(self)
+		area = pygame.Rect((x,y,0,0))
+		for row, line in enumerate(lines):
+			for col, char in enumerate(line):
+				chx = x + font['width'] * col
+				chy = (y+2) + font['height'] * row
+				sur = font['font'].render(
+					char[0],False,
+					char[1]['color'],
+					colors.bg)
+				s.blit(sur,(chx,chy))
+				area = area.union((chx, chy, sur.get_rect().w, sur.get_rect().h+2))
+		return area
+
+

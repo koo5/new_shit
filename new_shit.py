@@ -338,7 +338,8 @@ change_font_size()
 
 render()
 
-cursor_c, cursor_r = project.find(root['program'], lines)
+cursor_c, cursor_r = project.find(root['program'].ch.statements.items[0],
+                                  lines)
 
 draw()
 
