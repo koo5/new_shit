@@ -11,6 +11,9 @@ import widgets
 from menu import MenuItem, InfoMenuItem, HelpMenuItem
 import tags
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
+import tags as asstags
+asstags.asselement = element
+
 import project
 import colors
 
@@ -109,9 +112,9 @@ class Node(element.Element):
 				return None
 
 	@classmethod
-	def fresh(cls, type):
+	def fresh(cls, decl):
 		r = cls()
-		r.type = type
+		r.decl = decl
 		return r
 
 
@@ -258,7 +261,7 @@ class Dict(Collapsible):
 
 
 class List(Collapsible):
-	def __init__(self, expanded=True, vertical=False):
+	def __init__(self, expanded=True, vertical=True):
 		#if self.item_type ..
 		super(List, self).__init__(expanded, vertical)
 		self.items = []
@@ -323,7 +326,7 @@ class List(Collapsible):
 		item.parent = self
 
 	def newline(self):
-		p = NodeCollider(self.types)
+		p = NodeCollider(self.item_type)
 		p.parent = self
 		self.items.append(p)
 
@@ -361,12 +364,12 @@ class WidgetedValue(Node):
 class Number(WidgetedValue):
 	def __init__(self, value):
 		super(Number, self).__init__()
-		self.widget = widgets.Number(self, 555)
+		self.widget = widgets.Number(self, value)
 
 class Text(WidgetedValue):
 	def __init__(self, value):
 		super(Text, self).__init__()
-		self.widget = widgets.Text(self, "")
+		self.widget = widgets.Text(self, value)
 
 class Root(Dict):
 	def __init__(self):
@@ -410,12 +413,13 @@ class Type(Node):
 
 class Ref(Node):
 	def __init__(self, target):
+		super(Ref, self).__init__()
 		self.target = target
 	def render(self):
-		return [t('>'), ]
+		return [t('*'), w("target")]
 
 
-b = {}
+b = OrderedDict()
 
 def bi(node):
 	"""build in"""
@@ -440,10 +444,10 @@ class ParametricType(Syntaxed):
 
 
 
-class Nodecl(Node):
+class AbstractNodecl(Node):
+	#this python class is abstract
 	def __init__(self, instance_class):
-		super(Nodecl, self).__init__()
-		instance_class.decl = self
+		super(AbstractNodecl, self).__init__()
 		self.instance_class = instance_class
 	def render(self):
 		return [t("builtin node type:"), t(str(self.instance_class))]
@@ -455,13 +459,19 @@ class Nodecl(Node):
 	def inst_fresh(self):
 		return self.instance_class.fresh(self)
 
-class SyntaxedNodecl(Nodecl):
+class Nodecl(AbstractNodecl):
+	def __init__(self, instance_class):
+		super(Nodecl, self).__init__(instance_class)
+		instance_class.decl = self
+
+class SyntaxedNodecl(AbstractNodecl):
 	def __init__(self, instance_class, instance_syntax, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
+		instance_class.decl = self
 		self.instance_slots = instance_slots
 		self.instance_syntax = instance_syntax
 
-class ParametricNodecl(Nodecl):
+class ParametricNodecl(AbstractNodecl):
 	"""only non Syntaxed types are parametric now(list and dict),
 	so this contains the type instance's syntax and slots"""
 	def __init__(self, instance_class, type_syntax, type_slots):
@@ -566,8 +576,8 @@ def test_root():
 	r.add(("program", b['module'].inst_fresh()))
 	r["program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
-	r["builtins"].ch.statements.items = list(b)
-
+	r["builtins"].ch.statements.items = list(b.itervalues())
+	return r
 
 
 """
@@ -662,3 +672,70 @@ mode = eval/pass
 """
 
 
+class NodeCollider(Node):
+	def __init__(self, types):
+		super(NodeCollider, self).__init__()
+		self.types = types
+		self.items = []
+		self.add(SomethingNew(""))
+
+	def render(self):
+		r = [t("[")]
+		for item in self.items:
+			r += [ElementTag(item)]
+		r += [t("]")]
+		return r
+
+	def __getitem__(self, i):
+		return self.items[i]
+
+	def fix_relations(self):
+		super(NodeCollider, self).fix_relations()
+		self.fix_(self.items)
+
+	def on_keypress(self, e):
+		item_index = self.insertion_pos(e.cursor)
+		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
+			if len(self.items) > item_index:
+				del self.items[item_index]
+
+	def insertion_pos(self, (char, line)):
+		i = -1
+		for i, item in enumerate(self.items):
+			#print i, item, item._render_start_line, item._render_start_char
+			if (item._render_start_line >= line and
+				item._render_start_char >= char):
+				return i
+		return i + 1
+
+	def flatten(self):
+		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
+
+	def add(self, item):
+		self.items.append(item)
+		assert(isinstance(item, Node))
+		item.parent = self
+
+	def replace_child(self, child, new):
+		assert(child in self.items)
+		self.items[self.items.index(child)] = new
+		new.parent = self
+		#add a blank at the end
+		p = SomethingNew()
+		p.parent = self
+		self.items.append(p)
+
+	def eval(self):
+		i = self.items[0]
+		i.eval()
+		self.runtime = i.runtime
+		return self.runtime.value.val
+
+	def menu(self):
+		r = [InfoMenuItem("insert:")]
+		#i think ill redo the screen layout as two panes of projection
+
+		
+
+		r += [InfoMenuItem("banana")]
+		return r

@@ -3,8 +3,8 @@ def cache(args):
 	global invert, mono, bg, fg, cursor
 	invert = args.invert
 	mono = args.mono
-	background = modify((0,0,0))
-	foreground = modify((255,255,255))
+	bg = modify((0,0,0))
+	fg = modify((255,255,255))
 	cursor = modify((200,200,200))
 
 

@@ -21,9 +21,9 @@ parser.add_argument('--mono', action='store_true',
 parser.add_argument('--webos', action='store_true',
                    help='webos keys hack')
 parser.add_argument('--invert', action='store_true',
-                   help='inverted colors')
+                   help='invert colors')
 parser.add_argument('--font_size', action='store_true',
-                   help='inverted colors')
+                   default=18)
 args = parser.parse_args()
 
 
@@ -84,9 +84,10 @@ def element_char_index():
 	except:
 		return None
 
-def set_mode():
+def resize(size):
 	global screen_surface
-	screen_surface = pygame.display.set_mode((1000,500), flags)
+	log("resize")
+	screen_surface = pygame.display.set_mode(size,pygame.DOUBLEBUF|pygame.RESIZABLE)
 
 def first_nonblank():
 	r = 0
@@ -167,7 +168,7 @@ class KeypressEvent(object):
 		self.all = pygame.key.get_pressed()
 		self.cursor = cursor
 		
-		if args['webos_hack']:
+		if args.webos:
 			self.webos_hack()
 	
 	def webos_hack(self):
@@ -250,8 +251,7 @@ def process_event(event):
 		mousedown(event)
 		
 	if event.type == pygame.VIDEORESIZE:
-		log("resize")
- 		screen_surface = pygame.display.set_mode(event.dict['size'],pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE)
+		resize(event.dict['size'])
  		render()
 		draw()
 
@@ -312,16 +312,17 @@ def loop():
 
 
 
-display.set_caption('lemon v 0.0 streamlined insane prototype')
+display.set_caption('lemon v 0.0 streamlined insane prototype with types')
 icon = image.load('icon32x32.png')
 display.set_icon(icon)
 
 
 
 root = typed.test_root()
+root.fix_parents()
 menu = Menu()
 cursor_c = cursor_r = 0
-set_mode()
+resize((1280,500))
 
 
 def cache_colors():
@@ -329,13 +330,15 @@ def cache_colors():
 cache_colors()
 
 
-font = pygame.font.SysFont('monospace', args.font_size)
-font_width, font_height = font.size("X")
-
+def change_font_size():
+	global font, font_width, font_height
+	font = pygame.font.SysFont('monospace', args.font_size)
+	font_width, font_height = font.size("X")
+change_font_size()
 
 render()
 
-cursor_c, cursor_r = project.find(root['programs'], lines)
+cursor_c, cursor_r = project.find(root['program'], lines)
 
 draw()
 

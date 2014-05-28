@@ -1,3 +1,5 @@
+#asselement = None
+
 class Tag(object):
 	pass
 
@@ -34,8 +36,9 @@ class WidgetTag(Tag):
 		self.name = name
 
 class ElementTag(Tag):
-	def __init__(self, element):
-		self.element = element
+	def __init__(self, el):
+		self.element = el
+		assert(isinstance(el, asselement.Element))
 
 
 """

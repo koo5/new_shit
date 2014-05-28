@@ -103,7 +103,8 @@ def _project(lines, elem, atts, indent, visualize_elements):
 
 		elif isinstance(tag, ChildTag):
 			assert(isinstance(elem, assnodes.Node))
-			tag = ElementTag(elem.__getattr__(tag.name)) #get child
+			assert(isinstance(elem.ch[tag.name], asselement.Element))
+			tag = ElementTag(elem.ch[tag.name]) #get child
 		elif isinstance(tag, WidgetTag):
 			tag = ElementTag(elem.__dict__[tag.name]) #get widget
 

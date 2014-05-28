@@ -330,7 +330,7 @@ class NodeCollider(Node):
 		super(NodeCollider, self).__init__()
 		self.types = types
 		self.items = []
-		self.add(Placeholder(types))
+		self.add(SomethingNew())
 
 	def render(self):
 		r = [t("[")]
