@@ -42,6 +42,9 @@ cached_root_surface = None
 lines = []
 scroll_lines = 0
 
+def screen_lines():
+	return screen_surface.get_height() / font_height
+
 
 def render():
 	global lines, cached_root_surface
@@ -63,7 +66,7 @@ def render():
 				assert(i[1].has_key('char_index'))
 			
 	cached_root_surface = draw_root()
-	
+
 def by_xy((x,y)):
 	c = x / font_width
 	r = y / font_height
@@ -155,6 +158,11 @@ def top_keypress(event):
 				cursor_c = first_nonblank()
 		elif k == pygame.K_END:
 			cursor_c = len(lines[cursor_r])
+		elif k == pygame.K_PAGEUP:
+			updown_cursor(-10)
+		elif k == pygame.K_PAGEDOWN:
+			updown_cursor(10)
+
 		else:
 			return False
 	return True
@@ -192,10 +200,24 @@ def move_cursor(x):
 	if cursor_c > len(lines[cursor_r]):
 		updown_cursor(1)
 		cursor_c = 0
+	if cursor_c < 0: cursor_c = 0
 
 def updown_cursor(count):
-	global cursor_r
+	global cursor_r, scroll_lines
 	cursor_r += count
+	scl = screen_lines()
+	if cursor_r > scl:
+		scroll_lines += cursor_r - scl
+		cursor_r = scl
+	if cursor_r < 0:
+		scroll_lines += cursor_r
+		cursor_r = 0
+		if scroll_lines < 0:
+			scroll_lines = 0
+
+
+
+
 
 def update_menu():
 
@@ -261,14 +283,15 @@ def process_event(event):
 def draw_root():
 	s = pygame.Surface(screen_surface.get_size())
 	s.fill(colors.bg)
+	uc = under_cursor()
 	for row, line in enumerate(lines):
 		for col, char in enumerate(line):
 			x = font_width * col
 			y = font_height * row
 			sur = font.render(
-				char[0],False,
+				char[0],True,
 				char[1]['color'],
-				colors.bg)
+				colors.bg if not char[1]['node'] == uc else (100,0,0))
 			s.blit(sur,(x,y))
 	return s
 

@@ -74,9 +74,9 @@ class Node(element.Element):
 	def replace_child(self, child, new):
 		assert(child in self.ch.values())
 		assert(isinstance(new, Node))
-		for k,v in self.children.iteritems():
+		for k,v in self.ch.iteritems():
 			if v == child:
-				self.children[k] = new
+				self.ch[k] = new
 		new.parent = self
 
 	def scope(self):
@@ -304,7 +304,7 @@ class List(Collapsible):
 		#???
 		if e.key == pygame.K_RETURN:
 			pos = self.insertion_pos(e.cursor)
-			p = NodeCollider(self.types)
+			p = NodeCollider(self.item_type)
 			p.parent = self
 			self.items.insert(pos, p)
 			return True
@@ -680,6 +680,19 @@ class NodeCollider(Node):
 		#		v.score += 1
 
 		return menu
+
+	def menu_item_selected(self, item):
+		if not isinstance(item, ColliderMenuItem):
+			log("not ColliderMenuItem")
+			return
+		v = item.value
+		if v == None:
+			log("no value")
+		x = v
+		self.parent.replace_child(self, x)
+
+
+
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection

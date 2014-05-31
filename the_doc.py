@@ -145,7 +145,7 @@ def the_doc():
 					what does lemon stand for?
 					Language Editing Monster!""")
 		
-		
+					best syntax for literate-programming? one character starts comment block, different starts code block?
 		
 		)
 		,ReadmeGenerator()

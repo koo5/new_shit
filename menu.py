@@ -54,8 +54,8 @@ class Menu(object):
 				self.move(1)
 				return True
 		if e.key == pygame.K_SPACE:
-			print self.sel
-			log(self.items[self.sel])
+#			print self.sel
+#			log(self.items[self.sel])
 			self.element.menu_item_selected(self.items[self.sel])
 			return True
 				

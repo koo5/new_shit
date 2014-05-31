@@ -44,6 +44,7 @@ python -m cProfile -s cumulative  new_shit.py
 
 status
 ===
+31/5
 i added some awareness of types to the editor
 so the slots of nodes can specify a type they accept, as opposed to just a python class of node
 actually, will have to introduce the Slot objects yet
@@ -59,3 +60,4 @@ you dont want to deal with a tree hierarchy all the time, instead, just a flat l
 but i think what i got so far is relevant
 (?)or start extending the way Syntaxed specifies syntax now, like, for List, it would be '[', ListItemWithComma*, ListItem?, ']'
 ListItemWithComma, ListItem...implies the concrete syntax nodes would co-exist with the AST nodes..(?)
+other todo options: triples, math notations
