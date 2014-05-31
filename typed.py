@@ -171,6 +171,7 @@ class Syntaxed(Node):
 		#fix:
 		for k, v in slots.iteritems(): #for each child:
 			if v in [b[x] for x in ['text', 'number', 'statements']]:
+				#todo: definition, list
 				a = v.inst_fresh()
 			else:
 				a = NodeCollider(v)
@@ -622,9 +623,10 @@ class NodeCollider(Node):
 	def __getitem__(self, i):
 		return self.items[i]
 
-	def fix_relations(self):
-		super(NodeCollider, self).fix_relations()
-		self.fix_(self.items)
+
+	def fix_parents(self):
+		super(NodeCollider, self).fix_parents()
+		self._fix_parents(self.items)
 
 	def on_keypress(self, e):
 		item_index = self.insertion_pos(e.cursor)

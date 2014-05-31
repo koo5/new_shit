@@ -110,17 +110,17 @@ def and_updown(event):
 
 def top_help():
 	return [HelpMenuItem(t) for t in [
-	"ctrl + +,- : font size",
-	"up, down, left, right, home, end : move cursor",
-	"f12 : normalize"
+	"ctrl + =,- : font size"
 	]]
+	#,	"f12 : normalize"
+	#,	"up, down, left, right, home, end : move cursor"#obvious
 
 def top_keypress(event):
 	global cursor_r,cursor_c
 	k = event.key
 	
 	if pygame.KMOD_CTRL & event.mod:
-		if event.uni == '+':
+		if event.uni == '=':
 			args.font_size += 1
 			change_font_size()
 		elif event.uni == '-':
