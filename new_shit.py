@@ -197,12 +197,8 @@ def updown_cursor(count):
 	global cursor_r
 	cursor_r += count
 
+def update_menu():
 
-def keypress(event):
-	pos = element_char_index()
-	handle(KeypressEvent(event, pos, (cursor_c, cursor_r)))
-		
-	render()
 	e = under_cursor()
 	menu.element = e
 	new_items = []
@@ -213,6 +209,12 @@ def keypress(event):
 	new_items += top_help()
 	menu.items = new_items
 
+
+def keypress(event):
+	pos = element_char_index()
+	handle(KeypressEvent(event, pos, (cursor_c, cursor_r)))
+	render()
+	update_menu()
 	draw()
 
 def handle(e):
@@ -338,9 +340,9 @@ change_font_size()
 
 render()
 
-cursor_c, cursor_r = project.find(root['program'].ch.statements.items[0],
+cursor_c, cursor_r = project.find(root['program'].ch.statements.items[0].items[0],
                                   lines)
-
+update_menu()
 draw()
 
 

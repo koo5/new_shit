@@ -110,9 +110,8 @@ class Node(element.Element):
 				return None
 
 	@classmethod
-	def fresh(cls, decl):
+	def fresh(cls):
 		r = cls()
-		r.decl = decl
 		return r
 
 	@classmethod
@@ -166,19 +165,22 @@ class Syntaxed(Node):
 				return True
 
 	@classmethod
-	def fresh(cls, decl):
+	def new_kids(cls, slots):
+		assert(isinstance(slots, dict))
 		kids = {}
 		#fix:
-		for k, v in decl.instance_slots.iteritems(): #for each child:
-			#if there is only one possible node type to instantiate..
-			if v == b['statements']:
+		for k, v in slots.iteritems(): #for each child:
+			if v in [b[x] for x in ['text', 'number', 'statements']]:
 				a = v.inst_fresh()
 			else:
 				a = NodeCollider(v)
 			assert(isinstance(a, Node))
 			kids[k] = a
-		r = cls(kids)
-		r.decl = decl
+		return kids
+
+	@classmethod
+	def fresh(cls):
+		r = cls(cls.new_kids(cls.decl.instance_slots))
 		return r
 
 
@@ -197,7 +199,7 @@ class Syntaxed(Node):
 
 
 class Collapsible(Node):
-	"""Collapsible - List or Dict - dont have a title, a top unindented line. They are just
+	"""Collapsible - List or Dict - dont have a title, a top unindented line. just
 	the items...now"""
 	def __init__(self, expanded=True, vertical=True):
 		super(Collapsible, self).__init__()	
@@ -225,6 +227,13 @@ class Collapsible(Node):
 		for i in self.items:
 			i.eval()
 		return self
+
+	@classmethod
+	def fresh(cls, decl):
+		r = cls()
+		r.decl = decl
+		return r
+
 
 
 class Dict(Collapsible):
@@ -356,20 +365,14 @@ class WidgetedValue(Node):
 		return self.widget.value
 	def render(self):
 		return [w('widget')]
-	@classmethod
-	def fresh(cls, decl):
-		r = cls("")
-		r.decl = decl
-		return r
-
 
 class Number(WidgetedValue):
-	def __init__(self, value):
+	def __init__(self, value=""):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
 
 class Text(WidgetedValue):
-	def __init__(self, value):
+	def __init__(self, value=""):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 
@@ -422,21 +425,6 @@ def bi(node):
 
 
 
-class ParametricType(Syntaxed):
-	def __init__(self, kids, decl):
-		self.decl = decl
-		super(ParametricType, self).__init__(kids)
-	@property
-	def child_types(self):
-		return self.decl.type_slots
-	@property
-	def syntaxes(self):
-		return [self.decl.type_syntax]
-	def inst_fresh(self):
-		return self.decl.instance_class.fresh(self)
-
-
-
 
 class NodeclBase(Node):
 	#this python class is abstract
@@ -451,18 +439,18 @@ class NodeclBase(Node):
 	def instantiate(self, kids):
 		return self.instance_class(kids)
 	def inst_fresh(self):
-		return self.instance_class.fresh(self)
+		return self.instance_class.fresh()
+	def palette(self, scope):
+		return [ColliderMenuItem(self.inst_fresh())]
 
 
 class TypeNodecl(NodeclBase):
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
 		b['type'] = self
-	@staticmethod
-	def palette(scope):
+	def palette(self, scope):
 		decls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [ColliderMenuItem(Ref(x)) for x in decls]
-
 
 TypeNodecl()
 
@@ -471,6 +459,9 @@ class Nodecl(NodeclBase):
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = self
+		b[self.name] = self
+
+[Nodecl(x) for x in [Number, Text]]
 
 
 class SyntaxedNodecl(NodeclBase):
@@ -486,6 +477,26 @@ class SyntaxedNodecl(NodeclBase):
 		self.instance_syntax = instance_syntax
 		b[self.name] = self
 
+
+
+class ParametricType(Syntaxed):
+	def __init__(self, kids, decl):
+		self.decl = decl
+		super(ParametricType, self).__init__(kids)
+	@property
+	def child_types(self):
+		return self.decl.type_slots
+	@property
+	def syntaxes(self):
+		return [self.decl.type_syntax]
+	def inst_fresh(self):
+		return self.decl.instance_class.fresh(self)
+	@classmethod
+	def fresh(cls, decl):
+		return cls(cls.new_kids(decl.type_slots), decl)
+
+
+
 class ParametricNodecl(NodeclBase):
 	"""only non Syntaxed types are parametric now(list and dict),
 	so this contains the type instance's syntax and slots"""
@@ -495,6 +506,10 @@ class ParametricNodecl(NodeclBase):
 		self.type_syntax = type_syntax
 	def make_type(self, kids):
 		return ParametricType(kids, self)
+	def palette(self, scope):
+		return [ColliderMenuItem(ParametricType.fresh(self))]
+	#def obvious_fresh(self):
+	#if there is only one possible node type to instantiate..
 
 
 
@@ -503,10 +518,6 @@ class ParametricNodecl(NodeclBase):
 
 
 
-
-[bi(Nodecl(x)) for x in [Number, Text]]
-
-print b
 
 
 class AbstractType(Syntaxed):
@@ -575,7 +586,7 @@ class Union(Syntaxed):
 
 b['union'] = SyntaxedNodecl(Union,
                [t("union of"), ch("items")],
-               {'items': b['text'], 'type': b['list'].make_type({'itemtype': b['type']})})
+               {'items': b['list'].make_type({'itemtype': b['type']})})
 b['union'].notes="""should be just "type or type or type...",
                  but Syntaxed with a list is an easier implementation for now"""
 
@@ -657,7 +668,7 @@ class NodeCollider(Node):
 		scope = self.scope() + self.root["builtins"].ch.statements.items #all nodes
 		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
 
-		menu = flatten([x.palette() for x in nodecls])
+		menu = flatten([x.palette(scope) for x in nodecls])
 
 		#ev = self.slot.evaluated
 		type = self.type #self.slot.type
@@ -751,8 +762,8 @@ class FunctionDefinitionBase(Syntaxed):
 
 class FunctionDefinition(FunctionDefinitionBase):
 
-	def __init__(self):
-		super(FunctionDefinition, self).__init__()
+	def __init__(self, kids):
+		super(FunctionDefinition, self).__init__(kids)
 
 SyntaxedNodecl(FunctionDefinition,
                [t("deffun:"), ch("sig"), t(":\n"), ch("body")],
@@ -798,7 +809,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		super(BuiltinFunctionDecl, self).__init__(kids)
 	@staticmethod
 	def create(name, fun, sig):
-		x = BuiltinFunctionDecl.fresh()#mkay only parametric nedds to pass decl?
+		x = BuiltinFunctionDecl.fresh()
 		b[name] = x
 		x.ch.name.widget.value = name
 		x.fun = fun

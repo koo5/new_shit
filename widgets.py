@@ -62,6 +62,9 @@ class Text(Widget):
 	@property
 	def value(self):
 		return self.text
+	@value.setter
+	def value(self, v):
+		self.text = v
 
 """
 class ShadowedText(Text):
