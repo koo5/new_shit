@@ -25,8 +25,6 @@ import colors
 
 
 
-
-
 class val(list):
 	"""
 	a list of Values
@@ -117,6 +115,11 @@ class Node(element.Element):
 		r.decl = decl
 		return r
 
+	@classmethod
+	def palette(cls, scope):
+		return [ColliderMenuItem(cls.make)]
+
+
 
 class Syntaxed(Node):
 	def __init__(self, kids):
@@ -132,7 +135,7 @@ class Syntaxed(Node):
 		assert(isinstance(self.child_types, dict))
 		for name, type in self.child_types.iteritems():
 			assert(isinstance(name, str))
-			assert(isinstance(type, (Nodecl, Define))) #what else works as a type?
+			assert(isinstance(type, (NodeclBase, Definition, ParametricType))) #what else works as a type?
 
 	@property
 	def syntax(self):
@@ -345,21 +348,20 @@ class List(Collapsible):
 				r.append(i)
 
 
-
-class SomethingNew(Node):
-	def __init__(self, text):
-		super(SomethingNew, self).__init__()
-		self.text = text
-	def render(self):
-		return [t("?"),t(self.text), t("?")]
-
 class WidgetedValue(Node):
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
+	@property
 	def pyval(self):
 		return self.widget.value
 	def render(self):
 		return [w('widget')]
+	@classmethod
+	def fresh(cls, decl):
+		r = cls("")
+		r.decl = decl
+		return r
+
 
 class Number(WidgetedValue):
 	def __init__(self, value):
@@ -403,18 +405,6 @@ class Module(Syntaxed):
 
 
 
-
-
-class Type(Node):
-	#target
-
-	def parse(self, somethingnew):
-		pass
-	def menu(self):
-		pass
-
-
-
 class Ref(Node):
 	def __init__(self, target):
 		super(Ref, self).__init__()
@@ -448,10 +438,10 @@ class ParametricType(Syntaxed):
 
 
 
-class AbstractNodecl(Node):
+class NodeclBase(Node):
 	#this python class is abstract
 	def __init__(self, instance_class):
-		super(AbstractNodecl, self).__init__()
+		super(NodeclBase, self).__init__()
 		self.instance_class = instance_class
 	def render(self):
 		return [t("builtin node type:"), t(str(self.instance_class))]
@@ -463,19 +453,40 @@ class AbstractNodecl(Node):
 	def inst_fresh(self):
 		return self.instance_class.fresh(self)
 
-class Nodecl(AbstractNodecl):
+
+class TypeNodecl(NodeclBase):
+	def __init__(self):
+		super(TypeNodecl, self).__init__(Ref)
+		b['type'] = self
+	@staticmethod
+	def palette(scope):
+		decls = [x for x in scope if isinstance(x, (NodeclBase))]
+		return [ColliderMenuItem(Ref(x)) for x in decls]
+
+
+TypeNodecl()
+
+
+class Nodecl(NodeclBase):
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = self
 
-class SyntaxedNodecl(AbstractNodecl):
+
+class SyntaxedNodecl(NodeclBase):
+	"""
+	child types of Syntaxed are like b["text"], they are "values",
+	 children themselves are either Refs (pointing to other nodes),
+	 or other instances of Node
+	"""
 	def __init__(self, instance_class, instance_syntax, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
 		instance_class.decl = self
 		self.instance_slots = instance_slots
 		self.instance_syntax = instance_syntax
+		b[self.name] = self
 
-class ParametricNodecl(AbstractNodecl):
+class ParametricNodecl(NodeclBase):
 	"""only non Syntaxed types are parametric now(list and dict),
 	so this contains the type instance's syntax and slots"""
 	def __init__(self, instance_class, type_syntax, type_slots):
@@ -493,36 +504,43 @@ class ParametricNodecl(AbstractNodecl):
 
 
 
-[bi(Nodecl(x)) for x in [Number, Text, SomethingNew, Type]]
+[bi(Nodecl(x)) for x in [Number, Text]]
 
 print b
 
 
 class AbstractType(Syntaxed):
+	"""this is a syntactical category(?) of nodes"""
 	def __init__(self, kids):
 		super(AbstractType, self).__init__(kids)
-
-class IsSubclassOf(Syntaxed):
-	def __init__(self, kids):
-		super(IsSubclassOf, self).__init__(kids)
-
-class Define(Syntaxed):
-	def __init__(self, kids):
-		super(Define, self).__init__(kids)
-	def inst_fresh(self):
-		return self.ch.type.inst_fresh()
-
 SyntaxedNodecl(AbstractType,
                [t("abstract type:"), ch("name")],
                {'name': b['text']})
+
+class IsSubclassOf(Syntaxed):
+	"""just a relation"""
+	def __init__(self, kids):
+		super(IsSubclassOf, self).__init__(kids)
 
 SyntaxedNodecl(IsSubclassOf,
                [ch("sub"), t("is a subclass of"), ch("sup")],
                {'sub': b['type'], 'sup': b['type']})
 
-SyntaxedNodecl(Define,
+
+class Definition(Syntaxed):
+	"""should have type functionality"""
+	def __init__(self, kids):
+		super(Definition, self).__init__(kids)
+		b[self.ch.name.pyval] = self
+		print b
+	def inst_fresh(self):
+		return self.ch.type.inst_fresh()
+
+SyntaxedNodecl(Definition,
                [t("define"), ch("name"), t("as"), ch("type")], #expression?
                {'name': b['text'], 'type': b['type']})
+
+
 
 b['statement'] = AbstractType({'name': Text("statement")})
 b['expression'] =AbstractType({'name': Text("expression")})
@@ -543,34 +561,24 @@ b['dict'] = ParametricNodecl(Dict,
 #IsSubclassOf([Ref(b["dict"]), Ref(b["expression"])])
 
 
-b['statements'] = Define({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': b['statement']})})
+Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': b['statement']})})
 
 b['module'] = SyntaxedNodecl(Module,
                [t("module:"), nl(), ch("statements"), t("end.")],
                {'statements': b['statements']})
 
+Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': b['type']})})
 
+class Union(Syntaxed):
+	def __init__(self, children):
+		super(Union, self).__init__(children)
 
+b['union'] = SyntaxedNodecl(Union,
+               [t("union of"), ch("items")],
+               {'items': b['text'], 'type': b['list'].make_type({'itemtype': b['type']})})
+b['union'].notes="""should be just "type or type or type...",
+                 but Syntaxed with a list is an easier implementation for now"""
 
-#bi(b["subclass"].instantiate((Text(""))
-
-
-
-
-"""
-class BaseType(Node):
-	def __init__(self):
-		super(BaseType, self).__init__()
-		b['base type'] = self
-BaseType()
-"""
-
-
-"""
-x = b['list'].make_type()
-x.setch('itemtype', b['statement'])
-BuiltinSubclass("statements", x)
-"""
 
 
 
@@ -584,96 +592,6 @@ def test_root():
 	return r
 
 
-"""
-define statements as a list of statement, or
-statements is a subclass of a list of statement?
-number is a subclass of expression.
-IsSubclassOf would act as both a definition and not,
-depending on the type of the first argument
-(number is already defined, statements isnt)
-"""
-
-"""
-
-
-def test_root():
-	r = Root()
-	r.add(("programs", ListType((ProgramType)).inst()))
-	r["programs"].add(Program())
-	r["programs"][0].ch.statements.newline()
-	r.add(("modules", 
-
-
-
-
-class VariableDecl(Syntaxed):
-	def __init__(self, (kids)):
-		self.child_types = {'name': b['text'],
-	 						'type': b['type']}
-		super(VariableDecl, self).__init__()
-	
-class Union(Syntaxed):
-	syntaxes == [[ch("l"), t("or"), ch("r")]]
-	doc = "only two nodes for now, sorry"
-	def __init__(self, children):
-		self.child_types = {'l': b['type'], 'r': b['type']}
-		super(Union, self).__init__(children)
-
-
-BuiltinNodeType('union', Union)
-Subclass(b['union'], b['type'])
-
-Definition('function signature list', 
-b['list'].instance((b['union'].instance((Ref(b['text']), Ref(b['argument']_____
-
-
-
-
-
-
- {'of': b['union
-
-
-
-
-
-
-
-
-
-
-
-b['type'] = TypeType()
-
-class TypeType(
-	name = 'type'
-	
-for each declaration in scope
-	if declaration.isinstanceof(
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<function returning <int>>
-a is a <list of <ints>>
-
-
-
-function arguments:
-mode = eval/pass
-"""
 
 
 class NodeCollider(Node):
@@ -681,7 +599,7 @@ class NodeCollider(Node):
 		super(NodeCollider, self).__init__()
 		self.type = type
 		self.items = []
-		self.add(SomethingNew(""))
+		self.add(Text(""))
 
 	def render(self):
 		r = [t("[")]
@@ -736,21 +654,21 @@ class NodeCollider(Node):
 		return self.runtime.value.val
 
 	def menu(self):
-		r = [InfoMenuItem("insert:")]
+		scope = self.scope() + self.root["builtins"].ch.statements.items #all nodes
+		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
+
+		menu = flatten([x.palette() for x in nodecls])
 
 		#ev = self.slot.evaluated
-		type = self.type
-		#type is Nodecl or Definition or AbstractType or ParametrizedType
+		type = self.type #self.slot.type
+
+		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
 		#first lets search for things in scope that are already of that type
-		scope = self.scope() + self.root["builtins"].ch.statements.items
-		menu = [ColliderMenuItem(x) for x in scope]
+		#for i in menu:
+		#	if i.value.decl.eq(type):
+		#		v.score += 1
 
-		for i in menu:
-			if i.value.decl.eq(type):
-				v.score += 1
-
-		r += menu + [InfoMenuItem("/insert")]
-		return r
+		return menu
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection
@@ -785,3 +703,151 @@ class ColliderMenuItem(MenuItem):
 		return area
 
 
+
+
+
+
+
+
+
+
+
+
+
+#todo function arguments:#mode = eval/pass, untyped argument,
+#todo optional function return type
+#todo: show and hide argument names. syntaxed?
+
+class TypedArgument(Syntaxed):
+	def __init__(self, kids):
+		super(TypedArgument, self).__init__(kids)
+
+SyntaxedNodecl(TypedArgument,
+               [ch("name"), t("-"), ch("type")],
+               {'name': b['text'], 'type': b['type']})
+
+tmp = b['union'].inst_fresh()
+tmp.ch["items"].add(Ref(b['text']))
+tmp.ch["items"].add(Ref(b['typedargument']))
+Definition({'name': Text('function signature items'), 'type': tmp})
+
+tmp = b['list'].make_type({'itemtype': Ref(b['function signature items'])})
+Definition({'name': Text('function signature list'), 'type':tmp})
+
+
+
+
+class FunctionDefinitionBase(Syntaxed):
+
+	def __init__(self, kids):
+		super(FunctionDefinitionBase, self).__init__(kids)
+	@property
+	def arg_types(selfs):
+		args = [i for i in self.sig.items if isinstance(i, TypedArgument)]
+		return [i.ch.type for i in args]
+	@property
+	def sig(self):
+		return self.ch.sig
+
+class FunctionDefinition(FunctionDefinitionBase):
+
+	def __init__(self):
+		super(FunctionDefinition, self).__init__()
+
+SyntaxedNodecl(FunctionDefinition,
+               [t("deffun:"), ch("sig"), t(":\n"), ch("body")],
+				{'sig': b['function signature list'],
+				 'body': b['statements']})
+
+
+"""
+class PassedFunctionCall(Syntaxed):
+	def __init__(self, definition):
+		super(FunctionCall, self).__init__()
+		assert isinstance(definition, FunctionDefinition)
+		self.definition = definition
+		self.arguments = List([Placeholder() for x in range(len(self.definition.signature.items.items))], vertical=False) #todo:filter out Texts
+
+	def render(self):
+		r = [t('(call)')]
+		for i in self.definition.signature.items:
+			if isinstance(i, Text):
+				r += [t(i.widget.text)]
+			elif isinstance(i, ArgumentDefinition):
+				r += [ElementTag(self.arguments.items[i])]
+
+		return r
+"""
+
+
+"""
+class PythonFunctionDecl(Syntaxed):
+	def __init__(self, fun, sig, arg):
+		self.setch('signature', FunctionSignature(sig))
+
+
+PythonFunctionDecl(
+	operator.div,
+	signature = [ad("left"), tl("/"), ad("right")],
+	arg_types = {'left': b['expression'], 'right': b['expression']})
+"""
+
+
+class BuiltinFunctionDecl(FunctionDefinitionBase):
+	def __init__(self, kids):
+		super(BuiltinFunctionDecl, self).__init__(kids)
+	@staticmethod
+	def create(name, fun, sig):
+		x = BuiltinFunctionDecl.fresh()#mkay only parametric nedds to pass decl?
+		b[name] = x
+		x.ch.name.widget.value = name
+		x.fun = fun
+		x.ch.sig.items = sig
+
+
+SyntaxedNodecl(BuiltinFunctionDecl,
+               [t("builtin function"), ch("name"), t(":"), ch("sig")],
+				{'sig': b['function signature list'],
+				 'name': b['text']})
+
+def multiply_eval(args):
+		l,r = args.left.eval(), args.right.eval()
+		assert(isinstance(l, Value))
+		assert(isinstance(r, Value))
+		res = Value(b['number'], l.value * r.value)
+		return res
+
+BuiltinFunctionDecl.create("multiply",
+                           multiply_eval,
+	[	TypedArgument({'name': Text("left"), 'type': Ref(b['number'])}),
+		Text("*"),
+		TypedArgument({'name': Text("right"), 'type': Ref(b['number'])})])
+
+
+
+class FunctionCall(Node):
+	def __init__(self, target):
+		super(FunctionCall, self).__init__()
+		assert isinstance(target, FunctionDefinition)
+		self.target = target
+		self.args = [NodeCollider(v) for v in self.target.arg_types]
+		self._fix_parents(self.args)
+	"""
+	def replace_child(self, child, new):
+		x = self.args.find(child)
+		self.args[x] = new
+		new.parent = self
+	"""
+	def render(self):
+		r = [t('!')]
+		for i, v in enumerate(self.target.sig):
+			if isinstance(v, Text):
+				r += [t(v.pyval)]
+			elif isinstance(v, TypedArgument):
+				r += [ElementTag(self.args[i])]
+		return r
+
+	@staticmethod
+	def palette(scope):
+		defuns = [x for x in scope if isinstance(x,(BuiltinFunctionDecl, FunctionDefinition))]
+		return [ColliderMenuItem(FunctionCall(x)) for x in defuns]

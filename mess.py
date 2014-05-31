@@ -544,35 +544,65 @@ class Placeholder(Node):
 #			x = v()
 		self.parent.replace_child(self, x)
 
-# hack here, to make a menu item renderable by project.project
-class PlaceholderMenuItem(MenuItem):
-	def __init__(self, value):
-		self.value = value
-		self.score = 0
-		self.brackets_color = (0,0,255)
-		#(and so needs brackets_color)
-
-	#PlaceholderMenuItem is not an Element, but still has tags(),
-	#called by project.project called from draw()
-	def tags(self):
-		return [ColorTag((0,255,0)),w('value'), t(" - "+str(self.value.__class__.__name__)), EndTag()]
-		#and abusing "w" for "widget" here...not just here...
-
-	def draw(self, menu, s, font, x, y):
-		#replicating draw_root, but for now..
-		#project._width = ..
-		lines = project.project(self)
-		area = pygame.Rect((x,y,0,0))
-		for row, line in enumerate(lines):
-			for col, char in enumerate(line):
-				chx = x + font['width'] * col
-				chy = (y+2) + font['height'] * row
-				sur = font['font'].render(
-					char[0],False,
-					char[1]['color'],
-					colors.bg)
-				s.blit(sur,(chx,chy))
-				area = area.union((chx, chy, sur.get_rect().w, sur.get_rect().h+2))
-		return area
 
 
+
+
+
+
+#bi(b["subclass"].instantiate((Text(""))
+
+"""
+class BaseType(Node):
+	def __init__(self):
+		super(BaseType, self).__init__()
+		b['base type'] = self
+BaseType()
+"""
+
+"""
+x = b['list'].make_type()
+x.setch('itemtype', b['statement'])
+BuiltinSubclass("statements", x)
+"""
+
+
+"""
+define statements as a list of statement, or
+statements is a subclass of a list of statement?
+number is a subclass of expression.
+IsSubclassOf would act as both a definition and not,
+depending on the type of the first argument
+(number is already defined, statements isnt)
+"""
+
+"""
+def test_root():
+	r = Root()
+	r.add(("programs", ListType((ProgramType)).inst()))
+	r["programs"].add(Program())
+	r["programs"][0].ch.statements.newline()
+	r.add(("modules",
+
+"""
+"""
+
+class VariableDecl(Syntaxed):
+	def __init__(self, (kids)):
+		self.child_types = {'name': b['text'],
+	 						'type': b['type']}
+		super(VariableDecl, self).__init__()
+"""
+"""
+class Union(Syntaxed):
+	syntaxes == [[ch("l"), t("or"), ch("r")]]
+	doc = "only two nodes for now, sorry"
+	def __init__(self, children):
+		self.child_types = {'l': b['type'], 'r': b['type']}
+		super(Union, self).__init__(children)
+
+BuiltinNodeType('union', Union)
+Subclass(b['union'], b['type'])
+
+ {'of': b['union
+"""

@@ -59,8 +59,11 @@ class Text(Widget):
 		else:
 			return False
 		return True
+	@property
+	def value(self):
+		return self.text
 
-
+"""
 class ShadowedText(Text):
 
 	def __init__(self, parent, text, shadow):
@@ -76,7 +79,7 @@ class ShadowedText(Text):
 
 #	def len(self):
 #		return len(self.text+self.shadow[len(self.text)])
-		
+"""
 class Button(Widget):
 	def __init__(self, parent, text="[      ]"):#🔳🔳🔳🔳]"):
 		super(Button, self).__init__(parent)
