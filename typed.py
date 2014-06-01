@@ -414,7 +414,7 @@ class Ref(Node):
 		super(Ref, self).__init__()
 		self.target = target
 	def render(self):
-		return [t('*'), w("target")]
+		return [t('*'), t(self.target.name)]
 
 
 b = OrderedDict()
@@ -433,7 +433,8 @@ class NodeclBase(Node):
 		super(NodeclBase, self).__init__()
 		self.instance_class = instance_class
 	def render(self):
-		return [t("builtin node type:"), t(str(self.instance_class))]
+		return [t("builtin node:"), t(self.name)]
+		# t(str(self.instance_class))]
 	@property
 	def name(self):
 		return self.instance_class.__name__.lower()
@@ -523,6 +524,9 @@ class ParametricNodecl(NodeclBase):
 
 class AbstractType(Syntaxed):
 	"""this is a syntactical category(?) of nodes"""
+	@property
+	def name(self):
+		return self.ch.name.pyval
 	def __init__(self, kids):
 		super(AbstractType, self).__init__(kids)
 SyntaxedNodecl(AbstractType,
@@ -547,6 +551,9 @@ class Definition(Syntaxed):
 		print b
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
+	@property
+	def name(self):
+		return self.ch.name.pyval
 
 SyntaxedNodecl(Definition,
                [t("define"), ch("name"), t("as"), ch("type")], #expression?
@@ -573,13 +580,13 @@ b['dict'] = ParametricNodecl(Dict,
 #IsSubclassOf([Ref(b["dict"]), Ref(b["expression"])])
 
 
-Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': b['statement']})})
+Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 b['module'] = SyntaxedNodecl(Module,
                [t("module:"), nl(), ch("statements"), t("end.")],
                {'statements': b['statements']})
 
-Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': b['type']})})
+Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})})
 
 class Union(Syntaxed):
 	def __init__(self, children):
@@ -588,8 +595,7 @@ class Union(Syntaxed):
 b['union'] = SyntaxedNodecl(Union,
                [t("union of"), ch("items")],
                {'items': b['list'].make_type({'itemtype': b['type']})})
-b['union'].notes="""should be just "type or type or type...",
-                 but Syntaxed with a list is an easier implementation for now"""
+b['union'].notes="""should be just "type or type or type...", but Syntaxed with a list is an easier implementation for now"""
 
 
 

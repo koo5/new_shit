@@ -50,20 +50,24 @@ status
 31/5
 ==
 * i added some awareness of types to the editor so the slots of nodes can specify a type they accept, as opposed to just a python class of node
-* actually, have to introduce the Slot objects yet
 * also, added function definition and call nodes (must be tested out yet)
 * well, rewrote half of nodes.py, its now typed.py
 
 and pondering what i will do next
 
+* have to introduce the Slot objects yet
 * might redo the menu system to actually use the same way of rendering as nodes
 * or might work on the contents of the menu..the "palettes" that each node type offers, so inserting nodes actually works again
-* or start working out what is needed for the more natural way of editing
-* like, i see now the sweet spot could be some quantum-mechanic-like superposition
-* you dont want to deal with a tree hierarchy all the time, instead, just a flat list of tokens that keep background information
-* but i think what i got so far is relevant
 * (?)or start extending the way Syntaxed specifies syntax now, like, for List, it would be '[', ListItemWithComma*, ListItem?, ']'
 * ListItemWithComma, ListItem...implies the concrete syntax nodes would co-exist with the AST nodes..(?)
-* other todo options: triples, math notations
 
-* this markdown thing isnt worth my time and the contents here
+other todo options:
+* triples: predicate definition node, accepts Text or URL as subject and object
+* math notations (solve pygame unicode problem)
+* add more notes to nodes
+
+or start working out what is needed for the more natural way of editing
+you dont want to deal with a tree hierarchy all the time, instead,
+just a flat list of tokens that keep background information
+but i think what i got so far is relevant
+
