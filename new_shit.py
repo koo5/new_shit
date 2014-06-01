@@ -365,6 +365,7 @@ render()
 
 cursor_c, cursor_r = project.find(root['program'].ch.statements.items[0].items[0],
                                   lines)
+cursor_c += 2
 update_menu()
 draw()
 

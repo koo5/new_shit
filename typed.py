@@ -1,4 +1,8 @@
 import pygame
+import fuzzywuzzy
+from fuzzywuzzy import fuzz
+
+
 from collections import OrderedDict
 from compiler.ast import flatten
 #import weakref
@@ -184,6 +188,9 @@ class Syntaxed(Node):
 		r = cls(cls.new_kids(cls.decl.instance_slots))
 		return r
 
+	@property
+	def name(self):
+		return self.ch.name.pyval
 
 	@property
 	def syntaxes(self):
@@ -410,11 +417,15 @@ class Module(Syntaxed):
 
 
 class Ref(Node):
+	#todo: separate typeref and ref?..varref..?
 	def __init__(self, target):
 		super(Ref, self).__init__()
 		self.target = target
 	def render(self):
 		return [t('*'), t(self.target.name)]
+	@property
+	def name(self):
+		return self.target.name
 
 
 b = OrderedDict()
@@ -450,18 +461,19 @@ class TypeNodecl(NodeclBase):
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
 		b['type'] = self
+		Ref.decl = self
 	def palette(self, scope):
 		decls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [ColliderMenuItem(Ref(x)) for x in decls]
 
 TypeNodecl()
 
-
 class Nodecl(NodeclBase):
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = self
 		b[self.name] = self
+		instance_class.name = self.name
 
 [Nodecl(x) for x in [Number, Text]]
 
@@ -548,12 +560,8 @@ class Definition(Syntaxed):
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
 		b[self.ch.name.pyval] = self
-		print b
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
-	@property
-	def name(self):
-		return self.ch.name.pyval
 
 SyntaxedNodecl(Definition,
                [t("define"), ch("name"), t("as"), ch("type")], #expression?
@@ -598,16 +606,6 @@ b['union'] = SyntaxedNodecl(Union,
 b['union'].notes="""should be just "type or type or type...", but Syntaxed with a list is an easier implementation for now"""
 
 
-
-
-
-def test_root():
-	r = Root()
-	r.add(("program", b['module'].inst_fresh()))
-	r["program"].ch.statements.newline()
-	r.add(("builtins", b['module'].inst_fresh()))
-	r["builtins"].ch.statements.items = list(b.itervalues())
-	return r
 
 
 
@@ -673,12 +671,16 @@ class NodeCollider(Node):
 		return self.runtime.value.val
 
 	def menu(self):
-		scope = self.scope() + self.root["builtins"].ch.statements.items #all nodes
+		#all nodes "above"
+		scope = self.scope() + self.root["builtins"].ch.statements.items
+
 		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
 
 		menu = flatten([x.palette(scope) for x in nodecls])
 
 		#ev = self.slot.evaluated
+		#node type specifies if a child should be of given type or evaluate to it
+		#function definition specifies if the argument should be evaluated for it
 		type = self.type #self.slot.type
 
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
@@ -687,6 +689,16 @@ class NodeCollider(Node):
 		#	if i.value.decl.eq(type):
 		#		v.score += 1
 
+		#sorting:
+		#need to know the active item, maybe this whole menu generation should
+		#be moved to Text
+		if isinstance(self.items[0], Text):
+			inp = self.items[0].pyval
+			for item in menu:
+				item.score += fuzz.partial_ratio(item.value.decl.name, inp)
+
+		menu.sort(key=lambda i: i.score)
+		menu.reverse()
 		return menu
 
 	def menu_item_selected(self, item):
@@ -746,6 +758,7 @@ class ColliderMenuItem(MenuItem):
 
 
 
+
 #todo function arguments:#mode = eval/pass, untyped argument,
 #todo optional function return type
 #todo: show and hide argument names. syntaxed?
@@ -774,7 +787,7 @@ class FunctionDefinitionBase(Syntaxed):
 	def __init__(self, kids):
 		super(FunctionDefinitionBase, self).__init__(kids)
 	@property
-	def arg_types(selfs):
+	def arg_types(self):
 		args = [i for i in self.sig.items if isinstance(i, TypedArgument)]
 		return [i.ch.type for i in args]
 	@property
@@ -860,7 +873,7 @@ BuiltinFunctionDecl.create("multiply",
 class FunctionCall(Node):
 	def __init__(self, target):
 		super(FunctionCall, self).__init__()
-		assert isinstance(target, FunctionDefinition)
+		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
 		self.args = [NodeCollider(v) for v in self.target.arg_types]
 		self._fix_parents(self.args)
@@ -872,14 +885,46 @@ class FunctionCall(Node):
 	"""
 	def render(self):
 		r = [t('!')]
-		for i, v in enumerate(self.target.sig):
+		argument_index = 0
+		for v in self.target.sig:
 			if isinstance(v, Text):
 				r += [t(v.pyval)]
 			elif isinstance(v, TypedArgument):
-				r += [ElementTag(self.args[i])]
+				r += [ElementTag(self.args[argument_index])]
+				argument_index+=1
 		return r
 
 	@staticmethod
 	def palette(scope):
 		defuns = [x for x in scope if isinstance(x,(BuiltinFunctionDecl, FunctionDefinition))]
 		return [ColliderMenuItem(FunctionCall(x)) for x in defuns]
+
+
+
+
+
+class FunctionCallNodecl(NodeclBase):
+	def __init__(self):
+		super(FunctionCallNodecl, self).__init__(Ref)
+		b['call'] = self
+		FunctionCall.decl = self
+	def palette(self, scope):
+		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
+		return [ColliderMenuItem(FunctionCall(x)) for x in decls]
+
+FunctionCallNodecl()
+
+
+
+
+
+def test_root():
+	r = Root()
+	r.add(("program", b['module'].inst_fresh()))
+	r["program"].ch.statements.newline()
+	r.add(("builtins", b['module'].inst_fresh()))
+	r["builtins"].ch.statements.items = list(b.itervalues())
+	return r
+
+
+
