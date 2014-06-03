@@ -48,15 +48,18 @@ class Element(event.EventDispatcher):
 			i.fix_parents()
 
 	def menu(self):
+		return []
+
+	def info(self):
 		r = []
 		if self.__dict__.has_key("notes"):
 			r += [InfoMenuItem(self.notes)]
 		r += [InfoMenuItem("element: " + str(self))]
 		return r
 
-	def menu_item_selected(self, item):
+	def menu_item_selected(self, item, element):
 		if self.parent:
-			return self.parent.menu_item_selected(item)
+			return self.parent.menu_item_selected(item, self)
 
 	#def position(self):
 	#	return self.doc.positions[self]

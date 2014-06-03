@@ -26,12 +26,12 @@ _indent_width = 4
 
 def squash(l):
 #	ping()
-	assert(isinstance(l, list))
-	for i in l:
-		assert(isinstance(i, tuple))
-		assert(len(i) == 2)
-		assert(isinstance(i[0], str))
-		
+	if __debug__:
+		assert(isinstance(l, list))
+		for i in l:
+			assert(isinstance(i, tuple))
+			assert(len(i) == 2)
+			assert(isinstance(i[0], str))
 	r = {}
 	for i in l:
 		r[i[0]] = i[1]
@@ -69,11 +69,11 @@ def project(root, visualize_elements = True):
 def _project(lines, elem, atts, indent, visualize_elements):
 	"""calls elem.tags(), then calls itself recursively on widget,
 	child and element tags.	screen and atts are passed and mutated"""
-	
-	assert(isinstance(elem, (asselement.Element, assnodes.ColliderMenuItem)))
-	assert(isinstance(lines, list))
-	assert(isinstance(atts, list))
-	assert(isinstance(indent, int))
+	if __debug__:
+		assert(isinstance(elem, (asselement.Element, assnodes.ColliderMenuItem)))
+		assert(isinstance(lines, list))
+		assert(isinstance(atts, list))
+		assert(isinstance(indent, int))
 	
 	pos = -1 # because of the "<"
 	

@@ -174,11 +174,12 @@ class Syntaxed(Node):
 		kids = {}
 		#fix:
 		for k, v in slots.iteritems(): #for each child:
+			#print v
 			if v in [b[x] for x in ['text', 'number', 'statements']]:
 				#todo: definition, list
 				a = v.inst_fresh()
 			else:
-				a = NodeCollider(v)
+				a = Compiler(v)
 			assert(isinstance(a, Node))
 			kids[k] = a
 		return kids
@@ -312,7 +313,7 @@ class List(Collapsible):
 		#???
 		if e.key == pygame.K_RETURN:
 			pos = self.insertion_pos(e.cursor)
-			p = NodeCollider(self.item_type)
+			p = Compiler(self.item_type)
 			p.parent = self
 			self.items.insert(pos, p)
 			return True
@@ -346,7 +347,7 @@ class List(Collapsible):
 		item.parent = self
 
 	def newline(self):
-		p = NodeCollider(self.item_type)
+		p = Compiler(self.item_type)
 		p.parent = self
 		self.items.append(p)
 
@@ -610,9 +611,9 @@ b['union'].notes="""should be just "type or type or type...", but Syntaxed with 
 
 
 
-class NodeCollider(Node):
+class Compiler(Node):
 	def __init__(self, type):
-		super(NodeCollider, self).__init__()
+		super(Compiler, self).__init__()
 		self.type = type
 		self.items = []
 		self.add(Text(""))
@@ -629,7 +630,7 @@ class NodeCollider(Node):
 
 
 	def fix_parents(self):
-		super(NodeCollider, self).fix_parents()
+		super(Compiler, self).fix_parents()
 		self._fix_parents(self.items)
 
 	def on_keypress(self, e):
@@ -701,15 +702,12 @@ class NodeCollider(Node):
 		menu.reverse()
 		return menu
 
-	def menu_item_selected(self, item):
+	def menu_item_selected(self, item, child):
 		if not isinstance(item, ColliderMenuItem):
 			log("not ColliderMenuItem")
 			return
-		v = item.value
-		if v == None:
-			log("no value")
-		x = v
-		self.parent.replace_child(self, x)
+
+		self.parent.replace_child(self, item.value)
 
 
 
@@ -788,8 +786,10 @@ class FunctionDefinitionBase(Syntaxed):
 		super(FunctionDefinitionBase, self).__init__(kids)
 	@property
 	def arg_types(self):
-		args = [i for i in self.sig.items if isinstance(i, TypedArgument)]
-		return [i.ch.type for i in args]
+		if isinstance(self.sig, (List, Compiler)):#avoid crashes before sorting this out
+			args = [i for i in self.sig.items if isinstance(i, TypedArgument)]
+			return [i.ch.type for i in args]
+		else: return []
 	@property
 	def sig(self):
 		return self.ch.sig
@@ -875,23 +875,27 @@ class FunctionCall(Node):
 		super(FunctionCall, self).__init__()
 		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
-		self.args = [NodeCollider(v) for v in self.target.arg_types]
+		self.args = [Compiler(v) for v in self.target.arg_types]
 		self._fix_parents(self.args)
-	"""
+
 	def replace_child(self, child, new):
-		x = self.args.find(child)
-		self.args[x] = new
+		assert(child in self.args)
+		self.args[self.args.index(child)] = new
 		new.parent = self
-	"""
+
+
 	def render(self):
 		r = [t('!')]
 		argument_index = 0
-		for v in self.target.sig:
-			if isinstance(v, Text):
-				r += [t(v.pyval)]
-			elif isinstance(v, TypedArgument):
-				r += [ElementTag(self.args[argument_index])]
-				argument_index+=1
+		if not isinstance(self.target.sig, (List, Compiler)):
+			r+=[t("sig not List, " + str(self.target.sig))]
+		else:
+			for v in self.target.sig:
+				if isinstance(v, Text):
+					r += [t(v.pyval)]
+				elif isinstance(v, TypedArgument):
+					r += [ElementTag(self.args[argument_index])]
+					argument_index+=1
 		return r
 
 	@staticmethod

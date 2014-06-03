@@ -46,13 +46,14 @@ def screen_lines():
 	return screen_surface.get_height() / font_height
 
 
+
 def render():
 	global lines, cached_root_surface
 	cache_colors()
 	project._width = screen_surface.get_width() / font_width / 2
 	project._indent_width = 4
 	lines = project.project(root)[scroll_lines:]
-	
+
 	if __debug__:
 		assert(isinstance(lines, list))
 		for l in lines:
