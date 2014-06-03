@@ -1,8 +1,9 @@
 getting started
 ===
-\#requires pygame:
+\#requires pygame and fuzzywuzzy:
 
 apt-get install python-pygame
+pip install --user fuzzyfuzzy
 
 run new_shit.py, or faster.sh if things are slow for you (disables assertions)  
 if the latest commit doesnt run, git checkout HEAD^ until you find one that does  
@@ -43,9 +44,24 @@ python -m cProfile -s cumulative  new_shit.py
 
 status
 ===
+3/6
+==
+running in pycharm in debugging mode is too slow. optimalization notes:
+limiting the amount of lines rendered by render() is kinda useless until
+we can limit if from the top, that is, not call render(root) but render(some other element)
+and that needs thinking thru but must be doable. Simply dont care if something up there above
+the screen changes. Touches upon textual vs nodal navigation. As does deleting children.
+draw_menu() is slow, first should be redone to project()
+draw_lines is the heavy bit that could be separated out into a C frontend, but that
+could get inflexible if more features were wanted. Slightly better is making it a C module
+for python..(calling pygame how?)
+sanest option might be an alternative python interpreter, just dunno how that would work with pycharm
+
+
 1/6
 ==
 * added scrolling and sanitized cursor movement a bit
+* crude ordering of menu using fuzzywuzzy, based on decl name
 
 31/5
 ==
@@ -65,6 +81,7 @@ other todo options:
 * triples: predicate definition node, accepts Text or URL as subject and object
 * math notations (solve pygame unicode problem)
 * add more notes to nodes
+* bring shadowedtext back
 
 or start working out what is needed for the more natural way of editing
 you dont want to deal with a tree hierarchy all the time, instead,

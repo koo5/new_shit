@@ -5,9 +5,7 @@
 functon project takes a list of tags created by root.tags()
  and outputs a list of lines
  line is a list of tuples: (character, attributes)
-
- break line on "\n"
- later: break too long lines
+ break line on "\n".
 """
 
 from tags import *
@@ -75,13 +73,13 @@ def _project(lines, elem, atts, indent, visualize_elements):
 		assert(isinstance(atts, list))
 		assert(isinstance(indent, int))
 	
-	pos = -1 # because of the "<"
+	tags = [AttTag("node", elem)]
 	
-	tags = elem.tags()
-	
-	if visualize_elements:
-		tags = [AttTag("node", elem), ColorTag(elem.brackets_color), TextTag("<"), EndTag()] + tags
-		
+	if visualize_elements:# and isinstance(elem, Node):
+		pos = -1 # because of the "<"
+		tags += [ColorTag(elem.brackets_color), TextTag("<"), EndTag()]
+		tags += elem.tags()
+		"""
 		#value
 		if isinstance(elem, Node):
 			if elem.runtime.has_key("value") and elem.runtime.has_key("evaluated"):
@@ -92,10 +90,14 @@ def _project(lines, elem, atts, indent, visualize_elements):
 				tags += [ColorTag((255,155,0)), TextTag("[")]
 				tags += [TextTag(text)]
 				tags += [TextTag("]"), EndTag()]
-		
+		"""
 		tags += [ColorTag(elem.brackets_color), TextTag(">"), EndTag()]
-		tags += [EndTag()]
-	
+	else:
+		pos = 0
+		tags += elem.tags()
+
+	tags += [EndTag()]
+
 	for tag in tags:
 	#first some replaces
 		if isinstance(tag, NewlineTag):

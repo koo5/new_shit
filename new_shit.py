@@ -292,7 +292,7 @@ def draw_root():
 			sur = font.render(
 				char[0],True,
 				char[1]['color'],
-				colors.bg if not char[1]['node'] == uc else (100,0,0))
+				colors.bg if not char[1]['node'] == uc else (40,0,0)) #highlight current element
 			s.blit(sur,(x,y))
 	return s
 

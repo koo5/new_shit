@@ -55,7 +55,7 @@ class val(list):
 class Children(dotdict):
 	pass
 
-
+#todo: move Syntaxed functionality to Syntaxed
 class Node(element.Element):
 	"""a node is more than an element, it keeps track of its children with a dict.
 	in the editor, nodes can be cut'n'pasted around on their own
@@ -76,12 +76,18 @@ class Node(element.Element):
 		self.ch[name] = item
 
 	def replace_child(self, child, new):
-		assert(child in self.ch.values())
+		"""child name or child value? thats a good question...its child the value!"""
+		assert(child in self.ch.itervalues())
 		assert(isinstance(new, Node))
 		for k,v in self.ch.iteritems():
 			if v == child:
 				self.ch[k] = new
-		new.parent = self
+				new.parent = self
+				return
+		else_raise_hell()
+
+	def delete_child(self, child):
+		self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
 
 	def scope(self):
 		r = []
@@ -122,6 +128,13 @@ class Node(element.Element):
 	def palette(cls, scope):
 		return [ColliderMenuItem(cls.make)]
 
+	def on_keypress(self, e):
+		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
+			self.delete_self()
+			return True
+
+	def delete_self(self):
+		self.parent.delete_child(self)
 
 
 class Syntaxed(Node):
@@ -310,6 +323,7 @@ class List(Collapsible):
 		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
 			if len(self.items) > item_index:
 				del self.items[item_index]
+			return True
 		#???
 		if e.key == pygame.K_RETURN:
 			pos = self.insertion_pos(e.cursor)
@@ -385,6 +399,41 @@ class Text(WidgetedValue):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 
+	def menu(self):
+		if not isinstance(self.parent, Compiler):
+			return []
+
+		comp = self.parent
+
+		scope = self.scope()
+		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
+		menu = flatten([x.palette(scope) for x in nodecls])
+
+		#ev = self.slot.evaluated
+		#node type specifies if a child should be of given type or evaluate to it
+		#function definition specifies if the argument should be evaluated for it
+		type = comp.type #self.slot.type
+
+		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
+		#first lets search for things in scope that are already of that type
+		#for i in menu:
+		#	if i.value.decl.eq(type):
+		#		v.score += 1
+
+		for item in menu:
+			item.score += fuzz.partial_ratio(item.value.decl.name, self.pyval)
+			#add searching thru syntaxes
+
+		s = ColliderMenuItem(self)
+		s.score = 1000
+		menu.append(s)
+
+		menu.sort(key=lambda i: i.score)
+		menu.reverse()#umm...
+		return menu
+
+
+
 class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
@@ -395,9 +444,14 @@ class Root(Dict):
 	def render(self):
 		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
 
-	def scope(self):
+	def scope(self):#unused(?)
 		return []
 
+	def delete_child(self, child):
+		log("I'm sorry Dave, I'm afraid I can't do that ")
+
+	def delete_self(self):
+		log("I'm sorry Dave, I'm afraid I can't do that ")
 
 class Module(Syntaxed):
 	
@@ -413,6 +467,12 @@ class Module(Syntaxed):
 	def __setitem__(self, i, v):
 		self.ch.statements[i] = v
 
+	def scope(self):
+		#crude, but for now..
+		if self != self.root["builtins"]:
+			return self.root["builtins"].ch.statements.items
+		else:
+			return []
 
 
 
@@ -509,6 +569,9 @@ class ParametricType(Syntaxed):
 	@classmethod
 	def fresh(cls, decl):
 		return cls(cls.new_kids(decl.type_slots), decl)
+	@property
+	def name(self):
+		return "parametric type"
 
 
 
@@ -617,28 +680,35 @@ class Compiler(Node):
 		self.type = type
 		self.items = []
 		self.add(Text(""))
+		self.brackets_color = (220,100,100)
 
 	def render(self):
-		r = [t("[")]
+		#replicating List functionality here
+		r = []
+		#r += [t("[")]
 		for item in self.items:
 			r += [ElementTag(item)]
-		r += [t("]")]
+		#r += [t("]")]
+		if len(self.items) == 1 and isinstance(self.items[0], Text) and	self.items[0].pyval == "":
+			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()]
 		return r
 
 	def __getitem__(self, i):
 		return self.items[i]
-
 
 	def fix_parents(self):
 		super(Compiler, self).fix_parents()
 		self._fix_parents(self.items)
 
 	def on_keypress(self, e):
+		pass
+	"""
 		item_index = self.insertion_pos(e.cursor)
 		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
 			if len(self.items) > item_index:
 				del self.items[item_index]
-
+	"""
+	"""
 	def insertion_pos(self, (char, line)):
 		i = -1
 		for i, item in enumerate(self.items):
@@ -647,7 +717,7 @@ class Compiler(Node):
 				item._render_start_char >= char):
 				return i
 		return i + 1
-
+	"""
 	def flatten(self):
 		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
 
@@ -656,6 +726,7 @@ class Compiler(Node):
 		assert(isinstance(item, Node))
 		item.parent = self
 
+	"""
 	def replace_child(self, child, new):
 		assert(child in self.items)
 		self.items[self.items.index(child)] = new
@@ -664,52 +735,40 @@ class Compiler(Node):
 		p = SomethingNew()
 		p.parent = self
 		self.items.append(p)
-
+	"""
+	"""
 	def eval(self):
 		i = self.items[0]
 		i.eval()
 		self.runtime = i.runtime
 		return self.runtime.value.val
-
-	def menu(self):
-		#all nodes "above"
-		scope = self.scope() + self.root["builtins"].ch.statements.items
-
-		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
-
-		menu = flatten([x.palette(scope) for x in nodecls])
-
-		#ev = self.slot.evaluated
-		#node type specifies if a child should be of given type or evaluate to it
-		#function definition specifies if the argument should be evaluated for it
-		type = self.type #self.slot.type
-
-		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
-		#first lets search for things in scope that are already of that type
-		#for i in menu:
-		#	if i.value.decl.eq(type):
-		#		v.score += 1
-
-		#sorting:
-		#need to know the active item, maybe this whole menu generation should
-		#be moved to Text
-		if isinstance(self.items[0], Text):
-			inp = self.items[0].pyval
-			for item in menu:
-				item.score += fuzz.partial_ratio(item.value.decl.name, inp)
-
-		menu.sort(key=lambda i: i.score)
-		menu.reverse()
-		return menu
+	"""
 
 	def menu_item_selected(self, item, child):
 		if not isinstance(item, ColliderMenuItem):
 			log("not ColliderMenuItem")
 			return
 
-		self.parent.replace_child(self, item.value)
+		if child in self.items:
+			i = self.items.index(child)
+			self.items[i] = item.value
+			item.value.parent = self
+
+			if not isemptytext(self.items[0]):
+				n = Text()
+				n.parent = self
+				self.items.insert(0, n)
+			if not isemptytext(self.items[-1]):
+				n = Text()
+				n.parent = self
+				self.items.append(n)
+
+		else:
+			hmm()
 
 
+def isemptytext(item):
+	return isinstance(item, Text) and item.pyval == ""
 
 
 # hack here, to make a menu item renderable by project.project
