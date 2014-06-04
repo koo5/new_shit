@@ -68,7 +68,7 @@ def _project(lines, elem, atts, indent, visualize_elements):
 	"""calls elem.tags(), then calls itself recursively on widget,
 	child and element tags.	screen and atts are passed and mutated"""
 	if __debug__:
-		assert(isinstance(elem, (asselement.Element, assnodes.ColliderMenuItem)))
+		assert(isinstance(elem, (asselement.Element, assnodes.CompilerMenuItem)))
 		assert(isinstance(lines, list))
 		assert(isinstance(atts, list))
 		assert(isinstance(indent, int))

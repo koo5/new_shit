@@ -41,6 +41,7 @@ screen_surface = None
 cached_root_surface = None
 lines = []
 scroll_lines = 0
+brackets = True
 
 def screen_lines():
 	return screen_surface.get_height() / font_height
@@ -52,7 +53,7 @@ def render():
 	cache_colors()
 	project._width = screen_surface.get_width() / font_width / 2
 	project._indent_width = 4
-	lines = project.project(root)[scroll_lines:]
+	lines = project.project(root, brackets)[scroll_lines:]
 
 	if __debug__:
 		assert(isinstance(lines, list))
@@ -138,6 +139,8 @@ def top_keypress(event):
 			for item in root.flatten():
 				if isinstance(item, typed.Syntaxed):
 					item.view_normalized = not item.view_normalized
+		elif k == pygame.K_F10:
+			toggle_brackets()
 		elif k == pygame.K_ESCAPE:
 			bye()
 		elif k == pygame.K_UP:
@@ -167,6 +170,10 @@ def top_keypress(event):
 		else:
 			return False
 	return True
+
+def toggle_brackets():
+	global brackets
+	brackets = not brackets
 
 class KeypressEvent(object):
 	def __init__(self, e, pos, cursor):
@@ -344,7 +351,7 @@ display.set_icon(icon)
 
 
 
-root = typed.test_root()
+root = typed.make_root()
 root.fix_parents()
 menu = Menu()
 cursor_c = cursor_r = 0
@@ -366,7 +373,7 @@ render()
 
 cursor_c, cursor_r = project.find(root['program'].ch.statements.items[0].items[0],
                                   lines)
-cursor_c += 2
+cursor_c += 1
 update_menu()
 draw()
 

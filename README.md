@@ -21,6 +21,19 @@ might move everything into lemon nodes :), or a .md on github..
 
 
 
+files:
+===
+* typed.py (used to be nodes.py): AST classes - "nodes"
+* widgets.py textbox, number box, button..
+* element.py - both widgets and nodes descend from Element
+* project.py: project() "projects" the AST tree onto a grid of text
+* new_shit.py: the frontend, handles a window, events, drawing
+* colors.py: supposed to keep color settings in one place, doesnt get much love
+* tags.py: the result of calling element.render() is a list of tags, these are analogous to html tags
+* and menu.py. Plus there are other files around, mostly mess and notes, ignore please.
+
+
+
 license
 ===
 licensing is still undecided, usual open source business models dont fit lemon.  

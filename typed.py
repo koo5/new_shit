@@ -64,12 +64,16 @@ class Node(element.Element):
 		self.color = (0,255,0,255) #i hate hardcoded colors
 		self.runtime = dotdict() #various runtime data herded into one place
 
+	@property
+	def compiled(self):
+		return self
+
 	def scope(self):
 		"""what does this node see?"""
 		r = []
 
 		if isinstance(self.parent, List):
-			r += self.parent.above(self)
+			r += [x.compiled for x in self.parent.above(self)]
 
 		r += self.parent.scope()
 
@@ -96,9 +100,9 @@ class Node(element.Element):
 		return cls()
 
 	@classmethod
-	def palette(cls, scope):
-		"""generate menu item(s) with node(s) of this class"""
-		return [ColliderMenuItem(cls.make)]
+	def cls_palette(cls, scope):
+		"generate menu item(s) with node(s) of this class"
+		return []
 
 	def on_keypress(self, e):
 		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
@@ -124,9 +128,9 @@ class Syntaxed(Node):
 	"""
 	def __init__(self, kids):
 		super(Syntaxed, self).__init__()
-		self.ch = Children()
-		self.syntax_index = 0 #could be removed, one one variant of syntax is supported now
 		self.check_child_types()
+		self.syntax_index = 0 #could be removed, one one variant of syntax is supported now
+		self.ch = Children()
 		assert(len(kids) == len(self.child_types))
 		for k in self.child_types.iterkeys():
 			self.setch(k, kids[k])
@@ -413,27 +417,35 @@ class Number(WidgetedValue):
 		self.widget = widgets.Number(self, value)
 
 class Text(WidgetedValue):
-	"""this one is tricky, works as an "input buffer" textbox,
-	its weird but it seems a good place for the menu function"""
+	"""this one is tricky, works as an "input buffer" in Compiler node.
+	its weird but it seems a good place for the menu function
+	its also tricky now because im experimenting with removing one set of brackets
+	and rendering the widget directly
+	"""
 
 	def __init__(self, value=""):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 
+	def render(self):
+		return self.widget.render()
+
+	def on_keypress(self, e):
+		return self.widget.on_keypress(e)
+
 	def menu(self):
 		if not isinstance(self.parent, Compiler):
 			return []
 
-		comp = self.parent
+		#ev = self.slot.evaluated
+		#node type (slot) specifies if a child should be of given type directly or an expression that evaluates to it
+		#function definition specifies if the argument should be evaluated for it
+		type = self.parent.type #self.slot.type
 
 		scope = self.scope()
 		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
+		nodecls.remove(b['builtinfunctiondecl'])
 		menu = flatten([x.palette(scope) for x in nodecls])
-
-		#ev = self.slot.evaluated
-		#node type specifies if a child should be of given type or evaluate to it
-		#function definition specifies if the argument should be evaluated for it
-		type = comp.type #self.slot.type
 
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
 		#first lets search for things in scope that are already of that type
@@ -442,18 +454,26 @@ class Text(WidgetedValue):
 		#		v.score += 1
 
 		for item in menu:
-			item.score += fuzz.partial_ratio(item.value.decl.name, self.pyval)
-			#todo:add searching thru syntaxes
+			v = item.value
+			item.score += fuzz.partial_ratio(v.decl.name, self.pyval) #0-100
+			#print item.value.decl, item.value.decl.works_as(type), type.target
+			if item.value.decl.works_as(type):
+				item.score += 200
+			#searching thru syntaxes
+			if isinstance(v, Syntaxed):
+				for i in v.syntax:
+					if isinstance(i, t):
+						item.score += fuzz.partial_ratio(i.text, self.pyval)
+			#todo: search thru an actual rendering(including children)
 
-		#doing nothing is the default
-		s = ColliderMenuItem(self)
+		#doing nothing is the default (replacing self with self)
+		s = CompilerMenuItem(self)
 		s.score = 1000
 		menu.append(s)
 
 		menu.sort(key=lambda i: i.score)
 		menu.reverse()#umm...
 		return menu
-
 
 
 class Root(Dict):
@@ -513,16 +533,20 @@ class Ref(Node):
 	@property
 	def name(self):
 		return self.target.name
-
+	def works_as(self, type):
+		return self.target.works_as(type)
 
 
 
 class NodeclBase(Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
-	know their python class ("instance_class"), syntax and shit"""
+	know their python class ("instance_class"), syntax and shit
+	usually does something like instance_class.decl = self so we can instantiates the
+	classes in code without going thru a corresponding nodecl"""
 	def __init__(self, instance_class):
 		super(NodeclBase, self).__init__()
 		self.instance_class = instance_class
+		self.decl = None
 	def render(self):
 		return [t("builtin node:"), t(self.name)]
 		# t(str(self.instance_class))]
@@ -535,7 +559,18 @@ class NodeclBase(Node):
 		""" fresh creates default children"""
 		return self.instance_class.fresh()
 	def palette(self, scope):
-		return [ColliderMenuItem(self.inst_fresh())]
+			return [CompilerMenuItem(self.instance_class.fresh())] + \
+			       self.instance_class.cls_palette(scope)
+
+
+	def works_as(self, type):
+		if isinstance(type, Ref):
+			type = type.target
+		if self == type: return True
+		#todo:go thru definitions and IsSubclassOfs, in what scope tho?
+
+
+
 
 
 class TypeNodecl(NodeclBase):
@@ -548,7 +583,7 @@ class TypeNodecl(NodeclBase):
 		Ref.decl = self
 	def palette(self, scope):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [ColliderMenuItem(Ref(x)) for x in nodecls]
+		return [CompilerMenuItem(Ref(x)) for x in nodecls]
 
 
 
@@ -612,9 +647,15 @@ class ParametricNodecl(NodeclBase):
 	def make_type(self, kids):
 		return ParametricType(kids, self)
 	def palette(self, scope):
-		return [ColliderMenuItem(ParametricType.fresh(self))]
+		return [CompilerMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
 	#if there is only one possible node type to instantiate..
+
+
+
+
+
+
 
 
 
@@ -627,8 +668,7 @@ TypeNodecl() #..so you can say that your function returns a type, or something
 
 [Nodecl(x) for x in [Number, Text]]
 
-
-"""the stuff down here isnt well thought-out yet"""
+"""the stuff down here isnt well thought-out yet..the whole types thing.."""
 
 class AbstractType(Syntaxed):
 	"""this is a syntactical category(?) of nodes, used for "statement" and "expression" """
@@ -638,10 +678,35 @@ SyntaxedNodecl(AbstractType,
                [t("abstract type:"), ch("name")],
                {'name': b['text']})
 
+
+
+
+
+
+
+
+
+
+
+
+
+#just mocking up boolean properties here
+
+
 class ObjectDeclaration(Syntaxed):
 	"""just mocking stuff up"""
 	def __init__(self, kids):
 		super(ObjectDeclaration, self).__init__(kids)
+	@classmethod
+	def cls_palette(cls, scope):
+		r = []
+		for x in scope:
+			x = x.compiled
+			if x.decl == cls.decl:
+				print x, x.decl, cls.decl
+				r += [CompilerMenuItem(Ref(x))]
+		return r
+
 SyntaxedNodecl(ObjectDeclaration,
                [ch("name"), t("is an object")],
                {'name': b['text']})
@@ -656,16 +721,63 @@ SyntaxedNodecl(BooleanPropretyDeclaration,
                 'p1': b['text'],
 				'p2': b['text']})
 
+class BooleanProperty(Node):
+	def __init__(self, value):
+		super(BooleanProperty, self).__init__()
+		self.value = value
+	def render(self):
+		return [t(value)]
+
+class BooleanPropertyNodecl(NodeclBase):
+	def __init__(self):
+		super(BooleanPropertyNodecl, self).__init__(Ref)
+		b['booleanproperty'] = self
+		BooleanProperty.decl = self
+	def palette(self, scope):
+		r = []
+		decls = [x for x in scope if isinstance(x, (BooleanPropretyDeclaration))]
+		for d in decls:
+			r += [CompilerMenuItem(BooleanProperty(x)) for x in [d.ch.p1, d.ch.p2]]
+		return r
+
+BooleanPropertyNodecl()
+
+class BooleanPropretyAssignment(Syntaxed):
+	def __init__(self, kids):
+		super(BooleanPropretyAssignment, self).__init__(kids)
+SyntaxedNodecl(BooleanPropretyAssignment,
+               [ch("object"), t("is"), ch("property")],
+               {'object': b['objectdeclaration'],
+                'property': b['booleanproperty']})
+
+
+
+
+
+
+
+
+
+
+#end of mocking up boolean properties, serious stuff ahead
+
+
+
+
+
+
+
+
+
 
 class IsSubclassOf(Syntaxed):
-	"""a relation between two types"""
+	"""a relation between two existing"""
 	def __init__(self, kids):
 		super(IsSubclassOf, self).__init__(kids)
 
 SyntaxedNodecl(IsSubclassOf,
                [ch("sub"), t("is a subclass of"), ch("sup")],
                {'sub': b['type'], 'sup': b['type']})
-
 
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
@@ -722,6 +834,14 @@ b['union'].notes="""should be "type or type or type..", but Syntaxed with a list
 
 
 
+"""
+compiler node
+"""
+
+
+
+
+
 class Compiler(Node):
 	"""the awkward input node with orange brackets"""
 	def __init__(self, type):
@@ -730,6 +850,17 @@ class Compiler(Node):
 		self.items = []
 		self.add(Text(""))
 		self.brackets_color = (255,155,0)
+		self.decl = None
+
+	@property
+	def compiled(self):
+		"""compilation isnt supported until logic programming is obtained,
+		for now, just return what is there"""
+		if len(self.items) < 2:
+			#there is just the empty Text
+			return self
+		else:
+			return self.items[1]
 
 	def render(self):
 		#replicating List functionality here
@@ -794,8 +925,8 @@ class Compiler(Node):
 	"""
 
 	def menu_item_selected(self, item, child):
-		if not isinstance(item, ColliderMenuItem):
-			log("not ColliderMenuItem")
+		if not isinstance(item, CompilerMenuItem):
+			log("not CompilerMenuItem")
 			return
 
 		if child in self.items:
@@ -822,7 +953,7 @@ def isemptytext(item):
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection
-class ColliderMenuItem(MenuItem):
+class CompilerMenuItem(MenuItem):
 	def __init__(self, value):
 		self.value = value
 		self.score = 0
@@ -856,11 +987,11 @@ class ColliderMenuItem(MenuItem):
 
 
 
+"""
 
+functions
 
-
-
-
+"""
 
 
 
@@ -976,7 +1107,17 @@ BuiltinFunctionDecl.create("multiply",
 		Text("*"),
 		TypedArgument({'name': Text("right"), 'type': Ref(b['number'])})])
 
+"""
+def print_eval(args):
+		v = args.expression.eval()
+		assert(isinstance(v, Value))
+		res = Value(b['number'], l.value * r.value)
+		return res
 
+BuiltinFunctionDecl.create("print",
+                           print_eval,
+		[ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
+"""
 
 class FunctionCall(Node):
 	def __init__(self, target):
@@ -1009,7 +1150,7 @@ class FunctionCall(Node):
 	@staticmethod
 	def palette(scope):
 		defuns = [x for x in scope if isinstance(x,(BuiltinFunctionDecl, FunctionDefinition))]
-		return [ColliderMenuItem(FunctionCall(x)) for x in defuns]
+		return [CompilerMenuItem(FunctionCall(x)) for x in defuns]
 
 
 
@@ -1022,15 +1163,15 @@ class FunctionCallNodecl(NodeclBase):
 		FunctionCall.decl = self
 	def palette(self, scope):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
-		return [ColliderMenuItem(FunctionCall(x)) for x in decls]
+		return [CompilerMenuItem(FunctionCall(x)) for x in decls]
 
 FunctionCallNodecl()
 
 
+"""the end"""
 
 
-
-def test_root():
+def make_root():
 	r = Root()
 	r.add(("program", b['module'].inst_fresh()))
 	r["program"].ch.statements.newline()
