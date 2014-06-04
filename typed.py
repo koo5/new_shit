@@ -24,7 +24,7 @@ import colors
 
 
 
-
+b = OrderedDict() #for staging builtins module and referencing builtin nodes by name, from python code
 
 
 
@@ -32,8 +32,10 @@ import colors
 class val(list):
 	"""
 	a list of Values
-	during execution, results of evaluation of every node is appended, so there is a history visible, and the current value is the last one"""
+	during execution, results of evaluation of every node is appended,
+	so there is a history visible"""
 	def val(self):
+		"""the current value is the last one"""
 		return self[-1]
 
 	def append(self, x):
@@ -49,22 +51,85 @@ class val(list):
 		else:
 			super(self, val).append(x)
 		return x
-	
-	
+
+
+
+class Node(element.Element):
+	"""a node is more than an element,
+	in the editor, nodes can be cut'n'pasted around on their own
+	every node class has a corresponding decl object
+	"""
+	def __init__(self):
+		super(Node, self).__init__()
+		self.color = (0,255,0,255) #i hate hardcoded colors
+		self.runtime = dotdict() #various runtime data herded into one place
+
+	def scope(self):
+		"""what does this node see?"""
+		r = []
+
+		if isinstance(self.parent, List):
+			r += self.parent.above(self)
+
+		r += self.parent.scope()
+
+		assert(r != None)
+		assert(flatten(r) == r)
+		return r
+
+	def eval(self):
+		self.runtime.value.append(self._eval())
+		return self.runtime.value.val
+	"""
+	def program(self):
+		if isinstance(self, Program):
+			return self
+		else:
+			if self.parent != None:
+				return self.parent.program()
+			else:
+				print self, "has no parent"
+				return None
+	"""
+	@classmethod
+	def fresh(cls):
+		return cls()
+
+	@classmethod
+	def palette(cls, scope):
+		"""generate menu item(s) with node(s) of this class"""
+		return [ColliderMenuItem(cls.make)]
+
+	def on_keypress(self, e):
+		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
+			self.delete_self()
+			return True
+
+	def delete_self(self):
+		self.parent.delete_child(self)
+
+
 
 class Children(dotdict):
 	pass
 
-#todo: move Syntaxed functionality to Syntaxed
-class Node(element.Element):
-	"""a node is more than an element, it keeps track of its children with a dict.
-	in the editor, nodes can be cut'n'pasted around on their own
+class Syntaxed(Node):
 	"""
-	def __init__(self):
-		super(Node, self).__init__()
-		self.color = (0,255,0,255)
+	Syntaxed has some named children, kept in ch.
+	their types are in child_types, both are dicts
+	syntax is a list of objects from module tags
+	its all defined in its decl
+	todo: differentiate between raw and compiled children
+	todo: wrap child types in Slots, so eval/immediate can be specified
+	"""
+	def __init__(self, kids):
+		super(Syntaxed, self).__init__()
 		self.ch = Children()
-		self.runtime = dotdict()
+		self.syntax_index = 0 #could be removed, one one variant of syntax is supported now
+		self.check_child_types()
+		assert(len(kids) == len(self.child_types))
+		for k in self.child_types.iterkeys():
+			self.setch(k, kids[k])
 
 	def fix_parents(self):
 		self._fix_parents(self.ch.values())
@@ -72,6 +137,8 @@ class Node(element.Element):
 	def setch(self, name, item):
 		assert(isinstance(name, str))
 		assert(isinstance(item, Node))
+		#if isinstance(item, Compiler):
+			#if item.type
 		item.parent = self
 		self.ch[name] = item
 
@@ -89,69 +156,16 @@ class Node(element.Element):
 	def delete_child(self, child):
 		self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
 
-	def scope(self):
-		r = []
-
-		if isinstance(self.parent, List):
-			r += self.parent.above(self)
-
-		r += self.parent.scope()
-
-		assert(r != None)
-		assert(flatten(r) == r)
-		return r
-
 	def flatten(self):
 		assert(isinstance(v, Node) for v in self.ch.itervalues())
 		return [self] + [v.flatten() for v in self.ch.itervalues()]
 
-	def eval(self):
-		self.runtime.value.append(self._eval())
-		return self.runtime.value.val
-
-	def program(self):
-		if isinstance(self, Program):
-			return self
-		else:
-			if self.parent != None:
-				return self.parent.program()
-			else:
-				print self, "has no parent"
-				return None
-
-	@classmethod
-	def fresh(cls):
-		r = cls()
-		return r
-
-	@classmethod
-	def palette(cls, scope):
-		return [ColliderMenuItem(cls.make)]
-
-	def on_keypress(self, e):
-		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
-			self.delete_self()
-			return True
-
-	def delete_self(self):
-		self.parent.delete_child(self)
-
-
-class Syntaxed(Node):
-	def __init__(self, kids):
-		super(Syntaxed, self).__init__()
-		self.syntax_index = 0
-		self.check()
-		assert(len(kids) == len(self.child_types))
-		for k in self.child_types.iterkeys():
-			self.setch(k, kids[k])
-			#todo: check type
-
-	def check(self):
-		assert(isinstance(self.child_types, dict))
-		for name, type in self.child_types.iteritems():
-			assert(isinstance(name, str))
-			assert(isinstance(type, (NodeclBase, Definition, ParametricType))) #what else works as a type?
+	def check_child_types(self):
+		if __debug__:
+			assert(isinstance(self.child_types, dict))
+			for name, type in self.child_types.iteritems():
+				assert(isinstance(name, str))
+				assert(isinstance(type, (NodeclBase, Definition, ParametricType))) #what else works as a type?
 
 	@property
 	def syntax(self):
@@ -204,11 +218,13 @@ class Syntaxed(Node):
 
 	@property
 	def name(self):
+		"""override if this doesnt work for your subclass"""
 		return self.ch.name.pyval
 
 	@property
 	def syntaxes(self):
-		return [self.decl.instance_syntax]
+		return [self.decl.instance_syntax] #got rid of multisyntaxedness for now
+
 	@property
 	def child_types(self):
 		return self.decl.instance_slots
@@ -221,8 +237,9 @@ class Syntaxed(Node):
 
 
 class Collapsible(Node):
-	"""Collapsible - List or Dict - dont have a title, a top unindented line. just
-	the items...now"""
+	"""Collapsible - List or Dict -
+	they dont have a title, just a collapse button, right of which first item is rendered
+	"""
 	def __init__(self, expanded=True, vertical=True):
 		super(Collapsible, self).__init__()	
 		self.expand_collapse_button = widgets.Button(self)
@@ -381,6 +398,7 @@ class List(Collapsible):
 
 
 class WidgetedValue(Node):
+	"""basic one-widget values"""
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
 	@property
@@ -395,6 +413,9 @@ class Number(WidgetedValue):
 		self.widget = widgets.Number(self, value)
 
 class Text(WidgetedValue):
+	"""this one is tricky, works as an "input buffer" textbox,
+	its weird but it seems a good place for the menu function"""
+
 	def __init__(self, value=""):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
@@ -422,8 +443,9 @@ class Text(WidgetedValue):
 
 		for item in menu:
 			item.score += fuzz.partial_ratio(item.value.decl.name, self.pyval)
-			#add searching thru syntaxes
+			#todo:add searching thru syntaxes
 
+		#doing nothing is the default
 		s = ColliderMenuItem(self)
 		s.score = 1000
 		menu.append(s)
@@ -438,23 +460,25 @@ class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
-		self.post_render_move_caret = 0
-		self.indent_length = 4
+		self.post_render_move_caret = 0 #the frontend checks this
+		self.indent_length = 4 #is this even used?
 
 	def render(self):
+		#there has to be some default color for everything..
 		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
 
 	def scope(self):#unused(?)
 		return []
 
 	def delete_child(self, child):
-		log("I'm sorry Dave, I'm afraid I can't do that ")
+		log("I'm sorry Dave, I'm afraid I can't do that.")
 
 	def delete_self(self):
 		log("I'm sorry Dave, I'm afraid I can't do that ")
 
+
 class Module(Syntaxed):
-	
+	"""module or program, really"""
 	def __init__(self, kids):
 		super(Module, self).__init__(kids)
 
@@ -472,12 +496,14 @@ class Module(Syntaxed):
 		if self != self.root["builtins"]:
 			return self.root["builtins"].ch.statements.items
 		else:
-			return []
+			return [] #nothing above but Root
 
 
 
 
 class Ref(Node):
+	"""points to another node.
+	if a node already has a parent, you just want to point to it, not own it"""
 	#todo: separate typeref and ref?..varref..?
 	def __init__(self, target):
 		super(Ref, self).__init__()
@@ -489,18 +515,11 @@ class Ref(Node):
 		return self.target.name
 
 
-b = OrderedDict()
-
-def bi(node):
-	"""build in"""
-	b[node.name] = node
-
-
-
 
 
 class NodeclBase(Node):
-	#this python class is abstract
+	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
+	know their python class ("instance_class"), syntax and shit"""
 	def __init__(self, instance_class):
 		super(NodeclBase, self).__init__()
 		self.instance_class = instance_class
@@ -509,41 +528,46 @@ class NodeclBase(Node):
 		# t(str(self.instance_class))]
 	@property
 	def name(self):
-		return self.instance_class.__name__.lower()
+		return self.instance_class.__name__.lower() #i dunno why tolower..deal with it..or change it..
 	def instantiate(self, kids):
 		return self.instance_class(kids)
 	def inst_fresh(self):
+		""" fresh creates default children"""
 		return self.instance_class.fresh()
 	def palette(self, scope):
 		return [ColliderMenuItem(self.inst_fresh())]
 
 
 class TypeNodecl(NodeclBase):
+	""" "pass me a type" kind of value
+	instantiates Refs ..maybe should be TypeRefs
+	"""
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
-		b['type'] = self
+		b['type'] = self #add me to builtins
 		Ref.decl = self
 	def palette(self, scope):
-		decls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [ColliderMenuItem(Ref(x)) for x in decls]
+		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
+		return [ColliderMenuItem(Ref(x)) for x in nodecls]
 
-TypeNodecl()
+
 
 class Nodecl(NodeclBase):
+	"""for simple nodes (Number, Text, Bool)"""
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = self
 		b[self.name] = self
 		instance_class.name = self.name
 
-[Nodecl(x) for x in [Number, Text]]
+
 
 
 class SyntaxedNodecl(NodeclBase):
 	"""
 	child types of Syntaxed are like b["text"], they are "values",
 	 children themselves are either Refs (pointing to other nodes),
-	 or other instances of Node
+	 or owned nodes (their .parent points to us)
 	"""
 	def __init__(self, instance_class, instance_syntax, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
@@ -555,6 +579,8 @@ class SyntaxedNodecl(NodeclBase):
 
 
 class ParametricType(Syntaxed):
+	"""like..list of <type>, the actual type will be a child of this node.
+	 instantiated by ParametricNodecl"""
 	def __init__(self, kids, decl):
 		self.decl = decl
 		super(ParametricType, self).__init__(kids)
@@ -576,8 +602,9 @@ class ParametricType(Syntaxed):
 
 
 class ParametricNodecl(NodeclBase):
-	"""only non Syntaxed types are parametric now(list and dict),
-	so this contains the type instance's syntax and slots"""
+	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
+	only non Syntaxed types are parametric now(list and dict),
+	so this contains the type instance's syntax and slots (a bit confusing)"""
 	def __init__(self, instance_class, type_syntax, type_slots):
 		super(ParametricNodecl, self).__init__(instance_class)
 		self.type_slots = type_slots
@@ -594,23 +621,44 @@ class ParametricNodecl(NodeclBase):
 
 
 
+"""here we start putting stuff into b, which is then made into the builtins module"""
+
+TypeNodecl() #..so you can say that your function returns a type, or something
+
+[Nodecl(x) for x in [Number, Text]]
 
 
-
+"""the stuff down here isnt well thought-out yet"""
 
 class AbstractType(Syntaxed):
-	"""this is a syntactical category(?) of nodes"""
-	@property
-	def name(self):
-		return self.ch.name.pyval
+	"""this is a syntactical category(?) of nodes, used for "statement" and "expression" """
 	def __init__(self, kids):
 		super(AbstractType, self).__init__(kids)
 SyntaxedNodecl(AbstractType,
                [t("abstract type:"), ch("name")],
                {'name': b['text']})
 
+class ObjectDeclaration(Syntaxed):
+	"""just mocking stuff up"""
+	def __init__(self, kids):
+		super(ObjectDeclaration, self).__init__(kids)
+SyntaxedNodecl(ObjectDeclaration,
+               [ch("name"), t("is an object")],
+               {'name': b['text']})
+
+class BooleanPropretyDeclaration(Syntaxed):
+	"""just mocking stuff up"""
+	def __init__(self, kids):
+		super(BooleanPropretyDeclaration, self).__init__(kids)
+SyntaxedNodecl(BooleanPropretyDeclaration,
+               [ch("object"), t("can be"), ch("p1"), t("or"), ch("p2")],
+               {'object': b['objectdeclaration'],
+                'p1': b['text'],
+				'p2': b['text']})
+
+
 class IsSubclassOf(Syntaxed):
-	"""just a relation"""
+	"""a relation between two types"""
 	def __init__(self, kids):
 		super(IsSubclassOf, self).__init__(kids)
 
@@ -620,7 +668,7 @@ SyntaxedNodecl(IsSubclassOf,
 
 
 class Definition(Syntaxed):
-	"""should have type functionality"""
+	"""should have type functionality (work as a type)"""
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
 		b[self.ch.name.pyval] = self
@@ -666,8 +714,8 @@ class Union(Syntaxed):
 
 b['union'] = SyntaxedNodecl(Union,
                [t("union of"), ch("items")],
-               {'items': b['list'].make_type({'itemtype': b['type']})})
-b['union'].notes="""should be just "type or type or type...", but Syntaxed with a list is an easier implementation for now"""
+               {'items': b['list'].make_type({'itemtype': b['type']})}) #todo:should work with the definition from above instead
+b['union'].notes="""should be "type or type or type..", but Syntaxed with a list is an easier implementation for now"""
 
 
 
@@ -675,12 +723,13 @@ b['union'].notes="""should be just "type or type or type...", but Syntaxed with 
 
 
 class Compiler(Node):
+	"""the awkward input node with orange brackets"""
 	def __init__(self, type):
 		super(Compiler, self).__init__()
 		self.type = type
 		self.items = []
 		self.add(Text(""))
-		self.brackets_color = (220,100,100)
+		self.brackets_color = (255,155,0)
 
 	def render(self):
 		#replicating List functionality here
@@ -690,7 +739,7 @@ class Compiler(Node):
 			r += [ElementTag(item)]
 		#r += [t("]")]
 		if len(self.items) == 1 and isinstance(self.items[0], Text) and	self.items[0].pyval == "":
-			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()]
+			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()] #hint at the type expected
 		return r
 
 	def __getitem__(self, i):

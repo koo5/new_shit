@@ -1,4 +1,4 @@
-#beware misleading documentation
+#nodes.py isnt used, the new version is typed.py
 
 
 #everything is lumped together here, real ast nodes with clock and sticky notes,
