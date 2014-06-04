@@ -4,7 +4,7 @@
 
 import argparse, sys, os
 import pygame
-from pygame import gfxdraw, font, image, display
+from pygame import display, image, font
 
 
 from logger import bt, log, ping
@@ -310,9 +310,8 @@ def cursor_xy():
 
 def draw_cursor():
 	x, y, y2 = cursor_xy()
-	gfxdraw.vline(screen_surface, 
-			x, y, y2,    		
-			colors.modify(colors.cursor))
+	pygame.draw.rect(screen_surface, colors.modify(colors.cursor),
+	                 (x, y, 1, y2 - y,))
 
 #def draw_bg():
 #	screen_surface.fill((255,0,0))#bg_color())

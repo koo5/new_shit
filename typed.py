@@ -3,7 +3,9 @@ import fuzzywuzzy
 from fuzzywuzzy import fuzz
 
 
-from collections import OrderedDict
+#from collections import OrderedDict
+from odict import OrderedDict
+
 from compiler.ast import flatten
 #import weakref
 

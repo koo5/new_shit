@@ -3,7 +3,7 @@ getting started
 \#requires pygame and fuzzywuzzy:
 
 apt-get install python-pygame
-pip install --user fuzzyfuzzy
+pip install --user fuzzywuzzy
 
 run new_shit.py, or faster.sh if things are slow for you (disables assertions)  
 if the latest commit doesnt run, git checkout HEAD^ until you find one that does  
