@@ -42,6 +42,8 @@ cached_root_surface = None
 lines = []
 scroll_lines = 0
 brackets = True
+valid_only = False
+
 
 def screen_lines():
 	return screen_surface.get_height() / font_height
@@ -112,7 +114,9 @@ def and_updown(event):
 
 def top_help():
 	return [HelpMenuItem(t) for t in [
-	"ctrl + =,- : font size"
+	"ctrl + =,- : font size",
+	"f10 : toggle brackets",
+	"f9 : toggle valid-only items in menu"
 	]]
 	#,	"f12 : normalize"
 	#,	"up, down, left, right, home, end : move cursor"#obvious
@@ -141,6 +145,8 @@ def top_keypress(event):
 					item.view_normalized = not item.view_normalized
 		elif k == pygame.K_F10:
 			toggle_brackets()
+		elif k == pygame.K_F9:
+			toggle_valid()
 		elif k == pygame.K_ESCAPE:
 			bye()
 		elif k == pygame.K_UP:
@@ -174,6 +180,10 @@ def top_keypress(event):
 def toggle_brackets():
 	global brackets
 	brackets = not brackets
+
+def toggle_valid():
+	global valid_only
+	valid_only = not valid_only
 
 class KeypressEvent(object):
 	def __init__(self, e, pos, cursor):
@@ -237,6 +247,8 @@ def update_menu():
 		e = e.parent
 	new_items += menu.help()
 	new_items += top_help()
+	if valid_only:
+		new_items = [x for x in new_items if x.valid]
 	menu.items = new_items
 
 

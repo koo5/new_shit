@@ -36,7 +36,7 @@ class Menu(object):
 			ypos += item_area.h
 			if ypos > size[1]:
 				break
-#			print area.h
+			#print area.h
 		#pygame.draw.rect(scr, (100,100,100), (x,y,menu_area.w,menu_area.h), 1)
 	
 	def help(self):
@@ -47,7 +47,7 @@ class Menu(object):
 	
 	
 	def keypress(self, e):
-		ping()
+#		ping()
 		if e.mod & pygame.KMOD_CTRL:
 			if e.key == pygame.K_UP:
 				self.move(-1)
@@ -74,10 +74,12 @@ class Menu(object):
 #	self.sel = item under mouse
 
 class MenuItem(object):
-	pass
+	def __init__(self):
+		self.valid = True
 
 class InfoMenuItem(MenuItem):
 	def __init__(self, text):
+		super(InfoMenuItem, self).__init__()
 		self.text = "(" + text + ")"
 		self.color = (200,200,200)
 
@@ -88,6 +90,7 @@ class InfoMenuItem(MenuItem):
 
 class HelpMenuItem(InfoMenuItem):
 	def __init__(self, text):
+		super(HelpMenuItem, self).__init__("")
 		self.text = text
 		self.color = (255,255,255)
 

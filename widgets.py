@@ -27,6 +27,8 @@ class Text(Widget):
 	
 	def on_keypress(self, e):
 		pos = e.pos
+		if e.mod & pygame.KMOD_CTRL:
+			return False
 		if e.key == pygame.K_BACKSPACE:
 			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 				self.text = self.text[0:pos -1] + self.text[pos:]

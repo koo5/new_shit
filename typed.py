@@ -16,7 +16,8 @@ import element
 import widgets
 from menu import MenuItem, InfoMenuItem, HelpMenuItem
 import tags
-from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
+#better would be ch, wi, te, ?
+from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag#, MenuTag
 import tags as asstags
 asstags.asselement = element
 
@@ -459,18 +460,27 @@ class Text(WidgetedValue):
 			v = item.value
 			item.score += fuzz.partial_ratio(v.decl.name, self.pyval) #0-100
 			#print item.value.decl, item.value.decl.works_as(type), type.target
+
 			if item.value.decl.works_as(type):
 				item.score += 200
-			#searching thru syntaxes
-			if isinstance(v, Syntaxed):
-				for i in v.syntax:
-					if isinstance(i, t):
-						item.score += fuzz.partial_ratio(i.text, self.pyval)
-			#todo: search thru an actual rendering(including children)
+			else:
+				item.valid = False
+
+			#search thru syntaxes
+			#if isinstance(v, Syntaxed):
+			#	for i in v.syntax:
+			#		if isinstance(i, t):
+			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
+			#search thru an actual rendering(including children)
+			r = v.render()
+			re = " ".join([i.text for i in r if isinstance(i, t)])
+			item.score += fuzz.partial_ratio(re, self.pyval)
+
 
 		#doing nothing is the default (replacing self with self)
 		s = CompilerMenuItem(self)
 		s.score = 1000
+		s.valid = True
 		menu.append(s)
 
 		menu.sort(key=lambda i: i.score)
@@ -957,6 +967,7 @@ def isemptytext(item):
 #i think ill redo the screen layout as two panes of projection
 class CompilerMenuItem(MenuItem):
 	def __init__(self, value):
+		super(CompilerMenuItem, self).__init__()
 		self.value = value
 		self.score = 0
 		self.brackets_color = (0,0,255)
