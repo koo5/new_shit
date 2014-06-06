@@ -58,6 +58,7 @@ def attadd(atts, key, val):
 	atts.append((key, val))
 
 def project(root, visualize_elements = True):
+
 	atts = []
 	indent = 0
 	lines = [[]]
@@ -80,7 +81,7 @@ def _project(lines, elem, atts, indent, visualize_elements):
 		tags += [ColorTag(elem.brackets_color), TextTag("<"), EndTag()]
 		tags += elem.tags()
 		"""
-		#value
+		#eval results
 		if isinstance(elem, Node):
 			if elem.runtime.has_key("value") and elem.runtime.has_key("evaluated"):
 				if elem.runtime.has_key("unimplemented"):
@@ -126,6 +127,9 @@ def _project(lines, elem, atts, indent, visualize_elements):
 		elif isinstance(tag, EndTag):
 			atts.pop()
 
+		elif isinstance(tag, ArrowTag):
+			attadd(atts, "arrow", tag.target)
+
 		elif isinstance(tag, IndentTag):
 			indent+=1
 		elif isinstance(tag, DedentTag):
@@ -145,7 +149,7 @@ def _project(lines, elem, atts, indent, visualize_elements):
 					charadd(lines[-1], char, atts)
 				atts.pop()
 				pos += 1
-				
+
 		#elif isinstance(tag, MenuTag):
 		#	screen['menu'] = tag
 		else:

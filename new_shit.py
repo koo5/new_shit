@@ -6,7 +6,6 @@ import argparse, sys, os
 import pygame
 from pygame import display, image, font
 
-
 from logger import bt, log, ping
 import project
 import tags as tags_module
@@ -40,10 +39,11 @@ flags = pygame.RESIZABLE
 screen_surface = None
 cached_root_surface = None
 lines = []
+arrows = []
 scroll_lines = 0
 brackets = True
 valid_only = False
-
+arrows_visible = True
 
 def screen_lines():
 	return screen_surface.get_height() / font_height
@@ -52,6 +52,7 @@ def screen_lines():
 
 def render():
 	global lines, cached_root_surface
+	arrows = []
 	cache_colors()
 	project._width = screen_surface.get_width() / font_width / 2
 	project._indent_width = 4
@@ -68,8 +69,23 @@ def render():
 				assert(isinstance(i[1], dict))
 				assert(i[1]['node'])
 				assert(i[1].has_key('char_index'))
-			
+
+	generate_arrows()
 	cached_root_surface = draw_root()
+
+def generate_arrows():
+	global arrows
+	arrows = []
+	if not arrows_visible: return
+
+	for r,l in enumerate(lines):
+		for c,i in enumerate(l):
+			if i[1].has_key("arrow"):
+				target = project.find(i[1]["arrow"], lines)
+				if target:
+					arrows.append(((c,r),target))
+
+
 
 def by_xy((x,y)):
 	c = x / font_width
@@ -116,7 +132,8 @@ def top_help():
 	return [HelpMenuItem(t) for t in [
 	"ctrl + =,- : font size",
 	"f10 : toggle brackets",
-	"f9 : toggle valid-only items in menu"
+	"f9 : toggle valid-only items in menu",
+	"f8 : toggle arrows"
 	]]
 	#,	"f12 : normalize"
 	#,	"up, down, left, right, home, end : move cursor"#obvious
@@ -147,6 +164,8 @@ def top_keypress(event):
 			toggle_brackets()
 		elif k == pygame.K_F9:
 			toggle_valid()
+		elif k == pygame.K_F8:
+			toggle_arrows()
 		elif k == pygame.K_ESCAPE:
 			bye()
 		elif k == pygame.K_UP:
@@ -184,6 +203,10 @@ def toggle_brackets():
 def toggle_valid():
 	global valid_only
 	valid_only = not valid_only
+
+def toggle_arrows():
+	global arrows_visible
+	arrows_visible = not arrows_visible
 
 class KeypressEvent(object):
 	def __init__(self, e, pos, cursor):
@@ -313,7 +336,13 @@ def draw_root():
 				char[1]['color'],
 				colors.bg if not char[1]['node'] == uc else (40,0,0)) #highlight current element
 			s.blit(sur,(x,y))
+	draw_arrows(s)
 	return s
+
+def draw_arrows(sur):
+	for ((c,r),(c2,r2)) in arrows:
+		x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
+		pygame.draw.line(sur, (55,55,0), (x,y),(x2,y2))
 
 def cursor_xy():
 	return (font_width * cursor_c,

@@ -52,7 +52,7 @@ class ColorTag(Tag):
 	def __init__(self, color):
 		self.color = color
 
-
+"""
 class TwoDGraphicTag(Tag):
 	def __init__(self, width, height, draw_function):
 		pass
@@ -60,5 +60,8 @@ class TwoDGraphicTag(Tag):
 class MenuTag(Tag):
 	def __init__(self, items):
 		self.items = items
+"""
 
-
+class ArrowTag(Tag):
+	def __init__(self, target):
+		self.target = target

@@ -429,6 +429,7 @@ class Text(WidgetedValue):
 	def __init__(self, value=""):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
+		self.brackets_color = (0,200,0)
 
 	def render(self):
 		return self.widget.render()
@@ -469,10 +470,10 @@ class Text(WidgetedValue):
 			#search thru syntaxes
 			#if isinstance(v, Syntaxed):
 			#	for i in v.syntax:
-			#		if isinstance(i, t):
+			#   		if isinstance(i, t):
 			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
 			#search thru an actual rendering(including children)
-			r = v.render()
+			r =     v.render()
 			re = " ".join([i.text for i in r if isinstance(i, t)])
 			item.score += fuzz.partial_ratio(re, self.pyval)
 
@@ -541,7 +542,7 @@ class Ref(Node):
 		super(Ref, self).__init__()
 		self.target = target
 	def render(self):
-		return [t('*'), t(self.target.name)]
+		return [tags.ArrowTag(self.target), t('*'), EndTag(), t(self.target.name)]
 	@property
 	def name(self):
 		return self.target.name
