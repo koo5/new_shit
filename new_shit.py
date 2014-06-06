@@ -133,7 +133,17 @@ def top_help():
 	"ctrl + =,- : font size",
 	"f10 : toggle brackets",
 	"f9 : toggle valid-only items in menu",
-	"f8 : toggle arrows"
+	"f8 : toggle arrows",
+	"f5 : eval",
+	"",
+	"[text] are textboxes",
+	"orange <>'s denote Compiler",
+	"red <>'s enclose nodes or other widgets",
+	"(gray)'s are the type the compiler expects",
+	" (they should go under the text box)",
+	"currently you can only insert nodes manually",
+	" by selecting them from the menu, with prolog,",
+	" the compiler will start guessing what you mean"
 	]]
 	#,	"f12 : normalize"
 	#,	"up, down, left, right, home, end : move cursor"#obvious
@@ -156,16 +166,19 @@ def top_keypress(event):
 		else:
 			return False
 	else:
-		if k == pygame.K_F12:
+		"""if k == pygame.K_F12:
 			for item in root.flatten():
 				if isinstance(item, typed.Syntaxed):
 					item.view_normalized = not item.view_normalized
-		elif k == pygame.K_F10:
+		el"""
+		if k == pygame.K_F10:
 			toggle_brackets()
 		elif k == pygame.K_F9:
 			toggle_valid()
 		elif k == pygame.K_F8:
 			toggle_arrows()
+		elif k == pygame.K_F5:
+			run()
 		elif k == pygame.K_ESCAPE:
 			bye()
 		elif k == pygame.K_UP:
@@ -195,6 +208,9 @@ def top_keypress(event):
 		else:
 			return False
 	return True
+
+def run():
+	root['program'].run()
 
 def toggle_brackets():
 	global brackets

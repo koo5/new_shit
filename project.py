@@ -78,24 +78,29 @@ def _project(lines, elem, atts, indent, visualize_elements):
 	
 	if visualize_elements:# and isinstance(elem, Node):
 		pos = -1 # because of the "<"
-		tags += [ColorTag(elem.brackets_color), TextTag("<"), EndTag()]
+		tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag()]
 		tags += elem.tags()
-		"""
-		#eval results
-		if isinstance(elem, Node):
-			if elem.runtime.has_key("value") and elem.runtime.has_key("evaluated"):
-				if elem.runtime.has_key("unimplemented"):
-					text = "unimplemented"
-				else:
-					text = ', '.join([str(x.value) for x in elem.runtime.value])
-				tags += [ColorTag((255,155,0)), TextTag("[")]
-				tags += [TextTag(text)]
-				tags += [TextTag("]"), EndTag()]
-		"""
-		tags += [ColorTag(elem.brackets_color), TextTag(">"), EndTag()]
+		tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 	else:
 		pos = 0
 		tags += elem.tags()
+
+
+
+	#results of eval
+	if isinstance(elem, Node):
+		if elem.runtime.has_key("value") and elem.runtime.has_key("evaluated"):
+			"""
+			if elem.runtime.has_key("unimplemented"):
+				text = "unimplemented"
+			else:
+				text = ', '.join([str(x) for x in elem.runtime.value])
+			"""
+			tags += [ColorTag((155,155,155)), TextTag(":")]
+			tags += [ElementTag(elem.runtime.value.val)]
+			tags += [TextTag(" "), EndTag()]
+
+
 
 	tags += [EndTag()]
 

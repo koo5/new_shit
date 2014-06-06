@@ -37,13 +37,14 @@ class val(list):
 	a list of Values
 	during execution, results of evaluation of every node is appended,
 	so there is a history visible"""
+	@property
 	def val(self):
 		"""the current value is the last one"""
 		return self[-1]
 
 	def append(self, x):
 		assert(isinstance(x, Node))
-		super(self, val).append(x)
+		super(val, self).append(x)
 		return x
 	
 	def set(self, x):
@@ -85,8 +86,17 @@ class Node(element.Element):
 		return r
 
 	def eval(self):
-		self.runtime.value.append(self._eval())
-		return self.runtime.value.val
+		r = self._eval()
+		self.runtime.value.append(r)
+		self.runtime.evaluated = True
+		r.parent = self.parent
+
+		return r
+
+	def _eval(self):
+		self.runtime.unimplemented = True
+		return Text("not implemented")
+
 	"""
 	def program(self):
 		if isinstance(self, Program):
@@ -115,6 +125,9 @@ class Node(element.Element):
 	def delete_self(self):
 		self.parent.delete_child(self)
 
+	def flatten(self):
+		print self, "flattens to self"
+		return self
 
 
 class Children(dotdict):
@@ -269,11 +282,6 @@ class Collapsible(Node):
 		if widget is self.expand_collapse_button:
 			self.toggle()
 
-	def _eval(self):
-		for i in self.items:
-			i.eval()
-		return self
-
 	@classmethod
 	def fresh(cls, decl):
 		r = cls()
@@ -365,14 +373,12 @@ class List(Collapsible):
 				return i
 		return i + 1
 
-	def eval(self):
-		for i in self.items:
-			i.eval()
-		self.runtime.evaluated = True
-		return self.runtime.value.append(Value([x.runtime.value.val for x in self.items]))
-			
+	def _eval(self):
+		#todo: its not copy..its make new with same type..
+		return List([i.eval() for i in self.items])
+
 	def flatten(self):
-		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
+		return [self] + flatten([v.flatten() for v in self.items])
 
 	def replace_child(self, child, new):
 		assert(child in self.items)
@@ -418,6 +424,8 @@ class Number(WidgetedValue):
 	def __init__(self, value=""):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
+	def _eval(self):
+		return Number(self.pyval)
 
 class Text(WidgetedValue):
 	"""this one is tricky, works as an "input buffer" in Compiler node.
@@ -430,12 +438,16 @@ class Text(WidgetedValue):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 		self.brackets_color = (0,200,0)
+		self.brackets = ('[',']')
 
 	def render(self):
 		return self.widget.render()
 
 	def on_keypress(self, e):
 		return self.widget.on_keypress(e)
+
+	def _eval(self):
+		return Text(self.pyval)
 
 	def menu(self):
 		if not isinstance(self.parent, Compiler):
@@ -531,6 +543,14 @@ class Module(Syntaxed):
 		else:
 			return [] #nothing above but Root
 
+	def run(self):
+		#crude too..hey..everything is crude here
+		st = self.ch.statements
+		print "flatten:", st.flatten()
+		for i in st.flatten():
+			i.runtime.clear()
+			i.runtime.value = val()
+		return st.eval()
 
 
 
@@ -739,7 +759,7 @@ class BooleanProperty(Node):
 		super(BooleanProperty, self).__init__()
 		self.value = value
 	def render(self):
-		return [t(value)]
+		return [t(self.value)]
 
 class BooleanPropertyNodecl(NodeclBase):
 	def __init__(self):
@@ -750,7 +770,7 @@ class BooleanPropertyNodecl(NodeclBase):
 		r = []
 		decls = [x for x in scope if isinstance(x, (BooleanPropretyDeclaration))]
 		for d in decls:
-			r += [CompilerMenuItem(BooleanProperty(x)) for x in [d.ch.p1, d.ch.p2]]
+			r += [CompilerMenuItem(BooleanProperty(x.pyval)) for x in [d.ch.p1, d.ch.p2]]
 		return r
 
 BooleanPropertyNodecl()
@@ -875,6 +895,16 @@ class Compiler(Node):
 		else:
 			return self.items[1]
 
+	def _eval(self):
+		if len(self.items) == 1:
+			i = 0
+		else:
+			i = 1
+		r = self.items[i].eval()
+		print r
+		return r
+
+
 	def render(self):
 		#replicating List functionality here
 		r = []
@@ -912,7 +942,7 @@ class Compiler(Node):
 		return i + 1
 	"""
 	def flatten(self):
-		return [self] + [v.flatten() for v in self.items if isinstance(v, Node)]
+		return [self] + flatten([v.flatten() for v in self.items])
 
 	def add(self, item):
 		self.items.append(item)
@@ -1108,12 +1138,13 @@ SyntaxedNodecl(BuiltinFunctionDecl,
 				{'sig': b['function signature list'],
 				 'name': b['text']})
 
-def multiply_eval(args):
+def multiply_eval(self, args):
 		l,r = args.left.eval(), args.right.eval()
 		assert(isinstance(l, Value))
 		assert(isinstance(r, Value))
 		res = Value(b['number'], l.value * r.value)
 		return res
+		#self.runtime.output = ...
 
 BuiltinFunctionDecl.create("multiply",
                            multiply_eval,

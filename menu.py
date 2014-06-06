@@ -76,6 +76,7 @@ class Menu(object):
 class MenuItem(object):
 	def __init__(self):
 		self.valid = True
+		self.brackets = ('<','>')
 
 class InfoMenuItem(MenuItem):
 	def __init__(self, text):
