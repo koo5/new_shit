@@ -116,7 +116,7 @@ def first_nonblank():
 	r = 0
 	for ch,a in lines[cursor_r]:
 		if ch in [" ", u" "]:
-			r += 1
+	ooo		r += 1
 		else:
 			return r
 
