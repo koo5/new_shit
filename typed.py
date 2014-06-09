@@ -27,7 +27,7 @@ import colors
 
 
 
-b = OrderedDict() #for staging builtins module and referencing builtin nodes by name, from python code
+b = OrderedDict() #for staging the builtins module and referencing builtin nodes from python code
 
 
 
@@ -55,6 +55,7 @@ class val(list):
 		else:
 			super(self, val).append(x)
 		return x
+
 
 
 
@@ -130,6 +131,15 @@ class Node(element.Element):
 		return self
 
 
+
+lit = 0
+exp = 1
+class Slot(object):
+	def __init__(self, type, mode = lit):
+		self.type = type
+		self.mode = mode
+
+
 class Children(dotdict):
 	pass
 
@@ -139,13 +149,11 @@ class Syntaxed(Node):
 	their types are in child_types, both are dicts
 	syntax is a list of objects from module tags
 	its all defined in its decl
-	todo: differentiate between raw and compiled children
-	todo: wrap child types in Slots, so eval/immediate can be specified
 	"""
 	def __init__(self, kids):
 		super(Syntaxed, self).__init__()
 		self.check_child_types()
-		self.syntax_index = 0 #could be removed, one one variant of syntax is supported now
+		self.syntax_index = 0 #could be removed, alternative syntaxes arent supported now
 		self.ch = Children()
 		assert(len(kids) == len(self.child_types))
 		for k in self.child_types.iterkeys():
@@ -157,10 +165,9 @@ class Syntaxed(Node):
 	def setch(self, name, item):
 		assert(isinstance(name, str))
 		assert(isinstance(item, Node))
-		#if isinstance(item, Compiler):
-			#if item.type
 		item.parent = self
 		self.ch[name] = item
+		#todo:log if not Compiler and not correct type
 
 	def replace_child(self, child, new):
 		"""child name or child value? thats a good question...its child the value!"""
@@ -183,9 +190,10 @@ class Syntaxed(Node):
 	def check_child_types(self):
 		if __debug__:
 			assert(isinstance(self.child_types, dict))
-			for name, type in self.child_types.iteritems():
+			for name, slot in self.child_types.iteritems():
 				assert(isinstance(name, str))
-				assert(isinstance(type, (NodeclBase, Definition, ParametricType))) #what else works as a type?
+				assert(isinstance(slot, Slot))
+				assert(isinstance(slot.type, (NodeclBase, Definition, ParametricType))) #what else works as a type?
 
 	@property
 	def syntax(self):
@@ -222,9 +230,9 @@ class Syntaxed(Node):
 		#fix:
 		for k, v in slots.iteritems(): #for each child:
 			#print v
-			if v in [b[x] for x in ['text', 'number', 'statements']]:
+			if v.type in [b[x] for x in ['text', 'number', 'statements']]:
 				#todo: definition, list
-				a = v.inst_fresh()
+				a = v.type.inst_fresh()
 			else:
 				a = Compiler(v)
 			assert(isinstance(a, Node))
@@ -248,8 +256,6 @@ class Syntaxed(Node):
 	@property
 	def child_types(self):
 		return self.decl.instance_slots
-
-
 
 
 
@@ -326,6 +332,7 @@ class Dict(Collapsible):
 		val.parent = self
 
 
+#todo: view ordering
 class List(Collapsible):
 	def __init__(self, expanded=True, vertical=True):
 		#if self.item_type ..
@@ -477,7 +484,7 @@ class Text(WidgetedValue):
 			if item.value.decl.works_as(type):
 				item.score += 200
 			else:
-				item.valid = False
+				item.invalid = True
 
 			#search thru syntaxes
 			#if isinstance(v, Syntaxed):
@@ -593,7 +600,7 @@ class NodeclBase(Node):
 		return self.instance_class.fresh()
 	def palette(self, scope):
 			return [CompilerMenuItem(self.instance_class.fresh())] + \
-			       self.instance_class.cls_palette(scope)
+				   self.instance_class.cls_palette(scope)
 
 
 	def works_as(self, type):
@@ -645,6 +652,19 @@ class SyntaxedNodecl(NodeclBase):
 		b[self.name] = self
 
 
+
+    """
+    syntaxed match(items, nodes) :-
+
+    Text match(item, nodes) :-
+        isinstance(item, Text) and item.pyval.isnum() and
+
+    FunctionDefinition match(items, nodes
+        for s, i in zip(self.sig, items)
+            if isinstance(s, Text):
+                if isinstance(i, Text):
+                    i.pyval
+    """
 
 class ParametricType(Syntaxed):
 	"""like..list of <type>, the actual type will be a child of this node.
@@ -703,13 +723,15 @@ TypeNodecl() #..so you can say that your function returns a type, or something
 
 """the stuff down here isnt well thought-out yet..the whole types thing.."""
 
-class AbstractType(Syntaxed):
+class SyntacticCategory(Syntaxed):
 	"""this is a syntactical category(?) of nodes, used for "statement" and "expression" """
 	def __init__(self, kids):
-		super(AbstractType, self).__init__(kids)
-SyntaxedNodecl(AbstractType,
-               [t("abstract type:"), ch("name")],
-               {'name': b['text']})
+		super(SyntacticCategory, self).__init__(kids)
+		b[self.ch.name.pyval] = self
+
+SyntaxedNodecl(SyntacticCategory,
+			   [t("syntactic category:"), ch("name")],
+			   {'name': Slot(b['text'])})
 
 
 
@@ -723,65 +745,6 @@ SyntaxedNodecl(AbstractType,
 
 
 
-#just mocking up boolean properties here
-
-
-class ObjectDeclaration(Syntaxed):
-	"""just mocking stuff up"""
-	def __init__(self, kids):
-		super(ObjectDeclaration, self).__init__(kids)
-	@classmethod
-	def cls_palette(cls, scope):
-		r = []
-		for x in scope:
-			x = x.compiled
-			if x.decl == cls.decl:
-				print x, x.decl, cls.decl
-				r += [CompilerMenuItem(Ref(x))]
-		return r
-
-SyntaxedNodecl(ObjectDeclaration,
-               [ch("name"), t("is an object")],
-               {'name': b['text']})
-
-class BooleanPropretyDeclaration(Syntaxed):
-	"""just mocking stuff up"""
-	def __init__(self, kids):
-		super(BooleanPropretyDeclaration, self).__init__(kids)
-SyntaxedNodecl(BooleanPropretyDeclaration,
-               [ch("object"), t("can be"), ch("p1"), t("or"), ch("p2")],
-               {'object': b['objectdeclaration'],
-                'p1': b['text'],
-				'p2': b['text']})
-
-class BooleanProperty(Node):
-	def __init__(self, value):
-		super(BooleanProperty, self).__init__()
-		self.value = value
-	def render(self):
-		return [t(self.value)]
-
-class BooleanPropertyNodecl(NodeclBase):
-	def __init__(self):
-		super(BooleanPropertyNodecl, self).__init__(Ref)
-		b['booleanproperty'] = self
-		BooleanProperty.decl = self
-	def palette(self, scope):
-		r = []
-		decls = [x for x in scope if isinstance(x, (BooleanPropretyDeclaration))]
-		for d in decls:
-			r += [CompilerMenuItem(BooleanProperty(x.pyval)) for x in [d.ch.p1, d.ch.p2]]
-		return r
-
-BooleanPropertyNodecl()
-
-class BooleanPropretyAssignment(Syntaxed):
-	def __init__(self, kids):
-		super(BooleanPropretyAssignment, self).__init__(kids)
-SyntaxedNodecl(BooleanPropretyAssignment,
-               [ch("object"), t("is"), ch("property")],
-               {'object': b['objectdeclaration'],
-                'property': b['booleanproperty']})
 
 
 
@@ -790,27 +753,19 @@ SyntaxedNodecl(BooleanPropretyAssignment,
 
 
 
-
-
-#end of mocking up boolean properties, serious stuff ahead
-
-
-
-
-
-
-
-
-
-
-class IsSubclassOf(Syntaxed):
+class WorksAs(Syntaxed):
 	"""a relation between two existing"""
 	def __init__(self, kids):
-		super(IsSubclassOf, self).__init__(kids)
+		super(WorksAs, self).__init__(kids)
+		b[self] = self
+	@classmethod
+	def b(cls, sub, sup):
+		cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
 
-SyntaxedNodecl(IsSubclassOf,
-               [ch("sub"), t("is a subclass of"), ch("sup")],
-               {'sub': b['type'], 'sup': b['type']})
+SyntaxedNodecl(WorksAs,
+			   [ch("sub"), t("works as"), ch("sup")],
+			   {'sub': Slot(b['type']), 'sup': Slot(b['type'])})
+
 
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
@@ -821,35 +776,35 @@ class Definition(Syntaxed):
 		return self.ch.type.inst_fresh()
 
 SyntaxedNodecl(Definition,
-               [t("define"), ch("name"), t("as"), ch("type")], #expression?
-               {'name': b['text'], 'type': b['type']})
+			   [t("define"), ch("name"), t("as"), ch("type")], #expression?
+			   {'name': Slot(b['text']), 'type': Slot(b['type'])})
 
 
 
-b['statement'] = AbstractType({'name': Text("statement")})
-b['expression'] =AbstractType({'name': Text("expression")})
-b[0] = IsSubclassOf({'sub': Ref(b["expression"]), 'sup': Ref(b["statement"])})
-#b[1] = IsSubclassOf([Ref(b["number"]), Ref(b["expression"])])
-#b[2] = IsSubclassOf([Ref(b["somethingnew"]), Ref(b["expression"])])
+SyntacticCategory({'name': Text("statement")})
+SyntacticCategory({'name': Text("expression")})
+WorksAs.b("expression", "statement")
+WorksAs.b("number", "expression")
+WorksAs.b("text", "expression")
 
 
 b['list'] = ParametricNodecl(List,
-                 [t("list of"), ch("itemtype")],
-                 {'itemtype': b['type']})
+				 [t("list of"), ch("itemtype")],
+				 {'itemtype': Slot(b['type'], exp)})
 b['dict'] = ParametricNodecl(Dict,
-                 [t("dict from"), ch("keytype"), t("to"), ch("valtype")],
-                 {'keytype': b['type'], 'valtype': b['type']})
+				 [t("dict from"), ch("keytype"), t("to"), ch("valtype")],
+				 {'keytype': Slot(b['type'], exp), 'valtype': Slot(b['type'], exp)})
 
 
-#IsSubclassOf([Ref(b["list"]), Ref(b["expression"])])
+WorksAs.b("list", "expression")
 #IsSubclassOf([Ref(b["dict"]), Ref(b["expression"])])
 
 
 Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 b['module'] = SyntaxedNodecl(Module,
-               [t("module:"), nl(), ch("statements"), t("end.")],
-               {'statements': b['statements']})
+			   [t("module:"), nl(), ch("statements"), t("end.")],
+			   {'statements': b['statements']})
 
 Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})})
 
@@ -858,8 +813,8 @@ class Union(Syntaxed):
 		super(Union, self).__init__(children)
 
 b['union'] = SyntaxedNodecl(Union,
-               [t("union of"), ch("items")],
-               {'items': b['list'].make_type({'itemtype': b['type']})}) #todo:should work with the definition from above instead
+			   [t("union of"), ch("items")],
+			   {'items': b['list'].make_type({'itemtype': b['type']})}) #todo:should work with the definition from above instead
 b['union'].notes="""should be "type or type or type..", but Syntaxed with a list is an easier implementation for now"""
 
 
@@ -1049,8 +1004,8 @@ class TypedArgument(Syntaxed):
 		super(TypedArgument, self).__init__(kids)
 
 SyntaxedNodecl(TypedArgument,
-               [ch("name"), t("-"), ch("type")],
-               {'name': b['text'], 'type': b['type']})
+			   [ch("name"), t("-"), ch("type")],
+			   {'name': b['text'], 'type': b['type']})
 
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
@@ -1083,7 +1038,7 @@ class FunctionDefinition(FunctionDefinitionBase):
 		super(FunctionDefinition, self).__init__(kids)
 
 SyntaxedNodecl(FunctionDefinition,
-               [t("deffun:"), ch("sig"), t(":\n"), ch("body")],
+			   [t("deffun:"), ch("sig"), t(":\n"), ch("body")],
 				{'sig': b['function signature list'],
 				 'body': b['statements']})
 
@@ -1134,7 +1089,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 
 
 SyntaxedNodecl(BuiltinFunctionDecl,
-               [t("builtin function"), ch("name"), t(":"), ch("sig")],
+			   [t("builtin function"), ch("name"), t(":"), ch("sig")],
 				{'sig': b['function signature list'],
 				 'name': b['text']})
 
@@ -1147,7 +1102,7 @@ def multiply_eval(self, args):
 		#self.runtime.output = ...
 
 BuiltinFunctionDecl.create("multiply",
-                           multiply_eval,
+						   multiply_eval,
 	[	TypedArgument({'name': Text("left"), 'type': Ref(b['number'])}),
 		Text("*"),
 		TypedArgument({'name': Text("right"), 'type': Ref(b['number'])})])
@@ -1160,7 +1115,7 @@ def print_eval(args):
 		return res
 
 BuiltinFunctionDecl.create("print",
-                           print_eval,
+						   print_eval,
 		[ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
 """
 
