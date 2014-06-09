@@ -116,7 +116,7 @@ def first_nonblank():
 	r = 0
 	for ch,a in lines[cursor_r]:
 		if ch in [" ", u" "]:
-	ooo		r += 1
+			r += 1
 		else:
 			return r
 
@@ -128,8 +128,7 @@ def and_updown(event):
 	if event.all[pygame.K_UP]: updown_cursor(-1)
 	if event.all[pygame.K_DOWN]: updown_cursor(1)
 
-def top_help():
-	return [HelpMenuItem(t) for t in [
+top_help = [HelpMenuItem(t) for t in [
 	"ctrl + =,- : font size",
 	"f10 : toggle brackets",
 	"f9 : toggle valid-only items in menu",
@@ -145,8 +144,7 @@ def top_help():
 	" by selecting them from the menu, with prolog,",
 	" the compiler will start guessing what you mean"
 	]]
-	#,	"f12 : normalize"
-	#,	"up, down, left, right, home, end : move cursor"#obvious
+	#,	"f12 : normalize syntaxes"
 
 def top_keypress(event):
 	global cursor_r,cursor_c

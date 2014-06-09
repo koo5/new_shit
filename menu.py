@@ -1,8 +1,10 @@
 import pygame
 
 import colors
-from logger import ping,log
-
+from logger import ping
+import element
+import widgets
+from tags import *
 
 class Menu(object):
 	@property
@@ -73,25 +75,29 @@ class Menu(object):
 #on mousedown or (mousemove if mouse is down):
 #	self.sel = item under mouse
 
-class MenuItem(object):
+class MenuItem(element.Element):
 	def __init__(self):
-		self.valid = True
 		self.brackets = ('<','>')
+
+
+class HelpMenuItem(MenuItem):
+	def __init__(self, text):
+		super(HelpMenuItem, self).__init__()
+		self.text = text
+		self.color = (255,255,255)
+        self.hide_button = widgets.Button("(X)", "hide")
+        self.hide_button.push_handlers(onclick = self.hidebutton_onclick)
+        self.hide_button.color = (100,100,100)
+        #checkbox would be better
+    del hidebutton_onclick(self, widget):
+        self.hidden = True
+
+    def render(self):
+        return [TextTag(self.text + "  "), WidgetTag(self.hide_button)]
+
 
 class InfoMenuItem(MenuItem):
 	def __init__(self, text):
 		super(InfoMenuItem, self).__init__()
 		self.text = "(" + text + ")"
 		self.color = (200,200,200)
-
-	def draw(self, menu, s, font, x, y):
-		fs = font['font'].render(self.text, True, self.color, colors.bg)
-		s.blit(fs,(x,y))
-		return fs.get_rect()
-
-class HelpMenuItem(InfoMenuItem):
-	def __init__(self, text):
-		super(HelpMenuItem, self).__init__("")
-		self.text = text
-		self.color = (255,255,255)
-

@@ -86,7 +86,7 @@ class ShadowedText(Text):
 #		return len(self.text+self.shadow[len(self.text)])
 """
 class Button(Widget):
-	def __init__(self, parent, text="[      ]"):#🔳🔳🔳🔳]"):
+	def __init__(self, parent, text="[button]", description = "?"):#🔳🔳🔳🔳]"):
 		super(Button, self).__init__(parent)
 		self.register_event_types('on_click, on_text')
 		self.color = (255,150,150,255)
