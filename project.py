@@ -107,7 +107,7 @@ def _project(lines, elem, atts, indent, visualize_elements):
 	for tag in tags:
 	#first some replaces
 		if isinstance(tag, NewlineTag):
-			tag = TextTag("\n")
+			tag = "\n"
 
 		elif isinstance(tag, ChildTag):
 			assert(isinstance(elem, assnodes.Node))

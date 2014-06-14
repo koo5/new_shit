@@ -1,12 +1,20 @@
 import pygame
 
+
 import colors
 from logger import ping
-import element
+from element import Element
 import widgets
 from tags import *
 
-class Menu(object):
+
+class Menu(Element):
+	def __init__(self):
+        super(Menu, self).__init__()
+		self.sel = 0
+		self._items = [InfoMenuItem("hello")]
+		self.active_element = None
+
 	@property
 	def items(self):
 		return self._items
@@ -15,12 +23,7 @@ class Menu(object):
 		if self.sel > len(value) - 1:
 			self.sel = len(value) - 1
 		self._items = value
-	
-	def __init__(self):
-		self.sel = 0
-		self._items = [InfoMenuItem("hello")]
-		self.element = None
-		
+
 	def draw(self, scr, font, x, y, size):
 		#s = pygame.Surface((size[0], size[1]), pygame.SRCALPHA)
 		menu_area = pygame.Rect(0,0,0,0)
@@ -75,8 +78,20 @@ class Menu(object):
 #on mousedown or (mousemove if mouse is down):
 #	self.sel = item under mouse
 
-class MenuItem(element.Element):
+
+class HelpMenu(Menu):
+
+
+    def render(self):
+        r = [TextTag("help  "), ColorTag((100,100,100)), WidgetTag(visible_toggle), EndTag()]
+        for i in self.items:
+            if not self.hidden_toggle.value or i.visible_toggle.value:
+                r += i.render()
+
+
+class MenuItem(Element):
 	def __init__(self):
+        superMenuItem, self).__init__()
 		self.brackets = ('<','>')
 
 
@@ -85,15 +100,12 @@ class HelpMenuItem(MenuItem):
 		super(HelpMenuItem, self).__init__()
 		self.text = text
 		self.color = (255,255,255)
-        self.hide_button = widgets.Button("(X)", "hide")
-        self.hide_button.push_handlers(onclick = self.hidebutton_onclick)
-        self.hide_button.color = (100,100,100)
-        #checkbox would be better
-    del hidebutton_onclick(self, widget):
-        self.hidden = True
+        self.visible_toggle = widgets.Toggle(self, True, ("(X)", "show"))
+        self.visible_toggle.push_handlers(on_change = self.visible_toggle_onclick)
+        self.visible_toggle.color = (100,100,100)
 
     def render(self):
-        return [TextTag(self.text + "  "), WidgetTag(self.hide_button)]
+        return [TextTag(self.text + "  "), WidgetTag(self.visible_toggle)]
 
 
 class InfoMenuItem(MenuItem):

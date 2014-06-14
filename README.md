@@ -8,16 +8,14 @@ getting started
 ===
 \#requires pygame and fuzzywuzzy:
 
-apt-get install python-pygame
-pip install --user fuzzywuzzy #or pip install fuzzywuzzy
+* apt-get install python-pygame
+* pip install --user fuzzywuzzy #or pip install fuzzywuzzy
+
 it should work with python 2.5, OrderedDict is bundled in
 
-run new_shit.py, or faster.sh if things are slow for you (disables assertions)  
+run new_shit.py, or faster.sh if things are slow for you (disables assertions)    
 if the latest commit doesnt run, git checkout HEAD^ until you find one that does:)
 
-a menu should appear, the menu reacts to CTRL with up and down   
-arrow and inserts an item with space.
-Thats kinda all there is to it at the moment!
 
 
 

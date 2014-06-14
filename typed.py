@@ -130,12 +130,15 @@ class Node(element.Element):
 		print self, "flattens to self"
 		return self
 
+    def to_python_str(self):
+        return str(self)
 
 
 lit = 0
 exp = 1
 class Slot(object):
 	def __init__(self, type, mode = lit):
+        """mode is lit(default) or exp"""
 		self.type = type
 		self.mode = mode
 
@@ -416,6 +419,9 @@ class List(Collapsible):
 			else:
 				r.append(i)
 
+    def to_python_str(self):
+        return "[" + ", ".join([i.to_python_str() for i in self.items]) + "]"
+
 
 class WidgetedValue(Node):
 	"""basic one-widget values"""
@@ -426,6 +432,9 @@ class WidgetedValue(Node):
 		return self.widget.value
 	def render(self):
 		return [w('widget')]
+    def to_python_str(self):
+        return self.pyval
+
 
 class Number(WidgetedValue):
 	def __init__(self, value=""):
@@ -667,8 +676,8 @@ class SyntaxedNodecl(NodeclBase):
     """
 
 class ParametricType(Syntaxed):
-	"""like..list of <type>, the actual type will be a child of this node.
-	 instantiated by ParametricNodecl"""
+	"""like..list of <type>, the <type> will be a child of this node.
+	 ParametricType is instantiated by ParametricNodecl"""
 	def __init__(self, kids, decl):
 		self.decl = decl
 		super(ParametricType, self).__init__(kids)
@@ -803,8 +812,8 @@ WorksAs.b("list", "expression")
 Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 b['module'] = SyntaxedNodecl(Module,
-			   [t("module:"), nl(), ch("statements"), t("end.")],
-			   {'statements': b['statements']})
+			   ["module:\n", ch("statements"), t("end.")],
+			   {'statements': Slot(b['statements'], lit)})
 
 Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})})
 
@@ -824,6 +833,11 @@ b['union'].notes="""should be "type or type or type..", but Syntaxed with a list
 
 """
 compiler node
+
+im planning to rework this into a freeform text field, where text is interspersed with nodes
+(get rid of Texts)
+for now, lets just hack it so that the first node, when a second node is added, is set as the
+leftmost child of the second node
 """
 
 
@@ -846,7 +860,7 @@ class Compiler(Node):
 		for now, just return what is there"""
 		if len(self.items) < 2:
 			#there is just the empty Text
-			return self
+			return self#hmm
 		else:
 			return self.items[1]
 
@@ -962,7 +976,7 @@ class CompilerMenuItem(MenuItem):
 	#PlaceholderMenuItem is not an Element, but still has tags(),
 	#called by project.project called from draw()
 	def tags(self):
-		return [ColorTag((0,255,0)),w('value'), t(" - "+str(self.value.__class__.__name__)), EndTag()]
+		return [ColorTag((0,255,0)), w('value'), " - "+str(self.value.__class__.__name__)), EndTag()]
 		#and abusing "w" for "widget" here...not just here...
 
 	def draw(self, menu, s, font, x, y):
@@ -1063,22 +1077,11 @@ class PassedFunctionCall(Syntaxed):
 """
 
 
-"""
-class PythonFunctionDecl(Syntaxed):
-	def __init__(self, fun, sig, arg):
-		self.setch('signature', FunctionSignature(sig))
-
-
-PythonFunctionDecl(
-	operator.div,
-	signature = [ad("left"), tl("/"), ad("right")],
-	arg_types = {'left': b['expression'], 'right': b['expression']})
-"""
-
-
 class BuiltinFunctionDecl(FunctionDefinitionBase):
+
 	def __init__(self, kids):
 		super(BuiltinFunctionDecl, self).__init__(kids)
+
 	@staticmethod
 	def create(name, fun, sig):
 		x = BuiltinFunctionDecl.fresh()
@@ -1087,37 +1090,41 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		x.fun = fun
 		x.ch.sig.items = sig
 
+    def call(self, args):
+        args = [arg.eval() for arg in args]
+        assert(len(args) == len(self.arg_types))
+        for i, arg in enumerate(args):
+            if not arg.type.eq(self.arg_types[i]):
+                log("well this is bad")
+        return self.fun(*args)
 
 SyntaxedNodecl(BuiltinFunctionDecl,
 			   [t("builtin function"), ch("name"), t(":"), ch("sig")],
 				{'sig': b['function signature list'],
 				 'name': b['text']})
 
-def multiply_eval(self, args):
-		l,r = args.left.eval(), args.right.eval()
-		assert(isinstance(l, Value))
-		assert(isinstance(r, Value))
-		res = Value(b['number'], l.value * r.value)
-		return res
-		#self.runtime.output = ...
-
+def b_multiply(self, args):
+	return Number(args[0] * args[1])
 BuiltinFunctionDecl.create("multiply",
-						   multiply_eval,
+						   b_multiply,
 	[	TypedArgument({'name': Text("left"), 'type': Ref(b['number'])}),
 		Text("*"),
 		TypedArgument({'name': Text("right"), 'type': Ref(b['number'])})])
 
-"""
-def print_eval(args):
-		v = args.expression.eval()
-		assert(isinstance(v, Value))
-		res = Value(b['number'], l.value * r.value)
-		return res
+def b_sum(self, args):
+	return Number(sum([i.pyval for i in args[0].items]))
+BuiltinFunctionDecl.create("sum",
+						   b_sum,
+	[	Text("the sum of"),
+        TypedArgument({'name': Text("list"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})})])
+
+def b_print(args):
+	print(args[0].to_python_string())
 
 BuiltinFunctionDecl.create("print",
-						   print_eval,
-		[ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
-"""
+    b_print,
+    [ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
+
 
 class FunctionCall(Node):
 	def __init__(self, target):
@@ -1166,6 +1173,35 @@ class FunctionCallNodecl(NodeclBase):
 		return [CompilerMenuItem(FunctionCall(x)) for x in decls]
 
 FunctionCallNodecl()
+
+
+
+
+
+
+
+
+
+class Clock(Node):
+	def __init__(self):
+		super(Clock,self).__init__()
+		self.datetime = __import__("datetime")
+	def render(self):
+		return [t(str(self.datetime.datetime.now()))]
+	def _eval(self):
+		return Text(str(self.datetime.datetime.now()))
+
+
+
+class PythonEval(Syntaxed):
+	def __init__(self, children):
+		super(PythonEval, self).__init__(children)
+
+b['pythoneval'] = SyntaxedNodecl(Union,
+			   [t("python eval"), ch("text")],
+			   {'text': Slot(b['text'], exp)
+
+
 
 
 """the end"""
