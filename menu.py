@@ -6,11 +6,11 @@ from logger import ping
 from element import Element
 import widgets
 from tags import *
-
+from menu_items import *
 
 class Menu(Element):
 	def __init__(self):
-        super(Menu, self).__init__()
+		super(Menu, self).__init__()
 		self.sel = 0
 		self._items = [InfoMenuItem("hello")]
 		self.active_element = None
@@ -75,41 +75,20 @@ class Menu(Element):
 		if self.sel >= len(self.items): self.sel = len(self.items) - 1
 		print len(self.items), self.sel
 
+"""
 #on mousedown or (mousemove if mouse is down):
+	(c,r):
+		translate row by scroll
+		for i in self.items:
+			if i._render_start_line <= r and i._render_end_line >= r
 #	self.sel = item under mouse
+"""
 
+class InfoMenu(Menu):
+	def render(self):
+		r = [TextTag("info  "), ColorTag((100,100,100)), WidgetTag(visible_toggle), EndTag()]
+		for i in self.items:
+			if not self.hidden_toggle.value or i.visible_toggle.value:
+				r += i.render()
+		return r
 
-class HelpMenu(Menu):
-
-
-    def render(self):
-        r = [TextTag("help  "), ColorTag((100,100,100)), WidgetTag(visible_toggle), EndTag()]
-        for i in self.items:
-            if not self.hidden_toggle.value or i.visible_toggle.value:
-                r += i.render()
-
-
-class MenuItem(Element):
-	def __init__(self):
-        superMenuItem, self).__init__()
-		self.brackets = ('<','>')
-
-
-class HelpMenuItem(MenuItem):
-	def __init__(self, text):
-		super(HelpMenuItem, self).__init__()
-		self.text = text
-		self.color = (255,255,255)
-        self.visible_toggle = widgets.Toggle(self, True, ("(X)", "show"))
-        self.visible_toggle.push_handlers(on_change = self.visible_toggle_onclick)
-        self.visible_toggle.color = (100,100,100)
-
-    def render(self):
-        return [TextTag(self.text + "  "), WidgetTag(self.visible_toggle)]
-
-
-class InfoMenuItem(MenuItem):
-	def __init__(self, text):
-		super(InfoMenuItem, self).__init__()
-		self.text = "(" + text + ")"
-		self.color = (200,200,200)

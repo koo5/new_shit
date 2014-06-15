@@ -1,12 +1,19 @@
 
+default_colors = {
+	"info item text": (244,244,244),
+	"bg": (0,0,0),
+	"fg": (255,255,255),
+	"cursor": (255,255,200),
+	"info_item_visibility_toggle":(100,100,100)
+	}
+
+colors = 666
+
 def cache(args):
-	global invert, mono, bg, fg, cursor
+	global colors, invert, mono
 	invert = args.invert
 	mono = args.mono
-	bg = modify((0,0,0))
-	fg = modify((255,255,255))
-	cursor = modify((200,200,200))
-
+	colors = dict([(k, modify(v)) for k,v in default_colors.iteritems()])
 
 def modify(c, max=255):
 	if mono and c != (0,0,0):

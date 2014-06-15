@@ -338,3 +338,6 @@ you dont want to deal with a tree hierarchy all the time, instead,
 just a flat list of tokens that keep background information
 but i think what i got so far is relevant
 
+
+PYTHONPATH=~/pygame_cffi pypy new_shit/new_shit.py
+

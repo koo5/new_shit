@@ -14,7 +14,7 @@ from dotdict import dotdict
 from logger import ping, log
 import element
 import widgets
-from menu import MenuItem, InfoMenuItem, HelpMenuItem
+from menu import MenuItem, InfoItem
 import tags
 #better would be ch, wi, te, ?
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag#, MenuTag
@@ -130,15 +130,15 @@ class Node(element.Element):
 		print self, "flattens to self"
 		return self
 
-    def to_python_str(self):
-        return str(self)
+	def to_python_str(self):
+		return str(self)
 
 
 lit = 0
 exp = 1
 class Slot(object):
 	def __init__(self, type, mode = lit):
-        """mode is lit(default) or exp"""
+		"""mode is lit(default) or exp"""
 		self.type = type
 		self.mode = mode
 
@@ -155,11 +155,11 @@ class Syntaxed(Node):
 	"""
 	def __init__(self, kids):
 		super(Syntaxed, self).__init__()
-		self.check_child_types()
+		self.check_slots(self.slots)
 		self.syntax_index = 0 #could be removed, alternative syntaxes arent supported now
 		self.ch = Children()
-		assert(len(kids) == len(self.child_types))
-		for k in self.child_types.iterkeys():
+		assert(len(kids) == len(self.slots))
+		for k in self.slots.iterkeys():
 			self.setch(k, kids[k])
 
 	def fix_parents(self):
@@ -190,12 +190,13 @@ class Syntaxed(Node):
 		assert(isinstance(v, Node) for v in self.ch.itervalues())
 		return [self] + [v.flatten() for v in self.ch.itervalues()]
 
-	def check_child_types(self):
+	@staticmethod
+	def check_slots(slots):
 		if __debug__:
-			assert(isinstance(self.child_types, dict))
-			for name, slot in self.child_types.iteritems():
+			assert(isinstance(slots, dict))
+			for name, slot in slots.iteritems():
 				assert(isinstance(name, str))
-				assert(isinstance(slot, Slot))
+				assert isinstance(slot, Slot), (slot, " is not Slot, in ", slots)
 				assert(isinstance(slot.type, (NodeclBase, Definition, ParametricType))) #what else works as a type?
 
 	@property
@@ -228,7 +229,7 @@ class Syntaxed(Node):
 
 	@classmethod
 	def new_kids(cls, slots):
-		assert(isinstance(slots, dict))
+		cls.check_slots(slots)
 		kids = {}
 		#fix:
 		for k, v in slots.iteritems(): #for each child:
@@ -257,7 +258,7 @@ class Syntaxed(Node):
 		return [self.decl.instance_syntax] #got rid of multisyntaxedness for now
 
 	@property
-	def child_types(self):
+	def slots(self):
 		return self.decl.instance_slots
 
 
@@ -419,8 +420,8 @@ class List(Collapsible):
 			else:
 				r.append(i)
 
-    def to_python_str(self):
-        return "[" + ", ".join([i.to_python_str() for i in self.items]) + "]"
+	def to_python_str(self):
+		return "[" + ", ".join([i.to_python_str() for i in self.items]) + "]"
 
 
 class WidgetedValue(Node):
@@ -432,8 +433,8 @@ class WidgetedValue(Node):
 		return self.widget.value
 	def render(self):
 		return [w('widget')]
-    def to_python_str(self):
-        return self.pyval
+	def to_python_str(self):
+		return self.pyval
 
 
 class Number(WidgetedValue):
@@ -662,18 +663,18 @@ class SyntaxedNodecl(NodeclBase):
 
 
 
-    """
-    syntaxed match(items, nodes) :-
+	"""
+	syntaxed match(items, nodes) :-
 
-    Text match(item, nodes) :-
-        isinstance(item, Text) and item.pyval.isnum() and
+	Text match(item, nodes) :-
+		isinstance(item, Text) and item.pyval.isnum() and
 
-    FunctionDefinition match(items, nodes
-        for s, i in zip(self.sig, items)
-            if isinstance(s, Text):
-                if isinstance(i, Text):
-                    i.pyval
-    """
+	FunctionDefinition match(items, nodes
+		for s, i in zip(self.sig, items)
+			if isinstance(s, Text):
+				if isinstance(i, Text):
+					i.pyval
+	"""
 
 class ParametricType(Syntaxed):
 	"""like..list of <type>, the <type> will be a child of this node.
@@ -682,7 +683,7 @@ class ParametricType(Syntaxed):
 		self.decl = decl
 		super(ParametricType, self).__init__(kids)
 	@property
-	def child_types(self):
+	def slots(self):
 		return self.decl.type_slots
 	@property
 	def syntaxes(self):
@@ -823,7 +824,7 @@ class Union(Syntaxed):
 
 b['union'] = SyntaxedNodecl(Union,
 			   [t("union of"), ch("items")],
-			   {'items': b['list'].make_type({'itemtype': b['type']})}) #todo:should work with the definition from above instead
+			   {'items': Slot(b['list'].make_type({'itemtype': b['type']}))}) #todo:should work with the definition from above instead
 b['union'].notes="""should be "type or type or type..", but Syntaxed with a list is an easier implementation for now"""
 
 
@@ -976,7 +977,7 @@ class CompilerMenuItem(MenuItem):
 	#PlaceholderMenuItem is not an Element, but still has tags(),
 	#called by project.project called from draw()
 	def tags(self):
-		return [ColorTag((0,255,0)), w('value'), " - "+str(self.value.__class__.__name__)), EndTag()]
+		return [ColorTag((0,255,0)), w('value'), " - "+str(self.value.__class__.__name__), EndTag()]
 		#and abusing "w" for "widget" here...not just here...
 
 	def draw(self, menu, s, font, x, y):
@@ -1019,7 +1020,7 @@ class TypedArgument(Syntaxed):
 
 SyntaxedNodecl(TypedArgument,
 			   [ch("name"), t("-"), ch("type")],
-			   {'name': b['text'], 'type': b['type']})
+			   {'name': Slot(b['text']), 'type': Slot(b['type'])})
 
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
@@ -1090,18 +1091,18 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		x.fun = fun
 		x.ch.sig.items = sig
 
-    def call(self, args):
-        args = [arg.eval() for arg in args]
-        assert(len(args) == len(self.arg_types))
-        for i, arg in enumerate(args):
-            if not arg.type.eq(self.arg_types[i]):
-                log("well this is bad")
-        return self.fun(*args)
+	def call(self, args):
+		args = [arg.eval() for arg in args]
+		assert(len(args) == len(self.arg_types))
+		for i, arg in enumerate(args):
+			if not arg.type.eq(self.arg_types[i]):
+				log("well this is bad")
+		return self.fun(*args)
 
 SyntaxedNodecl(BuiltinFunctionDecl,
 			   [t("builtin function"), ch("name"), t(":"), ch("sig")],
-				{'sig': b['function signature list'],
-				 'name': b['text']})
+				{'sig': Slot(b['function signature list'], lit),
+				 'name': Slot(b['text'], lit)})
 
 def b_multiply(self, args):
 	return Number(args[0] * args[1])
@@ -1116,14 +1117,14 @@ def b_sum(self, args):
 BuiltinFunctionDecl.create("sum",
 						   b_sum,
 	[	Text("the sum of"),
-        TypedArgument({'name': Text("list"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})})])
+		TypedArgument({'name': Text("list"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})})])
 
 def b_print(args):
 	print(args[0].to_python_string())
 
 BuiltinFunctionDecl.create("print",
-    b_print,
-    [ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
+	b_print,
+	[ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
 
 
 class FunctionCall(Node):
@@ -1199,7 +1200,7 @@ class PythonEval(Syntaxed):
 
 b['pythoneval'] = SyntaxedNodecl(Union,
 			   [t("python eval"), ch("text")],
-			   {'text': Slot(b['text'], exp)
+			   {'text': Slot(b['text'], exp)})
 
 
 

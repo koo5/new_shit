@@ -156,7 +156,7 @@ class Toggle(Widget):
 		super(Toggle, self).__init__(parent)
 		self.register_event_types('on_change')
 		self.value = value
-        self.texts = texts
+		self.texts = texts
 	def render(self):
 		return [TextTag(self.text)]
 	@property
