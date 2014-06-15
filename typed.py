@@ -1104,6 +1104,13 @@ SyntaxedNodecl(BuiltinFunctionDecl,
 				{'sig': Slot(b['function signature list'], lit),
 				 'name': Slot(b['text'], lit)})
 
+def b_squared(self, args):
+	return Number(args[0] * args[0])
+BuiltinFunctionDecl.create("squared",
+						   b_squared,
+	[	TypedArgument({'name': Text("number"), 'type': Ref(b['number'])})
+		Text("squared")])
+
 def b_multiply(self, args):
 	return Number(args[0] * args[1])
 BuiltinFunctionDecl.create("multiply",
