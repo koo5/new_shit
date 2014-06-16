@@ -1,4 +1,6 @@
 
+from dotdict import dotdict
+
 default_colors = {
 	"info item text": (244,244,244),
 	"bg": (0,0,0),
@@ -13,7 +15,7 @@ def cache(args):
 	global colors, invert, mono
 	invert = args.invert
 	mono = args.mono
-	colors = dict([(k, modify(v)) for k,v in default_colors.iteritems()])
+	colors = dotdict([(k, modify(v)) for k,v in default_colors.iteritems()])
 
 def modify(c, max=255):
 	if mono and c != (0,0,0):

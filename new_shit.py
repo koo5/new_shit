@@ -23,42 +23,27 @@ element.Element.hierarchy_infoitem = InfoItem #todo:fill it somewhere
 
 
 
-def by_xy((x,y)):
-	c = x / font_width
-	r = y / font_height
-	return c,r
-
-def under_cr((c,r)):
-	try:
-		return lines[r][c][1]["node"]
-	except:
-		return None
-
-def under_cursor():
-	return under_cr((cursor_c, cursor_r))
-
-def element_char_index():
-	try:
-		return lines[cursor_r][cursor_c][1]["char_index"]
-	except:
-		return None
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
 	log("resize")
-	screen_surface = pygame.display.set_mode(size,pygame.DOUBLEBUF|pygame.RESIZABLE)
+	screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
+	resize_frames()
+
+def resize_frames():
+	root.pos = (0,0)
+	root.width = screen_width / 2
+	root.height = screen_height
+	menu.pos = (root.width, 0)
+	menu.width = screen_width / 2
+	menu.height = screen_height - info.used_height
+	info.pos = (root.width, menu.height)
+	info.width = screen_width / 2
+	info.height = info.used_height
 
 def screen_rows():
 	return screen_surface.get_height() / font_height
-
-def first_nonblank():
-	r = 0
-	for ch,a in lines[cursor_r]:
-		if ch in [" ", u" "]:
-			r += 1
-		else:
-			return r
 
 def cursor_xy():
 	return (font_width * cursor_c,
@@ -154,11 +139,7 @@ def top_keypress(event):
 	return True
 
 def run():
-	root['program'].run()
-
-def toggle_brackets():
-	global brackets
-	brackets = not brackets
+	root.root['program'].run()
 
 def toggle_valid():
 	global valid_only
@@ -167,6 +148,7 @@ def toggle_valid():
 def toggle_arrows():
 	global arrows_visible
 	arrows_visible = not arrows_visible
+
 
 class KeypressEvent(object):
 	def __init__(self, e, pos, cursor):
@@ -195,67 +177,14 @@ class KeypressEvent(object):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s, pos=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod), self.pos))
 
-def move_cursor(x):
-	global cursor_c
-	cursor_c += x
-	if cursor_c > len(lines[cursor_r]):
-		updown_cursor(1)
-		cursor_c = 0
-	if cursor_c < 0: cursor_c = 0
-
-def updown_cursor(count):
-	global cursor_r, scroll_lines
-	cursor_r += count
-	scl = screen_lines()
-	if cursor_r > scl:
-		scroll_lines += cursor_r - scl
-		cursor_r = scl
-	if cursor_r < 0:
-		scroll_lines += cursor_r
-		cursor_r = 0
-		if scroll_lines < 0:
-			scroll_lines = 0
-
-
-
-
-
-def update_menu():
-	e = under_cursor()
-	menu.element = e
-	new_items = []
-	while e != None:
-		new_items += e.menu()
-		e = e.parent
-	new_items += menu.help()
-	new_items += top_help()
-	if valid_only:
-		new_items = [x for x in new_items if x.valid]
-	menu.items = new_items
-
-
-
-def handle(e):
-	if top_keypress(e):
-		return
-
-	if menu != None and menu.keypress(e):
-		return
-
-	element = under_cursor()
-	while element != None and not element.on_keypress(e):
-		element = element.parent
-	if element != None:#some element handled it
-		move_cursor(root.post_render_move_caret)
-		root.post_render_move_caret = 0
-		return
 
 def keypress(event):
-	pos = element_char_index()
-	handle(KeypressEvent(event, pos, (cursor_c, cursor_r)))
-	render()
-	update_menu()
-	draw()
+	if top_keypress(e):
+		return
+	if menu.keypress(e):
+		return
+	root.keypress(e)
+
 
 def mousedown(e):
 #	log(e.button)
@@ -263,10 +192,9 @@ def mousedown(e):
 	if n:
 		n.on_mouse_press(e.button)
 		render()
-		draw()
 
 def process_event(event):
-	global screen_surface
+
 	if event.type == pygame.QUIT:
 		bye()
 
@@ -278,15 +206,14 @@ def process_event(event):
 
 	if event.type == pygame.VIDEORESIZE:
 		resize(event.dict['size'])
-		render()
 		draw()
 
 
 
 def draw():
-	screen_surface.blit(root.draw(),(0,0))
-	screen_surface.blit(menu.draw(),(screen_width / 2,0))
-	screen_surface.blit(info.draw(),(screen_width / 2,screen_height / 2))
+	screen_surface.blit(root.draw(),root.pos)
+	screen_surface.blit(menu.draw(),menu.pos)
+	screen_surface.blit(info.draw(),info.pos)
 	pygame.display.flip()
 
 def bye():
@@ -323,7 +250,7 @@ repeat_delay, repeat_rate = int(s[3]), int(s[6])
 pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
 
 
-flags = pygame.RESIZABLE
+flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 screen_surface = None
 brackets = True
 valid_only = False
