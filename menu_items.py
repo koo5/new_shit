@@ -7,8 +7,6 @@ class MenuItem(Element):
 		super(MenuItem, self).__init__()
 		#self.brackets = ('<','>')
 
-	@property
-	def crrect(self):
 
 
 class InfoItem(MenuItem):

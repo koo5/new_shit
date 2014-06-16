@@ -1108,7 +1108,7 @@ def b_squared(self, args):
 	return Number(args[0] * args[0])
 BuiltinFunctionDecl.create("squared",
 						   b_squared,
-	[	TypedArgument({'name': Text("number"), 'type': Ref(b['number'])})
+	[	TypedArgument({'name': Text("number"), 'type': Ref(b['number'])}),
 		Text("squared")])
 
 def b_multiply(self, args):

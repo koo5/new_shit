@@ -39,12 +39,19 @@ def test_squash():
 	assert squash([("a", 1), ("b", 2), ("a", 3)]) == {"a": 3, "b": 2}
 
 
-def newline(lines, indent, atts):
+def newline(lines, indent, atts, elem):
+	elem._render_lines[-1]["end"] = len(lines[-1])
+
 	lines.append([])
 	for i in range(indent * _indent_width):
 		#keeps the attributes of the last node,
 		#but lets see how this works in the ui..
 		charadd(lines[-1], " ", atts)
+
+	elem._render_lines.append({
+		"start": len(lines[-1]),
+		"line": len(lines)})
+
 
 def charadd(line, char, atts):
 	assert(isinstance(atts, list))
@@ -76,7 +83,7 @@ def _project(lines, elem, atts, indent):
 
 	elem._render_lines = [
 		{"start": len(lines[-1]),
-		 "line": len(lines[-1])}
+		 "line": len(lines)}]
 
 	tags = [AttTag("node", elem)]
 
@@ -127,10 +134,10 @@ def _project(lines, elem, atts, indent):
 			for char in tag.text:
 				attadd(atts, "char_index", pos)
 				if char == "\n":
-					newline(lines, indent, atts)
+					newline(lines, indent, atts, elem)
 				else:
 					if len(lines[-1]) >= _width:
-						newline(lines, indent, atts)
+						newline(lines, indent, atts, elem)
 					charadd(lines[-1], char, atts)
 				atts.pop()
 				pos += 1
@@ -165,8 +172,7 @@ def _project(lines, elem, atts, indent):
 			raise hell
 
 
-	elem._render_end_line = len(lines) - 1
-	elem._render_end_char = len(lines[-1])
+	elem._render_lines[-1]["end"] = len(lines[-1])
 
 
 def find(node, lines):

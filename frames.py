@@ -11,8 +11,18 @@ def change_font_size():
 	font_width, font_height = font.size("X")
 
 
+class Frame(object):
+	def on_mouse_press(self, e):
 
-class Root(object):
+
+	def keypress(self, e):
+
+
+	def draw(self):
+
+
+
+class Root(Frame):
 	def __init__(self, size):
 		self.cursor_c = self.cursor_r = 0
 		self.root = typed.make_root()
@@ -87,11 +97,16 @@ class Root(object):
 
 
 
-class Menu(Root):
+class Menu(Frame):
 	def __init__(self, size):
 		self.root = menu.Menu()
 		self.scroll_lines = 0
 		self.size = size
+
+	def render():
+		self.arrows = []
+		lines = project.project(self.root, self.size[0])
+
 
 	def draw(self):
 		self.render()
@@ -104,4 +119,11 @@ class Menu(Root):
 
 	def draw_rects(self, s):
 		for i in self.root.items:
+			startline = i._render_lines[0]["line"]
+			endline = i._render_lines[-1]["line"]
+			startchar = min([c["start"] for c in i._render_lines)
+			endchar   = max([c["end"],
+
+
+
 
