@@ -659,7 +659,10 @@ class SyntaxedNodecl(NodeclBase):
 		instance_class.decl = self
 		self.instance_slots = instance_slots
 		self.instance_syntax = instance_syntax
-		b[self.name] = self
+		try:
+			b[self.name] = self
+		except:
+			b[self.instance_class.__name__.lower()] = self
 
 
 
@@ -812,7 +815,7 @@ WorksAs.b("list", "expression")
 
 Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
-b['module'] = SyntaxedNodecl(Module,
+SyntaxedNodecl(Module,
 			   ["module:\n", ch("statements"), t("end.")],
 			   {'statements': Slot(b['statements'], lit)})
 
@@ -821,8 +824,8 @@ Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtyp
 class Union(Syntaxed):
 	def __init__(self, children):
 		super(Union, self).__init__(children)
-
-b['union'] = SyntaxedNodecl(Union,
+		#assert(self.syntax[1].name == "items")
+SyntaxedNodecl(Union,
 			   [t("union of"), ch("items")],
 			   {'items': Slot(b['list'].make_type({'itemtype': b['type']}))}) #todo:should work with the definition from above instead
 b['union'].notes="""should be "type or type or type..", but Syntaxed with a list is an easier implementation for now"""
@@ -847,9 +850,11 @@ leftmost child of the second node
 
 class Compiler(Node):
 	"""the awkward input node with orange brackets"""
-	def __init__(self, type):
+	def __init__(self, slot):
 		super(Compiler, self).__init__()
-		self.type = type
+		self.slot = slot
+		self.type = slot.type
+		assert(isinstance(slot, Slot))
 		self.items = []
 		self.add(Text(""))
 		self.brackets_color = (255,155,0)
@@ -883,7 +888,7 @@ class Compiler(Node):
 			r += [ElementTag(item)]
 		#r += [t("]")]
 		if len(self.items) == 1 and isinstance(self.items[0], Text) and	self.items[0].pyval == "":
-			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()] #hint at the type expected
+			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()] #hint the expected type
 		return r
 
 	def __getitem__(self, i):
@@ -1054,8 +1059,8 @@ class FunctionDefinition(FunctionDefinitionBase):
 
 SyntaxedNodecl(FunctionDefinition,
 			   [t("deffun:"), ch("sig"), t(":\n"), ch("body")],
-				{'sig': b['function signature list'],
-				 'body': b['statements']})
+				{'sig': Slot(b['function signature list']),
+				 'body': Slot(b['statements'])})
 
 
 """
@@ -1205,7 +1210,7 @@ class PythonEval(Syntaxed):
 	def __init__(self, children):
 		super(PythonEval, self).__init__(children)
 
-b['pythoneval'] = SyntaxedNodecl(Union,
+SyntaxedNodecl(PythonEval,
 			   [t("python eval"), ch("text")],
 			   {'text': Slot(b['text'], exp)})
 

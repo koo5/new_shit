@@ -77,6 +77,7 @@ def _project(lines, elem, atts, indent):
 	"""calls elem.tags(), then calls itself recursively on widget,
 	child and element tags.	lines and atts are passed and mutated"""
 	assert(isinstance(elem, (asselement.Element, assnodes.CompilerMenuItem)))
+	print elem
 	assert(isinstance(lines, list))
 	assert(isinstance(atts, list))
 	assert(isinstance(indent, int))
@@ -87,16 +88,10 @@ def _project(lines, elem, atts, indent):
 
 	tags = [AttTag("node", elem)]
 
-	if visualize_elements:# and isinstance(elem, Node):
-		pos = -1 # because of the "<"
-		tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag()]
-		tags += elem.tags()
-		tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
-	else:
-		pos = 0
-		tags += elem.tags()
-
-
+	pos = -1 # because of the "<"
+	tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag()]
+	tags += elem.tags()
+	tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
 	#results of eval
 	if isinstance(elem, Node):
@@ -130,8 +125,8 @@ def _project(lines, elem, atts, indent):
 			tag = ElementTag(elem.__dict__[tag.name]) #get widget
 
 	#now real stuff
-		if isinstance(tag, TextTag):
-			for char in tag.text:
+		if isinstance(tag, str):
+			for char in tag:
 				attadd(atts, "char_index", pos)
 				if char == "\n":
 					newline(lines, indent, atts, elem)
@@ -144,7 +139,7 @@ def _project(lines, elem, atts, indent):
 
 		#recurse
 		elif isinstance(tag, ElementTag):
-			_project(lines, tag.element, atts, indent, visualize_elements)
+			_project(lines, tag.element, atts, indent)
 
 		#attributes
 		elif isinstance(tag, EndTag):
@@ -169,8 +164,7 @@ def _project(lines, elem, atts, indent):
 		#elif isinstance(tag, MenuTag):
 		#	screen['menu'] = tag
 		else:
-			raise hell
-
+			raise Exception("is %s a tag?" % tag)
 
 	elem._render_lines[-1]["end"] = len(lines[-1])
 

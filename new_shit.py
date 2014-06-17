@@ -125,9 +125,9 @@ def process_event(event):
 
 
 def draw():
-	screen_surface.blit(root.draw(),root.pos)
-	screen_surface.blit(menu.draw(),menu.pos)
-	screen_surface.blit(info.draw(),info.pos)
+	screen_surface.blit(root.draw(),root.rect.topleft)
+	screen_surface.blit(menu.draw(),menu.rect.topleft)
+	screen_surface.blit(info.draw(),info.rect.topleft)
 	pygame.display.flip()
 
 def bye():
@@ -186,7 +186,7 @@ root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.i
 root.cursor_c += 1
 
 
-menu.update()
+menu.update(root)
 draw()
 
 

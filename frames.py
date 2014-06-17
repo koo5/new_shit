@@ -1,7 +1,8 @@
 import pygame
-from pygame import font
+from pygame import draw
 
-from colors import colors
+
+from colors import color, colors
 import project
 import typed
 import menu
@@ -39,6 +40,15 @@ class Frame(object):
 		for i in s.items[s.scroll:s.scroll + s.rows]:
 			s.lines.extend(project.project(i, s.cols))
 
+	@property
+	def rows(self):
+		return self.rect.h / font_height
+
+
+	@property
+	def cols(self):
+		return self.rect.w / font_width
+
 
 def xy2cr((x, y)):
 	c = x / font_width
@@ -53,6 +63,7 @@ class Root(Frame):
 		self.root = typed.make_root()
 		self.root.fix_parents()
 		self.scroll_lines = 0
+		self.arrows_visible = True
 
 	def and_sides(s,e):
 		if e.all[pygame.K_LEFT]: s.move_cursor_h(-1)
@@ -103,9 +114,6 @@ class Root(Frame):
 		self.cursor_r = r
 		self.scroll_lines = sl
 
-	@property
-	def rows(self):
-		return self.height / font_height
 
 	def render(self):
 		self.arrows = []
@@ -136,17 +144,19 @@ class Root(Frame):
 						self.arrows.append(((c,r),target))
 
 	def draw_lines(self):
-		s = pygame.Surface(self.size)
+		s = pygame.Surface((self.rect.w, self.rect.h))
 		s.fill(colors.bg)
 		uc = self.under_cursor()
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
 				x = font_width * col
 				y = font_height * row
+				fg = color(char[1]['color'])
+				bg = color("bg" if not char[1]['node'] == uc else (40,0,0)) #highlight element under cursor
 				sur = font.render(
 					char[0],True,
-					colors[char[1]['color']],
-					colors["bg"] if not char[1]['node'] == uc else (40,0,0)) #highlight element under cursor
+					fg,
+					bg)
 				s.blit(sur,(x,y))
 		return s
 
@@ -265,6 +275,7 @@ class Menu(Frame):
 		s.scroll = 0
 		s.sel = 0
 		s._items = []
+		s.valid_only = False
 
 	@property
 	def items(self):
@@ -283,12 +294,21 @@ class Menu(Frame):
 		return surface
 
 	def draw_rects(self, s):
-		for i in self.items: go by lines instead?
+		#for [l[0][1]["node"] for l in s.lines].uniq()
+		for i in self.items:
 			startline = i._render_lines[0]["line"]
 			endline = i._render_lines[-1]["line"]
-			startchar = min([c["start"] for c in i._render_lines])
+			startchar = 0#min([c["start"] for c in i._render_lines])
 			endchar   = max([c["end"] for c in i._render_lines])
-
+			r = pygame.Rect(startchar * font_width,
+			                (startline + s.scroll) * font_height,
+			                endchar * font_width,
+			                (endline + s.scroll) * font_height)
+			if i == s.selected:
+				c = colors.menu_rect_selected
+			else:
+				c = colors.menu_rect
+			draw.rect(s, c, r, 1)
 
 	def update(s, root):
 		e = root.under_cursor()
@@ -324,6 +344,10 @@ class Menu(Frame):
 		print len(self.items), self.sel
 
 
+	def toggle_valid(s):
+		s.valid_only = not s.valid_only
+
+
 class Info(Frame):
 
 	def __init__(s):
@@ -353,8 +377,17 @@ class Info(Frame):
 	def used_height(s):
 		return len(s.lines) * font_height
 
-	def toggle_valid(s):
-		s.valid_only = not s.valid_only
+
+
+	def render(self):
+		r = [TextTag("info  "), ColorTag((100,100,100)), WidgetTag(visible_toggle), EndTag()]
+		for i in self.items:
+			if not self.hidden_toggle.value or i.visible_toggle.value:
+				r += i.render()
+		return r
+
 
 #	def draw(self):
 
+
+#todo: definition / insight frame? preferably able to float in multiple numbers around the code in root

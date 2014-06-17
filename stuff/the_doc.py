@@ -341,3 +341,9 @@ but i think what i got so far is relevant
 
 PYTHONPATH=~/pygame_cffi pypy new_shit/new_shit.py
 
+
+
+Levels of detail
+IP systems also offer several levels of detail, allowing the programmer to "zoom in" or out. In the example above, the programmer could zoom out to get a level that would say something like:
+<<print the numbers 1 to 10>>
+en.wikipedia.org/wiki/Intentional_programming
