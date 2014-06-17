@@ -6,21 +6,20 @@ import argparse, sys, os
 
 
 import pygame
-from pygame import display, image, font
+from pygame import display, image
 
 
-from logger import bt, log, ping
+from logger import log
 import project
-import tags as tags_module
 import colors
-from menu import Menu, InfoItem
-import typed, element
 import frames
 
 
-element.Element.hierarchy_infoitem = InfoItem #todo:fill it somewhere
 
 
+def change_font_size():
+	frames.font = pygame.font.SysFont('monospace', args.font_size)
+	frames.font_width, frames.font_height = frames.font.size("X")
 
 
 
@@ -32,50 +31,15 @@ def resize(size):
 	resize_frames()
 
 def resize_frames():
-	root.pos = (0,0)
-	root.width = screen_width / 2
-	root.height = screen_height
-	menu.pos = (root.width, 0)
-	menu.width = screen_width / 2
-	menu.height = screen_height - info.used_height
-	info.pos = (root.width, menu.height)
-	info.width = screen_width / 2
-	info.height = info.used_height
-
-def screen_rows():
-	return screen_surface.get_height() / font_height
-
-def cursor_xy():
-	return (font_width * cursor_c,
-			font_height * cursor_r,
-			font_height * (cursor_r+1))
-
-def and_sides(event):
-	if event.all[pygame.K_LEFT]: move_cursor(-1)
-	if event.all[pygame.K_RIGHT]: move_cursor(1)
-
-def and_updown(event):
-	if event.all[pygame.K_UP]: updown_cursor(-1)
-	if event.all[pygame.K_DOWN]: updown_cursor(1)
+	root.rect.topleft = (0,0)
+	root.rect.width = screen_width / 2
+	root.rect.height = screen_height
+	menu.rect.topleft = (root.rect.w, 0)
+	menu.rect.size = (screen_width / 2, screen_height - info.used_height)
+	info.rect.topleft = (root.rect.w, menu.rect.h)
+	info.rect.size = (screen_width / 2,	info.used_height)
 
 
-top_help = [InfoItem(t) for t in [
-	"ctrl + =,- : font size",
-	"f10 : toggle brackets",
-	"f9 : toggle valid-only items in menu",
-	"f8 : toggle arrows",
-	"f5 : eval",
-	"",
-	"[text] are textboxes",
-	"orange <>'s denote Compiler",
-	"red <>'s enclose nodes or other widgets",
-	"(gray)'s are the type the compiler expects",
-	" (they should go under the text box)",
-	"currently you can only insert nodes manually",
-	" by selecting them from the menu, with prolog,",
-	" the compiler will start guessing what you mean"
-	]]
-	#,	"f12 : normalize syntaxes"
 
 def top_keypress(event):
 	global cursor_r,cursor_c
@@ -88,76 +52,24 @@ def top_keypress(event):
 		elif event.uni == '-':
 			args.font_size -= 1
 			change_font_size()
-		elif k == pygame.K_LEFT:
-			cursor_c -= 1
-		elif k == pygame.K_RIGHT:
-			cursor_c += 1
 		else:
 			return False
 	else:
-		"""if k == pygame.K_F12:
-			for item in root.flatten():
-				if isinstance(item, typed.Syntaxed):
-					item.view_normalized = not item.view_normalized
-		el"""
-		if k == pygame.K_F10:
-			toggle_brackets()
-		elif k == pygame.K_F9:
-			toggle_valid()
-		elif k == pygame.K_F8:
-			toggle_arrows()
-		elif k == pygame.K_F5:
-			run()
-		elif k == pygame.K_ESCAPE:
+		if k == pygame.K_ESCAPE:
 			bye()
-		elif k == pygame.K_UP:
-			updown_cursor(-1)
-			and_sides(event)
-		elif k == pygame.K_DOWN:
-			updown_cursor(+1)
-			and_sides(event)
-		elif k == pygame.K_LEFT:
-			move_cursor(-1)
-			and_updown(event)
-		elif k == pygame.K_RIGHT:
-			move_cursor(+1)
-			and_updown(event)
-		elif k == pygame.K_HOME:
-			if cursor_c != 0:
-				cursor_c = 0
-			else:
-				cursor_c = first_nonblank()
-		elif k == pygame.K_END:
-			cursor_c = len(lines[cursor_r])
-		elif k == pygame.K_PAGEUP:
-			updown_cursor(-10)
-		elif k == pygame.K_PAGEDOWN:
-			updown_cursor(10)
-
 		else:
 			return False
 	return True
 
-def run():
-	root.root['program'].run()
 
-def toggle_valid():
-	global valid_only
-	valid_only = not valid_only
-
-def toggle_arrows():
-	global arrows_visible
-	arrows_visible = not arrows_visible
 
 
 class KeypressEvent(object):
-	def __init__(self, e, pos, cursor):
+	def __init__(self, e):
 		self.uni = e.unicode
 		self.key = e.key
 		self.mod = e.mod
-		self.pos = pos
 		self.all = pygame.key.get_pressed()
-		self.cursor = cursor
 
 		if args.webos:
 			self.webos_hack()
@@ -174,11 +86,12 @@ class KeypressEvent(object):
 				self.key = pygame.K_RIGHT
 
 	def __repr__(self):
-		return ("KeypressEvent(key=%s, uni=%s, mod=%s, pos=%s)" %
-			(pygame.key.name(self.key), self.uni, bin(self.mod), self.pos))
+		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
+			(pygame.key.name(self.key), self.uni, bin(self.mod)))
 
 
 def keypress(event):
+	e = KeypressEvent(event)
 	if top_keypress(e):
 		return
 	if menu.keypress(e):
@@ -187,11 +100,12 @@ def keypress(event):
 
 
 def mousedown(e):
-#	log(e.button)
-	n = under_cr(by_xy(e.pos))
-	if n:
-		n.on_mouse_press(e.button)
-		render()
+	for f in frames:
+		if f.rect.collidepoint(e.pos):
+			e.pos.x -= f.rect.x
+			e.pos.y -= f.rect.y
+			f.mousedown(e)
+			break
 
 def process_event(event):
 
@@ -248,30 +162,21 @@ pygame.font.init()
 s = os.popen('xset -q  | grep "repeat delay"').read().split()
 repeat_delay, repeat_rate = int(s[3]), int(s[6])
 pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
-
-
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 screen_surface = None
-brackets = True
-valid_only = False
-arrows_visible = True
-
-
 display.set_caption('lemon v 0.0 streamlined insane prototype with types')
 icon = image.load('icon32x32.png')
 display.set_icon(icon)
-resize((1280,500))
-
 
 change_font_size()
 colors.cache(args)
 
-
-
 root = frames.Root()
-menu = frames.Menue()
+menu = frames.Menu()
 info = frames.Info()
+frames = [root, menu, info]
 
+resize((1280,500))
 
 
 
@@ -281,7 +186,7 @@ root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.i
 root.cursor_c += 1
 
 
-update_menu()
+menu.update()
 draw()
 
 

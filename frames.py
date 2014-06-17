@@ -1,24 +1,44 @@
+import pygame
+from pygame import font
+
 from colors import colors
 import project
 import typed
 import menu
 
+from menu_items import InfoItem
 
+font = font_height = font_width = 666
 
-def change_font_size():
-	global font, font_width, font_height
-	font = pygame.font.SysFont('monospace', args.font_size)
-	font_width, font_height = font.size("X")
 
 
 class Frame(object):
 #	def on_mouse_press(self, e):
-#	def keypress(self, e):
+#	def on_keypress(self, e):
 #	def draw(self):
 
-	@property
-	def pos(self):
-		return (self.width, self.height)
+	def under_cr(self, (c, r)):
+		try:
+			return self.lines[r][c][1]["node"]
+		except:
+			return None
+
+
+	def mousedown(s,e):
+		#	log(e.button)
+		n = s.under_cr(xy2cr(e.pos))
+		if n:
+			n.on_mouse_press(e.button)
+
+	def __init__(s):
+		s.rect = pygame.Rect((6,6,6,6))
+		s.lines = []
+
+	def render(s):
+		s.lines = []
+		for i in s.items[s.scroll:s.scroll + s.rows]:
+			s.lines.extend(project.project(i, s.cols))
+
 
 def xy2cr((x, y)):
 	c = x / font_width
@@ -27,18 +47,20 @@ def xy2cr((x, y)):
 
 
 class Root(Frame):
-	def __init__(self, size):
+	def __init__(self):
+		super(Root, self).__init__()
 		self.cursor_c = self.cursor_r = 0
 		self.root = typed.make_root()
 		self.root.fix_parents()
 		self.scroll_lines = 0
-		self.size = size
 
-	def under_cr(self, (c, r)):
-		try:
-			return self.lines[r][c][1]["node"]
-		except:
-			return None
+	def and_sides(s,e):
+		if e.all[pygame.K_LEFT]: s.move_cursor_h(-1)
+		if e.all[pygame.K_RIGHT]: s.move_cursor_h(1)
+
+	def and_updown(event):
+		if event.all[pygame.K_UP]: updown_cursor(-1)
+		if event.all[pygame.K_DOWN]: updown_cursor(1)
 
 	def under_cursor(self):
 		return self.under_cr((self.cursor_c, self.cursor_r))
@@ -65,7 +87,7 @@ class Root(Frame):
 			s.move_cursor_v(1)
 			s.cursor_c = 0
 		if s.cursor_c < 0: s.cursor_c = 0
-		return old = s.cursor_c, s.cursor_r
+		return old == s.cursor_c, s.cursor_r
 
 	def move_cursor_v(self, count):
 		r = self.cursor_r + count
@@ -85,9 +107,9 @@ class Root(Frame):
 	def rows(self):
 		return self.height / font_height
 
-	def render():
+	def render(self):
 		self.arrows = []
-		lines = project.project(self.root, self.size[0])
+		lines = project.project(self.root, self.rect.w)
 		self.lines = lines[self.scroll_lines:self.scroll_lines + self.rows]
 
 		if __debug__:
@@ -104,14 +126,14 @@ class Root(Frame):
 
 	def generate_arrows(self):
 		self.arrows = []
-		if not arrows_visible: return
+		if not self.arrows_visible: return
 
 		for r,l in enumerate(self.lines):
 			for c,i in enumerate(l):
 				if i[1].has_key("arrow"):
 					target = project.find(i[1]["arrow"], self.lines)
 					if target:
-						arrows.append(((c,r),target))
+						self.arrows.append(((c,r),target))
 
 	def draw_lines(self):
 		s = pygame.Surface(self.size)
@@ -128,24 +150,29 @@ class Root(Frame):
 				s.blit(sur,(x,y))
 		return s
 
-	def draw_arrows(sself, ur):
+	def draw_arrows(s, surface):
 		#todo: real arrows would be cool
-		for ((c,r),(c2,r2)) in self.arrows:
+		for ((c,r),(c2,r2)) in s.arrows:
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
-			pygame.draw.line(sur, (55,55,55), (x,y),(x2,y2))
+			pygame.draw.line(surface, (55,55,55), (x,y),(x2,y2))
 
 	def draw(self):
 		self.render()
 		self.generate_arrows()
-		s = self.draw()
-		draw_arrows(s)
+		s = self.draw_lines()
+		self.draw_arrows(s)
 		self.draw_cursor(s)
 		return s
 
 	def draw_cursor(self, s):
-		x, y, y2 = cursor_xy()
+		x, y, y2 = self.cursor_xy()
 		pygame.draw.rect(s, colors.cursor,
 						 (x, y, 1, y2 - y,))
+
+	def cursor_xy(s):
+		return (font_width * s.cursor_c,
+		        font_height * s.cursor_r,
+		        font_height * (s.cursor_r + 1))
 
 
 	def prev_elem(s):
@@ -160,12 +187,24 @@ class Root(Frame):
 			if e != s.under_cursor():
 				break
 
+	def cursor_home(s):
+		if s.cursor_c != 0:
+			s.cursor_c = 0
+		else:
+			s.cursor_c = s.first_nonblank()
+
+	def cursor_end(s):
+		s.cursor_c = len(s.lines[s.cursor_r])
+
+	def run(s):
+		s.root['program'].run()
+
 	def top_keypress(s, event):
 
 		k = event.key
 
 		if pygame.KMOD_CTRL & event.mod:
-			elif k == pygame.K_LEFT:
+			if k == pygame.K_LEFT:
 				s.prev_elem()
 			elif k == pygame.K_RIGHT:
 				s.next_elem()
@@ -177,57 +216,55 @@ class Root(Frame):
 					if isinstance(item, typed.Syntaxed):
 						item.view_normalized = not item.view_normalized
 			el"""
-			elif k == pygame.K_F8:
-				toggle_arrows()
+			if k == pygame.K_F8:
+				s.toggle_arrows()
 			elif k == pygame.K_F5:
-				run()
+				s.run()
 			elif k == pygame.K_UP:
 				s.move_cursor_v(-1)
 				s.and_sides(event)
 			elif k == pygame.K_DOWN:
-				s.move_cursor.v(+1)
+				s.move_cursor_v(+1)
 				s.and_sides(event)
 			elif k == pygame.K_LEFT:
-				move_cursor(-1)
-				and_updown(event)
+				s.move_cursor_h(-1)
+				s.and_updown(event)
 			elif k == pygame.K_RIGHT:
-				move_cursor(+1)
-				and_updown(event)
+				s.move_cursor_h(+1)
+				s.and_updown(event)
 			elif k == pygame.K_HOME:
-				if cursor_c != 0:
-					cursor_c = 0
-				else:
-					cursor_c = first_nonblank()
+				s.cursor_home()
 			elif k == pygame.K_END:
-				cursor_c = len(lines[cursor_r])
+				s.cursor_end()
 			elif k == pygame.K_PAGEUP:
-				updown_cursor(-10)
+				s.move_cursor_v(-10)
 			elif k == pygame.K_PAGEDOWN:
-				updown_cursor(10)
-
+				s.move_cursor_v(10)
 			else:
 				return False
 		return True
 
 
-def keypress(self, event):
-	event = KeypressEvent(event, self.element_char_index(), (self.cursor_c, self.cursor_r)))
+def on_keypress(self, event):
+	event.pos = self.element_char_index()
+	event.cursor = (self.cursor_c, self.cursor_r)
+	if self.top_keypress(event):
+		return True
 	element = self.under_cursor()
 	while element != None and not element.on_keypress(event):
 		element = element.parent
 	if element != None:#some element handled it
-		self.move_cursor(root.post_render_move_caret)
-		root.post_render_move_caret = 0
-		return
-
-
+		self.move_cursor(self.root.post_render_move_caret)
+		self.root.post_render_move_caret = 0
+		return True
 
 
 class Menu(Frame):
-	def __init__(self, size):
-		self.scroll = 0
-		self.sel = 0
-		self._items = []
+	def __init__(s):
+		super(Menu, s).__init__()
+		s.scroll = 0
+		s.sel = 0
+		s._items = []
 
 	@property
 	def items(self):
@@ -239,38 +276,85 @@ class Menu(Frame):
 			self.sel = len(value) - 1
 		self._items = value
 
-	def render():
-		self.lines = []
-		for i in self.items[self.scroll:self.scroll + self.rows]:
-			self.lines.extend(project.project(i, self.cols)
-
-	def draw(self):
-		self.render()
-		s = self.draw_lines()
-		self.draw_rects(s)
-		return s
+	def draw(s):
+		s.render()
+		surface = s.draw_lines()
+		s.draw_rects(surface)
+		return surface
 
 	def draw_rects(self, s):
-		for i in self.root.items:
+		for i in self.items: go by lines instead?
 			startline = i._render_lines[0]["line"]
 			endline = i._render_lines[-1]["line"]
-			startchar = min([c["start"] for c in i._render_lines)
-			endchar   = max([c["end"] for c in i._render_lines)
+			startchar = min([c["start"] for c in i._render_lines])
+			endchar   = max([c["end"] for c in i._render_lines])
 
 
+	def update(s, root):
+		e = root.under_cursor()
+		s.element = e
+		new_items = []
+		while e != None:
+			new_items += e.menu()
+			e = e.parent
+		if s.valid_only:
+			new_items = [x for x in new_items if x.valid]
+		s.items = new_items
 
 
+	def on_keypress(self, e):
+		if e.mod & pygame.KMOD_CTRL:
+			if e.key == pygame.K_UP:
+				self.move(-1)
+				return True
+			if e.key == pygame.K_DOWN:
+				self.move(1)
+				return True
+		if e.key == pygame.K_SPACE:
+			self.element.menu_item_selected(self.items[self.sel], None)
+			self.sel = 0
+			return True
 
-def update_menu():
-	e = under_cursor()
-	menu.element = e
-	new_items = []
-	while e != None:
-		new_items += e.menu()
-		e = e.parent
-	new_items += menu.help()
-	new_items += top_help()
-	if valid_only:
-		new_items = [x for x in new_items if x.valid]
-	menu.items = new_items
+
+	def move(self, y):
+		ping()
+		self.sel += y
+		if self.sel < 0: self.sel = 0
+		if self.sel >= len(self.items): self.sel = len(self.items) - 1
+		print len(self.items), self.sel
+
+
+class Info(Frame):
+
+	def __init__(s):
+		super(Info, s).__init__()
+		s.top_info = [InfoItem(t) for t in [
+			"ctrl + =,- : font size",
+			"f10 : toggle brackets",
+			"f9 : toggle valid-only items in menu",
+			"f8 : toggle arrows",
+			"f5 : eval",
+			"ctrl + up, down: menu movement",
+			"space: menu selection",
+			"",
+			"[text] are textboxes",
+			"orange <>'s denote Compiler",
+			"red <>'s enclose nodes or other widgets",
+			"(gray)'s are the type the compiler expects",
+			" (they should go under the text box)",
+			"currently you can only insert nodes manually",
+			" by selecting them from the menu, with prolog,",
+			" the compiler will start guessing what you mean"
+		]]
+		#,	"f12 : normalize syntaxes"
+		s.hierarchy_infoitem = InfoItem("bla")
+
+	@property
+	def used_height(s):
+		return len(s.lines) * font_height
+
+	def toggle_valid(s):
+		s.valid_only = not s.valid_only
+
+#	def draw(self):
 
