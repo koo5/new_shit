@@ -92,9 +92,9 @@ def keypress(event):
 	e = KeypressEvent(event)
 	if top_keypress(e):
 		return
-	if menu.keypress(e):
+	if menu.on_keypress(e):
 		return
-	root.keypress(e)
+	root.on_keypress(e)
 
 
 def mousedown(e):
@@ -111,9 +111,11 @@ def process_event(event):
 
 	if event.type == pygame.KEYDOWN:
 		keypress(event)
+		draw()
 
 	if event.type == pygame.MOUSEBUTTONDOWN:
 		mousedown(event)
+		draw()
 
 	if event.type == pygame.VIDEORESIZE:
 		resize(event.dict['size'])

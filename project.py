@@ -5,7 +5,6 @@
 functon project takes a list of tags created by root.tags()
  and outputs a list of lines
  line is a list of tuples: (character, attributes)
- break line on "\n".
 """
 
 from tags import *
@@ -39,15 +38,14 @@ def test_squash():
 
 
 def newline(p, elem):
-	elem._render_lines[-1]["end"] = len(p.lines[-1])
+	elem._render_lines[p.frame][-1]["end"] = len(p.lines[-1])
 
 	p.lines.append([])
 	for i in range(p.indent * p.indent_width):
 		#keeps the attributes of the last node,
 		#but lets see how this works in the ui..
 		charadd(p.lines[-1], " ", p.atts)
-
-	elem._render_lines.append({
+	elem._render_lines[p.frame].append({
 		"start": len(p.lines[-1]),
 		"line": len(p.lines)-1})
 
@@ -62,7 +60,7 @@ def attadd(atts, key, val):
 	assert(isinstance(key, str))
 	atts.append((key, val))
 
-def new_p(cols):
+def new_p(cols, frame):
 	p = dotdict()
 	p.width = cols
 	p.indent_width = 4
@@ -70,16 +68,17 @@ def new_p(cols):
 	p.lines = [[]]
 	p.arrows = []
 	p.indent = 0
+	p.frame = frame
 	return p
 
-def project(root, cols):
-	p = new_p(cols)
+def project(root, cols, frame):
+	p = new_p(cols, frame)
 	_project_elem(p, root)
 	return p
 
-def project_tags(tags, cols):
-	p = new_p(cols)
-	p._render_lines = [{}]
+def project_tags(tags, cols, frame):
+	p = new_p(cols, frame)
+	p._render_lines = {frame:[{}]}
 	_project_tags(p, p, tags, 0)
 	return p
 
@@ -88,10 +87,6 @@ def _project_elem(p, elem):
 	assert(isinstance(p.lines, list))
 	assert(isinstance(p.atts, list))
 	assert(isinstance(p.indent, int))
-
-	elem._render_lines = [
-		{"start": len(p.lines[-1]),
-		 "line": len(p.lines)-1}]
 
 	tags = [AttTag("node", elem)]
 
@@ -115,7 +110,14 @@ def _project_elem(p, elem):
 
 	tags += [EndTag()]
 
+	elem._render_lines[p.frame] = [
+		{"start": len(p.lines[-1]),
+		 "line": len(p.lines)-1}]
+
 	_project_tags(p, elem, tags, pos)
+
+	elem._render_lines[p.frame][-1]["end"] = len(p.lines[-1])
+
 
 def _project_tags(p, elem, tags, pos):
 
@@ -175,7 +177,6 @@ def _project_tags(p, elem, tags, pos):
 		else:
 			raise Exception("is %s a tag?" % tag)
 
-	elem._render_lines[-1]["end"] = len(p.lines[-1]) - 1
 
 
 

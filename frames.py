@@ -40,10 +40,9 @@ class Frame(object):
 		except:
 			return None
 
-
-	def mousedown(s,e):
+	def mousedown(s,e,pos):
 		#	log(e.button)
-		n = s.under_cr(xy2cr(e.pos))
+		n = s.under_cr(xy2cr(pos))
 		if n:
 			n.on_mouse_press(e.button)
 
@@ -51,11 +50,15 @@ class Frame(object):
 		s.rect = pygame.Rect((6,6,6,6))
 		s.lines = []
 
+	@property
+	def items_on_screen(s):
+		return s.items[s.scroll:s.scroll + s.rows]
+
 	def render(s):
 		r = []
-		for i in s.items[s.scroll:s.scroll + s.rows]:
+		for i in s.items_on_screen:
 			r += [ElementTag(i), "\n"]
-		s.lines = project.project_tags(r, s.cols).lines
+		s.lines = project.project_tags(r, s.cols, s).lines
 
 	@property
 	def rows(self):
@@ -86,9 +89,9 @@ class Root(Frame):
 		if e.all[pygame.K_LEFT]: s.move_cursor_h(-1)
 		if e.all[pygame.K_RIGHT]: s.move_cursor_h(1)
 
-	def and_updown(event):
-		if event.all[pygame.K_UP]: updown_cursor(-1)
-		if event.all[pygame.K_DOWN]: updown_cursor(1)
+	def and_updown(s,event):
+		if event.all[pygame.K_UP]: s.move_cursor_v(-1)
+		if event.all[pygame.K_DOWN]: s.move_cursor_v(1)
 
 	def under_cursor(self):
 		return self.under_cr((self.cursor_c, self.cursor_r))
@@ -114,7 +117,9 @@ class Root(Frame):
 		if s.cursor_c > len(s.lines[s.cursor_r]):
 			s.move_cursor_v(1)
 			s.cursor_c = 0
-		if s.cursor_c < 0: s.cursor_c = 0
+		if s.cursor_c < 0:
+			#todo
+			s.cursor_c = 0
 		return old == s.cursor_c, s.cursor_r
 
 	def move_cursor_v(self, count):
@@ -134,7 +139,7 @@ class Root(Frame):
 
 	def render(self):
 
-		p = project.project(self.root, self.cols)
+		p = project.project(self.root, self.cols, self)
 		self.lines = p.lines[self.scroll_lines:self.scroll_lines + self.rows]
 		self.arrows = p.arrows
 
@@ -273,18 +278,18 @@ class Root(Frame):
 		return True
 
 
-def on_keypress(self, event):
-	event.pos = self.element_char_index()
-	event.cursor = (self.cursor_c, self.cursor_r)
-	if self.top_keypress(event):
-		return True
-	element = self.under_cursor()
-	while element != None and not element.on_keypress(event):
-		element = element.parent
-	if element != None:#some element handled it
-		self.move_cursor(self.root.post_render_move_caret)
-		self.root.post_render_move_caret = 0
-		return True
+	def on_keypress(self, event):
+		event.pos = self.element_char_index()
+		event.cursor = (self.cursor_c, self.cursor_r)
+		if self.top_keypress(event):
+			return True
+		element = self.under_cursor()
+		while element != None and not element.on_keypress(event):
+			element = element.parent
+		if element != None:#some element handled it
+			self.move_cursor_h(self.root.post_render_move_caret)
+			self.root.post_render_move_caret = 0 #carry it over!
+			return True
 
 
 class Menu(Frame):
@@ -316,17 +321,17 @@ class Menu(Frame):
 		return surface
 
 	def draw_rects(s, surface):
-		#for [l[0][1]["node"] for l in s.lines].uniq()
-		for i in s.items:
-			if not i.__dict__.has_key("_render_lines"): continue #a hacky way to tell it wasnt rendered
-			startline = i._render_lines[0]["line"]
-			endline = i._render_lines[-1]["line"]
-			startchar = 0#min([c["start"] for c in i._render_lines])
-			endchar   = max([c["end"] for c in i._render_lines])
+		for i in s.items_on_screen:
+			rl = i._render_lines[s]
+			#print rl
+			startline = rl[0]["line"]
+			endline = rl[-1]["line"]
+			startchar = 0
+			endchar   = max([c["end"] for c in rl])
 			r = pygame.Rect(startchar * font_width,
 			                (startline + s.scroll) * font_height,
-			                endchar * font_width,
-			                (endline + s.scroll) * font_height)
+			                (endchar  - startchar) * font_width,
+			                (endline + s.scroll - startline) * font_height)
 			if i == s.selected:
 				c = colors.menu_rect_selected
 			else:
@@ -358,9 +363,12 @@ class Menu(Frame):
 			self.sel = 0
 			return True
 
+	def mousedown(s,e,pos):
+		n = s.under_cr(xy2cr(pos))
+		if n:
+			s.element.menu_item_selected(n, None)
 
 	def move(self, y):
-		ping()
 		self.sel += y
 		if self.sel < 0: self.sel = 0
 		if self.sel >= len(self.items): self.sel = len(self.items) - 1

@@ -9,6 +9,7 @@ class Element(event.EventDispatcher):
 		super(Element, self).__init__()
 		self.brackets_color = (200,0,0)
 		self.brackets = ('<','>')
+		self._render_lines = {}
 
 	def on_keypress(self, event):
 #		ping()
@@ -57,11 +58,10 @@ class Element(event.EventDispatcher):
 		r += [InfoMenuItem("element: " + str(self))]
 		return r
 
-	"""
 	def menu_item_selected(self, item, element):
 		if self.parent:
 			return self.parent.menu_item_selected(item, self)
-
+	"""
 	#def position(self):
 	#	return self.doc.positions[self]
 	
