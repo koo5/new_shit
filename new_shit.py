@@ -98,7 +98,7 @@ def keypress(event):
 
 
 def mousedown(e):
-	for f in frames:
+	for f in all_frames:
 		if f.rect.collidepoint(e.pos):
 			pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
 			f.mousedown(e, pos)
@@ -149,7 +149,7 @@ parser.add_argument('--webos', action='store_true',
 parser.add_argument('--invert', action='store_true',
 				   help='invert colors')
 parser.add_argument('--font_size', action='store_true',
-				   default=18)
+				   default=28)
 args = parser.parse_args()
 
 
@@ -173,11 +173,28 @@ colors.cache(args)
 root = frames.Root()
 menu = frames.Menu()
 info = frames.Info()
-frames = [root, menu, info]
-
-resize((1280,500))
+all_frames = [root, menu, info]
 
 
+def fuck_sdl():
+	w = pygame.display.get_wm_info()["wmwindow"]
+	import subprocess
+	x =  subprocess.check_output(["xwininfo", "-id", str(w)])
+	y = x.splitlines()
+	for l in y:
+		s = l.split()
+		if len(s) > 1:
+			if s[0] == "Width:":
+				w = int(s[1])
+			if s[0] == "Height:":
+				h = int(s[1])
+	return w,h
+
+resize((666,666))
+try:
+	resize(fuck_sdl())
+except:
+	pass
 
 root.render()
 

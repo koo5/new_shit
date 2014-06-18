@@ -353,14 +353,14 @@ class List(Collapsible):
 		self._fix_parents(self.items)
 
 	def on_keypress(self, e):
-		item_index = self.insertion_pos(e.cursor)
+		item_index = self.insertion_pos(e.frame, e.cursor)
 		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
 			if len(self.items) > item_index:
 				del self.items[item_index]
 			return True
 		#???
 		if e.key == pygame.K_RETURN:
-			pos = self.insertion_pos(e.cursor)
+			pos = self.insertion_pos(e.frame, e.cursor)
 			p = Compiler(self.item_type)
 			p.parent = self
 			self.items.insert(pos, p)
@@ -370,8 +370,8 @@ class List(Collapsible):
 		i = -1
 		for i, item in enumerate(self.items):
 			#print i, item, item._render_start_line, item._render_start_char
-			if (item._render_lines[frame]["line"] >= line and
-				item._render_lines[frame]["start"] >= char):
+			if (item._render_lines[frame]["startline"] >= line and
+				item._render_lines[frame]["startchar"] >= char):
 				return i
 		return i + 1
 

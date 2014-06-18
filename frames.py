@@ -279,6 +279,7 @@ class Root(Frame):
 
 
 	def on_keypress(self, event):
+		event.frame = self
 		event.pos = self.element_char_index()
 		event.cursor = (self.cursor_c, self.cursor_r)
 		if self.top_keypress(event):
@@ -324,14 +325,14 @@ class Menu(Frame):
 		for i in s.items_on_screen:
 			rl = i._render_lines[s]
 			#print rl
-			startline = rl[0]["line"]
-			endline = rl[-1]["line"]
+			startline = rl["startline"]
+			endline = rl["endline"]
 			startchar = 0
-			endchar   = max([c["end"] for c in rl])
+			endchar = max([len(l) for l in s.lines[startline:endline+1]])
 			r = pygame.Rect(startchar * font_width,
-			                (startline + s.scroll) * font_height,
+			                startline * font_height,
 			                (endchar  - startchar) * font_width,
-			                (endline + s.scroll - startline) * font_height)
+			                (endline - startline+1) * font_height)
 			if i == s.selected:
 				c = colors.menu_rect_selected
 			else:

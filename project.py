@@ -38,16 +38,11 @@ def test_squash():
 
 
 def newline(p, elem):
-	elem._render_lines[p.frame][-1]["end"] = len(p.lines[-1])
-
 	p.lines.append([])
 	for i in range(p.indent * p.indent_width):
 		#keeps the attributes of the last node,
 		#but lets see how this works in the ui..
 		charadd(p.lines[-1], " ", p.atts)
-	elem._render_lines[p.frame].append({
-		"start": len(p.lines[-1]),
-		"line": len(p.lines)-1})
 
 
 def charadd(line, char, atts):
@@ -110,13 +105,15 @@ def _project_elem(p, elem):
 
 	tags += [EndTag()]
 
-	elem._render_lines[p.frame] = [
-		{"start": len(p.lines[-1]),
-		 "line": len(p.lines)-1}]
+	elem._render_lines[p.frame] = {
+		"startchar": len(p.lines[-1]),
+		"startline": len(p.lines)-1}
 
 	_project_tags(p, elem, tags, pos)
 
-	elem._render_lines[p.frame][-1]["end"] = len(p.lines[-1])
+	elem._render_lines[p.frame]["endchar"] = len(p.lines[-1])
+	elem._render_lines[p.frame]["endline"] = len(p.lines)-1
+
 
 
 def _project_tags(p, elem, tags, pos):
@@ -136,7 +133,7 @@ def _project_tags(p, elem, tags, pos):
 			tag = ElementTag(elem.__dict__[tag.name]) #get widget #?
 
 	#now real stuff
-		if isinstance(tag, str):
+		if isinstance(tag, (str, unicode)):
 			for char in tag:
 				attadd(p.atts, "char_index", pos)
 				if char == "\n":
@@ -175,7 +172,7 @@ def _project_tags(p, elem, tags, pos):
 		#elif isinstance(tag, MenuTag):
 		#	screen['menu'] = tag
 		else:
-			raise Exception("is %s a tag?" % tag)
+			raise Exception("is %s a tag?" % tag.__class__)
 
 
 
