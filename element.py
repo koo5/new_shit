@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from menu import InfoMenuItem
 import event
 from logger import log, ping
 import tags
@@ -51,13 +50,14 @@ class Element(event.EventDispatcher):
 	def menu(self):
 		return []
 
-	def info(self):
+	def hierarchy_info(self):
 		r = []
 		if self.__dict__.has_key("notes"):
 			r += [InfoMenuItem(self.notes)]
 		r += [InfoMenuItem("element: " + str(self))]
 		return r
 
+	"""
 	def menu_item_selected(self, item, element):
 		if self.parent:
 			return self.parent.menu_item_selected(item, self)
@@ -66,5 +66,6 @@ class Element(event.EventDispatcher):
 	#	return self.doc.positions[self]
 	
 
-#	def is_active(self):
-#		return False
+	#	def is_active(self):
+	#		return False
+"""

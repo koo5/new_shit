@@ -86,7 +86,7 @@ class ShadowedText(Text):
 #		return len(self.text+self.shadow[len(self.text)])
 """
 class Button(Widget):
-	def __init__(self, parent, text="[      ]"):#🔳🔳🔳🔳]"):
+	def __init__(self, parent, text="[button]", description = "?"):#🔳🔳🔳🔳]"):
 		super(Button, self).__init__(parent)
 		self.register_event_types('on_click, on_text')
 		self.color = (255,150,150,255)
@@ -152,15 +152,16 @@ class Number(Text):
 
 				
 class Toggle(Widget):
-	def __init__(self, parent, value):
+	def __init__(self, parent, value, texts = ("checked", "unchecked")):
 		super(Toggle, self).__init__(parent)
 		self.register_event_types('on_change')
 		self.value = value
+		self.texts = texts
 	def render(self):
 		return [TextTag(self.text)]
 	@property
 	def text(self):
-		return "checked" if self.value else "unchecked"
+		return self.texts[0] if self.value else self.texts[1]
 	def toggle(self):
 		self.value = not self.value
 		self.dispatch_event('on_change', self)

@@ -819,3 +819,74 @@ builtins.ch.statements.items += [
 
 
 
+
+#just mocking up boolean properties here
+
+
+class ObjectDeclaration(Syntaxed):
+	"""just mocking stuff up"""
+	def __init__(self, kids):
+		super(ObjectDeclaration, self).__init__(kids)
+	@classmethod
+	def cls_palette(cls, scope):
+		r = []
+		for x in scope:
+			x = x.compiled
+			if x.decl == cls.decl:
+				print x, x.decl, cls.decl
+				r += [CompilerMenuItem(Ref(x))]
+		return r
+
+SyntaxedNodecl(ObjectDeclaration,
+               [ch("name"), t("is an object")],
+               {'name': Slot(b['text'])})
+
+class BooleanPropretyDeclaration(Syntaxed):
+	"""just mocking stuff up"""
+	def __init__(self, kids):
+		super(BooleanPropretyDeclaration, self).__init__(kids)
+SyntaxedNodecl(BooleanPropretyDeclaration,
+               [ch("object"), t("can be"), ch("p1"), t("or"), ch("p2")],
+               {'object': b['objectdeclaration'],
+                'p1': Slot(b['text']),
+				'p2': Slot(b['text'])})
+
+class BooleanProperty(Node):
+	def __init__(self, value):
+		super(BooleanProperty, self).__init__()
+		self.value = value
+	def render(self):
+		return [t(self.value)]
+
+class BooleanPropertyNodecl(NodeclBase):
+	def __init__(self):
+		super(BooleanPropertyNodecl, self).__init__(Ref)
+		b['booleanproperty'] = self
+		BooleanProperty.decl = self
+	def palette(self, scope):
+		r = []
+		decls = [x for x in scope if isinstance(x, (BooleanPropretyDeclaration))]
+		for d in decls:
+			r += [CompilerMenuItem(BooleanProperty(x.pyval)) for x in [d.ch.p1, d.ch.p2]]
+		return r
+
+BooleanPropertyNodecl()
+
+class BooleanPropretyAssignment(Syntaxed):
+	def __init__(self, kids):
+		super(BooleanPropretyAssignment, self).__init__(kids)
+SyntaxedNodecl(BooleanPropretyAssignment,
+               [ch("object"), t("is"), ch("property")],
+               {'object': b['objectdeclaration'],
+                'property': b['booleanproperty']})
+
+
+
+
+
+
+
+
+
+
+#end of mocking up boolean properties, serious stuff ahead

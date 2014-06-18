@@ -18,7 +18,6 @@ if __debug__:
 	import typed as assnodes
 
 
-_width = 5 #screen width
 _indent_width = 4
 
 
@@ -37,15 +36,22 @@ def squash(l):
 
 
 def test_squash():
-	if squash([("a", 1), ("b", 2), ("a", 3)]) != {"a": 3, "b": 2}:
-		raise Exception()
+	assert squash([("a", 1), ("b", 2), ("a", 3)]) == {"a": 3, "b": 2}
 
-def newline(lines, indent, atts):
+
+def newline(lines, indent, atts, elem):
+	elem._render_lines[-1]["end"] = len(lines[-1])
+
 	lines.append([])
 	for i in range(indent * _indent_width):
 		#keeps the attributes of the last node,
 		#but lets see how this works in the ui..
 		charadd(lines[-1], " ", atts)
+
+	elem._render_lines.append({
+		"start": len(lines[-1]),
+		"line": len(lines)})
+
 
 def charadd(line, char, atts):
 	assert(isinstance(atts, list))
@@ -57,35 +63,35 @@ def attadd(atts, key, val):
 	assert(isinstance(key, str))
 	atts.append((key, val))
 
-def project(root, visualize_elements = True):
+def project(root, width):
+	global _width
+	_width = width
 
 	atts = []
 	indent = 0
 	lines = [[]]
-	_project(lines,root,atts,indent, visualize_elements)
+	_project(lines,root,atts,indent)
 	return lines
 
-def _project(lines, elem, atts, indent, visualize_elements):
+def _project(lines, elem, atts, indent):
 	"""calls elem.tags(), then calls itself recursively on widget,
-	child and element tags.	screen and atts are passed and mutated"""
-	if __debug__:
-		assert(isinstance(elem, (asselement.Element, assnodes.CompilerMenuItem)))
-		assert(isinstance(lines, list))
-		assert(isinstance(atts, list))
-		assert(isinstance(indent, int))
-	
+	child and element tags.	lines and atts are passed and mutated"""
+	assert(isinstance(elem, (asselement.Element, assnodes.CompilerMenuItem)))
+	print elem
+	assert(isinstance(lines, list))
+	assert(isinstance(atts, list))
+	assert(isinstance(indent, int))
+
+	elem._render_lines = [
+		{"start": len(lines[-1]),
+		 "line": len(lines)}]
+
 	tags = [AttTag("node", elem)]
-	
-	if visualize_elements:# and isinstance(elem, Node):
-		pos = -1 # because of the "<"
-		tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag()]
-		tags += elem.tags()
-		tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
-	else:
-		pos = 0
-		tags += elem.tags()
 
-
+	pos = -1 # because of the "<"
+	tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag()]
+	tags += elem.tags()
+	tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
 	#results of eval
 	if isinstance(elem, Node):
@@ -107,7 +113,9 @@ def _project(lines, elem, atts, indent, visualize_elements):
 	for tag in tags:
 	#first some replaces
 		if isinstance(tag, NewlineTag):
-			tag = TextTag("\n")
+			tag = "\n"
+		elif isinstance(tag, TextTag):
+			tag = tag.text
 
 		elif isinstance(tag, ChildTag):
 			assert(isinstance(elem, assnodes.Node))
@@ -117,20 +125,30 @@ def _project(lines, elem, atts, indent, visualize_elements):
 			tag = ElementTag(elem.__dict__[tag.name]) #get widget
 
 	#now real stuff
+		if isinstance(tag, str):
+			for char in tag:
+				attadd(atts, "char_index", pos)
+				if char == "\n":
+					newline(lines, indent, atts, elem)
+				else:
+					if len(lines[-1]) >= _width:
+						newline(lines, indent, atts, elem)
+					charadd(lines[-1], char, atts)
+				atts.pop()
+				pos += 1
+
 		#recurse
-		if isinstance(tag, ElementTag):
-			tag.element._render_start_line = len(lines) - 1
-			tag.element._render_start_char = len(lines[-1])
-			
-			_project(lines, tag.element, atts, indent, visualize_elements)
+		elif isinstance(tag, ElementTag):
+			_project(lines, tag.element, atts, indent)
 
 		#attributes
+		elif isinstance(tag, EndTag):
+			atts.pop()
+
 		elif isinstance(tag, AttTag):
 			attadd(atts, tag.key, tag.val)
 		elif isinstance(tag, ColorTag):
 			attadd(atts, "color", colors.modify(tag.color))
-		elif isinstance(tag, EndTag):
-			atts.pop()
 
 		elif isinstance(tag, ArrowTag):
 			attadd(atts, "arrow", tag.target)
@@ -143,22 +161,12 @@ def _project(lines, elem, atts, indent, visualize_elements):
 		#	if len(lines[-1]) < tag.spaces:
 		#		log("cant backspace that much")
 		#	lines[-1] = lines[-1][:-tag.spaces]
-		elif isinstance(tag, TextTag):
-			for char in tag.text:
-				attadd(atts, "char_index", pos)
-				if char == "\n":
-					newline(lines, indent, atts)
-				else:
-					if len(lines[-1]) >= _width:
-						newline(lines, indent, atts)
-					charadd(lines[-1], char, atts)
-				atts.pop()
-				pos += 1
-
 		#elif isinstance(tag, MenuTag):
 		#	screen['menu'] = tag
 		else:
-			raise hell
+			raise Exception("is %s a tag?" % tag)
+
+	elem._render_lines[-1]["end"] = len(lines[-1])
 
 
 def find(node, lines):
