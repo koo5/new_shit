@@ -134,14 +134,6 @@ class Node(element.Element):
 		return str(self)
 
 
-lit = 0
-exp = 1
-class Slot(object):
-	def __init__(self, type, mode = lit):
-		"""mode is lit(default) or exp"""
-		self.type = type
-		self.mode = mode
-
 
 class Children(dotdict):
 	pass
@@ -196,8 +188,8 @@ class Syntaxed(Node):
 			assert(isinstance(slots, dict))
 			for name, slot in slots.iteritems():
 				assert(isinstance(name, str))
-				assert isinstance(slot, Slot), (slot, " is not Slot, in ", slots)
-				assert(isinstance(slot.type, (NodeclBase, Definition, ParametricType))) #what else works as a type?
+				assert isinstance(slot, NodeclBase)
+
 
 	@property
 	def syntax(self):
@@ -234,7 +226,7 @@ class Syntaxed(Node):
 		#fix:
 		for k, v in slots.iteritems(): #for each child:
 			#print v
-			if v.type in [b[x] for x in ['text', 'number', 'statements']]:
+			if isinstance(v, Lit) and v.target in [b[x] for x in ['text', 'number', 'statements']]:
 				#todo: definition, list
 				a = v.type.inst_fresh()
 			else:
@@ -455,7 +447,7 @@ class Text(WidgetedValue):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 		self.brackets_color = (0,200,0)
-		self.brackets = ('[',']')
+		self.brackets = ('"','"')
 
 	def render(self):
 		return self.widget.render()
@@ -579,12 +571,20 @@ class Ref(Node):
 		super(Ref, self).__init__()
 		self.target = target
 	def render(self):
-		return [tags.ArrowTag(self.target), t('*'), EndTag(), t(self.target.name)]
+		return [tags.ArrowTag(self.target), t('*'), EndTag(), t(self.name)]
 	@property
 	def name(self):
 		return self.target.name
 	def works_as(self, type):
 		return self.target.works_as(type)
+
+
+class Lit(Node):
+	def __init__(self, type):
+		super(Lit, self).__init__()
+		self.target = target
+	def render(self):
+		return [w("target"), t('literal')]
 
 
 
@@ -635,6 +635,15 @@ class TypeNodecl(NodeclBase):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Ref(x)) for x in nodecls]
 
+class LitNodecl(NodeclBase):
+	def __init__(self):
+		super(LitNodecl, self).__init__(Lit)
+		b['lit'] = self #add me to builtins
+		Lit.decl = self
+	def palette(self, scope):
+		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
+		return [CompilerMenuItem(Lit(x)) for x in nodecls]
+
 
 
 class Nodecl(NodeclBase):
@@ -657,14 +666,12 @@ class SyntaxedNodecl(NodeclBase):
 	def __init__(self, instance_class, instance_syntax, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
 		instance_class.decl = self
-		self.instance_slots = instance_slots
+		self.instance_slots = [b[i] if isinstance(i, str) else i for i in instance_slots]
 		self.instance_syntax = instance_syntax
-		try:
+		if self.ch.has_key("name"):
 			b[self.name] = self
-		except:
+		else:
 			b[self.instance_class.__name__.lower()] = self
-
-
 
 	"""
 	syntaxed match(items, nodes) :-
@@ -742,29 +749,6 @@ class SyntacticCategory(Syntaxed):
 		super(SyntacticCategory, self).__init__(kids)
 		b[self.ch.name.pyval] = self
 
-SyntaxedNodecl(SyntacticCategory,
-			   [t("syntactic category:"), ch("name")],
-			   {'name': Slot(b['text'])})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class WorksAs(Syntaxed):
 	"""a relation between two existing"""
@@ -775,10 +759,6 @@ class WorksAs(Syntaxed):
 	def b(cls, sub, sup):
 		cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
 
-SyntaxedNodecl(WorksAs,
-			   [ch("sub"), t("works as"), ch("sup")],
-			   {'sub': Slot(b['type']), 'sup': Slot(b['type'])})
-
 
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
@@ -788,11 +768,20 @@ class Definition(Syntaxed):
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
 
+class Union(Syntaxed):
+	def __init__(self, children):
+		super(Union, self).__init__(children)
+
+
+SyntaxedNodecl(SyntacticCategory,
+			   [t("syntactic category:"), ch("name")],
+			   {'name': 'text'})
+SyntaxedNodecl(WorksAs,
+			   [ch("sub"), t("works as"), ch("sup")],
+			   {'sub': 'type', 'sup': 'type'})
 SyntaxedNodecl(Definition,
 			   [t("define"), ch("name"), t("as"), ch("type")], #expression?
-			   {'name': Slot(b['text']), 'type': Slot(b['type'])})
-
-
+			   {'name': 'text', 'type': 'type'})
 
 SyntacticCategory({'name': Text("statement")})
 SyntacticCategory({'name': Text("expression")})
@@ -800,35 +789,28 @@ WorksAs.b("expression", "statement")
 WorksAs.b("number", "expression")
 WorksAs.b("text", "expression")
 
-
 b['list'] = ParametricNodecl(List,
 				 [t("list of"), ch("itemtype")],
-				 {'itemtype': Slot(b['type'], exp)})
+				 {'itemtype': b['type']})
 b['dict'] = ParametricNodecl(Dict,
 				 [t("dict from"), ch("keytype"), t("to"), ch("valtype")],
-				 {'keytype': Slot(b['type'], exp), 'valtype': Slot(b['type'], exp)})
-
+				 {'keytype': b['type'], 'valtype': Exp(b['type'])})
 
 WorksAs.b("list", "expression")
-#IsSubclassOf([Ref(b["dict"]), Ref(b["expression"])])
-
+WorksAs.b("dict", "expression")
 
 Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 SyntaxedNodecl(Module,
 			   ["module:\n", ch("statements"), t("end.")],
-			   {'statements': Slot(b['statements'], lit)})
+			   {'statements': b['statements']})
 
 Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})})
 
-class Union(Syntaxed):
-	def __init__(self, children):
-		super(Union, self).__init__(children)
-		#assert(self.syntax[1].name == "items")
 SyntaxedNodecl(Union,
 			   [t("union of"), ch("items")],
-			   {'items': Slot(b['list'].make_type({'itemtype': b['type']}))}) #todo:should work with the definition from above instead
-b['union'].notes="""should be "type or type or type..", but Syntaxed with a list is an easier implementation for now"""
+			   {'items': b['list'].make_type({'itemtype': b['type']})}) #todo:should work with the definition from above instead
+b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
 
 
 
@@ -850,11 +832,10 @@ leftmost child of the second node
 
 class Compiler(Node):
 	"""the awkward input node with orange brackets"""
-	def __init__(self, slot):
+	def __init__(self, type):
 		super(Compiler, self).__init__()
-		self.slot = slot
-		self.type = slot.type
-		assert(isinstance(slot, Slot))
+		self.type = type
+		assert isinstance(type, NodeclBase, Lit)
 		self.items = []
 		self.add(Text(""))
 		self.brackets_color = (255,155,0)
@@ -888,7 +869,7 @@ class Compiler(Node):
 			r += [ElementTag(item)]
 		#r += [t("]")]
 		if len(self.items) == 1 and isinstance(self.items[0], Text) and	self.items[0].pyval == "":
-			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()] #hint the expected type
+			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()] #hint at the type expected
 		return r
 
 	def __getitem__(self, i):
@@ -1025,14 +1006,14 @@ class TypedArgument(Syntaxed):
 
 SyntaxedNodecl(TypedArgument,
 			   [ch("name"), t("-"), ch("type")],
-			   {'name': Slot(b['text']), 'type': Slot(b['type'])})
+			   {'name': 'text', 'type': 'type'})
 
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
 tmp.ch["items"].add(Ref(b['typedargument']))
-Definition({'name': Text('function signature items'), 'type': tmp})
+Definition({'name': Text('function signature nodes'), 'type': tmp})
 
-tmp = b['list'].make_type({'itemtype': Ref(b['function signature items'])})
+tmp = b['list'].make_type({'itemtype': Ref(b['function signature nodes'])})
 Definition({'name': Text('function signature list'), 'type':tmp})
 
 
@@ -1059,8 +1040,8 @@ class FunctionDefinition(FunctionDefinitionBase):
 
 SyntaxedNodecl(FunctionDefinition,
 			   [t("deffun:"), ch("sig"), t(":\n"), ch("body")],
-				{'sig': Slot(b['function signature list']),
-				 'body': Slot(b['statements'])})
+				{'sig': b['function signature list'],
+				 'body': b['statements']})
 
 
 """
@@ -1106,8 +1087,8 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 
 SyntaxedNodecl(BuiltinFunctionDecl,
 			   [t("builtin function"), ch("name"), t(":"), ch("sig")],
-				{'sig': Slot(b['function signature list'], lit),
-				 'name': Slot(b['text'], lit)})
+				{'sig': b['function signature list'],
+				 'name': b['text']})
 
 def b_squared(self, args):
 	return Number(args[0] * args[0])
@@ -1210,9 +1191,9 @@ class PythonEval(Syntaxed):
 	def __init__(self, children):
 		super(PythonEval, self).__init__(children)
 
-SyntaxedNodecl(PythonEval,
+SyntaxedNodecl(PythonEval, #how did this say here??
 			   [t("python eval"), ch("text")],
-			   {'text': Slot(b['text'], exp)})
+			   {'text': Exp(b['text'])})
 
 
 
