@@ -188,7 +188,7 @@ class Syntaxed(Node):
 			assert(isinstance(slots, dict))
 			for name, slot in slots.iteritems():
 				assert(isinstance(name, str))
-				assert isinstance(slot, NodeclBase)
+				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition))
 
 
 	@property
@@ -225,10 +225,9 @@ class Syntaxed(Node):
 		kids = {}
 		#fix:
 		for k, v in slots.iteritems(): #for each child:
-			#print v
-			if isinstance(v, Lit) and v.target in [b[x] for x in ['text', 'number', 'statements']]:
-				#todo: definition, list
-				a = v.type.inst_fresh()
+			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
+			if v in [b[x] for x in ['text', 'number', 'statements', 'list']]:
+				a = v.inst_fresh()
 			else:
 				a = Compiler(v)
 			assert(isinstance(a, Node))
@@ -579,13 +578,15 @@ class Ref(Node):
 		return self.target.works_as(type)
 
 
-class Lit(Node):
+class Exp(Node):
 	def __init__(self, type):
-		super(Lit, self).__init__()
-		self.target = target
+		super(Exp, self).__init__()
+		self.type = type
 	def render(self):
-		return [w("target"), t('literal')]
-
+		return [w("type"), t('expr')]
+	@property
+	def name(self):
+		return self.type.name + " expr"
 
 
 class NodeclBase(Node):
@@ -635,14 +636,14 @@ class TypeNodecl(NodeclBase):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Ref(x)) for x in nodecls]
 
-class LitNodecl(NodeclBase):
+class ExpNodecl(NodeclBase):
 	def __init__(self):
-		super(LitNodecl, self).__init__(Lit)
-		b['lit'] = self #add me to builtins
-		Lit.decl = self
+		super(ExpNodecl, self).__init__(Exp)
+		b['exp'] = self #add me to builtins
+		Exp.decl = self
 	def palette(self, scope):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [CompilerMenuItem(Lit(x)) for x in nodecls]
+		return [CompilerMenuItem(Exp(x)) for x in nodecls]
 
 
 
@@ -666,12 +667,9 @@ class SyntaxedNodecl(NodeclBase):
 	def __init__(self, instance_class, instance_syntax, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
 		instance_class.decl = self
-		self.instance_slots = [b[i] if isinstance(i, str) else i for i in instance_slots]
+		self.instance_slots = dict([(k, b[i] if isinstance(i, str) else i) for k,i in instance_slots.iteritems()])
 		self.instance_syntax = instance_syntax
-		if self.ch.has_key("name"):
-			b[self.name] = self
-		else:
-			b[self.instance_class.__name__.lower()] = self
+		b[self.instance_class.__name__.lower()] = self
 
 	"""
 	syntaxed match(items, nodes) :-
@@ -835,7 +833,7 @@ class Compiler(Node):
 	def __init__(self, type):
 		super(Compiler, self).__init__()
 		self.type = type
-		assert isinstance(type, NodeclBase, Lit)
+		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition))
 		self.items = []
 		self.add(Text(""))
 		self.brackets_color = (255,155,0)
