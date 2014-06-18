@@ -12,13 +12,12 @@ from tags import *
 from logger import ping, log
 import colors
 from typed import Node
+from dotdict import dotdict
 
 if __debug__:
 	import element as asselement
 	import typed as assnodes
 
-
-_indent_width = 4
 
 
 def squash(l):
@@ -39,18 +38,18 @@ def test_squash():
 	assert squash([("a", 1), ("b", 2), ("a", 3)]) == {"a": 3, "b": 2}
 
 
-def newline(lines, indent, atts, elem):
-	elem._render_lines[-1]["end"] = len(lines[-1])
+def newline(p, elem):
+	elem._render_lines[-1]["end"] = len(p.lines[-1])
 
-	lines.append([])
-	for i in range(indent * _indent_width):
+	p.lines.append([])
+	for i in range(p.indent * p.indent_width):
 		#keeps the attributes of the last node,
 		#but lets see how this works in the ui..
-		charadd(lines[-1], " ", atts)
+		charadd(p.lines[-1], " ", p.atts)
 
 	elem._render_lines.append({
-		"start": len(lines[-1]),
-		"line": len(lines)})
+		"start": len(p.lines[-1]),
+		"line": len(p.lines)-1})
 
 
 def charadd(line, char, atts):
@@ -63,28 +62,36 @@ def attadd(atts, key, val):
 	assert(isinstance(key, str))
 	atts.append((key, val))
 
-def project(root, width):
-	global _width
-	_width = width
+def new_p(cols):
+	p = dotdict()
+	p.width = cols
+	p.indent_width = 4
+	p.atts = []
+	p.lines = [[]]
+	p.arrows = []
+	p.indent = 0
+	return p
 
-	atts = []
-	indent = 0
-	lines = [[]]
-	_project(lines,root,atts,indent)
-	return lines
+def project(root, cols):
+	p = new_p(cols)
+	_project_elem(p, root)
+	return p
 
-def _project(lines, elem, atts, indent):
-	"""calls elem.tags(), then calls itself recursively on widget,
-	child and element tags.	lines and atts are passed and mutated"""
-	assert(isinstance(elem, (asselement.Element, assnodes.CompilerMenuItem)))
-	print elem
-	assert(isinstance(lines, list))
-	assert(isinstance(atts, list))
-	assert(isinstance(indent, int))
+def project_tags(tags, cols):
+	p = new_p(cols)
+	p._render_lines = [{}]
+	_project_tags(p, p, tags, 0)
+	return p
+
+def _project_elem(p, elem):
+	assert(isinstance(elem, asselement.Element))
+	assert(isinstance(p.lines, list))
+	assert(isinstance(p.atts, list))
+	assert(isinstance(p.indent, int))
 
 	elem._render_lines = [
-		{"start": len(lines[-1]),
-		 "line": len(lines)}]
+		{"start": len(p.lines[-1]),
+		 "line": len(p.lines)-1}]
 
 	tags = [AttTag("node", elem)]
 
@@ -106,9 +113,11 @@ def _project(lines, elem, atts, indent):
 			tags += [ElementTag(elem.runtime.value.val)]
 			tags += [TextTag(" "), EndTag()]
 
-
-
 	tags += [EndTag()]
+
+	_project_tags(p, elem, tags, pos)
+
+def _project_tags(p, elem, tags, pos):
 
 	for tag in tags:
 	#first some replaces
@@ -122,41 +131,41 @@ def _project(lines, elem, atts, indent):
 			assert(isinstance(elem.ch[tag.name], asselement.Element))
 			tag = ElementTag(elem.ch[tag.name]) #get child
 		elif isinstance(tag, WidgetTag):
-			tag = ElementTag(elem.__dict__[tag.name]) #get widget
+			tag = ElementTag(elem.__dict__[tag.name]) #get widget #?
 
 	#now real stuff
 		if isinstance(tag, str):
 			for char in tag:
-				attadd(atts, "char_index", pos)
+				attadd(p.atts, "char_index", pos)
 				if char == "\n":
-					newline(lines, indent, atts, elem)
+					newline(p, elem)
 				else:
-					if len(lines[-1]) >= _width:
-						newline(lines, indent, atts, elem)
-					charadd(lines[-1], char, atts)
-				atts.pop()
+					if len(p.lines[-1]) >= p.width:
+						newline(p, elem)
+					charadd(p.lines[-1], char, p.atts)
+				p.atts.pop()
 				pos += 1
 
 		#recurse
 		elif isinstance(tag, ElementTag):
-			_project(lines, tag.element, atts, indent)
+			_project_elem(p, tag.element)
 
 		#attributes
 		elif isinstance(tag, EndTag):
-			atts.pop()
+			p.atts.pop()
 
 		elif isinstance(tag, AttTag):
-			attadd(atts, tag.key, tag.val)
+			attadd(p.atts, tag.key, tag.val)
 		elif isinstance(tag, ColorTag):
-			attadd(atts, "color", colors.modify(tag.color))
+			attadd(p.atts, "color", tag.color)
 
 		elif isinstance(tag, ArrowTag):
-			attadd(atts, "arrow", tag.target)
+			p.arrows.append((len(p.lines[-1]), len(p.lines) - 1, tag.target))
 
 		elif isinstance(tag, IndentTag):
-			indent+=1
+			p.indent+=1
 		elif isinstance(tag, DedentTag):
-			indent-=1
+			p.indent-=1
 		#elif isinstance(tag, BackspaceTag):
 		#	if len(lines[-1]) < tag.spaces:
 		#		log("cant backspace that much")
@@ -166,7 +175,8 @@ def _project(lines, elem, atts, indent):
 		else:
 			raise Exception("is %s a tag?" % tag)
 
-	elem._render_lines[-1]["end"] = len(lines[-1])
+	elem._render_lines[-1]["end"] = len(p.lines[-1]) - 1
+
 
 
 def find(node, lines):

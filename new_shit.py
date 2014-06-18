@@ -100,9 +100,8 @@ def keypress(event):
 def mousedown(e):
 	for f in frames:
 		if f.rect.collidepoint(e.pos):
-			e.pos.x -= f.rect.x
-			e.pos.y -= f.rect.y
-			f.mousedown(e)
+			pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
+			f.mousedown(e, pos)
 			break
 
 def process_event(event):

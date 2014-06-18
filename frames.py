@@ -5,7 +5,7 @@ from pygame import draw
 from colors import color, colors
 import project
 import typed
-from tags import TextTag, ColorTag, WidgetTag, EndTag
+from tags import TextTag, ElementTag, WidgetTag
 from menu_items import InfoItem
 import widgets
 
@@ -52,9 +52,10 @@ class Frame(object):
 		s.lines = []
 
 	def render(s):
-		s.lines = []
+		r = []
 		for i in s.items[s.scroll:s.scroll + s.rows]:
-			s.lines.extend(project.project(i, s.cols))
+			r += [ElementTag(i), "\n"]
+		s.lines = project.project_tags(r, s.cols).lines
 
 	@property
 	def rows(self):
@@ -132,13 +133,14 @@ class Root(Frame):
 
 
 	def render(self):
-		self.arrows = []
-		lines = project.project(self.root, self.rect.w)
-		self.lines = lines[self.scroll_lines:self.scroll_lines + self.rows]
+
+		p = project.project(self.root, self.cols)
+		self.lines = p.lines[self.scroll_lines:self.scroll_lines + self.rows]
+		self.arrows = p.arrows
 
 		if __debug__:
 			assert(isinstance(self.lines, list))
-			for l in lines:
+			for l in self.lines:
 				assert(isinstance(l, list))
 				for i in l:
 					assert(isinstance(i, tuple))
@@ -149,15 +151,15 @@ class Root(Frame):
 					assert(i[1].has_key('char_index'))
 
 	def generate_arrows(self):
-		self.arrows = []
-		if not self.arrows_visible: return
-
-		for r,l in enumerate(self.lines):
-			for c,i in enumerate(l):
-				if i[1].has_key("arrow"):
-					target = project.find(i[1]["arrow"], self.lines)
-					if target:
-						self.arrows.append(((c,r),target))
+		if not self.arrows_visible:
+			self.arrows = []
+			return
+		r = []
+		for a in self.arrows:
+			target = project.find(a[2], self.lines)
+			if target:
+				r.append(((a[0],a[1]),target))
+		self.arrows = r
 
 	def draw_lines(self):
 		s = pygame.Surface((self.rect.w, self.rect.h))

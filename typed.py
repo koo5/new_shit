@@ -570,7 +570,7 @@ class Ref(Node):
 		super(Ref, self).__init__()
 		self.target = target
 	def render(self):
-		return [tags.ArrowTag(self.target), t('*'), EndTag(), t(self.name)]
+		return [t('*'), tags.ArrowTag(self.target), t(self.name)]
 	@property
 	def name(self):
 		return self.target.name
