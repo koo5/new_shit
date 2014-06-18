@@ -6,7 +6,9 @@ default_colors = {
 	"bg": (0,0,0),
 	"fg": (255,255,255),
 	"cursor": (255,255,200),
-	"info_item_visibility_toggle":(100,100,100)
+	"info_item_visibility_toggle":(100,100,100),
+    "menu_rect_selected":(255,255,255),
+    "menu_rect":(0,0,255)
 	}
 
 colors = dotdict()

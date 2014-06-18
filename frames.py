@@ -5,9 +5,9 @@ from pygame import draw
 from colors import color, colors
 import project
 import typed
-import menu
-
+from tags import TextTag, ColorTag, WidgetTag, EndTag
 from menu_items import InfoItem
+import widgets
 
 font = font_height = font_width = 666
 
@@ -17,6 +17,22 @@ class Frame(object):
 #	def on_mouse_press(self, e):
 #	def on_keypress(self, e):
 #	def draw(self):
+
+	def draw_lines(self): #we didnt start the fire...
+		s = pygame.Surface((self.rect.w, self.rect.h))
+		s.fill(colors.bg)
+		for row, line in enumerate(self.lines):
+			for col, char in enumerate(line):
+				x = font_width * col
+				y = font_height * row
+				fg = color(char[1]['color'])
+				bg = color("bg")
+				sur = font.render(
+					char[0],True,
+					fg,
+					bg)
+				s.blit(sur,(x,y))
+		return s
 
 	def under_cr(self, (c, r)):
 		try:
@@ -281,6 +297,10 @@ class Menu(Frame):
 	def items(self):
 		return self._items
 
+	@property
+	def selected(self):
+		return self.items[self.sel]
+
 	@items.setter
 	def items(self, value):
 		if self.sel > len(value) - 1:
@@ -293,9 +313,10 @@ class Menu(Frame):
 		s.draw_rects(surface)
 		return surface
 
-	def draw_rects(self, s):
+	def draw_rects(s, surface):
 		#for [l[0][1]["node"] for l in s.lines].uniq()
-		for i in self.items:
+		for i in s.items:
+			if not i.__dict__.has_key("_render_lines"): continue #a hacky way to tell it wasnt rendered
 			startline = i._render_lines[0]["line"]
 			endline = i._render_lines[-1]["line"]
 			startchar = 0#min([c["start"] for c in i._render_lines])
@@ -308,7 +329,7 @@ class Menu(Frame):
 				c = colors.menu_rect_selected
 			else:
 				c = colors.menu_rect
-			draw.rect(s, c, r, 1)
+			draw.rect(surface, c, r, 1)
 
 	def update(s, root):
 		e = root.under_cursor()
@@ -372,22 +393,31 @@ class Info(Frame):
 		]]
 		#,	"f12 : normalize syntaxes"
 		s.hierarchy_infoitem = InfoItem("bla")
+		s.hidden_toggle = widgets.Toggle(s, False, ("(...)", "(...,,,)"))
+		s.hidden_toggle.color = "info item visibility toggle"
+
 
 	@property
 	def used_height(s):
 		return len(s.lines) * font_height
 
+	def update(s):
+		s.items = s.top_info[:]
+		s.items.append(s.hierarchy_infoitem)
+		#elements..
 
-
-	def render(self):
-		r = [TextTag("info  "), ColorTag((100,100,100)), WidgetTag(visible_toggle), EndTag()]
-		for i in self.items:
-			if not self.hidden_toggle.value or i.visible_toggle.value:
+	def render(s):
+		s.update()
+		r = [TextTag("help:  "), WidgetTag(s.hidden_toggle)]
+		for i in s.items:
+			if not s.hidden_toggle.value or i.visible_toggle.value:
 				r += i.render()
 		return r
 
-
-#	def draw(self):
+	def draw(s):
+		s.render()
+		surface = s.draw_lines()
+		return surface
 
 
 #todo: definition / insight frame? preferably able to float in multiple numbers around the code in root
