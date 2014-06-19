@@ -14,7 +14,7 @@ from dotdict import dotdict
 from logger import ping, log
 import element
 import widgets
-from menu import MenuItem, InfoItem
+from menu_items import MenuItem
 import tags
 #better would be ch, wi, te, ?
 from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag#, MenuTag
@@ -950,6 +950,7 @@ def isemptytext(item):
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection
+print MenuItem
 class CompilerMenuItem(MenuItem):
 	def __init__(self, value):
 		super(CompilerMenuItem, self).__init__()
