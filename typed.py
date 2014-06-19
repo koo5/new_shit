@@ -133,7 +133,8 @@ class Node(element.Element):
 	def to_python_str(self):
 		return str(self)
 
-
+	def vardecls(s):
+		return []
 
 class Children(dotdict):
 	pass
@@ -155,7 +156,7 @@ class Syntaxed(Node):
 			self.setch(k, kids[k])
 
 	def fix_parents(self):
-		self._fix_parents(self.ch.values())
+		self._fix_parents(self.ch._dict.values())
 
 	def setch(self, name, item):
 		assert(isinstance(name, str))
@@ -810,6 +811,19 @@ SyntaxedNodecl(Union,
 			   {'items': b['list'].make_type({'itemtype': b['type']})}) #todo:should work with the definition from above instead
 b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
 
+
+
+class For(Syntaxed):
+	def __init__(self, children):
+		super(For, self).__init__(children)
+	@property
+	def vardecls(s):
+		return [s.ch.item]
+
+
+SyntaxedNodecl(SyntacticCategory,
+			   [t("syntactic category:"), ch("name")],
+			   {'name': 'text'})
 
 
 

@@ -17,7 +17,7 @@ def cache(args):
 	global colors, invert, mono
 	invert = args.invert
 	mono = args.mono
-	colors.update(dict([(k, modify(v)) for k,v in default_colors.iteritems()]))
+	colors._dict.update(dict([(k, modify(v)) for k,v in default_colors.iteritems()]))
 
 def modify(c, max=255):
 	if mono and c != (0,0,0):

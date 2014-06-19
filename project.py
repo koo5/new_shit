@@ -92,7 +92,7 @@ def _project_elem(p, elem):
 
 	#results of eval
 	if isinstance(elem, Node):
-		if elem.runtime.has_key("value") and elem.runtime.has_key("evaluated"):
+		if elem.runtime._dict.has_key("value") and elem.runtime._dict.has_key("evaluated"):
 			"""
 			if elem.runtime.has_key("unimplemented"):
 				text = "unimplemented"
