@@ -1,4 +1,5 @@
-class dotdict(object): 
+#optimalization: what if we replaced it with an empty object?
+class dotdict(object):
 	def __init__(s):
 		object.__setattr__(s, "_dict", dict())
 	def __setattr__ (s, k, v):

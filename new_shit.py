@@ -35,9 +35,10 @@ def resize_frames():
 	root.rect.width = screen_width / 2
 	root.rect.height = screen_height
 	menu.rect.topleft = (root.rect.w, 0)
-	menu.rect.size = (screen_width / 2, screen_height - info.used_height)
+	info_height = min(info.used_height, screen_height / 2)
+	menu.rect.size = (screen_width / 2, screen_height - info_height)
 	info.rect.topleft = (root.rect.w, menu.rect.h)
-	info.rect.size = (screen_width / 2,	info.used_height)
+	info.rect.size = (screen_width / 2,	info_height)
 
 def top_keypress(event):
 	global cursor_r,cursor_c
@@ -125,6 +126,10 @@ def process_event(event):
 
 def draw():
 	menu.update(root)
+	root.render()
+	info.render()
+	resize_frames()
+	menu.render()
 	screen_surface.blit(root.draw(),root.rect.topleft)
 	screen_surface.blit(menu.draw(),menu.rect.topleft)
 	screen_surface.blit(info.draw(),info.rect.topleft)
@@ -195,12 +200,13 @@ resize((666,666))
 try:
 	resize(fuck_sdl())
 except:
-	pass
+	print "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize"
+
 
 root.render()
-
 root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0].items[0], root.lines)
 root.cursor_c += 1
+
 
 draw()
 

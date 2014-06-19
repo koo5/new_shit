@@ -19,5 +19,5 @@ class InfoItem(MenuItem):
 		self.visibility_toggle.color = "info item visibility toggle"
 
 	def render(self):
-		return [TextTag(self.text + "  "), WidgetTag(self.visibility_toggle)]
+		return [TextTag(self.text + "  "), WidgetTag("visibility_toggle")]
 

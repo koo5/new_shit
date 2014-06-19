@@ -5,7 +5,7 @@ from pygame import draw
 from colors import color, colors
 import project
 import typed
-from tags import TextTag, ElementTag, WidgetTag
+from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 from menu_items import InfoItem
 import widgets
 
@@ -316,7 +316,6 @@ class Menu(Frame):
 		self._items = value
 
 	def draw(s):
-		s.render()
 		surface = s.draw_lines()
 		s.draw_rects(surface)
 		return surface
@@ -404,9 +403,8 @@ class Info(Frame):
 		]]
 		#,	"f12 : normalize syntaxes"
 		s.hierarchy_infoitem = InfoItem("bla")
-		s.hidden_toggle = widgets.Toggle(s, False, ("(...)", "(...,,,)"))
+		s.hidden_toggle = widgets.Toggle(s, True, ("(...)", "(......)"))
 		s.hidden_toggle.color = "info item visibility toggle"
-
 
 	@property
 	def used_height(s):
@@ -419,14 +417,14 @@ class Info(Frame):
 
 	def render(s):
 		s.update()
-		r = [TextTag("help:  "), WidgetTag(s.hidden_toggle)]
+		r = [ColorTag("help"), TextTag("help:  "), ElementTag(s.hidden_toggle), "\n"]
 		for i in s.items:
-			if not s.hidden_toggle.value or i.visible_toggle.value:
-				r += i.render()
-		return r
+			if not s.hidden_toggle.value or i.visibility_toggle.value:
+				r += [ElementTag(i), "\n"]
+		r += [EndTag()]
+		s.lines = project.project_tags(r, s.cols, s).lines
 
 	def draw(s):
-		s.render()
 		surface = s.draw_lines()
 		return surface
 
