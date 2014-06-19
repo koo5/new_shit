@@ -1,6 +1,6 @@
 import pygame
 from pygame import draw
-
+from roman import OutOfRangeError
 
 from colors import color, colors
 import project
@@ -105,9 +105,12 @@ class Root(Frame):
 				return r
 
 	def element_char_index(self):
+		return self.atts["char_index"]
+
+	def atts(self):
 		try:
-			return self.lines[self.cursor_r][self.cursor_c][1]["char_index"]
-		except:
+			return self.lines[self.cursor_r][self.cursor_c][1]
+		except OutOfRangeError():
 			return None
 
 	def move_cursor_h(s, x):
@@ -282,6 +285,7 @@ class Root(Frame):
 		event.frame = self
 		event.pos = self.element_char_index()
 		event.cursor = (self.cursor_c, self.cursor_r)
+		event.atts = self.atts
 		if self.top_keypress(event):
 			return True
 		element = self.under_cursor()

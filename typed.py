@@ -847,68 +847,79 @@ class Compiler(Node):
 	def __init__(self, type):
 		super(Compiler, self).__init__()
 		self.type = type
-		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition))
+		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition)) #in short, everything that works as a type..abstract it away later
 		self.items = []
-		self.add(Text(""))
 		self.brackets_color = (255,155,0)
-		self.decl = None
+		self.decl = None #i am a free man, not a number!
 
 	@property
 	def compiled(self):
-		"""compilation isnt supported until logic programming is obtained,
+		"""compilation isnt supported until logic programming is obtained:)
 		for now, just return what is there"""
-		if len(self.items) < 2:
-			#there is just the empty Text
-			return self#hmm
+		#filter out strings
+		nodes = [i if isinstance(i, Node) for i in self.items]
+		if len(self.items) == 1 and isinstance(self.items[0], Node):
+			return self.items[0]
 		else:
-			return self.items[1]
+			return Text("not compiled")
 
 	def _eval(self):
-		if len(self.items) == 1:
-			i = 0
-		else:
-			i = 1
-		r = self.items[i].eval()
-		print r
-		return r
-
+		return self.compiled().eval()
 
 	def render(self):
-		#replicating List functionality here
+		if len(self.items) == 0: #hint at the type expected
+			return [ColorTag("compiler hint), t('('+self.type.name+')'), EndTag()]
+
 		r = []
-		#r += [t("[")]
-		for item in self.items:
-			r += [ElementTag(item)]
-		#r += [t("]")]
-		if len(self.items) == 1 and isinstance(self.items[0], Text) and	self.items[0].pyval == "":
-			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()] #hint at the type expected
+		for i, item in enumerate(self.items):
+			r += [AttTag("compiler item", i)]
+			if isinstance(item, str):
+				for j, c in enumerate(item):
+					r += [AttTag("compiler item index", j), t(c), EndTag()]
+			else:
+				r += [ElementTag(item)]
+			r += [EndTag()]
 		return r
 
 	def __getitem__(self, i):
 		return self.items[i]
 
+	@property
+	def nodes(s):
+		return [i if isinstance(i, Node) for i in s.items)
+
 	def fix_parents(self):
 		super(Compiler, self).fix_parents()
-		self._fix_parents(self.items)
+		self._fix_parents(self.nodes)
 
 	def on_keypress(self, e):
-		pass
-	"""
-		item_index = self.insertion_pos(e.cursor)
-		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
-			if len(self.items) > item_index:
-				del self.items[item_index]
-	"""
-	"""
-	def insertion_pos(self, (char, line)):
-		i = -1
-		for i, item in enumerate(self.items):
-			#print i, item, item._render_start_line, item._render_start_char
-			if (item._render_start_line >= line and
-				item._render_start_char >= char):
-				return i
-		return i + 1
-	"""
+		item = self.items[e.atts["compiler item"]]
+		if isinstance(item, str):
+			char = e.atts["compiler item index"]
+		
+		if e.mod & pygame.KMOD_CTRL:
+			return False
+		if e.key == pygame.K_BACKSPACE:
+			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
+				self.text = self.text[0:pos -1] + self.text[pos:]
+#				log(self.text)
+				self.root.post_render_move_caret = -1
+		elif e.key == pygame.K_DELETE:
+			if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
+				self.text = self.text[0:pos] + self.text[pos + 1:]
+		elif e.key == pygame.K_ESCAPE:
+			return False
+		elif e.key == pygame.K_RETURN:
+			return False
+		elif e.uni:
+			self.text = self.text[:pos] + e.uni + self.text[pos:]
+			self.root.post_render_move_caret = len(e.uni)
+		else: return False
+		#log(self.text + "len: " + len(self.text))
+		self.dispatch_event('on_edit', self)
+		return True
+
+
 	def flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items])
 
