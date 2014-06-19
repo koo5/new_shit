@@ -124,6 +124,7 @@ def process_event(event):
 
 
 def draw():
+	menu.update(root)
 	screen_surface.blit(root.draw(),root.rect.topleft)
 	screen_surface.blit(menu.draw(),menu.rect.topleft)
 	screen_surface.blit(info.draw(),info.rect.topleft)
@@ -201,8 +202,6 @@ root.render()
 root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0].items[0], root.lines)
 root.cursor_c += 1
 
-
-menu.update(root)
 draw()
 
 
