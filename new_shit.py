@@ -25,7 +25,7 @@ def change_font_size():
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
-	log("resize")
+	log("resize to "+str(size))
 	screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
 	resize_frames()
@@ -88,14 +88,38 @@ class KeypressEvent(object):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod)))
 
+replay = []
+import pickle, copy
 
 def keypress(event):
+	global replay
 	e = KeypressEvent(event)
-	if top_keypress(e):
-		return
-	if menu.on_keypress(e):
-		return
-	root.on_keypress(e)
+
+	if e.key == pygame.K_F2:
+		try:
+			with open("replay.p", "rb") as f:
+				replay = pickle.load(f)
+		except:
+			log("couldnt read replay.p")
+			replay = []
+		for i in replay:
+			do_keypress(copy.deepcopy(i))
+	else:
+		if e.key == pygame.K_ESCAPE:
+			bye()
+		else:
+			replay.append(e)
+			with open("replay.p", "wb") as f:
+				#print replay
+				try:
+					pickle.dump(replay, f)
+				except pickle.PicklingError as error:
+					print error, ", are you profiling?"
+		do_keypress(copy.deepcopy(e))
+
+def do_keypress(e):
+	top_keypress(e) or menu.on_keypress(e) or root.on_keypress(e)
+	draw()
 
 
 def mousedown(e):
@@ -103,6 +127,7 @@ def mousedown(e):
 		if f.rect.collidepoint(e.pos):
 			pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
 			f.mousedown(e, pos)
+			draw()
 			break
 
 def process_event(event):
@@ -112,11 +137,9 @@ def process_event(event):
 
 	if event.type == pygame.KEYDOWN:
 		keypress(event)
-		draw()
 
 	if event.type == pygame.MOUSEBUTTONDOWN:
 		mousedown(event)
-		draw()
 
 	if event.type == pygame.VIDEORESIZE:
 		resize(event.dict['size'])
@@ -125,10 +148,10 @@ def process_event(event):
 
 
 def draw():
-	menu.update(root)
 	root.render()
 	info.render()
 	resize_frames()
+	menu.update(root)
 	menu.render()
 	screen_surface.blit(root.draw(),root.rect.topleft)
 	screen_surface.blit(menu.draw(),menu.rect.topleft)
@@ -169,7 +192,7 @@ repeat_delay, repeat_rate = int(s[3]), int(s[6])
 pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 screen_surface = None
-display.set_caption('lemon v 0.0 streamlined insane prototype with types')
+display.set_caption('lemon operating language v 0.0 streamlined insane prototype with types')
 icon = image.load('icon32x32.png')
 display.set_icon(icon)
 
@@ -219,9 +242,9 @@ def main():
 	#	except KeyboardInterrupt() as e:
 	#		pygame.display.iconify()
 	#		raise e
-		except Exception() as e:
+		except:
 			pygame.display.iconify()
-			raise e
+			raise
 
 if __name__ == "__main__":
 	main()

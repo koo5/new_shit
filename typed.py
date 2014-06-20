@@ -53,7 +53,7 @@ class val(list):
 		if len(self) > 0 and self[-1] == x:
 			pass
 		else:
-			super(self, val).append(x)
+			super(val, self).append(x)
 		return x
 
 

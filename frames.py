@@ -430,3 +430,6 @@ class Info(Frame):
 
 
 #todo: definition / insight frame? preferably able to float in multiple numbers around the code in root
+#status / log window
+#toolbar (toolbar.py)
+#settings, the doc?
