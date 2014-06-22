@@ -4,6 +4,13 @@ a protoprototype of a structure editor and of a programming language / user inte
 
 
 
+status
+===
+6/22: lemon is on hold while im resolving my RSI
+
+
+
+
 getting started
 ===
 \#requires pygame and fuzzywuzzy:
