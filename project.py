@@ -21,12 +21,12 @@ if __debug__:
 
 def squash(l):
 #	ping()
-	if __debug__:
-		assert(isinstance(l, list))
-		for i in l:
-			assert(isinstance(i, tuple))
-			assert(len(i) == 2)
-			assert(isinstance(i[0], str))
+#	if __debug__:
+#		assert(isinstance(l, list))
+#		for i in l:
+#			assert(isinstance(i, tuple))
+#			assert(len(i) == 2)
+#			assert(isinstance(i[0], str))
 	r = {}
 	for i in l:
 		r[i[0]] = i[1]
@@ -46,13 +46,13 @@ def newline(p, elem):
 
 
 def charadd(line, char, atts):
-	assert(isinstance(atts, list))
+	#assert(isinstance(atts, list))
 	a = squash(atts)
-	assert(isinstance(a, dict))
+	#assert(isinstance(a, dict))
 	line.append((char, a))
 
 def attadd(atts, key, val):
-	assert(isinstance(key, str))
+	#assert(isinstance(key, str))
 	atts.append((key, val))
 
 def new_p(cols, frame):
@@ -78,10 +78,13 @@ def project_tags(tags, cols, frame):
 	return p
 
 def _project_elem(p, elem):
-	assert(isinstance(elem, asselement.Element))
-	assert(isinstance(p.lines, list))
-	assert(isinstance(p.atts, list))
-	assert(isinstance(p.indent, int))
+	#assert(isinstance(elem, asselement.Element))
+	#assert(isinstance(p.lines, list))
+	#assert(isinstance(p.atts, list))
+	#assert(isinstance(p.indent, int))
+
+	#in theory, it could buy some cpu time to attadd/charadd these tags directly,
+	#but actually they should rather be moved to Node.tags/Element.tags
 
 	tags = [AttTag("node", elem)]
 
@@ -120,10 +123,10 @@ def _project_tags(p, elem, tags, pos):
 
 	for tag in tags:
 	#first some replaces
-		if isinstance(tag, NewlineTag):
-			tag = "\n"
-		elif isinstance(tag, TextTag):
+		if isinstance(tag, TextTag):
 			tag = tag.text
+		elif isinstance(tag, NewlineTag):
+			tag = "\n"
 
 		elif isinstance(tag, ChildTag):
 			assert(isinstance(elem, assnodes.Node))
@@ -145,18 +148,16 @@ def _project_tags(p, elem, tags, pos):
 				p.atts.pop()
 				pos += 1
 
+		elif isinstance(tag, AttTag):
+			attadd(p.atts, tag.key, tag.val)
+		elif isinstance(tag, EndTag):
+			p.atts.pop()
+		elif isinstance(tag, ColorTag):
+			attadd(p.atts, "color", tag.color)
+
 		#recurse
 		elif isinstance(tag, ElementTag):
 			_project_elem(p, tag.element)
-
-		#attributes
-		elif isinstance(tag, EndTag):
-			p.atts.pop()
-
-		elif isinstance(tag, AttTag):
-			attadd(p.atts, tag.key, tag.val)
-		elif isinstance(tag, ColorTag):
-			attadd(p.atts, "color", tag.color)
 
 		elif isinstance(tag, ArrowTag):
 			p.arrows.append((len(p.lines[-1]), len(p.lines) - 1, tag.target))

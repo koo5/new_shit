@@ -53,7 +53,7 @@ class val(list):
 		if len(self) > 0 and self[-1] == x:
 			pass
 		else:
-			super(self, val).append(x)
+			super(val, self).append(x)
 		return x
 
 
@@ -1131,6 +1131,21 @@ BuiltinFunctionDecl.create("sum",
 						   b_sum,
 	[	Text("the sum of"),
 		TypedArgument({'name': Text("list"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})})])
+
+def b_range(self, args):
+	r = List()
+	r.decl = b["list"].make_type({'itemtype': Ref(b['number'])})
+	r.items = [Number(i) for i in range(args["from"].pyval, args["to"].pyval + 1)]
+	r.fix_parents()
+	return r
+BuiltinFunctionDecl.create("range",
+						   b_range,
+	[	Text("numbers from"),
+		TypedArgument({'name': Text('from'), 'type': Ref(b['number'])}),
+		Text("to"),
+		TypedArgument({'name': Text('to'), 'type': Ref(b['number'])})
+		])
+
 
 def b_print(args):
 	print(args[0].to_python_string())
