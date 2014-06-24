@@ -17,7 +17,7 @@ import widgets
 from menu_items import MenuItem
 import tags
 #better would be ch, wi, te, ?
-from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag#, MenuTag
+from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, AttTag#, MenuTag
 import tags as asstags
 asstags.asselement = element
 
@@ -854,10 +854,6 @@ class Compiler(Node):
 
 	@property
 	def compiled(self):
-		"""compilation isnt supported until logic programming is obtained:)
-		for now, just return what is there"""
-		#filter out strings
-		nodes = [i if isinstance(i, Node) for i in self.items]
 		if len(self.items) == 1 and isinstance(self.items[0], Node):
 			return self.items[0]
 		else:
@@ -868,7 +864,7 @@ class Compiler(Node):
 
 	def render(self):
 		if len(self.items) == 0: #hint at the type expected
-			return [ColorTag("compiler hint), t('('+self.type.name+')'), EndTag()]
+			return [ColorTag("compiler hint"), t('('+self.type.name+')'), EndTag()]
 
 		r = []
 		for i, item in enumerate(self.items):
@@ -886,7 +882,7 @@ class Compiler(Node):
 
 	@property
 	def nodes(s):
-		return [i if isinstance(i, Node) for i in s.items)
+		return [i for i in s.items if isinstance(i, Node) ]
 
 	def fix_parents(self):
 		super(Compiler, self).fix_parents()

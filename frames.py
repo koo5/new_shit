@@ -1,6 +1,5 @@
 import pygame
 from pygame import draw
-from roman import OutOfRangeError
 
 from colors import color, colors
 import project
@@ -110,7 +109,7 @@ class Root(Frame):
 	def atts(self):
 		try:
 			return self.lines[self.cursor_r][self.cursor_c][1]
-		except OutOfRangeError():
+		except IndexError():
 			return None
 
 	def move_cursor_h(s, x):
