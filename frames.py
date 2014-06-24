@@ -106,6 +106,7 @@ class Root(Frame):
 	def element_char_index(self):
 		return self.atts["char_index"]
 
+	@property
 	def atts(self):
 		try:
 			return self.lines[self.cursor_r][self.cursor_c][1]

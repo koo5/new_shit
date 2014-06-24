@@ -9,7 +9,8 @@ default_colors = {
 	"info_item_visibility_toggle":(100,100,100),
 	"menu_rect_selected":(255,255,255),
 	"menu_rect":(0,0,255),
-    "help":(255,255,0)
+    "help":(255,255,0),
+    "compiler hint":(100,100,100)
 
 	}
 

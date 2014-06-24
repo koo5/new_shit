@@ -871,7 +871,7 @@ class Compiler(Node):
 			r += [AttTag("compiler item", i)]
 			if isinstance(item, str):
 				for j, c in enumerate(item):
-					r += [AttTag("compiler item index", j), t(c), EndTag()]
+					r += [AttTag("compiler item char", j), t(c), EndTag()]
 			else:
 				r += [ElementTag(item)]
 			r += [EndTag()]
@@ -889,10 +889,14 @@ class Compiler(Node):
 		self._fix_parents(self.nodes)
 
 	def on_keypress(self, e):
-		item = self.items[e.atts["compiler item"]]
+		if e.atts.has_key("compiler item"):
+			item = self.items[e.atts["compiler item"]]
+		else:
+			item = None
 		if isinstance(item, str):
-			char = e.atts["compiler item index"]
-		
+			char = e.atts["compiler item char"]
+		"""hmm, how to ideally solve the problem of the keypress between two nodes?
+		make the beginning bracket belong to the parent node?"""
 		if e.mod & pygame.KMOD_CTRL:
 			return False
 		if e.key == pygame.K_BACKSPACE:
