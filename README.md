@@ -4,11 +4,6 @@ a protoprototype of a structure editor and of a programming language / user inte
 
 
 
-status
-===
-6/22: lemon is on hold while im resolving my RSI
-
-
 
 
 getting started
@@ -51,15 +46,10 @@ files:
 
 license
 ===
-licensing is still undecided, usual open source business models dont fit lemon.  
-i may choose some standard open source license or continue developing this experiment: <https://github.com/koo5/Free-Man-License>  
-crudely something like CC-NC + additional permissions for non-heavy use +  a commercial license  
-but for sanity in matters like patents, might try writing something on my own (ha ha)  
-clahub isnt ready yet.http://lwn.net/Articles/592503/  
-http://www.drdobbs.com/open-source/the-conflict-at-the-heart-of-open-source/240168123  
-http://research.microsoft.com/en-us/projects/pex/msr-la.txt  
-so, if you want to contribute, you must either give me a CLA or persuade me into a standard license  
+i may choose some standard license or continue developing this experiment: <https://github.com/koo5/Free-Man-License>  
 this license is just an experiment..side project.. and this version of lemon should be just a bootstrap, so technically it shouldnt matter...
+so, if you want to contribute, you must either give me a CLA or persuade me into a standard license  
+
 
 
 

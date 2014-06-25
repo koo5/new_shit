@@ -851,6 +851,7 @@ class Compiler(Node):
 		self.items = []
 		self.brackets_color = (255,155,0)
 		self.decl = None #i am a free man, not a number!
+		self.register_event_types('on_edit')
 
 	@property
 	def compiled(self):
@@ -869,7 +870,7 @@ class Compiler(Node):
 		r = []
 		for i, item in enumerate(self.items):
 			r += [AttTag("compiler item", i)]
-			if isinstance(item, str):
+			if isinstance(item, (str, unicode)):
 				for j, c in enumerate(item):
 					r += [AttTag("compiler item char", j), t(c), EndTag()]
 			else:
@@ -889,16 +890,36 @@ class Compiler(Node):
 		self._fix_parents(self.nodes)
 
 	def on_keypress(self, e):
+
+		assert self.root.post_render_move_caret == 0
+
+		its = self.items
 		if e.atts.has_key("compiler item"):
-			item = self.items[e.atts["compiler item"]]
+			i = e.atts["compiler item"]
+			if isinstance(its[i], (str, unicode)):
+				char = e.atts["compiler item char"]
 		else:
-			item = None
-		if isinstance(item, str):
-			char = e.atts["compiler item char"]
-		"""hmm, how to ideally solve the problem of the keypress between two nodes?
-		make the beginning bracket belong to the parent node?"""
+			if len(its) == 0:
+				self.items.append("")
+				i = 0
+				char = 0
+				print e.atts
+				self.root.post_render_move_caret -= e.atts['char_index']
+			else:
+				i = len(its) - 1
+				char = len(its[i])
+
+
 		if e.mod & pygame.KMOD_CTRL:
 			return False
+		if not isinstance(its[i], (str, unicode)):
+			return False
+		if e.key == pygame.K_ESCAPE:
+			return False
+		if e.key == pygame.K_RETURN:
+			return False
+
+
 		if e.key == pygame.K_BACKSPACE:
 			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 				self.text = self.text[0:pos -1] + self.text[pos:]
@@ -907,14 +928,14 @@ class Compiler(Node):
 		elif e.key == pygame.K_DELETE:
 			if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
 				self.text = self.text[0:pos] + self.text[pos + 1:]
-		elif e.key == pygame.K_ESCAPE:
-			return False
-		elif e.key == pygame.K_RETURN:
-			return False
+
+
 		elif e.uni:
-			self.text = self.text[:pos] + e.uni + self.text[pos:]
-			self.root.post_render_move_caret = len(e.uni)
-		else: return False
+			text = its[i]
+			its[i] = text[:char] + e.uni + text[char:]
+			self.root.post_render_move_caret += len(e.uni)
+		else:
+			return False
 		#log(self.text + "len: " + len(self.text))
 		self.dispatch_event('on_edit', self)
 		return True
