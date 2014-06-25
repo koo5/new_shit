@@ -447,7 +447,7 @@ class Text(WidgetedValue):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 		self.brackets_color = (0,200,0)
-		self.brackets = ('"','"')
+		self.brackets = ('[',']')
 
 	def render(self):
 		return self.widget.render()
@@ -1108,6 +1108,15 @@ def b_squared(self, args):
 BuiltinFunctionDecl.create("squared",
 						   b_squared,
 	[	TypedArgument({'name': Text("number"), 'type': Ref(b['number'])}),
+		Text("squared")])
+
+def b_list_squared(self, args):
+	r = List() #todo:type
+	[r.add(Number(i.pyval*i.pyval)) for i in args[0].items]
+	return r
+BuiltinFunctionDecl.create("list squared",
+						   b_squared,
+	[	TypedArgument({'name': Text("list of numbers"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})}),
 		Text("squared")])
 
 def b_multiply(self, args):
