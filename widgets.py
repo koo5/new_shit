@@ -157,8 +157,9 @@ class Toggle(Widget):
 		self.register_event_types('on_change')
 		self.value = value
 		self.texts = texts
+		self.color = "text"
 	def render(self):
-		return [TextTag(self.text)]
+		return [ColorTag(self.color), TextTag(self.text), EndTag()]
 	@property
 	def text(self):
 		return self.texts[0] if self.value else self.texts[1]

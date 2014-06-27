@@ -123,7 +123,7 @@ class Root(Frame):
 		if s.cursor_c < 0:
 			#todo
 			s.cursor_c = 0
-		return old == s.cursor_c, s.cursor_r
+		return old != (s.cursor_c, s.cursor_r)
 
 	def move_cursor_v(self, count):
 		r = self.cursor_r + count
@@ -391,26 +391,22 @@ class Info(Frame):
 		super(Info, s).__init__()
 		s.top_info = [InfoItem(t) for t in [
 			"ctrl + =,- : font size",
-			"f10 : toggle brackets",
-			"f9 : toggle valid-only items in menu",
-			"f8 : toggle arrows",
+			"f9 : only valid items in menu",
+			"f8 : arrows",
 			"f5 : eval",
 			"ctrl + up, down: menu movement",
 			"space: menu selection",
 			"",
 			"[text] are textboxes",
-			"orange <>'s denote Compiler",
+			"orange <>'s are Compiler",
 			"red <>'s enclose nodes or other widgets",
 			"(gray)'s are the type the compiler expects",
-			" (they should go under the text box)",
-			"currently you can only insert nodes manually",
-			" by selecting them from the menu, with prolog,",
-			" the compiler will start guessing what you mean"
+			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"
 		]]
 		#,	"f12 : normalize syntaxes"
 		s.hierarchy_infoitem = InfoItem("bla")
 		s.hidden_toggle = widgets.Toggle(s, True, ("(...)", "(......)"))
-		s.hidden_toggle.color = "info item visibility toggle"
+		s.hidden_toggle.color = s.hidden_toggle.brackets_color = "info item visibility toggle"
 
 	@property
 	def used_height(s):

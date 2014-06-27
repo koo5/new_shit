@@ -219,6 +219,7 @@ class Syntaxed(Node):
 			if e.key == pygame.K_PAGEDOWN:
 				self.next_syntax()
 				return True
+		return super(Syntaxed, self).on_keypress(e)
 
 	@classmethod
 	def new_kids(cls, slots):
@@ -857,16 +858,16 @@ class Compiler(Node):
 
 			else:
 				i = self.mine(e.atts)
-
-			if isinstance(its[i], (str, unicode)):
-				if "compiler item char" in e.atts:
-					char = e.atts["compiler item char"]
+				if i != None:
+					if isinstance(its[i], (str, unicode)):
+						if "compiler item char" in e.atts:
+							char = e.atts["compiler item char"]
+						else:
+							char = len(its[i])
+					else:
+						return False
 				else:
-					char = len(its[i])
-
-
-			if not isinstance(its[i], (str, unicode)):
-				return False
+					return False
 
 		"""
 		if e.key == pygame.K_BACKSPACE:
@@ -962,8 +963,11 @@ class Compiler(Node):
 		if i != None:
 			text = self.items[i]
 		else:
-			text = ""
-
+			if len(self.items) == 0:
+				text = ""
+			else:
+				return []
+		print '.',text,"."
 
 
 		for item in menu:
@@ -991,10 +995,9 @@ class Compiler(Node):
 		menu.reverse()#umm...
 		return menu
 
-
-def isemptytext(item):
-	return isinstance(item, Text) and item.pyval == ""
-
+	def delete_child(s, ch):
+		log("del")
+		del s.items[s.items.index(ch)]
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection
@@ -1206,7 +1209,7 @@ class FunctionCall(Node):
 
 
 	def render(self):
-		r = [t('!')]
+		r = []
 		argument_index = 0
 		if not isinstance(self.target.sig, (List, Compiler)):
 			r+=[t("sig not List, " + str(self.target.sig))]
@@ -1262,7 +1265,7 @@ class PythonEval(Syntaxed):
 	def __init__(self, children):
 		super(PythonEval, self).__init__(children)
 
-SyntaxedNodecl(PythonEval, #how did this say here??
+SyntaxedNodecl(PythonEval,
 			   [t("python eval"), ch("text")],
 			   {'text': Exp(b['text'])})
 
