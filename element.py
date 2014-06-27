@@ -48,7 +48,7 @@ class Element(event.EventDispatcher):
 			i.parent = self
 			i.fix_parents()
 
-	def menu(self):
+	def menu(self, atts):
 		return []
 
 	def hierarchy_info(self):
@@ -58,9 +58,9 @@ class Element(event.EventDispatcher):
 		r += [InfoMenuItem("element: " + str(self))]
 		return r
 
-	def menu_item_selected(self, item, element):
+	def menu_item_selected(self, item, atts):
 		if self.parent:
-			return self.parent.menu_item_selected(item, self)
+			return self.parent.menu_item_selected(item, atts)
 	"""
 	#def position(self):
 	#	return self.doc.positions[self]

@@ -64,6 +64,7 @@ def new_p(cols, frame):
 	p.arrows = []
 	p.indent = 0
 	p.frame = frame
+	p.char_index = 0
 	return p
 
 def project(root, cols, frame):
@@ -74,7 +75,7 @@ def project(root, cols, frame):
 def project_tags(tags, cols, frame):
 	p = new_p(cols, frame)
 	p._render_lines = {frame:[{}]}
-	_project_tags(p, p, tags, 0)
+	_project_tags(p, p, tags)
 	return p
 
 def _project_elem(p, elem):
@@ -82,14 +83,11 @@ def _project_elem(p, elem):
 	#assert(isinstance(p.lines, list))
 	#assert(isinstance(p.atts, list))
 	#assert(isinstance(p.indent, int))
-
+	p.char_index = 0
 	#in theory, it could buy some cpu time to attadd/charadd these tags directly,
 	#but actually they should rather be moved to Node.tags/Element.tags
 
 	tags = [AttTag("node", elem)]
-
-	pos = -1 # because of the "<"
-	tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag()]
 	tags += elem.tags()
 	tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
@@ -112,14 +110,14 @@ def _project_elem(p, elem):
 		"startchar": len(p.lines[-1]),
 		"startline": len(p.lines)-1}
 
-	_project_tags(p, elem, tags, pos)
+	_project_tags(p, elem, tags)
 
 	elem._render_lines[p.frame]["endchar"] = len(p.lines[-1])
 	elem._render_lines[p.frame]["endline"] = len(p.lines)-1
 
 
 
-def _project_tags(p, elem, tags, pos):
+def _project_tags(p, elem, tags):
 
 	for tag in tags:
 	#first some replaces
@@ -138,7 +136,7 @@ def _project_tags(p, elem, tags, pos):
 	#now real stuff
 		if isinstance(tag, (str, unicode)):
 			for char in tag:
-				attadd(p.atts, "char_index", pos)
+				attadd(p.atts, "char_index", p.char_index)
 				if char == "\n":
 					newline(p, elem)
 				else:
@@ -146,7 +144,7 @@ def _project_tags(p, elem, tags, pos):
 						newline(p, elem)
 					charadd(p.lines[-1], char, p.atts)
 				p.atts.pop()
-				pos += 1
+				p.char_index += 1
 
 		elif isinstance(tag, AttTag):
 			attadd(p.atts, tag.key, tag.val)
@@ -157,6 +155,8 @@ def _project_tags(p, elem, tags, pos):
 
 		#recurse
 		elif isinstance(tag, ElementTag):
+
+			_project_tags(p, elem, [ColorTag(tag.element.brackets_color), TextTag(tag.element.brackets[0]), EndTag()])
 			_project_elem(p, tag.element)
 
 		elif isinstance(tag, ArrowTag):

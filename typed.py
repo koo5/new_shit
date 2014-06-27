@@ -17,7 +17,7 @@ import widgets
 from menu_items import MenuItem
 import tags
 #better would be ch, wi, te, ?
-from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag#, MenuTag
+from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, AttTag#, MenuTag
 import tags as asstags
 asstags.asselement = element
 
@@ -437,16 +437,11 @@ class Number(WidgetedValue):
 		return Number(self.pyval)
 
 class Text(WidgetedValue):
-	"""this one is tricky, works as an "input buffer" in Compiler node.
-	its weird but it seems a good place for the menu function
-	its also tricky now because im experimenting with removing one set of brackets
-	and rendering the widget directly
-	"""
 
 	def __init__(self, value=""):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
-		self.brackets_color = (0,200,0)
+		self.brackets_color = "text brackets"
 		self.brackets = ('[',']')
 
 	def render(self):
@@ -458,56 +453,6 @@ class Text(WidgetedValue):
 	def _eval(self):
 		return Text(self.pyval)
 
-	def menu(self):
-		if not isinstance(self.parent, Compiler):
-			return []
-
-		#ev = self.slot.evaluated
-		#node type (slot) specifies if a child should be of given type directly or an expression that evaluates to it
-		#function definition specifies if the argument should be evaluated for it
-		type = self.parent.type #self.slot.type
-
-		scope = self.scope()
-		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
-		nodecls.remove(b['builtinfunctiondecl'])
-		menu = flatten([x.palette(scope) for x in nodecls])
-
-		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
-		#first lets search for things in scope that are already of that type
-		#for i in menu:
-		#	if i.value.decl.eq(type):
-		#		v.score += 1
-
-		for item in menu:
-			v = item.value
-			item.score += fuzz.partial_ratio(v.decl.name, self.pyval) #0-100
-			#print item.value.decl, item.value.decl.works_as(type), type.target
-
-			if item.value.decl.works_as(type):
-				item.score += 200
-			else:
-				item.invalid = True
-
-			#search thru syntaxes
-			#if isinstance(v, Syntaxed):
-			#	for i in v.syntax:
-			#   		if isinstance(i, t):
-			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
-			#search thru an actual rendering(including children)
-			r =     v.render()
-			re = " ".join([i.text for i in r if isinstance(i, t)])
-			item.score += fuzz.partial_ratio(re, self.pyval)
-
-
-		#doing nothing is the default (replacing self with self)
-		s = CompilerMenuItem(self)
-		s.score = 1000
-		s.valid = True
-		menu.append(s)
-
-		menu.sort(key=lambda i: i.score)
-		menu.reverse()#umm...
-		return menu
 
 
 class Root(Dict):
@@ -847,68 +792,104 @@ class Compiler(Node):
 	def __init__(self, type):
 		super(Compiler, self).__init__()
 		self.type = type
-		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition))
+		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition)) #in short, everything that works as a type..abstract it away later
 		self.items = []
-		self.add(Text(""))
 		self.brackets_color = (255,155,0)
-		self.decl = None
+		self.decl = None #i am a free man, not a number!
+		self.register_event_types('on_edit')
 
 	@property
 	def compiled(self):
-		"""compilation isnt supported until logic programming is obtained,
-		for now, just return what is there"""
-		if len(self.items) < 2:
-			#there is just the empty Text
-			return self#hmm
+		if len(self.items) == 1 and isinstance(self.items[0], Node):
+			return self.items[0]
 		else:
-			return self.items[1]
+			return Text("not compiled")
 
 	def _eval(self):
-		if len(self.items) == 1:
-			i = 0
-		else:
-			i = 1
-		r = self.items[i].eval()
-		print r
-		return r
-
+		return self.compiled().eval()
 
 	def render(self):
-		#replicating List functionality here
+		if len(self.items) == 0: #hint at the type expected
+			return [ColorTag("compiler hint"), t('('+self.type.name+')'), EndTag()]
+
 		r = []
-		#r += [t("[")]
-		for item in self.items:
-			r += [ElementTag(item)]
-		#r += [t("]")]
-		if len(self.items) == 1 and isinstance(self.items[0], Text) and	self.items[0].pyval == "":
-			r+=[ColorTag((100,100,100)), t('('+self.type.name+')'), EndTag()] #hint at the type expected
+		for i, item in enumerate(self.items):
+			r += [AttTag("compiler item", i)]
+			if isinstance(item, (str, unicode)):
+				for j, c in enumerate(item):
+					r += [AttTag("compiler item char", j), t(c), EndTag()]
+			else:
+				r += [ElementTag(item)]
+			r += [EndTag()]
 		return r
 
 	def __getitem__(self, i):
 		return self.items[i]
 
+	@property
+	def nodes(s):
+		return [i for i in s.items if isinstance(i, Node) ]
+
 	def fix_parents(self):
 		super(Compiler, self).fix_parents()
-		self._fix_parents(self.items)
+		self._fix_parents(self.nodes)
 
 	def on_keypress(self, e):
-		pass
-	"""
-		item_index = self.insertion_pos(e.cursor)
-		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
-			if len(self.items) > item_index:
-				del self.items[item_index]
-	"""
-	"""
-	def insertion_pos(self, (char, line)):
-		i = -1
-		for i, item in enumerate(self.items):
-			#print i, item, item._render_start_line, item._render_start_char
-			if (item._render_start_line >= line and
-				item._render_start_char >= char):
-				return i
-		return i + 1
-	"""
+
+		if e.mod & pygame.KMOD_CTRL:
+			return False
+		if e.key == pygame.K_ESCAPE:
+			return False
+		if e.key == pygame.K_RETURN:
+			return False
+
+		assert self.root.post_render_move_caret == 0
+		its = self.items
+
+		if e.uni: #or backspace etc
+
+			if len(its) == 0:
+				self.items.append("")
+				i = 0
+				char = 0
+				log("add")
+				self.root.post_render_move_caret -= e.atts['char_index']
+
+			else:
+				i = self.mine(e.atts)
+
+			if isinstance(its[i], (str, unicode)):
+				if "compiler item char" in e.atts:
+					char = e.atts["compiler item char"]
+				else:
+					char = len(its[i])
+
+
+			if not isinstance(its[i], (str, unicode)):
+				return False
+
+		"""
+		if e.key == pygame.K_BACKSPACE:
+			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
+				self.text = self.text[0:pos -1] + self.text[pos:]
+#				log(self.text)
+				self.root.post_render_move_caret = -1
+		elif e.key == pygame.K_DELETE:
+			if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
+				self.text = self.text[0:pos] + self.text[pos + 1:]
+		"""
+
+		if e.uni:
+			log(e)
+			text = its[i]
+			its[i] = text[:char] + e.uni + text[char:]
+			self.root.post_render_move_caret += len(e.uni)
+
+		#log(self.text + "len: " + len(self.text))
+		self.dispatch_event('on_edit', self)
+		return True
+
+
 	def flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items])
 
@@ -935,27 +916,80 @@ class Compiler(Node):
 		return self.runtime.value.val
 	"""
 
-	def menu_item_selected(self, item, child): #takes child because the menu is generated by Text, remove later
+	def mine(self, atts):
+		if "compiler item" in atts and atts["compiler item"] in self.items:
+			return self.items.index(atts["compiler item"])
+		elif len(self.items) != 0 and atts["node"] == self:
+			return len(self.items) - 1
+
+
+	def menu_item_selected(self, item, atts):
 		if not isinstance(item, CompilerMenuItem):
 			log("not CompilerMenuItem")
 			return
 
-		if child in self.items:
-			i = self.items.index(child)
+		i = self.mine(atts)
+		if i != None:
 			self.items[i] = item.value
-			item.value.parent = self
-
-			if not isemptytext(self.items[0]):
-				n = Text()
-				n.parent = self
-				self.items.insert(0, n)
-			if not isemptytext(self.items[-1]):
-				n = Text()
-				n.parent = self
-				self.items.append(n)
-
 		else:
-			hmm()
+			self.items.append(item.value)
+		item.value.parent = self
+
+
+
+	def menu(self, atts):
+		scope = self.scope()
+		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
+		nodecls.remove(b['builtinfunctiondecl'])
+		menu = flatten([x.palette(scope) for x in nodecls])
+
+		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
+		#first lets search for things in scope that are already of that type
+		#for i in menu:
+		#	if i.value.decl.eq(type):
+		#		v.score += 1
+
+		type = self.type
+		if isinstance(type, Exp):
+			type = type.type
+			exp = True
+		else:
+			exp = False
+
+
+
+		i = self.mine(atts)
+		if i != None:
+			text = self.items[i]
+		else:
+			text = ""
+
+
+
+		for item in menu:
+			v = item.value
+			item.score += fuzz.partial_ratio(v.decl.name, text) #0-100
+			#print item.value.decl, item.value.decl.works_as(type), type.target
+
+			if item.value.decl.works_as(type):
+				item.score += 200
+			else:
+				item.invalid = True
+
+			#search thru syntaxes
+			#if isinstance(v, Syntaxed):
+			#	for i in v.syntax:
+			#   		if isinstance(i, t):
+			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
+			#search thru an actual rendering(including children)
+			r =     v.render()
+			re = " ".join([i.text for i in r if isinstance(i, t)])
+			item.score += fuzz.partial_ratio(re, text)
+
+
+		menu.sort(key=lambda i: i.score)
+		menu.reverse()#umm...
+		return menu
 
 
 def isemptytext(item):

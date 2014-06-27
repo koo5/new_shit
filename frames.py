@@ -1,7 +1,6 @@
 import pygame
 from pygame import draw
 
-
 from colors import color, colors
 import project
 import typed
@@ -105,9 +104,13 @@ class Root(Frame):
 				return r
 
 	def element_char_index(self):
+		return self.atts["char_index"]
+
+	@property
+	def atts(self):
 		try:
-			return self.lines[self.cursor_r][self.cursor_c][1]["char_index"]
-		except:
+			return self.lines[self.cursor_r][self.cursor_c][1]
+		except IndexError:
 			return None
 
 	def move_cursor_h(s, x):
@@ -280,8 +283,8 @@ class Root(Frame):
 
 	def on_keypress(self, event):
 		event.frame = self
-		event.pos = self.element_char_index()
 		event.cursor = (self.cursor_c, self.cursor_r)
+		event.atts = self.atts
 		if self.top_keypress(event):
 			return True
 		element = self.under_cursor()
@@ -289,7 +292,7 @@ class Root(Frame):
 			element = element.parent
 		if element != None:#some element handled it
 			self.move_cursor_h(self.root.post_render_move_caret)
-			self.root.post_render_move_caret = 0 #carry it over!
+			self.root.post_render_move_caret = 0
 			return True
 
 
@@ -313,6 +316,8 @@ class Menu(Frame):
 	def items(self, value):
 		if self.sel > len(value) - 1:
 			self.sel = len(value) - 1
+		if self.sel < 0:
+			self.sel = 0
 		self._items = value
 
 	def draw(s):
@@ -340,10 +345,11 @@ class Menu(Frame):
 
 	def update(s, root):
 		e = root.under_cursor()
+		atts = root.atts
 		s.element = e
 		new_items = []
 		while e != None:
-			new_items += e.menu()
+			new_items += e.menu(atts)
 			e = e.parent
 		if s.valid_only:
 			new_items = [x for x in new_items if x.valid]
@@ -359,7 +365,7 @@ class Menu(Frame):
 				self.move(1)
 				return True
 		if e.key == pygame.K_SPACE:
-			self.element.menu_item_selected(self.items[self.sel], None)
+			self.element.menu_item_selected(self.items[self.sel], self.root.atts)
 			self.sel = 0
 			return True
 
@@ -372,7 +378,7 @@ class Menu(Frame):
 		self.sel += y
 		if self.sel < 0: self.sel = 0
 		if self.sel >= len(self.items): self.sel = len(self.items) - 1
-		print len(self.items), self.sel
+		#print len(self.items), self.sel
 
 
 	def toggle_valid(s):
