@@ -201,6 +201,7 @@ colors.cache(args)
 
 root = frames.Root()
 menu = frames.Menu()
+menu.root = root
 info = frames.Info()
 all_frames = [root, menu, info]
 

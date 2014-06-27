@@ -26,7 +26,7 @@ class Text(Widget):
 		return [TextTag(self.text)]
 	
 	def on_keypress(self, e):
-		pos = e.pos
+		pos = e.atts["char_index"]
 		if e.mod & pygame.KMOD_CTRL:
 			return False
 		if e.key == pygame.K_BACKSPACE:

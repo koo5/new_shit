@@ -343,10 +343,11 @@ class Menu(Frame):
 
 	def update(s, root):
 		e = root.under_cursor()
+		atts = root.atts
 		s.element = e
 		new_items = []
 		while e != None:
-			new_items += e.menu()
+			new_items += e.menu(atts)
 			e = e.parent
 		if s.valid_only:
 			new_items = [x for x in new_items if x.valid]
@@ -362,7 +363,7 @@ class Menu(Frame):
 				self.move(1)
 				return True
 		if e.key == pygame.K_SPACE:
-			self.element.menu_item_selected(self.items[self.sel], None)
+			self.element.menu_item_selected(self.items[self.sel], self.root.atts)
 			self.sel = 0
 			return True
 
@@ -375,7 +376,7 @@ class Menu(Frame):
 		self.sel += y
 		if self.sel < 0: self.sel = 0
 		if self.sel >= len(self.items): self.sel = len(self.items) - 1
-		print len(self.items), self.sel
+		#print len(self.items), self.sel
 
 
 	def toggle_valid(s):

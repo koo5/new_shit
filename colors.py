@@ -10,8 +10,8 @@ default_colors = {
 	"menu_rect_selected":(255,255,255),
 	"menu_rect":(0,0,255),
     "help":(255,255,0),
-    "compiler hint":(100,100,100)
-
+    "compiler hint":(100,100,100),
+	"text brackets":(200,100,0)
 	}
 
 colors = dotdict()
@@ -32,6 +32,9 @@ def modify(c, max=255):
 
 def color(c):
 	if isinstance(c, str):
-		return colors[c]
+		try:
+			return colors[c]
+		except KeyError:
+			raise Exception("i dont know color '%s'" % str(c))
 	else:
 		return modify(c)
