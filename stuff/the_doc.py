@@ -355,6 +355,12 @@ en.wikipedia.org/wiki/Intentional_programming
 
 
 
+why and hows of type systems stuff
+http://yager.io/programming/go.html
+
+
+
+
 semantic terminal:
 ===
 >>

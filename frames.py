@@ -405,7 +405,7 @@ class Info(Frame):
 		]]
 		#,	"f12 : normalize syntaxes"
 		s.hierarchy_infoitem = InfoItem("bla")
-		s.hidden_toggle = widgets.Toggle(s, True, ("(...)", "(......)"))
+		s.hidden_toggle = widgets.Toggle(s, True, ("(.....)", "(...)"))
 		s.hidden_toggle.color = s.hidden_toggle.brackets_color = "info item visibility toggle"
 
 	@property

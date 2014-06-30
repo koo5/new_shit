@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
+
+
 import argparse, sys, os
 
-
+os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 import pygame
 from pygame import display, image
 
