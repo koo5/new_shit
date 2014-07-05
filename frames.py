@@ -128,9 +128,9 @@ class Root(Frame):
 	def move_cursor_v(self, count):
 		r = self.cursor_r + count
 		sl = self.scroll_lines
-		if r > self.rows:
-			sl += r - self.rows
-			r = self.rows
+		if r >= self.rows:
+			sl += r - self.rows +1
+			r = self.rows-1
 		if r < 0:
 			sl += r
 			r = 0
@@ -169,36 +169,36 @@ class Root(Frame):
 				r.append(((a[0],a[1]),target))
 		self.arrows = r
 
-	def draw_lines(self):
-		s = pygame.Surface((self.rect.w, self.rect.h))
-		s.fill(colors.bg)
+	def draw_lines(self, surf):
 		uc = self.under_cursor()
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
 				x = font_width * col
 				y = font_height * row
 				fg = color(char[1]['color'])
-				bg = color("bg" if not char[1]['node'] == uc else (40,0,0)) #highlight element under cursor
+				bg = color("bg" if not char[1]['node'] == uc else "highlighted bg")
 				sur = font.render(
-					char[0],True,
-					fg,
-					bg)
-				s.blit(sur,(x,y))
-		return s
+					char[0],
+					1,
+					fg
+					)
+				surf.blit(sur,(x,y))
 
 	def draw_arrows(s, surface):
 		#todo: real arrows would be cool
 		for ((c,r),(c2,r2)) in s.arrows:
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
-			pygame.draw.line(surface, (55,55,55), (x,y),(x2,y2))
+			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
 
 	def draw(self):
 		self.render()
 		self.generate_arrows()
-		s = self.draw_lines()
-		self.draw_arrows(s)
-		self.draw_cursor(s)
-		return s
+		surf = pygame.Surface((self.rect.w, self.rect.h), 0, pygame.display.get_surface())
+		#surf.fill(colors.bg)
+		self.draw_arrows(surf)
+		self.draw_lines(surf)
+		self.draw_cursor(surf)
+		return surf
 
 	def draw_cursor(self, s):
 		x, y, y2 = self.cursor_xy()

@@ -3,15 +3,19 @@ from dotdict import dotdict
 
 default_colors = {
 	"info item text": (244,244,244),
-	"bg": (0,0,0),
+	"bg": (0,0,0,0),
+    "highlighted bg":(40,0,0),
+    "arrow":(50,50,111),
 	"fg": (255,255,255),
-	"cursor": (255,255,200),
+	"cursor": (255,255,0),
 	"info item visibility toggle":(100,100,100),
 	"menu_rect_selected":(255,255,255),
 	"menu_rect":(0,0,255),
     "help":(255,255,0),
     "compiler hint":(100,100,100),
-	"text brackets":(200,100,0)
+	"text brackets":(0,255,0),
+    "compiler brackets":(255,255,0),
+    "node brackets":(150,150,150)
 	}
 
 colors = dotdict()

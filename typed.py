@@ -4,7 +4,7 @@ from fuzzywuzzy import fuzz
 
 
 #from collections import OrderedDict
-from odict import OrderedDict
+from odict import OrderedDict #be compatible with older python
 
 from compiler.ast import flatten
 #import weakref
@@ -66,8 +66,14 @@ class Node(element.Element):
 	"""
 	def __init__(self):
 		super(Node, self).__init__()
-		self.color = (0,255,0,255) #i hate hardcoded colors
+		#self.color = (0,255,0,255) #i hate hardcoded colors
+		self.brackets_color = "node brackets"
 		self.runtime = dotdict() #various runtime data herded into one place
+		self.clear_runtime_dict()
+
+	def clear_runtime_dict(s):
+		s.runtime._dict.clear()
+		s.runtime.value = val()
 
 	@property
 	def compiled(self):
@@ -180,8 +186,8 @@ class Syntaxed(Node):
 		self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
 
 	def flatten(self):
-		assert(isinstance(v, Node) for v in self.ch.itervalues())
-		return [self] + [v.flatten() for v in self.ch.itervalues()]
+		assert(isinstance(v, Node) for v in self.ch._dict.itervalues())
+		return [self] + [v.flatten() for v in self.ch._dict.itervalues()]
 
 	@staticmethod
 	def check_slots(slots):
@@ -454,7 +460,8 @@ class Text(WidgetedValue):
 	def _eval(self):
 		return Text(self.pyval)
 
-
+	def __repr__(s):
+		return object.__repr__(s) + "('"+s.pyval+"')"
 
 class Root(Dict):
 	def __init__(self):
@@ -503,8 +510,7 @@ class Module(Syntaxed):
 		st = self.ch.statements
 		print "flatten:", st.flatten()
 		for i in st.flatten():
-			i.runtime.clear()
-			i.runtime.value = val()
+			i.clear_runtime_dict()
 		return st.eval()
 
 
@@ -747,7 +753,7 @@ WorksAs.b("dict", "expression")
 Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 SyntaxedNodecl(Module,
-			   ["module:\n", ch("statements"), t("end.")],
+			   ["module:\n", ch("statements"),  t("end.")],
 			   {'statements': b['statements']})
 
 Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})})
@@ -758,20 +764,21 @@ SyntaxedNodecl(Union,
 b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
 
 
-
+"""
 class For(Syntaxed):
 	def __init__(self, children):
 		super(For, self).__init__(children)
 	@property
 	def vardecls(s):
-		return [s.ch.item]
+		return {.ch.item]
 
 
-SyntaxedNodecl(SyntacticCategory,
-			   [t("syntactic category:"), ch("name")],
-			   {'name': 'text'})
+SyntaxedNodecl(For,
+			   [t("for"), ch("item"), t("in"), ch("items")],
+			   {'item': '',
+			    'items': '})
 
-
+"""
 
 
 
@@ -795,19 +802,22 @@ class Compiler(Node):
 		self.type = type
 		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition)) #in short, everything that works as a type..abstract it away later
 		self.items = []
-		self.brackets_color = (255,155,0)
+		self.brackets_color = "compiler brackets"
 		self.decl = None #i am a free man, not a number!
 		self.register_event_types('on_edit')
 
 	@property
 	def compiled(self):
 		if len(self.items) == 1 and isinstance(self.items[0], Node):
-			return self.items[0]
+			r = self.items[0]
 		else:
-			return Text("not compiled")
+			r = Text("does not compile")
+			r.parent = self
+		print self.items, "=>", r
+		return r
 
 	def _eval(self):
-		return self.compiled().eval()
+		return self.compiled.eval()
 
 	def render(self):
 		if len(self.items) == 0: #hint at the type expected
@@ -892,7 +902,7 @@ class Compiler(Node):
 
 
 	def flatten(self):
-		return [self] + flatten([v.flatten() for v in self.items])
+		return [self] + flatten([v.flatten() for v in self.items if isinstance(v, Node)])
 
 	def add(self, item):
 		self.items.append(item)
@@ -941,7 +951,9 @@ class Compiler(Node):
 	def menu(self, atts):
 		scope = self.scope()
 		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
-		nodecls.remove(b['builtinfunctiondecl'])
+		if b['builtinfunctiondecl'] in nodecls:
+			#with the simplistic "scope" being items above us, some Compiler in builtins might not see it
+			nodecls.remove(b['builtinfunctiondecl'])
 		menu = flatten([x.palette(scope) for x in nodecls])
 
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
@@ -1202,6 +1214,8 @@ class FunctionCall(Node):
 		self.args = [Compiler(v) for v in self.target.arg_types]
 		self._fix_parents(self.args)
 
+	#todo:eval...
+
 	def replace_child(self, child, new):
 		assert(child in self.args)
 		self.args[self.args.index(child)] = new
@@ -1212,7 +1226,7 @@ class FunctionCall(Node):
 		r = []
 		argument_index = 0
 		if not isinstance(self.target.sig, (List, Compiler)):
-			r+=[t("sig not List, " + str(self.target.sig))]
+			r+=[t("sig not a List, " + str(self.target.sig))]
 		else:
 			for v in self.target.sig:
 				if isinstance(v, Text):

@@ -155,6 +155,7 @@ def draw():
 	resize_frames()
 	menu.update(root)
 	menu.render()
+	#screen_surface.fill((0,0,255))
 	screen_surface.blit(root.draw(),root.rect.topleft)
 	screen_surface.blit(menu.draw(),menu.rect.topleft)
 	screen_surface.blit(info.draw(),info.rect.topleft)
