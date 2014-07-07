@@ -15,7 +15,8 @@ default_colors = {
     "compiler hint":(100,100,100),
 	"text brackets":(0,255,0),
     "compiler brackets":(255,255,0),
-    "node brackets":(150,150,150)
+    "node brackets":(150,150,150),
+    "number buttons":(40,40,250)
 	}
 
 colors = dotdict()

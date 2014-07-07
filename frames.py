@@ -235,6 +235,15 @@ class Root(Frame):
 	def run(s):
 		s.root['program'].run()
 
+	def run_line(s):
+		s.root['program'].run_line(s.under_cursor())
+
+	def clear(s):
+		s.root['program'].clear()
+
+	def toggle_arrows(s):
+		s.arrows_visible = not s.arrows_visible
+
 	def top_keypress(s, event):
 
 		k = event.key
@@ -254,8 +263,12 @@ class Root(Frame):
 			el"""
 			if k == pygame.K_F8:
 				s.toggle_arrows()
+			elif k == pygame.K_F4:
+				s.clear()
 			elif k == pygame.K_F5:
 				s.run()
+			elif k == pygame.K_F6:
+				s.run_line()
 			elif k == pygame.K_UP:
 				s.move_cursor_v(-1)
 				s.and_sides(event)

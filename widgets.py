@@ -27,8 +27,18 @@ class Text(Widget):
 	
 	def on_keypress(self, e):
 		pos = e.atts["char_index"]
+		return self._keypress(e, pos)
+
+	def _keypress(self, e, pos):
+		#first things that a text field should pass up
 		if e.mod & pygame.KMOD_CTRL:
 			return False
+		elif e.key == pygame.K_ESCAPE:
+			return False
+		elif e.key == pygame.K_RETURN:
+			return False
+
+		#editing keys
 		if e.key == pygame.K_BACKSPACE:
 			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 				self.text = self.text[0:pos -1] + self.text[pos:]
@@ -37,13 +47,12 @@ class Text(Widget):
 		elif e.key == pygame.K_DELETE:
 			if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
 				self.text = self.text[0:pos] + self.text[pos + 1:]
-		elif e.key == pygame.K_ESCAPE:
-			return False
-		elif e.key == pygame.K_RETURN:
-			return False
+
+		#letters
 		elif e.uni:
 			self.text = self.text[:pos] + e.uni + self.text[pos:]
 			self.root.post_render_move_caret = len(e.uni)
+
 		else: return False
 		#log(self.text + "len: " + len(self.text))
 		self.dispatch_event('on_edit', self)
@@ -99,10 +108,8 @@ class Button(Widget):
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
 			self.dispatch_event('on_click', self)
 			return True
-		
-		
 	def render(self):
-		return [TextTag(self.text)]
+		return [ColorTag(self.color),TextTag(self.text), EndTag()]
 
 class Number(Text):
 	"""Number widget inherits from text, contents are only int()'ed when needed"""	
@@ -112,12 +119,15 @@ class Number(Text):
 		self.limits = limits
 		self.minus_button = Button(self, "-")
 		self.plus_button = Button(self, "+")
+		for b in (self.plus_button, self.minus_button):
+			b.brackets = ('{','}')
+			b.brackets_color = b.color = "number buttons"
 		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 		self.plus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 		self.register_event_types('on_change')
 
 	def render(self):
-		return [WidgetTag('minus_button'), TextTag(self.text+" "), WidgetTag('plus_button')]
+		return [WidgetTag('minus_button'), TextTag(self.text), WidgetTag('plus_button')]
 	@property
 	def value(self):
 		return int(self.text)
@@ -149,6 +159,12 @@ class Number(Text):
 			self.inc()
 		if button == 5:
 			self.dec()
+
+	def on_keypress(self, e):
+		"""crudity crudity messity mess!"""
+		pos = e.atts["char_index"] - 2
+		return self._keypress(e, pos)
+
 
 				
 class Toggle(Widget):

@@ -129,6 +129,9 @@ class Node(element.Element):
 		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
 			self.delete_self()
 			return True
+		if e.key == pygame.K_F7:
+			self.eval()
+			return True
 
 	def delete_self(self):
 		self.parent.delete_child(self)
@@ -453,6 +456,7 @@ class Number(WidgetedValue):
 	def __init__(self, value=""):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
+		self.widget.brackets = ('','')
 	def _eval(self):
 		return Number(self.pyval)
 
@@ -529,14 +533,22 @@ class Module(Syntaxed):
 		else:
 			return [] #nothing above but Root
 
-	def run(self):
-		#crude too..hey..everything is crude here
+	def clear(self):
 		st = self.ch.statements
-		print "flatten:", st.flatten()
+		#print "flatten:", st.flatten()
 		for i in st.flatten():
 			i.clear_runtime_dict()
-		return st.eval()
 
+	def run(self):
+		self.clear()
+		return self.ch.statements.eval()
+
+	def run_line(self, node):
+		self.clear()
+		while node != None and node not in self.ch.statements.items:
+			node = node.parent
+		if node:
+			return node.eval()
 
 
 class Ref(Node):
@@ -838,6 +850,7 @@ class Compiler(Node):
 		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition)) #in short, everything that works as a type..abstract it away later
 		self.items = []
 		self.brackets_color = "compiler brackets"
+		self.brackets = (' ', ' ')
 		self.decl = None #i am a free man, not a number!
 		self.register_event_types('on_edit')
 
@@ -883,59 +896,53 @@ class Compiler(Node):
 
 	def on_keypress(self, e):
 
-		if e.mod & pygame.KMOD_CTRL:
-			return False
-		if e.key == pygame.K_ESCAPE:
-			return False
-		if e.key == pygame.K_RETURN:
-			return False
+		if not e.mod & pygame.KMOD_CTRL:
+			assert self.root.post_render_move_caret == 0
+			its = self.items
 
-		assert self.root.post_render_move_caret == 0
-		its = self.items
+			if e.uni and e.key not in [pygame.K_ESCAPE, pygame.K_RETURN]:
 
-		if e.uni: #or backspace etc
+				if len(its) == 0:
+					self.items.append("")
+					i = 0
+					char = 0
+					log("add")
+					self.root.post_render_move_caret -= e.atts['char_index']
 
-			if len(its) == 0:
-				self.items.append("")
-				i = 0
-				char = 0
-				log("add")
-				self.root.post_render_move_caret -= e.atts['char_index']
-
-			else:
-				i = self.mine(e.atts)
-				if i != None:
-					if isinstance(its[i], (str, unicode)):
-						if "compiler item char" in e.atts:
-							char = e.atts["compiler item char"]
+				else:
+					i = self.mine(e.atts)
+					if i != None:
+						if isinstance(its[i], (str, unicode)):
+							if "compiler item char" in e.atts:
+								char = e.atts["compiler item char"]
+							else:
+								char = len(its[i])
 						else:
-							char = len(its[i])
+							return False
 					else:
 						return False
-				else:
-					return False
 
-		"""
-		if e.key == pygame.K_BACKSPACE:
-			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
-				self.text = self.text[0:pos -1] + self.text[pos:]
-#				log(self.text)
-				self.root.post_render_move_caret = -1
-		elif e.key == pygame.K_DELETE:
-			if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
-				self.text = self.text[0:pos] + self.text[pos + 1:]
-		"""
+				"""
+				if e.key == pygame.K_BACKSPACE:
+					if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
+						self.text = self.text[0:pos -1] + self.text[pos:]
+		#				log(self.text)
+						self.root.post_render_move_caret = -1
+				if e.key == pygame.K_DELETE:
+					if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
+						self.text = self.text[0:pos] + self.text[pos + 1:]
+				"""
 
-		if e.uni:
-			log(e)
-			text = its[i]
-			its[i] = text[:char] + e.uni + text[char:]
-			self.root.post_render_move_caret += len(e.uni)
+				log(e)
+				text = its[i]
+				its[i] = text[:char] + e.uni + text[char:]
+				self.root.post_render_move_caret += len(e.uni)
 
-		#log(self.text + "len: " + len(self.text))
-		self.dispatch_event('on_edit', self)
-		return True
+				#log(self.text + "len: " + len(self.text))
+				self.dispatch_event('on_edit', self)
+				return True
 
+		return super(Compiler, self).on_keypress(e)
 
 	def flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items if isinstance(v, Node)])
@@ -1220,12 +1227,12 @@ def b_list_squared(args):
 	return r
 
 BuiltinFunctionDecl.create("list squared",
-						   b_squared,
+						   b_list_squared,
 	[	TypedArgument({'name': Text("list of numbers"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})}),
-		Text("squared")])
+		Text(", squared")])
 
 def b_multiply(args):
-	return Number(args[0] * args[1])
+	return Number(args[0].pyval * args[1].pyval)
 
 BuiltinFunctionDecl.create("multiply",
 						   b_multiply,

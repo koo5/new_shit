@@ -34,13 +34,13 @@ def resize(size):
 
 def resize_frames():
 	root.rect.topleft = (0,0)
-	root.rect.width = screen_width / 2
+	root.rect.width = screen_width / 3 * 2
 	root.rect.height = screen_height
 	menu.rect.topleft = (root.rect.w, 0)
 	info_height = min(info.used_height, screen_height / 2)
-	menu.rect.size = (screen_width / 2, screen_height - info_height)
+	menu.rect.size = (screen_width - root.rect.width, screen_height - info_height)
 	info.rect.topleft = (root.rect.w, menu.rect.h)
-	info.rect.size = (screen_width / 2,	info_height)
+	info.rect.size = (menu.rect.width,	info_height)
 
 def top_keypress(event):
 	global cursor_r,cursor_c
@@ -193,7 +193,7 @@ parser.add_argument('--webos', action='store_true',
 parser.add_argument('--invert', action='store_true',
 				   help='invert colors')
 parser.add_argument('--font_size', action='store_true',
-				   default=28)
+				   default=22)
 parser.add_argument('--replay', action='store_true',
 				   default=False)
 args = parser.parse_args()

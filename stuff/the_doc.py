@@ -397,3 +397,18 @@ but see forks on github.
 >heres another: xpipe
 >https://vimeo.com/68400623
 >
+https://github.com/zsh-users/zaw
+
+plan9 terminal too..
+
+
+
+
+
+some todo:
+===
+* (?)or start extending the way Syntaxed specifies syntax now, like, for List, it would be '[', ListItemWithComma*, ListItem?, ']'
+* ListItemWithComma, ListItem...implies the concrete syntax nodes would co-exist with the AST nodes..(?)
+* triples: predicate definition node, accepts Text or URL as subject and object
+* math notations (solve pygame unicode problem first)
+* add notes to nodes
