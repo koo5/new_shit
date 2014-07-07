@@ -1,6 +1,7 @@
 what is this
 ===
 a protoprototype of a structural editor and a programming language / user interface, inspired by inform 7, playing with natural language-like projections
+
 <http://imgur.com/a/otY8X#1>
 
 
@@ -23,7 +24,7 @@ if the latest commit doesnt run, git checkout HEAD^ until you find one that does
 
 intro
 ===
-talk to us in irc://irc.freenode.net#lemonparty  
+talk to us in irc://irc.freenode.net/lemonparty  
 old notes:  http://goo.gl/jesK0R ..i kinda stopped working on that one (fuck google docs!)  
 might move everything into lemon nodes :), or a .md on github..  
 
