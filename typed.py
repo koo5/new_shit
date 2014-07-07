@@ -94,6 +94,7 @@ class Node(element.Element):
 
 	def eval(self):
 		r = self._eval()
+		assert(isinstance(r, Node))
 		self.runtime.value.append(r)
 		self.runtime.evaluated = True
 		r.parent = self.parent
@@ -132,15 +133,19 @@ class Node(element.Element):
 	def delete_self(self):
 		self.parent.delete_child(self)
 
+	#i dont get any visitors here, nor should my code
 	def flatten(self):
 		print self, "flattens to self"
-		return self
+		return [self]
 
 	def to_python_str(self):
 		return str(self)
 
 	def vardecls(s):
 		return []
+
+	def to_python_str(s):
+		return str(s)
 
 class Children(dotdict):
 	pass
@@ -324,8 +329,7 @@ class Dict(Collapsible):
 		self._fix_parents(self.items.values())
 
 	def flatten(self):
-		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]
-		#skip Widgets, as in settings
+		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]#skip Widgets, for Settings
 
 	def add(self, (key, val)):
 		assert(not self.items.has_key(key))
@@ -423,6 +427,16 @@ class List(Collapsible):
 		return "[" + ", ".join([i.to_python_str() for i in self.items]) + "]"
 
 
+class Void(Node):
+	"i dont like it"
+	def __init__(self):
+		super(Void, self).__init__()
+	def render(self):
+		return [t('void')]
+	def to_python_str(self):
+		return "void"
+
+
 class WidgetedValue(Node):
 	"""basic one-widget values"""
 	def __init__(self):
@@ -433,8 +447,7 @@ class WidgetedValue(Node):
 	def render(self):
 		return [w('widget')]
 	def to_python_str(self):
-		return self.pyval
-
+		return str(self.pyval)
 
 class Number(WidgetedValue):
 	def __init__(self, value=""):
@@ -442,6 +455,12 @@ class Number(WidgetedValue):
 		self.widget = widgets.Number(self, value)
 	def _eval(self):
 		return Number(self.pyval)
+
+	@staticmethod
+	def match(text):
+		if text.isdigit():
+			return 300
+
 
 class Text(WidgetedValue):
 
@@ -462,6 +481,11 @@ class Text(WidgetedValue):
 
 	def __repr__(s):
 		return object.__repr__(s) + "('"+s.pyval+"')"
+
+	@staticmethod
+	def match(text):
+		return 100
+
 
 class Root(Dict):
 	def __init__(self):
@@ -562,7 +586,7 @@ class NodeclBase(Node):
 	def inst_fresh(self):
 		""" fresh creates default children"""
 		return self.instance_class.fresh()
-	def palette(self, scope):
+	def palette(self, scope, text):
 			return [CompilerMenuItem(self.instance_class.fresh())] + \
 				   self.instance_class.cls_palette(scope)
 
@@ -585,7 +609,7 @@ class TypeNodecl(NodeclBase):
 		super(TypeNodecl, self).__init__(Ref)
 		b['type'] = self #add me to builtins
 		Ref.decl = self
-	def palette(self, scope):
+	def palette(self, scope, text):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Ref(x)) for x in nodecls]
 
@@ -594,7 +618,7 @@ class ExpNodecl(NodeclBase):
 		super(ExpNodecl, self).__init__(Exp)
 		b['exp'] = self #add me to builtins
 		Exp.decl = self
-	def palette(self, scope):
+	def palette(self, scope, text):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Exp(x)) for x in nodecls]
 
@@ -608,6 +632,17 @@ class Nodecl(NodeclBase):
 		b[self.name] = self
 		instance_class.name = self.name
 
+	def palette(self, scope, text):
+		r = CompilerMenuItem(666)
+		i = self.instance_class
+
+		m = i.match(text)
+		if m:
+			r.value = i(text)
+			r.score = m
+		else:
+			r.value = i()
+		return r
 
 
 
@@ -670,7 +705,7 @@ class ParametricNodecl(NodeclBase):
 		self.type_syntax = type_syntax
 	def make_type(self, kids):
 		return ParametricType(kids, self)
-	def palette(self, scope):
+	def palette(self, scope, text):
 		return [CompilerMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
 	#if there is only one possible node type to instantiate..
@@ -811,6 +846,7 @@ class Compiler(Node):
 		if len(self.items) == 1 and isinstance(self.items[0], Node):
 			r = self.items[0]
 		else:
+			#raise an exception? make a NotCompiled node?
 			r = Text("does not compile")
 			r.parent = self
 		print self.items, "=>", r
@@ -932,7 +968,7 @@ class Compiler(Node):
 			return self.items.index(atts["compiler item"])
 		elif len(self.items) != 0 and atts["node"] == self:
 			return len(self.items) - 1
-
+		#else None
 
 	def menu_item_selected(self, item, atts):
 		if not isinstance(item, CompilerMenuItem):
@@ -949,12 +985,28 @@ class Compiler(Node):
 
 
 	def menu(self, atts):
+
+
+		i = self.mine(atts)
+		if i == None:
+			if len(self.items) == 0:
+				text = ""
+			else:
+				return []
+		else:
+			if isinstance(self.items[i], Node):
+				text = ""
+			else:
+				text = self.items[i]
+
+		print 'menu for:',text
+
+
 		scope = self.scope()
 		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
-		if b['builtinfunctiondecl'] in nodecls:
-			#with the simplistic "scope" being items above us, some Compiler in builtins might not see it
+		if b['builtinfunctiondecl'] in nodecls:#with the simplistic "scope" being simply items above us, some Compiler in builtins might not see it
 			nodecls.remove(b['builtinfunctiondecl'])
-		menu = flatten([x.palette(scope) for x in nodecls])
+		menu = flatten([x.palette(scope, text) for x in nodecls])
 
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
 		#first lets search for things in scope that are already of that type
@@ -970,20 +1022,13 @@ class Compiler(Node):
 			exp = False
 
 
-
-		i = self.mine(atts)
-		if i != None:
-			text = self.items[i]
-		else:
-			if len(self.items) == 0:
-				text = ""
-			else:
-				return []
-		print '.',text,"."
-
-
 		for item in menu:
 			v = item.value
+			try:
+				item.score += fuzz.partial_ratio(v.name, text) #0-100
+			except Exception as e:
+				#print e
+				pass
 			item.score += fuzz.partial_ratio(v.decl.name, text) #0-100
 			#print item.value.decl, item.value.decl.works_as(type), type.target
 
@@ -1134,6 +1179,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	@staticmethod
 	def create(name, fun, sig):
 		x = BuiltinFunctionDecl.fresh()
+		x._name = name
 		b[name] = x
 		x.ch.name.widget.value = name
 		x.fun = fun
@@ -1142,53 +1188,66 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def call(self, args):
 		args = [arg.eval() for arg in args]
 		assert(len(args) == len(self.arg_types))
-		for i, arg in enumerate(args):
-			if not arg.type.eq(self.arg_types[i]):
-				log("well this is bad")
-		return self.fun(*args)
+		#for i, arg in enumerate(args):
+		#	if not arg.type.eq(self.arg_types[i]):
+		#		log("well this is bad")
+		r = self.fun(args)
+		assert isinstance(r, Node)
+		return r
+		# *args, make the args named?
+
+	@property
+	def name(s):
+		return s._name
+
 
 SyntaxedNodecl(BuiltinFunctionDecl,
 			   [t("builtin function"), ch("name"), t(":"), ch("sig")],
 				{'sig': b['function signature list'],
 				 'name': b['text']})
 
-def b_squared(self, args):
+def b_squared(args):
 	return Number(args[0] * args[0])
+
 BuiltinFunctionDecl.create("squared",
 						   b_squared,
 	[	TypedArgument({'name': Text("number"), 'type': Ref(b['number'])}),
 		Text("squared")])
 
-def b_list_squared(self, args):
+def b_list_squared(args):
 	r = List() #todo:type
 	[r.add(Number(i.pyval*i.pyval)) for i in args[0].items]
 	return r
+
 BuiltinFunctionDecl.create("list squared",
 						   b_squared,
 	[	TypedArgument({'name': Text("list of numbers"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})}),
 		Text("squared")])
 
-def b_multiply(self, args):
+def b_multiply(args):
 	return Number(args[0] * args[1])
+
 BuiltinFunctionDecl.create("multiply",
 						   b_multiply,
 	[	TypedArgument({'name': Text("left"), 'type': Ref(b['number'])}),
 		Text("*"),
 		TypedArgument({'name': Text("right"), 'type': Ref(b['number'])})])
 
-def b_sum(self, args):
+def b_sum(args):
 	return Number(sum([i.pyval for i in args[0].items]))
+
 BuiltinFunctionDecl.create("sum",
 						   b_sum,
 	[	Text("the sum of"),
 		TypedArgument({'name': Text("list"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})})])
 
-def b_range(self, args):
+def b_range(args):
 	r = List()
 	r.decl = b["list"].make_type({'itemtype': Ref(b['number'])})
-	r.items = [Number(i) for i in range(args["from"].pyval, args["to"].pyval + 1)]
+	r.items = [Number(i) for i in range(args[0].pyval, args[1].pyval + 1)]
 	r.fix_parents()
 	return r
+
 BuiltinFunctionDecl.create("range",
 						   b_range,
 	[	Text("numbers from"),
@@ -1199,7 +1258,8 @@ BuiltinFunctionDecl.create("range",
 
 
 def b_print(args):
-	print(args[0].to_python_string())
+	print(args[0].to_python_str())
+	return Void()
 
 BuiltinFunctionDecl.create("print",
 	b_print,
@@ -1211,10 +1271,11 @@ class FunctionCall(Node):
 		super(FunctionCall, self).__init__()
 		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
-		self.args = [Compiler(v) for v in self.target.arg_types]
+		self.args = [Compiler(v) for v in self.target.arg_types] #this should go to fresh()
 		self._fix_parents(self.args)
 
-	#todo:eval...
+	def _eval(s):
+		return s.target.call([i.compiled for i in s.args])
 
 	def replace_child(self, child, new):
 		assert(child in self.args)
@@ -1236,12 +1297,12 @@ class FunctionCall(Node):
 					argument_index+=1
 		return r
 
-	@staticmethod
-	def palette(scope):
-		defuns = [x for x in scope if isinstance(x,(BuiltinFunctionDecl, FunctionDefinition))]
-		return [CompilerMenuItem(FunctionCall(x)) for x in defuns]
+	@property
+	def name(s):
+		return s.target.name
 
-
+	def flatten(self):
+		return [self] + flatten([v.flatten() for v in self.args])
 
 
 
@@ -1250,7 +1311,7 @@ class FunctionCallNodecl(NodeclBase):
 		super(FunctionCallNodecl, self).__init__(Ref)
 		b['call'] = self
 		FunctionCall.decl = self
-	def palette(self, scope):
+	def palette(self, scope, text):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
 		return [CompilerMenuItem(FunctionCall(x)) for x in decls]
 

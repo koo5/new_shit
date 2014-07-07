@@ -93,26 +93,37 @@ class KeypressEvent(object):
 replay = []
 import pickle, copy
 
+def do_replay(ff):
+	global replay, fast_forward
+	try:
+		with open("replay.p", "rb") as f:
+			replay = pickle.load(f)
+	except:
+		log("couldnt read replay.p")
+		replay = []
+	if ff:
+		fast_forward = True #ok, not much of a speedup. todo:dirtiness
+		display.set_caption("replaying...")
+		log("replaying...")
+	for i in replay:
+		display.set_caption(display.get_caption()[0] + " " + i.uni)
+		log(i.uni)
+		do_keypress(copy.deepcopy(i))
+	fast_forward = False
+
+
+
 def keypress(event):
-	global replay
 	e = KeypressEvent(event)
 
 	if e.key == pygame.K_F2:
-		try:
-			with open("replay.p", "rb") as f:
-				replay = pickle.load(f)
-		except:
-			log("couldnt read replay.p")
-			replay = []
-		for i in replay:
-			do_keypress(copy.deepcopy(i))
+		do_replay(e.mod & pygame.KMOD_SHIFT)
 	else:
 		if e.key == pygame.K_ESCAPE:
 			bye()
 		else:
 			replay.append(e)
 			with open("replay.p", "wb") as f:
-				#print replay
 				try:
 					pickle.dump(replay, f)
 				except pickle.PicklingError as error:
@@ -156,10 +167,11 @@ def draw():
 	menu.update(root)
 	menu.render()
 	#screen_surface.fill((0,0,255))
-	screen_surface.blit(root.draw(),root.rect.topleft)
-	screen_surface.blit(menu.draw(),menu.rect.topleft)
-	screen_surface.blit(info.draw(),info.rect.topleft)
-	pygame.display.flip()
+	if not fast_forward:
+		screen_surface.blit(root.draw(),root.rect.topleft)
+		screen_surface.blit(menu.draw(),menu.rect.topleft)
+		screen_surface.blit(info.draw(),info.rect.topleft)
+		pygame.display.flip()
 
 def bye():
 	log("deading")
@@ -182,6 +194,8 @@ parser.add_argument('--invert', action='store_true',
 				   help='invert colors')
 parser.add_argument('--font_size', action='store_true',
 				   default=28)
+parser.add_argument('--replay', action='store_true',
+				   default=False)
 args = parser.parse_args()
 
 
@@ -207,7 +221,7 @@ menu = frames.Menu()
 menu.root = root
 info = frames.Info()
 all_frames = [root, menu, info]
-
+fast_forward = False
 
 def fuck_sdl():
 	w = pygame.display.get_wm_info()["wmwindow"]
@@ -235,6 +249,8 @@ root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.i
 root.cursor_c += 1
 
 
+if args.replay:
+	do_replay(True)
 draw()
 
 
