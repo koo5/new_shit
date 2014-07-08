@@ -189,9 +189,15 @@ class Syntaxed(Node):
 				new.parent = self
 				return
 		else_raise_hell()
-
+		#todo:refactor into find_child or something
 	def delete_child(self, child):
-		self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
+		for k,v in self.ch.iteritems():
+			if v == child:
+				self.ch[k] = self.create_kids(self.slots)[k]
+				new.parent = self
+				return
+		shit()
+		#self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
 
 	def flatten(self):
 		assert(isinstance(v, Node) for v in self.ch._dict.itervalues())
@@ -227,23 +233,26 @@ class Syntaxed(Node):
 
 	def on_keypress(self, e):
 		if pygame.KMOD_CTRL & e.mod:
-			if e.key == pygame.K_PAGEUP:
+			if e.key == pygame.K_HOME:
 				self.prev_syntax()
 				return True
-			if e.key == pygame.K_PAGEDOWN:
+			if e.key == pygame.K_END:#ctrl+arrows should be left for structured navigation?
 				self.next_syntax()
 				return True
 		return super(Syntaxed, self).on_keypress(e)
 
 	@classmethod
-	def new_kids(cls, slots):
+	def create_kids(cls, slots):
 		cls.check_slots(slots)
 		kids = {}
 		#fix:
 		for k, v in slots.iteritems(): #for each child:
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
-			if v in [b[x] for x in ['text', 'number', 'statements', 'list']]:
+			if v in [b[x] for x in [y for y in ['text', 'number', 'statements', 'list', 'function signature list'] if y in b]]:
 				a = v.inst_fresh()
+				if v == b['statements']:
+					a.newline()#so, statements should be its own class and be defined as list of statment at the same time,
+					#so the class could implement extra behavior like this?
 			else:
 				a = Compiler(v)
 			assert(isinstance(a, Node))
@@ -252,7 +261,7 @@ class Syntaxed(Node):
 
 	@classmethod
 	def fresh(cls):
-		r = cls(cls.new_kids(cls.decl.instance_slots))
+		r = cls(cls.create_kids(cls.decl.instance_slots))
 		return r
 
 	@property
@@ -286,7 +295,9 @@ class Collapsible(Node):
 	
 	def render(self):
 		self.expand_collapse_button.text = ("-" if self.expanded else "+")
-		return [w('expand_collapse_button')] + [indent()] + (self.render_items() if self.expanded else [nl()]) + [dedent()]
+		return [w('expand_collapse_button')] + [indent()] + (self.render_items() if self.expanded else [
+
+		]) + [dedent()]
 	
 	def toggle(self):
 		self.expanded = not self.expanded
@@ -300,6 +311,7 @@ class Collapsible(Node):
 			self.toggle()
 
 	@classmethod
+	#watch out: List has its own
 	def fresh(cls, decl):
 		r = cls()
 		r.decl = decl
@@ -346,14 +358,17 @@ class Dict(Collapsible):
 class List(Collapsible):
 	def __init__(self, expanded=True, vertical=True):
 		#if self.item_type ..
+		assert isinstance(expanded, bool)
+		assert isinstance(vertical, bool)
 		super(List, self).__init__(expanded, vertical)
 		self.items = []
 
 	def render_items(self):
-		r = []
+		r = [t('[')]
 		for item in self.items:
 			r += [ElementTag(item)]
-			if self.vertical: r+= [nl()] 
+			if self.vertical: r+= [nl()]
+		r += [t(']')]
 		return r
 
 	def __getitem__(self, i):
@@ -391,8 +406,19 @@ class List(Collapsible):
 		return i + 1
 
 	def _eval(self):
-		#todo: its not copy..its make new with same type..
-		return List([i.eval() for i in self.items])
+		r = List()
+		r.decl = self.decl
+		r.items = [i.eval() for i in self.items]
+		r.fix_parents()
+		r.expanded = False
+		return r
+
+	def copy(self):
+		r = List()
+		r.decl = self.decl
+		r.items = [i.copy() for i in self.items]
+		r.fix_parents()
+		return r
 
 	def flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items])
@@ -429,6 +455,16 @@ class List(Collapsible):
 	def to_python_str(self):
 		return "[" + ", ".join([i.to_python_str() for i in self.items]) + "]"
 
+	@classmethod
+	def fresh(cls, decl):
+		r = cls()
+		r.decl = decl
+		r.newline()
+		return r
+
+	def delete_child(s, ch):
+		if ch in s.items:
+			s.items.remove(ch)
 
 class Void(Node):
 	"i dont like it"
@@ -451,6 +487,8 @@ class WidgetedValue(Node):
 		return [w('widget')]
 	def to_python_str(self):
 		return str(self.pyval)
+	def copy(s):
+		return s.eval()
 
 class Number(WidgetedValue):
 	def __init__(self, value=""):
@@ -462,8 +500,10 @@ class Number(WidgetedValue):
 
 	@staticmethod
 	def match(text):
+		"uhh"
 		if text.isdigit():
 			return 300
+
 
 
 class Text(WidgetedValue):
@@ -700,10 +740,11 @@ class ParametricType(Syntaxed):
 		return self.decl.instance_class.fresh(self)
 	@classmethod
 	def fresh(cls, decl):
-		return cls(cls.new_kids(decl.type_slots), decl)
+		return cls(cls.create_kids(decl.type_slots), decl)
 	@property
 	def name(self):
 		return "parametric type"
+		#todo: refsyntax?
 
 
 
@@ -1075,7 +1116,7 @@ class CompilerMenuItem(MenuItem):
 	#PlaceholderMenuItem is not an Element, but still has tags(),
 	#called by project.project called from draw()
 	def tags(self):
-		return [ColorTag((0,255,0)), w('value'), " - "+str(self.value.__class__.__name__), EndTag()]
+		return [ColorTag((0,255,0)), w('value'), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
 		#and abusing "w" for "widget" here...not just here...
 
 	def draw(self, menu, s, font, x, y):
@@ -1123,9 +1164,9 @@ SyntaxedNodecl(TypedArgument,
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
 tmp.ch["items"].add(Ref(b['typedargument']))
-Definition({'name': Text('function signature nodes'), 'type': tmp})
+Definition({'name': Text('function signature node'), 'type': tmp})
 
-tmp = b['list'].make_type({'itemtype': Ref(b['function signature nodes'])})
+tmp = b['list'].make_type({'itemtype': Ref(b['function signature node'])})
 Definition({'name': Text('function signature list'), 'type':tmp})
 
 
@@ -1166,23 +1207,26 @@ class FunctionDefinitionBase(Syntaxed):
 		return r
 		# *args, make the args named?
 
+	def _eval(s):
+		return Text("OK")
+
 class FunctionDefinition(FunctionDefinitionBase):
 
 	def __init__(self, kids):
 		super(FunctionDefinition, self).__init__(kids)
 
-	def _call(self, call_args):
+
+	def copy_args(self, call_args):
 		for ca in call_args:
 			n = ca.ch.name.pyval
-			assert isinstance(n, str)
+			assert isinstance(n, str)#or maybe unicode
 			for vd in self.vardecls:
 				if vd.ch.name.pyval == n:
 					vd.runtime.val.append(ca.copy())
 
-
-
-
-		return
+	def _call(self, call_args):
+		self.copy_args(call_args)
+		return Void()#self.ch.body.eval()
 
 	@property
 	def vardecls(s):
@@ -1330,14 +1374,14 @@ class FunctionCall(Node):
 		if not isinstance(sig, List):
 			r+=[t("sig not a List, " + str(sig))]
 		else:
-			for v in sig:
+			for v in [v.compiled for v in sig]:
 				if isinstance(v, Text):
 					r += [t(v.pyval)]
 				elif isinstance(v, TypedArgument):
 					r += [ElementTag(self.args[argument_index])]
 					argument_index+=1
 				else:
-					log("not good")
+					log("item in sig is"+str(v))
 		return r
 
 	@property
@@ -1399,6 +1443,7 @@ def make_root():
 	r["program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
 	r["builtins"].ch.statements.items = list(b.itervalues())
+	r["builtins"].ch.statements.expanded = False
 	return r
 
 

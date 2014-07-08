@@ -10,7 +10,7 @@ functon project takes a list of tags created by root.tags()
 from tags import *
 from logger import ping, log
 import colors
-from typed import Node
+from typed import Node, Compiler
 from dotdict import dotdict
 
 if __debug__:
@@ -93,7 +93,9 @@ def _project_elem(p, elem):
 
 	#results of eval
 	if isinstance(elem, Node):
-		if elem.runtime._dict.has_key("value") and elem.runtime._dict.has_key("evaluated"):
+		if elem.runtime._dict.has_key("value") \
+				and elem.runtime._dict.has_key("evaluated") \
+				and not isinstance(elem.parent, Compiler):
 			"""
 			if elem.runtime.has_key("unimplemented"):
 				text = "unimplemented"
@@ -103,6 +105,7 @@ def _project_elem(p, elem):
 			tags += [ColorTag((155,155,155)), TextTag(":")]
 			tags += [ElementTag(elem.runtime.value.val)]
 			tags += [TextTag(" "), EndTag()]
+
 
 	tags += [EndTag()]
 
