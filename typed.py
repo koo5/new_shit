@@ -817,17 +817,15 @@ class For(Syntaxed):
 		super(For, self).__init__(children)
 	@property
 	def vardecls(s):
-		return {.ch.item]
-
+		return {'item':s.ch.item}
+	def _eval(s):
+		items = s.ch.items.compiled.eval()
 
 SyntaxedNodecl(For,
 			   [t("for"), ch("item"), t("in"), ch("items")],
-			   {'item': '',
-			    'items': '})
-
+			   {'item': b['text'],
+			    'items': b''})
 """
-
-
 
 """
 compiler node
@@ -1137,20 +1135,61 @@ class FunctionDefinitionBase(Syntaxed):
 
 	def __init__(self, kids):
 		super(FunctionDefinitionBase, self).__init__(kids)
+
+	@property
+	def args(self):
+		c = self.sig.compiled
+		if isinstance(c, List):
+			return [i for i in c if isinstance(i, TypedArgument)]
+		else:
+			log("sig not a List")
+			return []
+
 	@property
 	def arg_types(self):
-		if isinstance(self.sig, (List, Compiler)):#avoid crashes before sorting this out
-			args = [i for i in self.sig.items if isinstance(i, TypedArgument)]
-			return [i.ch.type for i in args]
-		else: return []
+		return [i.ch.type for i in self.args]
+
 	@property
 	def sig(self):
 		return self.ch.sig
+
+	#def typecheck():
+		#for i, arg in enumerate(args):
+		#	if not arg.type.eq(self.arg_types[i]):
+		#		log("well this is bad")
+
+	def call(self, args):
+		args = [arg.eval() for arg in args]
+		assert(len(args) == len(self.arg_types))
+		r = self._call(args)
+		assert isinstance(r, Node)
+		return r
+		# *args, make the args named?
 
 class FunctionDefinition(FunctionDefinitionBase):
 
 	def __init__(self, kids):
 		super(FunctionDefinition, self).__init__(kids)
+
+	def _call(self, call_args):
+		for ca in call_args:
+			n = ca.ch.name.pyval
+			assert isinstance(n, str)
+			for vd in self.vardecls:
+				if vd.ch.name.pyval == n:
+					vd.runtime.val.append(ca.copy())
+
+
+
+
+		return
+
+	@property
+	def vardecls(s):
+		return s.args
+
+
+
 
 SyntaxedNodecl(FunctionDefinition,
 			   [t("deffun:"), ch("sig"), t(":\n"), ch("body")],
@@ -1190,18 +1229,12 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		b[name] = x
 		x.ch.name.widget.value = name
 		x.fun = fun
+		x.ch.sig = List()
 		x.ch.sig.items = sig
+		x.fix_parents()
 
-	def call(self, args):
-		args = [arg.eval() for arg in args]
-		assert(len(args) == len(self.arg_types))
-		#for i, arg in enumerate(args):
-		#	if not arg.type.eq(self.arg_types[i]):
-		#		log("well this is bad")
-		r = self.fun(args)
-		assert isinstance(r, Node)
-		return r
-		# *args, make the args named?
+	def _call(self, args):
+		return self.fun(args)
 
 	@property
 	def name(s):
@@ -1293,15 +1326,18 @@ class FunctionCall(Node):
 	def render(self):
 		r = []
 		argument_index = 0
-		if not isinstance(self.target.sig, (List, Compiler)):
-			r+=[t("sig not a List, " + str(self.target.sig))]
+		sig = self.target.sig.compiled
+		if not isinstance(sig, List):
+			r+=[t("sig not a List, " + str(sig))]
 		else:
-			for v in self.target.sig:
+			for v in sig:
 				if isinstance(v, Text):
 					r += [t(v.pyval)]
 				elif isinstance(v, TypedArgument):
 					r += [ElementTag(self.args[argument_index])]
 					argument_index+=1
+				else:
+					log("not good")
 		return r
 
 	@property
