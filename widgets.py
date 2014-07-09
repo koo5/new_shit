@@ -167,6 +167,33 @@ class Number(Text):
 
 
 				
+class NState(Widget):
+	def __init__(self, parent, value, texts = ("to state 1", "to state 2", "to state 0")):
+		super(NState, self).__init__(parent)
+		self.register_event_types('on_change')
+		self.value = value
+		assert(0 <= value < len(texts))
+		self.texts = texts
+		self.color = "text"
+	def render(self):
+		return [ColorTag(self.color), TextTag(self.text), EndTag()]
+	@property
+	def text(self):
+		return self.texts[self.value]
+	def toggle(self):
+		self.value = self.value + 1
+		if self.value == len(self.texts):
+			self.value = 0
+		self.dispatch_event('on_change', self)
+	def on_mouse_press(self, button):
+		self.toggle()
+	def on_keypress(self, e):
+		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
+			self.toggle()
+			return True
+
+#NState uses a number, Toggle bool..
+
 class Toggle(Widget):
 	def __init__(self, parent, value, texts = ("checked", "unchecked")):
 		super(Toggle, self).__init__(parent)

@@ -412,3 +412,8 @@ some todo:
 * triples: predicate definition node, accepts Text or URL as subject and object
 * math notations (solve pygame unicode problem first)
 * add notes to nodes
+
+
+
+
+brackets around nodes: doesnt make structure all that clear anyway, try boxing?

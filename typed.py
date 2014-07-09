@@ -286,30 +286,16 @@ class Collapsible(Node):
 	"""Collapsible - List or Dict -
 	they dont have a title, just a collapse button, right of which first item is rendered
 	"""
-	def __init__(self, expanded=True, vertical=True):
+	vm_collapsed = 0
+	vm_oneline = 1
+	vm_multiline = 2
+	def __init__(self):
 		super(Collapsible, self).__init__()	
-		self.expand_collapse_button = widgets.Button(self)
-		self.expand_collapse_button.push_handlers(on_click=self.on_widget_click)
-		self.expanded = expanded
-		self.vertical = vertical
-	
+		self.view_mode_widget = widgets.NState(self, 0, ("+","v","-"))
+
 	def render(self):
-		self.expand_collapse_button.text = ("-" if self.expanded else "+")
-		return [w('expand_collapse_button')] + [indent()] + (self.render_items() if self.expanded else [
-
-		]) + [dedent()]
+		return [w('view_mode_widget')] + [indent()] + (self.render_items() if self.view_mode > 0 else []) + [dedent()]
 	
-	def toggle(self):
-		self.expanded = not self.expanded
-		if self.expanded:
-			print "expand"
-		else:
-			print "collapse"
-
-	def on_widget_click(self, widget):
-		if widget is self.expand_collapse_button:
-			self.toggle()
-
 	@classmethod
 	#watch out: List has its own
 	def fresh(cls, decl):
@@ -465,6 +451,14 @@ class List(Collapsible):
 	def delete_child(s, ch):
 		if ch in s.items:
 			s.items.remove(ch)
+
+
+
+class Statments(List):
+	def __init__(s):
+		super(Statments, s).__init__()
+
+
 
 class Void(Node):
 	"i dont like it"
