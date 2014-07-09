@@ -50,8 +50,8 @@ class val(list):
 	def set(self, x):
 		"""constants call this"""
 		assert(isinstance(x, Node))
-		if len(self) > 0 and self[-1] == x:
-			pass
+		if len(self) > 0:
+			self[0] = x
 		else:
 			super(val, self).append(x)
 		return x
@@ -70,6 +70,7 @@ class Node(element.Element):
 		self.brackets_color = "node brackets"
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
+		self.isconst = False
 
 	def clear_runtime_dict(s):
 		s.runtime._dict.clear()
@@ -96,7 +97,11 @@ class Node(element.Element):
 	def eval(self):
 		r = self._eval()
 		assert isinstance(r, Node), str(self) + " _eval is borked"
-		self.runtime.value.append(r)
+		if self.isconst:
+			self.runtime.value.set(r)
+			log("const" + str(self))
+		else:
+			self.runtime.value.append(r)
 		self.runtime.evaluated = True
 		r.parent = self.parent
 
@@ -250,10 +255,10 @@ class Syntaxed(Node):
 		#fix:
 		for k, v in slots.iteritems(): #for each child:
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
-			if v in [b[x] for x in [y for y in ['text', 'number', 'statements', 'list', 'function signature list'] if y in b]]:
+			if v in [b[x] for x in [y for y in ['text', 'number', 'statements', 'list', 'function signature list', 'untypedvar' ] if y in b]]:
 				a = v.inst_fresh()
-				if v == b['statements']:
-					a.newline()#so, statements should be its own class and be defined as list of statment at the same time,
+				#if v == b['statements']:
+					#a.newline()#so, statements should be its own class and be defined as list of statment at the same time,
 					#so the class could implement extra behavior like this?
 			else:
 				a = Compiler(v)
@@ -510,6 +515,7 @@ class WidgetedValue(Node):
 	"""basic one-widget values"""
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
+		self.isconst = True
 	@property
 	def pyval(self):
 		return self.widget.value
@@ -924,6 +930,7 @@ class For(Syntaxed):
 		assert isinstance(items, List)
 		itemvar = s.ch.item.compiled
 		assert isinstance(itemvar, UntypedVar)
+		#r = b['list'].make_type({'itemtype': Ref(b['statement'])}).make_inst() #just a list of the "anything" type..dunno
 		for item in items:
 			itemvar.runtime.value.append(item)
 			s.ch.body.run()

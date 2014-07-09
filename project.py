@@ -97,7 +97,10 @@ def _project_elem(p, elem):
 				and elem.runtime._dict.has_key("evaluated") \
 				and not isinstance(elem.parent, Compiler):
 			tags += [ColorTag((0,252,252)), TextTag("->")]
-			tags += [ElementTag(elem.runtime.value.val)]
+
+			#tags += [ElementTag(elem.runtime.value.val)]
+			for v in elem.runtime.value:
+				tags += [ElementTag(v)]
 			tags += [TextTag("<-"), EndTag()]
 
 
