@@ -11,13 +11,15 @@ class MenuItem(Element):
 
 
 class InfoItem(MenuItem):
-	def __init__(self, text):
+	def __init__(self, contents):
 		super(InfoItem, self).__init__()
-		self.text = text
+		if not isinstance(contents, list):
+			contents = [contents]
+		self.contents = contents
 		self.color = "info item text"
 		self.visibility_toggle = widgets.Toggle(self, True, ("(X)", "show"))
 		self.visibility_toggle.color = self.visibility_toggle.brackets_color = "info item visibility toggle"
 
 	def render(self):
-		return [TextTag(self.text + "  "), WidgetTag("visibility_toggle")]
+		return self.contents + [TextTag("  "), WidgetTag("visibility_toggle")]
 

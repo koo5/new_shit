@@ -96,15 +96,9 @@ def _project_elem(p, elem):
 		if elem.runtime._dict.has_key("value") \
 				and elem.runtime._dict.has_key("evaluated") \
 				and not isinstance(elem.parent, Compiler):
-			"""
-			if elem.runtime.has_key("unimplemented"):
-				text = "unimplemented"
-			else:
-				text = ', '.join([str(x) for x in elem.runtime.value])
-			"""
-			tags += [ColorTag((155,155,155)), TextTag(":")]
+			tags += [ColorTag((0,252,252)), TextTag("->")]
 			tags += [ElementTag(elem.runtime.value.val)]
-			tags += [TextTag(" "), EndTag()]
+			tags += [TextTag("<-"), EndTag()]
 
 
 	tags += [EndTag()]

@@ -1,22 +1,23 @@
-
+from logger import log
 from dotdict import dotdict
 
 default_colors = {
 	"info item text": (244,244,244),
 	"bg": (0,0,0,0),
-    "highlighted bg":(40,0,0),
-    "arrow":(50,50,111),
+	"highlighted bg":(40,0,0),
+	"arrow":(50,50,111),
 	"fg": (255,255,255),
 	"cursor": (255,255,0),
 	"info item visibility toggle":(100,100,100),
 	"menu_rect_selected":(255,255,255),
 	"menu_rect":(0,0,255),
-    "help":(255,255,0),
-    "compiler hint":(100,100,100),
+	"help":(255,255,0),
+	"compiler hint":(100,100,100),
 	"text brackets":(0,255,0),
-    "compiler brackets":(255,255,0),
-    "node brackets":(150,150,150),
-    "number buttons":(40,40,250)
+	"compiler brackets":(255,255,0),
+	"node brackets":(150,150,150),
+	"number buttons":(80,80,255),
+	"menu item extra info":(0,200,0)
 	}
 
 colors = dotdict()
@@ -42,4 +43,5 @@ def color(c):
 		except KeyError:
 			raise Exception("i dont know color '%s'" % str(c))
 	else:
+		#log(c)
 		return modify(c)

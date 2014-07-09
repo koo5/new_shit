@@ -19,7 +19,8 @@ import frames
 
 
 
-def change_font_size():
+def change_font_size(by = 0):
+	args.font_size += by
 	frames.font = pygame.font.SysFont('monospace', args.font_size)
 	frames.font_width, frames.font_height = frames.font.size("X")
 
@@ -42,17 +43,16 @@ def resize_frames():
 	info.rect.topleft = (root.rect.w, menu.rect.h)
 	info.rect.size = (menu.rect.width,	info_height)
 
+
 def top_keypress(event):
 	global cursor_r,cursor_c
 	k = event.key
 
 	if pygame.KMOD_CTRL & event.mod:
 		if event.uni == '=':
-			args.font_size += 1
-			change_font_size()
+			change_font_size(1)
 		elif event.uni == '-':
-			args.font_size -= 1
-			change_font_size()
+			change_font_size(-1)
 		else:
 			return False
 	else:
@@ -115,6 +115,7 @@ def do_replay(ff):
 
 def keypress(event):
 	e = KeypressEvent(event)
+	log(e)
 
 	if e.key == pygame.K_F2:
 		do_replay(e.mod & pygame.KMOD_SHIFT)
@@ -136,12 +137,21 @@ def do_keypress(e):
 
 
 def mousedown(e):
-	for f in all_frames:
-		if f.rect.collidepoint(e.pos):
-			pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
-			f.mousedown(e, pos)
-			draw()
-			break
+	#handle ctrl + mousewheel font changing
+	if e.button in [4,5] and (
+		pygame.key.get_pressed()[pygame.K_LCTRL] or
+		pygame.key.get_pressed()[pygame.K_RCTRL]):
+		if e.button == 4: change_font_size(1)
+		if e.button == 5: change_font_size(-1)
+		draw()
+	else:
+		for f in all_frames:
+			if f.rect.collidepoint(e.pos):
+				pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
+				f.mousedown(e, pos)
+				draw()
+				break
+
 
 def process_event(event):
 
@@ -166,7 +176,6 @@ def draw():
 	resize_frames()
 	menu.update(root)
 	menu.render()
-	#screen_surface.fill((0,0,255))
 	if not fast_forward:
 		screen_surface.blit(root.draw(),root.rect.topleft)
 		screen_surface.blit(menu.draw(),menu.rect.topleft)
@@ -220,6 +229,7 @@ root = frames.Root()
 menu = frames.Menu()
 menu.root = root
 info = frames.Info()
+info.root = root
 all_frames = [root, menu, info]
 fast_forward = False
 
@@ -245,8 +255,11 @@ except:
 
 
 root.render()
-root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
-root.cursor_c += 1
+try:
+	root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
+	root.cursor_c += 1
+except Exception as e:
+	print e, ", cant move cursor"
 
 
 if args.replay:

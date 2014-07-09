@@ -233,10 +233,10 @@ class Syntaxed(Node):
 
 	def on_keypress(self, e):
 		if pygame.KMOD_CTRL & e.mod:
-			if e.key == pygame.K_HOME:
+			if e.key == pygame.K_COMMA:
 				self.prev_syntax()
 				return True
-			if e.key == pygame.K_END:#ctrl+arrows should be left for structured navigation?
+			if e.key == pygame.K_COLON:
 				self.next_syntax()
 				return True
 		return super(Syntaxed, self).on_keypress(e)
@@ -293,6 +293,13 @@ class Collapsible(Node):
 		super(Collapsible, self).__init__()	
 		self.view_mode_widget = widgets.NState(self, 0, ("+","v","-"))
 
+	@property
+	def view_mode(s):
+		return s.view_mode_widget.value
+	@view_mode.setter
+	def view_mode(s, m):
+		s.view_mode_widget.value = m
+
 	def render(self):
 		return [w('view_mode_widget')] + [indent()] + (self.render_items() if self.view_mode > 0 else []) + [dedent()]
 	
@@ -306,8 +313,8 @@ class Collapsible(Node):
 
 
 class Dict(Collapsible):
-	def __init__(self, expanded=True):
-		super(Dict, self).__init__(expanded)
+	def __init__(self):
+		super(Dict, self).__init__()
 		self.items = OrderedDict()
 		
 	def render_items(self):
@@ -342,18 +349,20 @@ class Dict(Collapsible):
 
 #todo: view ordering
 class List(Collapsible):
-	def __init__(self, expanded=True, vertical=True):
-		#if self.item_type ..
-		assert isinstance(expanded, bool)
-		assert isinstance(vertical, bool)
-		super(List, self).__init__(expanded, vertical)
+	def __init__(self):
+		super(List, self).__init__()
 		self.items = []
 
 	def render_items(self):
 		r = [t('[')]
 		for item in self.items:
 			r += [ElementTag(item)]
-			if self.vertical: r+= [nl()]
+			if self.view_mode == 2:
+				r+= [nl()]
+			else:
+				r+= [t(', ')]
+			#we will have to work towards having this kind of syntax
+			#defined declaratively so Compiler can deal with it
 		r += [t(']')]
 		return r
 
@@ -385,7 +394,6 @@ class List(Collapsible):
 	def insertion_pos(self, frame, (char, line)):
 		i = -1
 		for i, item in enumerate(self.items):
-			#print i, item, item._render_start_line, item._render_start_char
 			if (item._render_lines[frame]["startline"] >= line and
 				item._render_lines[frame]["startchar"] >= char):
 				return i
@@ -396,7 +404,6 @@ class List(Collapsible):
 		r.decl = self.decl
 		r.items = [i.eval() for i in self.items]
 		r.fix_parents()
-		r.expanded = False
 		return r
 
 	def copy(self):
@@ -454,9 +461,36 @@ class List(Collapsible):
 
 
 
-class Statments(List):
+class Statements(List):
 	def __init__(s):
-		super(Statments, s).__init__()
+		super(Statements, s).__init__()
+		s.view_mode = Collapsible.vm_multiline
+	@classmethod
+	def fresh(cls):
+		r = cls()
+		r.newline()
+		return r
+	@property
+	def item_type(self):
+		return b['statement']
+	@staticmethod
+	def match(text):
+		return None
+	def render_items(self):
+		r = []
+		for item in self.items:
+			r += [ElementTag(item)]
+			if self.view_mode == 2:
+				r+= [nl()]
+			else:
+				r+= [t(', ')]
+			#we will have to work towards having this kind of syntax
+			#defined declaratively so Compiler can deal with it
+		r += []
+		return r
+	def run(self):
+		[i.eval() for i in self.items]
+		return Text("banana")
 
 
 
@@ -485,7 +519,7 @@ class WidgetedValue(Node):
 		return s.eval()
 
 class Number(WidgetedValue):
-	def __init__(self, value=""):
+	def __init__(self, value="0"):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
 		self.widget.brackets = ('','')
@@ -494,7 +528,7 @@ class Number(WidgetedValue):
 
 	@staticmethod
 	def match(text):
-		"uhh"
+		"return score"
 		if text.isdigit():
 			return 300
 
@@ -575,7 +609,7 @@ class Module(Syntaxed):
 
 	def run(self):
 		self.clear()
-		return self.ch.statements.eval()
+		return self.ch.statements.run()
 
 	def run_line(self, node):
 		self.clear()
@@ -737,10 +771,8 @@ class ParametricType(Syntaxed):
 		return cls(cls.create_kids(decl.type_slots), decl)
 	@property
 	def name(self):
-		return "parametric type"
+		return "parametric type (fix this)"
 		#todo: refsyntax?
-
-
 
 class ParametricNodecl(NodeclBase):
 	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
@@ -758,21 +790,11 @@ class ParametricNodecl(NodeclBase):
 	#if there is only one possible node type to instantiate..
 
 
-
-
-
-
-
-
-
-
-
-
 """here we start putting stuff into b, which is then made into the builtins module"""
 
-TypeNodecl() #..so you can say that your function returns a type, or something
+TypeNodecl() #..so you can say that your function returns a type value, or something
 
-[Nodecl(x) for x in [Number, Text]]
+[Nodecl(x) for x in [Number, Text, Statements]]
 
 """the stuff down here isnt well thought-out yet..the whole types thing.."""
 
@@ -832,7 +854,7 @@ b['dict'] = ParametricNodecl(Dict,
 WorksAs.b("list", "expression")
 WorksAs.b("dict", "expression")
 
-Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
+#Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 SyntaxedNodecl(Module,
 			   ["module:\n", ch("statements"),  t("end.")],
@@ -880,7 +902,8 @@ class Compiler(Node):
 	def __init__(self, type):
 		super(Compiler, self).__init__()
 		self.type = type
-		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition)) #in short, everything that works as a type..abstract it away later
+		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory))
+		#..in short, everything that works as a type..abstract it away later
 		self.items = []
 		self.brackets_color = "compiler brackets" #bye:)
 		self.brackets = ('{', '}')
@@ -889,13 +912,24 @@ class Compiler(Node):
 
 	@property
 	def compiled(self):
-		if len(self.items) == 1 and isinstance(self.items[0], Node):
-			r = self.items[0]
-		else:
-			#raise an exception? make a NotCompiled node?
-			r = Text("does not compile")
-			r.parent = self
-		print self.items, "=>", r
+		#default result:
+		#raise an exception? make a NotCompiled node?
+		r = Text("?"+str(self.items))
+
+		if len(self.items) == 1:
+			i0 = self.items[0]
+			if isinstance(i0, Node):
+				r = i0
+			#demodemodemo
+			elif isinstance(self.type, Ref):
+				if self.type.target == b['text']:
+					r = Text(i0)
+				if self.type.target == b['number']:
+					if Number.match(i0):
+						r = Number(i0)
+			
+		r.parent = self
+		#log(self.items, "=>", r)
 		return r
 
 	def _eval(self):
@@ -966,7 +1000,7 @@ class Compiler(Node):
 						self.text = self.text[0:pos] + self.text[pos + 1:]
 				"""
 
-				log(e)
+				#log(e)
 				text = its[i]
 				its[i] = text[:char] + e.uni + text[char:]
 				self.root.post_render_move_caret += len(e.uni)
@@ -1011,16 +1045,30 @@ class Compiler(Node):
 		#else None
 
 	def menu_item_selected(self, item, atts):
-		if not isinstance(item, CompilerMenuItem):
-			log("not CompilerMenuItem")
-			return
+		assert isinstance(item, CompilerMenuItem)
+		node = item.value
 
-		i = self.mine(atts)
+		#add it to our items
+		i = self.mine(atts) #get index of my item under cursor
 		if i != None:
-			self.items[i] = item.value
+			self.items[i] = node
 		else:
-			self.items.append(item.value)
-		item.value.parent = self
+			self.items.append(node)
+		node.parent = self
+
+		#move cursor to first child. this should go somewhere else.
+		log(node)
+		if isinstance(node, Syntaxed):
+			for i in node.syntax:
+				if isinstance(i, ch):
+					self.root.post_render_move_caret = node.ch[i.name]
+					break
+		elif isinstance(node, FunctionCall):
+			if len(node.args) > 0:
+				self.root.post_render_move_caret = node.args[0]
+
+
+
 
 
 
@@ -1039,7 +1087,7 @@ class Compiler(Node):
 			else:
 				text = self.items[i]
 
-		print 'menu for:',text
+		#print 'menu for:',text
 
 
 		scope = self.scope()
@@ -1110,27 +1158,8 @@ class CompilerMenuItem(MenuItem):
 	#PlaceholderMenuItem is not an Element, but still has tags(),
 	#called by project.project called from draw()
 	def tags(self):
-		return [ColorTag((0,255,0)), w('value'), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
+		return [w('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
 		#and abusing "w" for "widget" here...not just here...
-
-	def draw(self, menu, s, font, x, y):
-		#replicating draw_root, but for now..
-		#project._width = ..
-		lines = project.project(self)
-		area = pygame.Rect((x,y,0,0))
-		for row, line in enumerate(lines):
-			for col, char in enumerate(line):
-				chx = x + font['width'] * col
-				chy = (y+2) + font['height'] * row
-				sur = font['font'].render(
-					char[0],False,
-					char[1]['color'],
-					colors.bg)
-				s.blit(sur,(chx,chy))
-				area = area.union((chx, chy, sur.get_rect().w, sur.get_rect().h+2))
-		return area
-
-
 
 
 
@@ -1199,28 +1228,26 @@ class FunctionDefinitionBase(Syntaxed):
 		r = self._call(args)
 		assert isinstance(r, Node)
 		return r
-		# *args, make the args named?
 
 	def _eval(s):
 		return Text("OK")
+
 
 class FunctionDefinition(FunctionDefinitionBase):
 
 	def __init__(self, kids):
 		super(FunctionDefinition, self).__init__(kids)
 
+	def _call(self, call_args):
+		return self.ch.body.run()#Void()#
 
 	def copy_args(self, call_args):
 		for ca in call_args:
-			n = ca.ch.name.pyval
-			assert isinstance(n, str)#or maybe unicode
+			name = ca.ch.name.pyval
+			assert isinstance(name, str)#or maybe unicode
 			for vd in self.vardecls:
-				if vd.ch.name.pyval == n:
+				if vd.ch.name.pyval == name:
 					vd.runtime.val.append(ca.copy())
-
-	def _call(self, call_args):
-		self.copy_args(call_args)
-		return Void()#self.ch.body.eval()
 
 	@property
 	def vardecls(s):
@@ -1273,6 +1300,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 
 	def _call(self, args):
 		return self.fun(args)
+		# todo use named *args i guess
 
 	@property
 	def name(s):
@@ -1320,6 +1348,8 @@ BuiltinFunctionDecl.create("sum",
 		TypedArgument({'name': Text("list"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})})])
 
 def b_range(args):
+	if not isinstance(args[0], Number) or not isinstance(args[1], Number):
+		return Text("error:)")
 	r = List()
 	r.decl = b["list"].make_type({'itemtype': Ref(b['number'])})
 	r.items = [Number(i) for i in range(args[0].pyval, args[1].pyval + 1)]
@@ -1353,7 +1383,9 @@ class FunctionCall(Node):
 		self._fix_parents(self.args)
 
 	def _eval(s):
-		return s.target.call([i.compiled for i in s.args])
+		args = s.args#[i.compiled for i in s.args]
+		log("args:"+str(args))
+		return s.target.call(args)
 
 	def replace_child(self, child, new):
 		assert(child in self.args)

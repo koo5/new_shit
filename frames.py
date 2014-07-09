@@ -7,6 +7,7 @@ import typed
 from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 from menu_items import InfoItem
 import widgets
+from logger import log
 
 font = font_height = font_width = 666
 
@@ -40,10 +41,11 @@ class Frame(object):
 			return None
 
 	def mousedown(s,e,pos):
-		#	log(e.button)
 		n = s.under_cr(xy2cr(pos))
+		log(str(e) + " on " + str(n))
 		if n:
 			n.on_mouse_press(e.button)
+
 
 	def __init__(s):
 		s.rect = pygame.Rect((6,6,6,6))
@@ -54,9 +56,10 @@ class Frame(object):
 		return s.items[s.scroll:s.scroll + s.rows]
 
 	def render(s):
-		r = []
+		r = [ColorTag("fg")]
 		for i in s.items_on_screen:
 			r += [ElementTag(i), "\n"]
+		r += [EndTag()]
 		s.lines = project.project_tags(r, s.cols, s).lines
 
 	@property
@@ -115,7 +118,7 @@ class Root(Frame):
 
 	def move_cursor_h(s, x):
 		"""returns True if it moved"""
-		old = s.cursor_c, s.cursor_r
+		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
 		if s.cursor_c > len(s.lines[s.cursor_r]):
 			s.move_cursor_v(1)
@@ -123,28 +126,32 @@ class Root(Frame):
 		if s.cursor_c < 0:
 			#todo
 			s.cursor_c = 0
-		return old != (s.cursor_c, s.cursor_r)
+		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 
-	def move_cursor_v(self, count):
-		r = self.cursor_r + count
-		sl = self.scroll_lines
-		if r >= self.rows:
-			sl += r - self.rows +1
-			r = self.rows-1
+	def move_cursor_v(s, count):
+		"""returns True if it moved. atm, screen bottom is unlimited"""
+		old = s.cursor_c, s.cursor_r, s.scroll_lines
+		r = s.cursor_r + count
+		sl = s.scroll_lines
+		if r >= s.rows:
+			sl += r - s.rows +1
+			r = s.rows-1
 		if r < 0:
 			sl += r
 			r = 0
 			if sl < 0:
 				sl = 0
-		self.cursor_r = r
-		self.scroll_lines = sl
-
+		s.cursor_r = r
+		s.scroll_lines = sl
+		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 
 	def render(self):
 
 		p = project.project(self.root, self.cols, self)
 		self.lines = p.lines[self.scroll_lines:self.scroll_lines + self.rows]
 		self.arrows = p.arrows
+		self.generate_arrows()
+		self.do_post_render_move_caret()
 
 		if __debug__:
 			assert(isinstance(self.lines, list))
@@ -176,7 +183,7 @@ class Root(Frame):
 				x = font_width * col
 				y = font_height * row
 				fg = color(char[1]['color'])
-				bg = color("bg" if not char[1]['node'] == uc else "highlighted bg")
+				#bg = color("bg" if not char[1]['node'] == uc else "highlighted bg")
 				sur = font.render(
 					char[0],
 					1,
@@ -191,10 +198,7 @@ class Root(Frame):
 			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
 
 	def draw(self):
-		self.render()
-		self.generate_arrows()
-		surf = pygame.Surface((self.rect.w, self.rect.h), 0, pygame.display.get_surface())
-		#surf.fill(colors.bg)
+		surf = pygame.Surface((self.rect.w, self.rect.h), 0)#, pygame.display.get_surface())
 		self.draw_arrows(surf)
 		self.draw_lines(surf)
 		self.draw_cursor(surf)
@@ -232,6 +236,12 @@ class Root(Frame):
 	def cursor_end(s):
 		s.cursor_c = len(s.lines[s.cursor_r])
 
+	def cursor_top(s):
+		s.cursor_r = 0
+
+	def cursor_bottom(s):
+		log("hmpf")
+
 	def run(s):
 		s.root['program'].run()
 
@@ -253,6 +263,11 @@ class Root(Frame):
 				s.prev_elem()
 			elif k == pygame.K_RIGHT:
 				s.next_elem()
+			elif k == pygame.K_HOME:
+				s.cursor_top()
+			elif k == pygame.K_END:
+				s.cursor_bottom()
+
 			else:
 				return False
 		else:
@@ -304,9 +319,15 @@ class Root(Frame):
 		while element != None and not element.on_keypress(event):
 			element = element.parent
 		if element != None:#some element handled it
-			self.move_cursor_h(self.root.post_render_move_caret)
-			self.root.post_render_move_caret = 0
 			return True
+
+	def do_post_render_move_caret(s):
+		if isinstance(s.root.post_render_move_caret, int):
+			s.move_cursor_h(s.root.post_render_move_caret)
+		else: #its a node
+			log(s.root.post_render_move_caret)
+			s.cursor_c, s.cursor_r = project.find(s.root.post_render_move_caret, s.lines)
+		s.root.post_render_move_caret = 0
 
 
 class Menu(Frame):
@@ -357,6 +378,7 @@ class Menu(Frame):
 			draw.rect(surface, c, r, 1)
 
 	def update(s, root):
+		"re-generate menu items"
 		e = root.under_cursor()
 		atts = root.atts
 		s.element = e
@@ -384,6 +406,7 @@ class Menu(Frame):
 
 	def mousedown(s,e,pos):
 		n = s.under_cr(xy2cr(pos))
+		log(str(e) + " on " + str(n))
 		if n:
 			s.element.menu_item_selected(n, None)
 
@@ -402,23 +425,25 @@ class Info(Frame):
 
 	def __init__(s):
 		super(Info, s).__init__()
-		s.top_info = [InfoItem(t) for t in [
+		#create all infoitems at __init__, makes persistence possible (for visibility state)
+		s.top_info = [InfoItem(i) for i in [
 			"ctrl + =,- : font size", 
 			"f9 : only valid items in menu",
-			"f8 : toggle the silly gray lines from Refs to their targets",
+			"f8 : toggle the silly blue lines from Refs to their targets",
 			"f5 : eval",
 			"f4 : clear eval results",
 			"ctrl + up, down: menu movement",
 			"space: menu selection",
 			"",
 			"[text] are textboxes",
-			"orange {}'s are Compiler",#display actual node here?
+			["orange {}'s are Compiler", ElementTag(typed.Compiler(typed.b['type']))],#display actual node here?
 			"red <>'s enclose nodes or other widgets",
 			"(gray)'s are the type the compiler expects",
 			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"
 		]]
 		#,	"f12 : normalize syntaxes"
 		s.hierarchy_infoitem = InfoItem("bla")
+		s.deffun_infoitem = InfoItem("bla")
 		s.hidden_toggle = widgets.Toggle(s, True, ("(.....)", "(...)"))
 		s.hidden_toggle.color = s.hidden_toggle.brackets_color = "info item visibility toggle"
 
@@ -428,8 +453,17 @@ class Info(Frame):
 
 	def update(s):
 		s.items = s.top_info[:]
+
+		uc = s.root.under_cursor()
 		s.items.append(s.hierarchy_infoitem)
-		#elements..
+		s.hierarchy_infoitem.contents = [
+			str(s.root.cursor_c) + ":"+
+			str(s.root.cursor_r)+ ":" + str(uc)]
+
+		if isinstance(uc, typed.FunctionCall):
+			s.deffun_infoitem.contents = ["=>", ElementTag(uc.target)]
+			s.items.append(s.deffun_infoitem)
+
 
 	def render(s):
 		s.update()
@@ -445,7 +479,7 @@ class Info(Frame):
 		return surface
 
 
-#todo: definition / insight frame? preferably able to float in multiple numbers around the code in root
-#status / log window
+#todo: function definition / insight frame? preferably able to float in multiple numbers around the code
+#status / action log window <- with keypresses too
 #toolbar (toolbar.py)
 #settings, the doc?

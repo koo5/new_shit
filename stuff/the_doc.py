@@ -417,3 +417,21 @@ some todo:
 
 
 brackets around nodes: doesnt make structure all that clear anyway, try boxing?
+
+
+
+
+
+		len(self.items) == 1:
+			i0 = self.items[0]
+			if isinstance(i0, Node):
+				r = i0
+			#demodemodemo
+			elif self.type == b['text']:
+				r = Text(i0)
+			if self.type == b['number']:
+				if Number.match(i0):
+					r = Number(i0)
+
+
+

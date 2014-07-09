@@ -174,7 +174,7 @@ class NState(Widget):
 		self.value = value
 		assert(0 <= value < len(texts))
 		self.texts = texts
-		self.color = "text"
+		self.color = "fg"
 	def render(self):
 		return [ColorTag(self.color), TextTag(self.text), EndTag()]
 	@property
@@ -200,7 +200,7 @@ class Toggle(Widget):
 		self.register_event_types('on_change')
 		self.value = value
 		self.texts = texts
-		self.color = "text"
+		self.color = "fg"
 	def render(self):
 		return [ColorTag(self.color), TextTag(self.text), EndTag()]
 	@property
