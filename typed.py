@@ -882,8 +882,8 @@ class Compiler(Node):
 		self.type = type
 		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition)) #in short, everything that works as a type..abstract it away later
 		self.items = []
-		self.brackets_color = "compiler brackets"
-		self.brackets = (' ', ' ')
+		self.brackets_color = "compiler brackets" #bye:)
+		self.brackets = ('{', '}')
 		self.decl = None #i am a free man, not a number!
 		self.register_event_types('on_edit')
 
