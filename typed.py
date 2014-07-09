@@ -927,7 +927,7 @@ class Compiler(Node):
 				if self.type.target == b['number']:
 					if Number.match(i0):
 						r = Number(i0)
-			
+
 		r.parent = self
 		#log(self.items, "=>", r)
 		return r
@@ -961,6 +961,10 @@ class Compiler(Node):
 		super(Compiler, self).fix_parents()
 		self._fix_parents(self.nodes)
 
+	#this is a total mess and still doesnt work, needs to be rethinked
+	#i could throw more info into the tags stream, about individual brackets
+	#the backspace/forward problem isnt really specific to this nodeless thing tho,
+	#it will have to be dealt with between/in nodes too
 	def on_keypress(self, e):
 
 		if not e.mod & pygame.KMOD_CTRL:
@@ -979,14 +983,18 @@ class Compiler(Node):
 				else:
 					i = self.mine(e.atts)
 					if i != None:
+					#cursor on my item
 						if isinstance(its[i], (str, unicode)):
+						#cursor on text
 							if "compiler item char" in e.atts:
 								char = e.atts["compiler item char"]
 							else:
 								char = len(its[i])
 						else:
+						#cursor on node
 							return False
 					else:
+						#should test here if its on our closing bracket
 						return False
 
 				"""
@@ -1041,6 +1049,7 @@ class Compiler(Node):
 		if "compiler item" in atts and atts["compiler item"] in self.items:
 			return self.items.index(atts["compiler item"])
 		elif len(self.items) != 0 and atts["node"] == self:
+			#cursor is on the closing bracket of Compiler
 			return len(self.items) - 1
 		#else None
 
@@ -1460,7 +1469,10 @@ SyntaxedNodecl(PythonEval,
 
 
 
+#Const({'name': Text("meaning of life"), 'value': Number(42)})
 """the end"""
+
+
 
 
 def make_root():

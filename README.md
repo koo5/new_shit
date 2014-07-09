@@ -11,7 +11,7 @@ getting started
 ===
 \#requires pygame and fuzzywuzzy:
 
-* apt-get install python-pygame
+* apt-get install python-pygame python-pip
 * pip install --user fuzzywuzzy #or pip install fuzzywuzzy
 
 it should work with python 2.5, OrderedDict is bundled in

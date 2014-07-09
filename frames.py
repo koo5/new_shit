@@ -432,6 +432,7 @@ class Info(Frame):
 			"f8 : toggle the silly blue lines from Refs to their targets",
 			"f5 : eval",
 			"f4 : clear eval results",
+			"f2 : replay previous session",
 			"ctrl + up, down: menu movement",
 			"space: menu selection",
 			"",

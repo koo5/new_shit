@@ -435,3 +435,8 @@ brackets around nodes: doesnt make structure all that clear anyway, try boxing?
 
 
 
+
+
+we should start thinking about some scenegraphotoolkitoframeworkthing
+i want to define all my keypress and mouse responses declaratively
+oh and i want actions like in photoshop. 
