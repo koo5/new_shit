@@ -403,15 +403,16 @@ class Info(Frame):
 	def __init__(s):
 		super(Info, s).__init__()
 		s.top_info = [InfoItem(t) for t in [
-			"ctrl + =,- : font size",
+			"ctrl + =,- : font size", 
 			"f9 : only valid items in menu",
-			"f8 : arrows",
+			"f8 : toggle the silly gray lines from Refs to their targets",
 			"f5 : eval",
+			"f4 : clear eval results",
 			"ctrl + up, down: menu movement",
 			"space: menu selection",
 			"",
 			"[text] are textboxes",
-			"orange <>'s are Compiler",
+			"orange {}'s are Compiler",#display actual node here?
 			"red <>'s enclose nodes or other widgets",
 			"(gray)'s are the type the compiler expects",
 			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"
