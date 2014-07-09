@@ -86,6 +86,7 @@ class Node(element.Element):
 		if isinstance(self.parent, List):
 			r += [x.compiled for x in self.parent.above(self)]
 
+		r += [self.parent]
 		r += self.parent.scope()
 
 		assert(r != None)
@@ -94,7 +95,7 @@ class Node(element.Element):
 
 	def eval(self):
 		r = self._eval()
-		assert(isinstance(r, Node))
+		assert isinstance(r, Node), str(self) + " _eval is borked"
 		self.runtime.value.append(r)
 		self.runtime.evaluated = True
 		r.parent = self.parent
@@ -144,6 +145,7 @@ class Node(element.Element):
 	def to_python_str(self):
 		return str(self)
 
+	@property
 	def vardecls(s):
 		return []
 
@@ -517,6 +519,8 @@ class WidgetedValue(Node):
 		return str(self.pyval)
 	def copy(s):
 		return s.eval()
+	def flatten(self):
+		return [self]
 
 class Number(WidgetedValue):
 	def __init__(self, value="0"):
@@ -634,6 +638,19 @@ class Ref(Node):
 	def works_as(self, type):
 		return self.target.works_as(type)
 
+class VarRef(Node):
+	def __init__(self, target):
+		super(VarRef, self).__init__()
+		self.target = target
+		assert isinstance(target, UntypedVar)
+		log("varref target:"+str(target))
+	def render(self):
+		return [t('$'), tags.ArrowTag(self.target), t(self.name)]
+	@property
+	def name(self):
+		return self.target.name
+	def _eval(s):
+		return s.target.runtime.value.val
 
 class Exp(Node):
 	def __init__(self, type):
@@ -692,6 +709,24 @@ class TypeNodecl(NodeclBase):
 	def palette(self, scope, text):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Ref(x)) for x in nodecls]
+
+class VarRefNodecl(NodeclBase):
+	def __init__(self):
+		super(VarRefNodecl, self).__init__(VarRef)
+		b['varref'] = self #add me to builtins
+		VarRef.decl = self
+	def palette(self, scope, text):
+		r = []
+		for x in scope:
+			xc=x.compiled
+			for y in x.vardecls:
+				yc=y.compiled
+				#log("vardecl compiles to: "+str(yc))
+				if isinstance(yc, (UntypedVar, TypedArgument)):
+					#log("vardecl:"+str(yc))
+					r += [CompilerMenuItem(VarRef(yc))]
+		#log (str(scope)+"varrefs:"+str(r))
+		return r
 
 class ExpNodecl(NodeclBase):
 	def __init__(self):
@@ -793,6 +828,7 @@ class ParametricNodecl(NodeclBase):
 """here we start putting stuff into b, which is then made into the builtins module"""
 
 TypeNodecl() #..so you can say that your function returns a type value, or something
+VarRefNodecl()
 
 [Nodecl(x) for x in [Number, Text, Statements]]
 
@@ -868,29 +904,49 @@ SyntaxedNodecl(Union,
 b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
 
 
-"""
+
+class UntypedVar(Syntaxed):
+	def __init__(self, kids):
+		super(UntypedVar, self).__init__(kids)
+
+SyntaxedNodecl(UntypedVar,
+			   [ch("name")],
+			   {'name': 'text'})
+
 class For(Syntaxed):
 	def __init__(self, children):
 		super(For, self).__init__(children)
 	@property
 	def vardecls(s):
-		return {'item':s.ch.item}
+		return [s.ch.item]
 	def _eval(s):
-		items = s.ch.items.compiled.eval()
+		items = s.ch.items.eval()
+		assert isinstance(items, List)
+		itemvar = s.ch.item.compiled
+		assert isinstance(itemvar, UntypedVar)
+		for item in items:
+			itemvar.runtime.value.append(item)
+			s.ch.body.run()
+
+		return Void()
 
 SyntaxedNodecl(For,
-			   [t("for"), ch("item"), t("in"), ch("items")],
-			   {'item': b['text'],
-			    'items': b''})
-"""
+			   [t("for"), ch("item"), t("in"), ch("items"),
+			        ":\n", ch("body")],
+			   {'item': b['untypedvar'],
+			    'items': Exp(
+				    b['list'].make_type({
+				        'itemtype': Ref(b['type'])
+				    })),
+			   'body': b['statements']})
+
+
 
 """
 compiler node
 
-im planning to rework this into a freeform text field, where text is interspersed with nodes
-(get rid of Texts)
-for now, lets just hack it so that the first node, when a second node is added, is set as the
-leftmost child of the second node
+todo:hack it so that the first node, when a second node is added, is set as the
+leftmost child of the second node..or maybe not..dunno
 """
 
 
@@ -1193,6 +1249,14 @@ SyntaxedNodecl(TypedArgument,
 			   [ch("name"), t("-"), ch("type")],
 			   {'name': 'text', 'type': 'type'})
 
+class TypedArgument(Syntaxed):
+	def __init__(self, kids):
+		super(TypedArgument, self).__init__(kids)
+
+SyntaxedNodecl(TypedArgument,
+			   [ch("name"), t("-"), ch("type")],
+			   {'name': 'text', 'type': 'type'})
+
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
 tmp.ch["items"].add(Ref(b['typedargument']))
@@ -1256,7 +1320,7 @@ class FunctionDefinition(FunctionDefinitionBase):
 			assert isinstance(name, str)#or maybe unicode
 			for vd in self.vardecls:
 				if vd.ch.name.pyval == name:
-					vd.runtime.val.append(ca.copy())
+					vd.runtime.value.append(ca.copy())
 
 	@property
 	def vardecls(s):
@@ -1391,9 +1455,16 @@ class FunctionCall(Node):
 		self.args = [Compiler(v) for v in self.target.arg_types] #this should go to fresh()
 		self._fix_parents(self.args)
 
+	def delete_child(self, child):
+		for i,a in Enumerate(self.args):
+			if a == child:
+				self.args[i] = Compiler(self.target.arg_types[i])
+				self.args[i].parent = self
+				return
+
 	def _eval(s):
 		args = s.args#[i.compiled for i in s.args]
-		log("args:"+str(args))
+		log("function call args:"+str(args))
 		return s.target.call(args)
 
 	def replace_child(self, child, new):
@@ -1425,6 +1496,7 @@ class FunctionCall(Node):
 
 	def flatten(self):
 		return [self] + flatten([v.flatten() for v in self.args])
+
 
 
 
@@ -1481,7 +1553,8 @@ def make_root():
 	r["program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
 	r["builtins"].ch.statements.items = list(b.itervalues())
-	r["builtins"].ch.statements.expanded = False
+	r["builtins"].ch.statements.add(Text("---end of builtins---"))
+	#r["builtins"].ch.statements.expanded = False
 	return r
 
 

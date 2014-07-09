@@ -436,10 +436,10 @@ class Info(Frame):
 			"ctrl + up, down: menu movement",
 			"space: menu selection",
 			"",
-			"[text] are textboxes",
-			["orange {}'s are Compiler", ElementTag(typed.Compiler(typed.b['type']))],#display actual node here?
 			"red <>'s enclose nodes or other widgets",
-			"(gray)'s are the type the compiler expects",
+			"green [text] are textboxes",
+			["Compiler looks like this: ", ElementTag(typed.Compiler(typed.b['type']))],
+			"(in gray) is the expected type",
 			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"
 		]]
 		#,	"f12 : normalize syntaxes"
