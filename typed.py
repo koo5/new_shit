@@ -948,6 +948,22 @@ SyntaxedNodecl(For,
 			   'body': b['statements']})
 
 
+"""
+class Filter(Syntaxed):
+	def __init__(self, kids):
+		super(Filter, self).__init__(kids)
+"""
+
+class UntypedVar(Syntaxed):
+	def __init__(self, kids):
+		super(UntypedVar, self).__init__(kids)
+
+SyntaxedNodecl(UntypedVar,
+			   [ch("name")],
+			   {'name': 'text'})
+
+
+
 
 """
 compiler node

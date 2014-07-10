@@ -87,7 +87,7 @@ class Root(Frame):
 		self.root.fix_parents()
 		self.scroll_lines = 0
 		self.arrows_visible = True
-		self.cursor_blink_phase = False
+		self.cursor_blink_phase = True
 		
 	def and_sides(s,e):
 		if e.all[pygame.K_LEFT]: s.move_cursor_h(-1)
@@ -122,8 +122,8 @@ class Root(Frame):
 		"""returns True if it moved"""
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
-		if s.cursor_c > len(s.lines[s.cursor_r]):
-			s.move_cursor_v(1)
+		if len(s.lines) <= s.cursor_r or s.cursor_c > len(s.lines[s.cursor_r]):
+			s.move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
 			#todo

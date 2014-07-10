@@ -114,6 +114,7 @@ def do_replay(ff):
 
 
 def keypress(event):
+	reset_cursor_blink_timer()
 	e = KeypressEvent(event)
 	log(e)
 
@@ -171,6 +172,11 @@ def process_event(event):
 	if event.type == pygame.VIDEORESIZE:
 		resize(event.dict['size'])
 		draw()
+
+
+def reset_cursor_blink_timer():
+	pygame.time.set_timer(pygame.USEREVENT + 1, 800)
+	root.cursor_blink_phase = True
 
 
 
@@ -272,7 +278,7 @@ draw()
 
 
 pygame.time.set_timer(pygame.USEREVENT, 100) #poll for SIGINT
-pygame.time.set_timer(pygame.USEREVENT + 1, 800) #blink cursor
+reset_cursor_blink_timer()
 def main():
 	while True:
 		try:

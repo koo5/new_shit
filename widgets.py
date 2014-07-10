@@ -18,10 +18,7 @@ class Text(Widget):
 		self.register_event_types('on_edit')
 		self.color = (150,150,255,255)
 		self.text = text
-		
-	def get_caret_position(self):
-		return self.root.caret_position - self.doc.positions[self]
-		
+
 	def render(self):
 		return [TextTag(self.text)]
 	
@@ -58,18 +55,6 @@ class Text(Widget):
 		self.dispatch_event('on_edit', self)
 		return True
 
-	
-	def on_text_motion(self, motion, select=False):
-		ping()
-		if motion == pyglet.window.key.MOTION_BACKSPACE:
-			position = self.get_caret_position()
-			if position > 0:
-				self.text = self.text[:position-1]+self.text[position:]
-			self.dispatch_event('on_edit', self)
-			self.win.post_render_move_caret = -1
-		else:
-			return False
-		return True
 	@property
 	def value(self):
 		return self.text
