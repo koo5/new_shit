@@ -187,6 +187,7 @@ class NState(Widget):
 		self.dispatch_event('on_change', self)
 	def on_mouse_press(self, button):
 		self.toggle()
+		return True
 	def on_keypress(self, e):
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
 			self.toggle()

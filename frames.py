@@ -41,10 +41,11 @@ class Frame(object):
 			return None
 
 	def mousedown(s,e,pos):
-		n = s.under_cr(xy2cr(pos))
+		cr = xy2cr(pos) #cursor column, row
+		n = s.under_cr(cr)
 		log(str(e) + " on " + str(n))
-		if n:
-			n.on_mouse_press(e.button)
+		if not n or not n.on_mouse_press(e.button):
+			s.cursor_c, s.cursor_r = cr
 
 
 	def __init__(s):
@@ -86,7 +87,8 @@ class Root(Frame):
 		self.root.fix_parents()
 		self.scroll_lines = 0
 		self.arrows_visible = True
-
+		self.cursor_blink_phase = False
+		
 	def and_sides(s,e):
 		if e.all[pygame.K_LEFT]: s.move_cursor_h(-1)
 		if e.all[pygame.K_RIGHT]: s.move_cursor_h(1)
@@ -205,8 +207,9 @@ class Root(Frame):
 		return surf
 
 	def draw_cursor(self, s):
-		x, y, y2 = self.cursor_xy()
-		pygame.draw.rect(s, colors.cursor,
+		if self.cursor_blink_phase:
+			x, y, y2 = self.cursor_xy()
+			pygame.draw.rect(s, colors.cursor,
 						 (x, y, 1, y2 - y,))
 
 	def cursor_xy(s):

@@ -155,6 +155,10 @@ def mousedown(e):
 
 def process_event(event):
 
+	if event.type == pygame.USEREVENT + 1:
+		root.cursor_blink_phase = not root.cursor_blink_phase
+		draw()
+
 	if event.type == pygame.QUIT:
 		bye()
 
@@ -268,6 +272,7 @@ draw()
 
 
 pygame.time.set_timer(pygame.USEREVENT, 100) #poll for SIGINT
+pygame.time.set_timer(pygame.USEREVENT + 1, 800) #blink cursor
 def main():
 	while True:
 		try:
