@@ -10,12 +10,12 @@ functon project takes a list of tags created by root.tags()
 from tags import *
 from logger import ping, log
 import colors
-from typed import Node, Compiler
+from nodes import Node, Compiler
 from dotdict import dotdict
 
 if __debug__:
 	import element as asselement
-	import typed as assnodes
+	import nodes as assnodes
 
 
 
@@ -190,4 +190,4 @@ def find(node, lines):
 if __debug__:
 	test_squash()
 
-#⇾node⇽
+#⇾node⇽...would be nice...pygames font dont do unicode:<

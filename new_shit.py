@@ -134,23 +134,24 @@ def keypress(event):
 
 def do_keypress(e):
 	top_keypress(e) or menu.on_keypress(e) or root.on_keypress(e)
-	draw()
+	render()
 
 
 def mousedown(e):
+	reset_cursor_blink_timer()
 	#handle ctrl + mousewheel font changing
 	if e.button in [4,5] and (
 		pygame.key.get_pressed()[pygame.K_LCTRL] or
 		pygame.key.get_pressed()[pygame.K_RCTRL]):
 		if e.button == 4: change_font_size(1)
 		if e.button == 5: change_font_size(-1)
-		draw()
+		render()
 	else:
 		for f in all_frames:
 			if f.rect.collidepoint(e.pos):
 				pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
 				f.mousedown(e, pos)
-				draw()
+				render()
 				break
 
 
@@ -171,7 +172,7 @@ def process_event(event):
 
 	if event.type == pygame.VIDEORESIZE:
 		resize(event.dict['size'])
-		draw()
+		render()
 
 
 def reset_cursor_blink_timer():
@@ -180,12 +181,15 @@ def reset_cursor_blink_timer():
 
 
 
-def draw():
+def render():
 	root.render()
 	info.render()
 	resize_frames()
-	menu.update(root)
-	menu.render()
+	menu.render(root)
+	draw()
+
+
+def draw():
 	if not fast_forward:
 		screen_surface.blit(root.draw(),root.rect.topleft)
 		screen_surface.blit(menu.draw(),menu.rect.topleft)
@@ -274,7 +278,7 @@ except Exception as e:
 
 if args.replay:
 	do_replay(True)
-draw()
+render()
 
 
 pygame.time.set_timer(pygame.USEREVENT, 100) #poll for SIGINT

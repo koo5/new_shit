@@ -11,7 +11,7 @@ from compiler.ast import flatten
 
 
 from dotdict import dotdict
-from logger import ping, log
+from logger import plog, log
 import element
 import widgets
 from menu_items import MenuItem
@@ -48,7 +48,7 @@ class val(list):
 		return x
 	
 	def set(self, x):
-		"""constants call this"""
+		"""constants call this..but if they are in a compiler..too bad"""
 		assert(isinstance(x, Node))
 		if len(self) > 0:
 			self[0] = x
@@ -252,10 +252,13 @@ class Syntaxed(Node):
 	def create_kids(cls, slots):
 		cls.check_slots(slots)
 		kids = {}
-		#fix:
 		for k, v in slots.iteritems(): #for each child:
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
-			if v in [b[x] for x in [y for y in ['text', 'number', 'statements', 'list', 'function signature list', 'untypedvar' ] if y in b]]:
+			easily_instantiable = [b[x] for x in [y for y in ['text', 'number',
+			    'statements', 'list', 'function signature list', 'untypedvar' ] if y in b]]
+			#if cls == For:
+			#	plog((v, easily_instantiable))
+			if v in easily_instantiable:
 				a = v.inst_fresh()
 				#if v == b['statements']:
 					#a.newline()#so, statements should be its own class and be defined as list of statment at the same time,
@@ -754,16 +757,16 @@ class Nodecl(NodeclBase):
 		instance_class.name = self.name
 
 	def palette(self, scope, text):
-		r = CompilerMenuItem(666)
 		i = self.instance_class
-
 		m = i.match(text)
 		if m:
-			r.value = i(text)
-			r.score = m
+			value = i(text)
+			score = m
 		else:
-			r.value = i()
-		return r
+			value = i()
+			score = 0
+		return CompilerMenuItem(value, score)
+
 
 
 
@@ -926,10 +929,10 @@ class For(Syntaxed):
 	def vardecls(s):
 		return [s.ch.item]
 	def _eval(s):
-		items = s.ch.items.eval()
-		assert isinstance(items, List)
 		itemvar = s.ch.item.compiled
 		assert isinstance(itemvar, UntypedVar)
+		items = s.ch.items.eval()
+		assert isinstance(items, List)
 		#r = b['list'].make_type({'itemtype': Ref(b['statement'])}).make_inst() #just a list of the "anything" type..dunno
 		for item in items:
 			itemvar.runtime.value.append(item)
@@ -953,14 +956,6 @@ class Filter(Syntaxed):
 	def __init__(self, kids):
 		super(Filter, self).__init__(kids)
 """
-
-class UntypedVar(Syntaxed):
-	def __init__(self, kids):
-		super(UntypedVar, self).__init__(kids)
-
-SyntaxedNodecl(UntypedVar,
-			   [ch("name")],
-			   {'name': 'text'})
 
 
 
@@ -1236,10 +1231,11 @@ class Compiler(Node):
 #i think ill redo the screen layout as two panes of projection
 print MenuItem
 class CompilerMenuItem(MenuItem):
-	def __init__(self, value):
+	def __init__(self, value, score = 0):
 		super(CompilerMenuItem, self).__init__()
 		self.value = value
-		self.score = 0
+		value.parent = self
+		self.score = score
 		self.brackets_color = (0,0,255)
 		#(and so needs brackets_color)
 

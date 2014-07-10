@@ -33,7 +33,7 @@ might move everything into lemon nodes :), or a .md on github..
 files:
 ===
 * new_shit.py: the frontend, handles a window, events, drawing. run this one.
-* typed.py (nodes.py is outphased): AST classes - "nodes"
+* nodes.py: AST classes - "nodes"
 * widgets.py textbox, number box, button..
 * element.py - both widgets and nodes descend from Element
 * project.py: project() "projects" the AST tree onto a grid of text

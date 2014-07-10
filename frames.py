@@ -3,7 +3,7 @@ from pygame import draw
 
 from colors import color, colors
 import project
-import typed
+import nodes
 from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 from menu_items import InfoItem
 import widgets
@@ -83,7 +83,7 @@ class Root(Frame):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.cursor_c = self.cursor_r = 0
-		self.root = typed.make_root()
+		self.root = nodes.make_root()
 		self.root.fix_parents()
 		self.scroll_lines = 0
 		self.arrows_visible = True
@@ -276,7 +276,7 @@ class Root(Frame):
 		else:
 			"""if k == pygame.K_F12:
 				for item in root.flatten():
-					if isinstance(item, typed.Syntaxed):
+					if isinstance(item, nodes.Syntaxed):
 						item.view_normalized = not item.view_normalized
 			el"""
 			if k == pygame.K_F8:
@@ -362,10 +362,10 @@ class Menu(Frame):
 		s.draw_rects(surface)
 		return surface
 
-	def draw_rects(s, surface):
+	def generate_rects(s):
+		s.rects = dict()
 		for i in s.items_on_screen:
 			rl = i._render_lines[s]
-			#print rl
 			startline = rl["startline"]
 			endline = rl["endline"]
 			startchar = 0
@@ -374,14 +374,22 @@ class Menu(Frame):
 			                startline * font_height,
 			                (endchar  - startchar) * font_width,
 			                (endline - startline+1) * font_height)
+			s.rects[i] = r
+
+	def draw_rects(s, surface):
+		for i,r in s.rects.iteritems():
 			if i == s.selected:
 				c = colors.menu_rect_selected
 			else:
 				c = colors.menu_rect
 			draw.rect(surface, c, r, 1)
 
-	def update(s, root):
-		"re-generate menu items"
+	def render(s, root):
+		s.generate_palette(root)
+		super(Menu, s).render()
+		s.generate_rects()
+
+	def generate_palette(s,root):
 		e = root.under_cursor()
 		atts = root.atts
 		s.element = e
@@ -403,15 +411,20 @@ class Menu(Frame):
 				self.move(1)
 				return True
 		if e.key == pygame.K_SPACE:
-			self.element.menu_item_selected(self.items[self.sel], self.root.atts)
-			self.sel = 0
+			self.accept()
 			return True
 
 	def mousedown(s,e,pos):
-		n = s.under_cr(xy2cr(pos))
-		log(str(e) + " on " + str(n))
-		if n:
-			s.element.menu_item_selected(n, None)
+		for i,r in s.rects.iteritems():
+			if r.collidepoint(pos):
+				s.sel = s.items_on_screen.index(i)
+				s.accept()
+
+	def accept(self):
+		if self.sel < len(self.items):
+				self.element.menu_item_selected(self.items[self.sel], self.root.atts)
+				self.sel = 0
+
 
 	def move(self, y):
 		self.sel += y
@@ -441,7 +454,7 @@ class Info(Frame):
 			"",
 			"red <>'s enclose nodes or other widgets",
 			"green [text] are textboxes",
-			["Compiler looks like this: ", ElementTag(typed.Compiler(typed.b['type']))],
+			["Compiler looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
 			"(in gray) is the expected type",
 			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"
 		]]
@@ -464,7 +477,7 @@ class Info(Frame):
 			str(s.root.cursor_c) + ":"+
 			str(s.root.cursor_r)+ ":" + str(uc)]
 
-		if isinstance(uc, typed.FunctionCall):
+		if isinstance(uc, nodes.FunctionCall):
 			s.deffun_infoitem.contents = ["=>", ElementTag(uc.target)]
 			s.items.append(s.deffun_infoitem)
 
