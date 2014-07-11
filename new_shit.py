@@ -227,9 +227,13 @@ pygame.font.init()
 
 
 #try to set SDL keyboard settings to system settings
-s = os.popen('xset -q  | grep "repeat delay"').read().split()
-repeat_delay, repeat_rate = int(s[3]), int(s[6])
-pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
+
+try:
+	s = os.popen('xset -q  | grep "repeat delay"').read().split()
+	repeat_delay, repeat_rate = int(s[3]), int(s[6])
+	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
+except:
+	pass
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 screen_surface = None
 display.set_caption('lemon operating language v 0.0 streamlined insane prototype with types')
