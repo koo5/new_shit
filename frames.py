@@ -185,12 +185,11 @@ class Root(Frame):
 				x = font_width * col
 				y = font_height * row
 				fg = color(char[1]['color'])
-				#bg = color("bg" if not char[1]['node'] == uc else "highlighted bg")
-				sur = font.render(
-					char[0],
-					1,
-					fg
-					)
+				bg = color("bg" if not char[1]['node'] == uc else "highlighted bg")
+				if self.arrows_visible:
+					sur = font.render(char[0],1,fg)
+				else:
+					sur = font.render(char[0],1,fg,bg)
 				surf.blit(sur,(x,y))
 
 	def draw_arrows(s, surface):
