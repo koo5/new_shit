@@ -99,7 +99,7 @@ class Node(element.Element):
 		assert isinstance(r, Node), str(self) + " _eval is borked"
 		if self.isconst:
 			self.runtime.value.set(r)
-			log("const" + str(self))
+			#log("const" + str(self)) todo:figure out how const would propagate (to compiler)
 		else:
 			self.runtime.value.append(r)
 		self.runtime.evaluated = True
@@ -1475,7 +1475,7 @@ class FunctionCall(Node):
 		self._fix_parents(self.args)
 
 	def delete_child(self, child):
-		for i,a in Enumerate(self.args):
+		for i,a in enumerate(self.args):
 			if a == child:
 				self.args[i] = Compiler(self.target.arg_types[i])
 				self.args[i].parent = self
@@ -1483,7 +1483,7 @@ class FunctionCall(Node):
 
 	def _eval(s):
 		args = s.args#[i.compiled for i in s.args]
-		log("function call args:"+str(args))
+		#log("function call args:"+str(args))
 		return s.target.call(args)
 
 	def replace_child(self, child, new):
