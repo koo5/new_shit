@@ -190,7 +190,7 @@ class Syntaxed(Node):
 	def __init__(self, kids):
 		super(Syntaxed, self).__init__()
 		self.check_slots(self.slots)
-		self.syntax_index = 0 #could be removed, alternative syntaxes arent supported now
+		self.syntax_index = 0 #alternative syntaxes arent supported now..but will be again
 		self.ch = Children()
 		assert(len(kids) == len(self.slots))
 		for k in self.slots.iterkeys():
@@ -845,6 +845,16 @@ class ParametricType(Syntaxed):
 	def name(self):
 		return "parametric type (fix this)"
 		#todo: refsyntax?
+	#@property
+	#def refsyntax(s):
+	#damn this is just all wrong. name should return something like "list of numbers"
+	#should i expose a wrapper for project that would return a string?
+	#or do we want to display the name as a node?
+	#you cant render a different nodes syntax as your own
+	#make a new kind of tag for this?
+
+
+
 
 class ParametricNodecl(NodeclBase):
 	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
