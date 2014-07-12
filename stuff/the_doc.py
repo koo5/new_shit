@@ -437,9 +437,103 @@ brackets around nodes: doesnt make structure all that clear anyway, try boxing?
 
 
 
+
+#todo: highlight matching parentheses
+
+
+
 we should start thinking about some scenegraphotoolkitoframeworkthing
 i want to define all my keypress and mouse responses declaratively
 oh and i want actions like in photoshop. 
 
 
-#todo: highlight matching parentheses
+stuff that lemon wants to use:
+pypy:
+pypy compiles your rpython-annotated code into a JITting interpreter. how cool is that?
+but it makes interacting with ctypes (?) based c extensions slow.
+http://morepypy.blogspot.cz/2014/03/pygamecffi-pygame-on-pypy.html
+pygame_cffi wasnt finished, missed drawing something lemon needed, last time i checked
+
+https://bitbucket.org/pypy/compatibility/wiki/Home#!gamemultimedia-libraries
+
+kivy:
+graphics framework
+compatible with pypy: doesnt look like happening. it is written in Cython, a sort of
+contender to pypy
+but, if we split frontend and backend..hmm..
+<kovak> there is nothing to stop you from using Kivy's providers directly<kovak> one of which is SDL<kovak> there has even been a recent discussion about a more low level text api
+
+
+simple options:
+tkinter:
+try how tkinter works with pygame (would events go thru pygame or tkinter? 
+its probably a hour of work to update the events handling, several more to 
+rewrite new_shit.py ...
+maybe i dont want to fight with a standard toolkit about focus.
+https://mail.python.org/pipermail/tutor/2012-September/091417.html
+
+pygame gui libs:
+ocempgui isnt packaged, does it work from source tree?
+pgu
+
+
+
+
+libavg: cool, but too much of a moving target?
+
+
+
+
+
+so, what do we want:
+access to SDL_ttf or other low level text drawing, preferably with both software and opengl backends
+
+at some point make lemon distributed, with ipython or some object proxying lib.
+each window or computer can display different frames. i never did this kind of thing, 
+so i dont know performance-wise where it will be best to make the "cuts"
+
+
+at some (distant) point, change to rpython, start using pypy
+
+we want graphics, opengl, but compatibility with non-accelerated machines too
+(an option to disable wild graphics and still run)
+
+what widgets do we want: for a start, panels to embed lemon frames in. with the line
+between them that you can drag to resize them. then maybe tabs. maybe file open dialog
+some of these things would be fun to do in lemon widgets but why.
+also, we may find that using standard widgets is useful, maybe popping up around lemon
+code or something, maybe that text editor.
+So yeah there would be both lemon text-o-widgets and some different widgets. but who cares.
+
+
+oh, and im eyeing pyglet again. pygame's Font cant do unicode. pyglet + SDL_ttf would work?
+
+
+if somebody will want to do a JS version, there are python-to-js compiler/interpreter projects. what would be the implications of their use for $above/of $above for their use?
+
+
+
+
+
+hard stuff to get done: 
+>Compiler.on_keypress: maybe some abstraction like this_is_left_bracket_of_item_1, this_is_...
+understand yield python or try pyDatalog again or .. /me cries
+that damned license
+
+
+fun stuff to get done:
+stuff/operators.py:
+use or adapt BuiltinFunctionDefinition to make available all useful python operators 
+(from python module "operator")
+something like [operator.mul, [ch("left"), "*", ch("right")], {"left": b["number"] etc
+or try going a step higher in abstraction and make a node that allows the user to 
+1) either access and add lemon syntax
+2) or access crudely by python name,
+python functions.
+reward: 1000 lemons
+
+
+control structures:
+If
+a builtin function or a class.
+
