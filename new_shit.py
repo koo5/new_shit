@@ -116,7 +116,8 @@ def do_replay(ff):
 def keypress(event):
 	reset_cursor_blink_timer()
 	e = KeypressEvent(event)
-	log(e)
+	if args.log_events:
+		log(e)
 
 	if e.key == pygame.K_F2:
 		do_replay(e.mod & pygame.KMOD_SHIFT)
@@ -133,7 +134,15 @@ def keypress(event):
 		do_keypress(copy.deepcopy(e))
 
 def do_keypress(e):
-	top_keypress(e) or menu.on_keypress(e) or root.on_keypress(e)
+	if top_keypress(e):
+		if args.log_events:
+			log("handled by main top")
+	elif menu.on_keypress(e):
+		if args.log_events:
+			log("handled by menu")
+	else:
+		root.on_keypress(e)
+
 	render()
 
 
@@ -157,6 +166,9 @@ def mousedown(e):
 
 def process_event(event):
 
+	if event.type == pygame.USEREVENT:
+		pass # woke up python to poll for SIGINT
+
 	if event.type == pygame.USEREVENT + 1:
 		root.cursor_blink_phase = not root.cursor_blink_phase
 		draw()
@@ -176,8 +188,9 @@ def process_event(event):
 
 
 def reset_cursor_blink_timer():
-	pygame.time.set_timer(pygame.USEREVENT + 1, 800)
-	root.cursor_blink_phase = True
+	if not args.dontblink:
+		pygame.time.set_timer(pygame.USEREVENT + 1, 800)
+		root.cursor_blink_phase = True
 
 
 
@@ -209,6 +222,12 @@ def loop():
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--dontblink', action='store_true',
+				   help='dont blink the cursor.')
+parser.add_argument('--log-events', action='store_true',
+				   help='what it says.')
+parser.add_argument('--noalpha', action='store_true',
+				   help='avoid alpha blending')
 parser.add_argument('--mono', action='store_true',
 				   help='no colors, just black and white')
 parser.add_argument('--webos', action='store_true',
@@ -244,12 +263,15 @@ change_font_size()
 colors.cache(args)
 
 root = frames.Root()
+if args.noalpha:
+	root.arrows_visible = False
 menu = frames.Menu()
 menu.root = root
 info = frames.Info()
 info.root = root
 all_frames = [root, menu, info]
 fast_forward = False
+frames.log_events = args.log_events
 
 def fuck_sdl():
 	"""SDL insists that you must give your new window some size

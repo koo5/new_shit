@@ -1173,6 +1173,8 @@ class Compiler(Node):
 	"""
 
 	def mine(self, atts):
+		#doesnt this need changes after the rewrite?
+		#if "compiler body" in atts and self == atts["compiler body"]
 		if "compiler item" in atts and atts["compiler item"] in self.items:
 			return self.items.index(atts["compiler item"])
 		elif len(self.items) != 0 and atts["node"] == self:
@@ -1193,7 +1195,7 @@ class Compiler(Node):
 		node.parent = self
 
 		#move cursor to first child. this should go somewhere else.
-		log(node)
+		#log(node)
 		if isinstance(node, Syntaxed):
 			for i in node.syntax:
 				if isinstance(i, ch):
@@ -1202,7 +1204,10 @@ class Compiler(Node):
 		elif isinstance(node, FunctionCall):
 			if len(node.args) > 0:
 				self.root.post_render_move_caret = node.args[0]
-
+		#elif isinstance(node, WidgetedValue):
+		#	if len(node.value) > 0:
+		#		self.root.post_render_move_caret = the next item..
+		#todo etc. make the cursor move naturally
 
 
 
@@ -1375,7 +1380,7 @@ class FunctionDefinitionBase(Syntaxed):
 		return r
 
 	def _eval(s):
-		return Text("OK")
+		return Text("OK:-)")
 
 
 class FunctionDefinition(FunctionDefinitionBase):

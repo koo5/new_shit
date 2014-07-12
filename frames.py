@@ -43,7 +43,8 @@ class Frame(object):
 	def mousedown(s,e,pos):
 		cr = xy2cr(pos) #cursor column, row
 		n = s.under_cr(cr)
-		log(str(e) + " on " + str(n))
+		if log_events:
+			log(str(e) + " on " + str(n))
 		if not n or not n.on_mouse_press(e.button):
 			s.cursor_c, s.cursor_r = cr
 
@@ -317,11 +318,15 @@ class Root(Frame):
 		event.cursor = (self.cursor_c, self.cursor_r)
 		event.atts = self.atts
 		if self.top_keypress(event):
+			if log_events:
+				log("handled by root frame")
 			return True
 		element = self.under_cursor()
 		while element != None and not element.on_keypress(event):
 			element = element.parent
 		if element != None:#some element handled it
+			if log_events:
+				log("handled by "+str(element))
 			return True
 
 	def do_post_render_move_caret(s):
