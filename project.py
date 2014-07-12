@@ -37,8 +37,11 @@ def test_squash():
 	assert squash([("a", 1), ("b", 2), ("a", 3)]) == {"a": 3, "b": 2}
 
 
+DONE = 1
 def newline(p, elem):
 	p.lines.append([])
+	if p.rows_limit and len(p.lines) > p.rows_limit:
+		return DONE
 	for i in range(p.indent * p.indent_width):
 		#keeps the attributes of the last node,
 		#but lets see how this works in the ui..
@@ -55,7 +58,7 @@ def attadd(atts, key, val):
 	#assert(isinstance(key, str))
 	atts.append((key, val))
 
-def new_p(cols, frame):
+def new_p(cols, frame, rows_limit):
 	p = dotdict()
 	p.width = cols
 	p.indent_width = 4
@@ -65,15 +68,16 @@ def new_p(cols, frame):
 	p.indent = 0
 	p.frame = frame
 	p.char_index = 0
+	p.rows_limit = rows_limit
 	return p
 
-def project(root, cols, frame):
-	p = new_p(cols, frame)
+def project(root, cols, frame, rows_limit = False):
+	p = new_p(cols, frame, rows_limit)
 	_project_elem(p, root)
 	return p
 
 def project_tags(tags, cols, frame):
-	p = new_p(cols, frame)
+	p = new_p(cols, frame, False)
 	p._render_lines = {frame:[{}]}
 	_project_tags(p, p, tags)
 	return p
@@ -84,33 +88,14 @@ def _project_elem(p, elem):
 	#assert(isinstance(p.atts, list))
 	#assert(isinstance(p.indent, int))
 	p.char_index = 0
-	#in theory, it could buy some cpu time to attadd/charadd these tags directly,
-	#but actually they should rather be moved to Node.tags/Element.tags
-
-	tags = [AttTag("node", elem)]
-	tags += elem.tags()
-	tags += [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
-
-	#results of eval
-	if isinstance(elem, Node):
-		if elem.runtime._dict.has_key("value") \
-				and elem.runtime._dict.has_key("evaluated") \
-				and not isinstance(elem.parent, Compiler):
-			tags += [ColorTag((0,252,252)), TextTag("->")]
-
-			#tags += [ElementTag(elem.runtime.value.val)]
-			for v in elem.runtime.value:
-				tags += [ElementTag(v)]
-			tags += [TextTag("<-"), EndTag()]
-
-
-	tags += [EndTag()]
 
 	elem._render_lines[p.frame] = {
 		"startchar": len(p.lines[-1]),
 		"startline": len(p.lines)-1}
 
-	_project_tags(p, elem, tags)
+	for tags in elem.tags():
+		if _project_tags(p, elem, tags) == DONE:
+			return DONE
 
 	elem._render_lines[p.frame]["endchar"] = len(p.lines[-1])
 	elem._render_lines[p.frame]["endline"] = len(p.lines)-1
@@ -119,7 +104,12 @@ def _project_elem(p, elem):
 
 def _project_tags(p, elem, tags):
 
-	for tag in tags:
+	if isinstance(tags, list):
+		for tag in tags:
+			if _project_tags(p, elem, tag) == DONE:
+				return DONE
+	else:
+		tag = tags
 	#first some replaces
 		if isinstance(tag, TextTag):
 			tag = tag.text
@@ -138,10 +128,12 @@ def _project_tags(p, elem, tags):
 			for char in tag:
 				attadd(p.atts, "char_index", p.char_index)
 				if char == "\n":
-					newline(p, elem)
+					if newline(p, elem) == DONE:
+						return DONE
 				else:
 					if len(p.lines[-1]) >= p.width:
-						newline(p, elem)
+						if newline(p, elem) == DONE:
+							return DONE
 					charadd(p.lines[-1], char, p.atts)
 				p.atts.pop()
 				p.char_index += 1
@@ -156,8 +148,10 @@ def _project_tags(p, elem, tags):
 		#recurse
 		elif isinstance(tag, ElementTag):
 
-			_project_tags(p, elem, [ColorTag(tag.element.brackets_color), TextTag(tag.element.brackets[0]), EndTag()])
-			_project_elem(p, tag.element)
+			if _project_tags(p, elem, [ColorTag(tag.element.brackets_color), TextTag(tag.element.brackets[0]), EndTag()]) == DONE:
+				return DONE
+			if _project_elem(p, tag.element) == DONE:
+				return DONE
 
 		elif isinstance(tag, ArrowTag):
 			p.arrows.append((len(p.lines[-1]), len(p.lines) - 1, tag.target))

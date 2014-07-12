@@ -56,6 +56,7 @@ class Frame(object):
 	def items_on_screen(s):
 		return s.items[s.scroll:s.scroll + s.rows]
 
+	#todo: should be used only in menu now
 	def render(s):
 		r = [ColorTag("fg")]
 		for i in s.items_on_screen:
@@ -149,8 +150,8 @@ class Root(Frame):
 
 	def render(self):
 
-		p = project.project(self.root, self.cols, self)
-		self.lines = p.lines[self.scroll_lines:self.scroll_lines + self.rows]
+		p = project.project(self.root, self.cols, self, self.scroll_lines + self.rows)
+		self.lines = p.lines
 		self.arrows = p.arrows
 		self.generate_arrows()
 		self.do_post_render_move_caret()

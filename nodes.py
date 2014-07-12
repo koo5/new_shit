@@ -17,7 +17,7 @@ import widgets
 from menu_items import MenuItem
 import tags
 #better would be ch, wi, te, ?
-from tags import ChildTag as ch, WidgetTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, AttTag#, MenuTag
+from tags import ChildTag as ch, WidgetTag as w, TextTag, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, AttTag#, MenuTag
 import tags as asstags
 asstags.asselement = element
 
@@ -156,6 +156,26 @@ class Node(element.Element):
 
 	def to_python_str(s):
 		return str(s)
+
+	def tags(self):
+		elem = self
+		yield AttTag("node", elem)
+		for l in elem.render():
+			yield l 
+		yield [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
+
+		#results of eval
+		if elem.runtime._dict.has_key("value") \
+				and elem.runtime._dict.has_key("evaluated") \
+				and not isinstance(elem.parent, Compiler):
+			yield [ColorTag((0,252,252)), TextTag("->")]
+
+			for v in elem.runtime.value:
+				yield ElementTag(v)
+			yield [TextTag("<-"), EndTag()]
+
+		yield EndTag()
+
 
 class Children(dotdict):
 	pass
@@ -311,7 +331,11 @@ class Collapsible(Node):
 		s.view_mode_widget.value = m
 
 	def render(self):
-		return [w('view_mode_widget')] + [indent()] + (self.render_items() if self.view_mode > 0 else []) + [dedent()]
+		yield [w('view_mode_widget')] + [indent()]
+		if self.view_mode > 0:
+			for i in self.render_items():
+				yield i
+		yield [dedent()]
 	
 	@classmethod
 	#watch out: List has its own
@@ -364,17 +388,17 @@ class List(Collapsible):
 		self.items = []
 
 	def render_items(self):
-		r = [t('[')]
+		yield t('[')
 		for item in self.items:
-			r += [ElementTag(item)]
+			yield ElementTag(item)
 			if self.view_mode == 2:
-				r+= [nl()]
+				yield nl()
 			else:
-				r+= [t(', ')]
+				yield t(', ')
 			#we will have to work towards having this kind of syntax
 			#defined declaratively so Compiler can deal with it
-		r += [t(']')]
-		return r
+		yield t(']')
+		
 
 	def __getitem__(self, i):
 		return self.items[i]
@@ -388,8 +412,9 @@ class List(Collapsible):
 		self._fix_parents(self.items)
 
 	def on_keypress(self, e):
-		item_index = self.insertion_pos(e.frame, e.cursor)
+		
 		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
+			item_index = self.insertion_pos(e.frame, e.cursor)
 			if len(self.items) > item_index:
 				del self.items[item_index]
 			return True
@@ -404,7 +429,10 @@ class List(Collapsible):
 	def insertion_pos(self, frame, (char, line)):
 		i = -1
 		for i, item in enumerate(self.items):
-			if (item._render_lines[frame]["startline"] >= line and
+			if (frame in item._render_lines and
+				#this will probably break finding insertion_pos and so inserting items
+				#when cursor is towards the bottom of the screen
+				item._render_lines[frame]["startline"] >= line and
 				item._render_lines[frame]["startchar"] >= char):
 				return i
 		return i + 1
@@ -1229,7 +1257,7 @@ class Compiler(Node):
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection
-print MenuItem
+#print MenuItem
 class CompilerMenuItem(MenuItem):
 	def __init__(self, value, score = 0):
 		super(CompilerMenuItem, self).__init__()

@@ -248,6 +248,11 @@ all_frames = [root, menu, info]
 fast_forward = False
 
 def fuck_sdl():
+	"""SDL insists that you must give your new window some size
+	(screen_surface = pygame.display.set_mode), it ignores the WM
+	but if the WM takes over...it doesnt even realize it!
+	so it thinks it has the original size
+	so i try to get the actual window size and "resize" """
 	w = pygame.display.get_wm_info()["wmwindow"]
 	import subprocess
 	x =  subprocess.check_output(["xwininfo", "-id", str(w)])

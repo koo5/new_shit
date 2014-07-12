@@ -24,9 +24,9 @@ class Element(event.EventDispatcher):
 			self.register_event_type(item.strip())
 
 	def tags(self):
-		#uh
-		r = self.render()
-#		ping()
+		#this needs to be refactored in with Node.tags
+		r = [tags.AttTag("node", self)] + self.render() + [tags.ColorTag(self.brackets_color), tags.TextTag(self.brackets[1]), tags.EndTag()] + [tags.EndTag()]
+
 		assert( isinstance(r, list))
 		return r
 		
