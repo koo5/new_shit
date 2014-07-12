@@ -145,14 +145,18 @@ def _project_tags(p, elem, tags):
 		elif isinstance(tag, ColorTag):
 			attadd(p.atts, "color", tag.color)
 
-		#recurse
+	#recurse
 		elif isinstance(tag, ElementTag):
-
-			if _project_tags(p, elem, [ColorTag(tag.element.brackets_color), TextTag(tag.element.brackets[0]), EndTag()]) == DONE:
+			#an opening bracket belongs to the parent node. its weird.
+			#cursor always acts on the char to the right of it
+			#so when it is on an opening bracket of a child,
+			#it is still "in" the parent
+			if _project_tags(p, elem, [AttTag("opening bracket", True), ColorTag(tag.element.brackets_color), TextTag(tag.element.brackets[0]), EndTag(), EndTag()]) == DONE:
 				return DONE
 			if _project_elem(p, tag.element) == DONE:
 				return DONE
 
+	#some more stuff
 		elif isinstance(tag, ArrowTag):
 			p.arrows.append((len(p.lines[-1]), len(p.lines) - 1, tag.target))
 

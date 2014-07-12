@@ -1047,21 +1047,6 @@ class Compiler(Node):
 	def _eval(self):
 		return self.compiled.eval()
 
-	def render(self):
-		if len(self.items) == 0: #hint at the type expected
-			return [ColorTag("compiler hint"), t('('+self.type.name+')'), EndTag()]
-
-		r = []
-		for i, item in enumerate(self.items):
-			r += [AttTag("compiler item", i)]
-			if isinstance(item, (str, unicode)):
-				for j, c in enumerate(item):
-					r += [AttTag("compiler item char", j), t(c), EndTag()]
-			else:
-				r += [ElementTag(item)]
-			r += [EndTag()]
-		return r
-
 	def __getitem__(self, i):
 		return self.items[i]
 
@@ -1077,39 +1062,78 @@ class Compiler(Node):
 	#i could throw more info into the tags stream, about individual brackets
 	#the backspace/forward problem isnt really specific to this nodeless thing tho,
 	#it will have to be dealt with between/in nodes too
-	def on_keypress(self, e):
+	def render(self):
+		if len(self.items) == 0: #hint at the type expected
+			return [ColorTag("compiler hint"), t('('+self.type.name+')'), EndTag()]
+
+		r = [AttTag("compiler body", self)]
+		for i, item in enumerate(self.items):
+			r += [AttTag("compiler item", i)]
+			if isinstance(item, (str, unicode)):
+				for j, c in enumerate(item):
+					r += [AttTag("compiler item char", j), t(c), EndTag()]
+			else:
+				r += [ElementTag(item)]
+			r += [EndTag()]
+		r += [EndTag()]
+		return r
+
+	def on_keypress(s, e):
 
 		if not e.mod & pygame.KMOD_CTRL:
-			assert self.root.post_render_move_caret == 0
-			its = self.items
+			assert s.root.post_render_move_caret == 0
 
 			if e.uni and e.key not in [pygame.K_ESCAPE, pygame.K_RETURN]:
 
-				if len(its) == 0:
-					self.items.append("")
-					i = 0
-					char = 0
-					log("add")
-					self.root.post_render_move_caret -= e.atts['char_index']
+				items = s.items
+				atts = e.atts
 
-				else:
-					i = self.mine(e.atts)
-					if i != None:
-					#cursor on my item
-						if isinstance(its[i], (str, unicode)):
-						#cursor on text
-							if "compiler item char" in e.atts:
-								char = e.atts["compiler item char"]
-							else:
-								char = len(its[i])
-						else:
-						#cursor on node
-							return False
+				if len(items) != 0:
+					#it's Compiler's closing bracket
+					if not "compiler body" in atts or s != atts["compiler body"]:
+						if isinstance(items[-1], Node): #is my last item a node?
+							items.append("")
+						#in either case
+						return s.edit_text(len(items) - 1, len(items[-1]), e)
 					else:
-						#should test here if its on our closing bracket
-						return False
+						ci = atts["compiler item"]
+						if "opening bracket" in atts:
+							if ci == 0 or isinstance(items[ci-1], Node):
+								items.insert(ci, "")
+								return s.edit_text(ci,0,e)
+							else:
+								return s.edit_text(ci - 1, len(items[ci-1]), e)
+						else:
+							if isinstance(items[ci], Node):
+								#its an event passed up from a child
+								return False
+							else:
+								#we are in the middle of text
+								return s.edit_text(ci, atts["compiler item char"], e)
+					#there is never a closing bracket, the child handles it
+				else: # no items in me
+					s.items.append("")
+					#snap cursor to the beginning of Compiler
+					s.root.post_render_move_caret -= atts['char_index']
+					return s.edit_text(0, 0, e)
 
-				"""
+		return super(Compiler, s).on_keypress(e)
+
+
+	def edit_text(s, ii, pos, e):
+		#item index, cursor position in item, event
+
+		text = s.items[ii]
+		text = text[:pos] + e.uni + text[pos:]
+		s.items[ii] = text
+
+		s.root.post_render_move_caret += len(e.uni)
+		#log(self.text + "len: " + len(self.text))
+		s.dispatch_event('on_edit', s)
+		return True
+
+
+		"""
 				if e.key == pygame.K_BACKSPACE:
 					if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 						self.text = self.text[0:pos -1] + self.text[pos:]
@@ -1118,18 +1142,9 @@ class Compiler(Node):
 				if e.key == pygame.K_DELETE:
 					if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
 						self.text = self.text[0:pos] + self.text[pos + 1:]
-				"""
+		"""
 
-				#log(e)
-				text = its[i]
-				its[i] = text[:char] + e.uni + text[char:]
-				self.root.post_render_move_caret += len(e.uni)
 
-				#log(self.text + "len: " + len(self.text))
-				self.dispatch_event('on_edit', self)
-				return True
-
-		return super(Compiler, self).on_keypress(e)
 
 	def flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items if isinstance(v, Node)])
