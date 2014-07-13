@@ -546,7 +546,7 @@ class WidgetedValue(Node):
 	"""basic one-widget values"""
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
-		self.isconst = True
+		self.isconst = True#this doesnt propagate to Compiler yet
 	@property
 	def pyval(self):
 		return self.widget.value
@@ -1058,10 +1058,57 @@ class Compiler(Node):
 		super(Compiler, self).fix_parents()
 		self._fix_parents(self.nodes)
 
-	#this is a total mess and still doesnt work, needs to be rethinked
-	#i could throw more info into the tags stream, about individual brackets
-	#the backspace/forward problem isnt really specific to this nodeless thing tho,
-	#it will have to be dealt with between/in nodes too
+	def flatten(self):
+		return [self] + flatten([v.flatten() for v in self.items if isinstance(v, Node)])
+
+	def add(self, item):
+		self.items.append(item)
+		assert(isinstance(item, Node))
+		item.parent = self
+
+	"""
+	def replace_child(self, child, new):
+		assert(child in self.items)
+		self.items[self.items.index(child)] = new
+		new.parent = self
+		#add a blank at the end
+		p = SomethingNew()
+		p.parent = self
+		self.items.append(p)
+	"""
+	"""
+	def eval(self):
+		i = self.items[0]
+		i.eval()
+		self.runtime = i.runtime
+		return self.runtime.value.val
+	"""
+
+
+	def edit_text(s, ii, pos, e):
+		#item index, cursor position in item, event
+
+		text = s.items[ii]
+		text = text[:pos] + e.uni + text[pos:]
+		s.items[ii] = text
+
+		s.root.post_render_move_caret += len(e.uni)
+		#log(self.text + "len: " + len(self.text))
+		s.dispatch_event('on_edit', s)
+		return True
+
+
+		"""
+				if e.key == pygame.K_BACKSPACE:
+					if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
+						self.text = self.text[0:pos -1] + self.text[pos:]
+		#				log(self.text)
+						self.root.post_render_move_caret = -1
+				if e.key == pygame.K_DELETE:
+					if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
+						self.text = self.text[0:pos] + self.text[pos + 1:]
+		"""
+
 	def render(self):
 		if len(self.items) == 0: #hint at the type expected
 			return [ColorTag("compiler hint"), t('('+self.type.name+')'), EndTag()]
@@ -1119,68 +1166,44 @@ class Compiler(Node):
 
 		return super(Compiler, s).on_keypress(e)
 
-
-	def edit_text(s, ii, pos, e):
-		#item index, cursor position in item, event
-
-		text = s.items[ii]
-		text = text[:pos] + e.uni + text[pos:]
-		s.items[ii] = text
-
-		s.root.post_render_move_caret += len(e.uni)
-		#log(self.text + "len: " + len(self.text))
-		s.dispatch_event('on_edit', s)
-		return True
-
-
-		"""
-				if e.key == pygame.K_BACKSPACE:
-					if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
-						self.text = self.text[0:pos -1] + self.text[pos:]
-		#				log(self.text)
-						self.root.post_render_move_caret = -1
-				if e.key == pygame.K_DELETE:
-					if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
-						self.text = self.text[0:pos] + self.text[pos + 1:]
-		"""
-
-
-
-	def flatten(self):
-		return [self] + flatten([v.flatten() for v in self.items if isinstance(v, Node)])
-
-	def add(self, item):
-		self.items.append(item)
-		assert(isinstance(item, Node))
-		item.parent = self
-
 	"""
-	def replace_child(self, child, new):
-		assert(child in self.items)
-		self.items[self.items.index(child)] = new
-		new.parent = self
-		#add a blank at the end
-		p = SomethingNew()
-		p.parent = self
-		self.items.append(p)
-	"""
-	"""
-	def eval(self):
-		i = self.items[0]
-		i.eval()
-		self.runtime = i.runtime
-		return self.runtime.value.val
-	"""
-
 	def mine(self, atts):
 		#doesnt this need changes after the rewrite?
-		#if "compiler body" in atts and self == atts["compiler body"]
-		if "compiler item" in atts and atts["compiler item"] in self.items:
-			return self.items.index(atts["compiler item"])
+		if "compiler body" in atts and self == atts["compiler body"]:
+			#if "compiler item" in atts and atts["compiler item"] in self.items:
+			return atts["compiler item"]
 		elif len(self.items) != 0 and atts["node"] == self:
 			#cursor is on the closing bracket of Compiler
 			return len(self.items) - 1
 		#else None
+	"""
+
+	def mine(s, atts):
+		"""
+		atts are the attributs of the char under cursor,
+		passed to us with an event. figure out if and which of our items
+		is there
+		this is an abstraction of the logic above i guess...
+		"""
+
+		if len(s.items) != 0:
+			if not "compiler body" in atts or s != atts["compiler body"]:
+				#we should only get an event if cursor is on us, so this
+				#only can be our closing bracket
+				return -1
+			else:
+				ci = atts["compiler item"]
+				if "opening bracket" in atts:
+					if ci == 0:
+						return 0
+					else:
+						return ci - 1
+				else:
+					return ci
+		else: # no items in me
+			return None
+
+
 
 	def menu_item_selected(self, item, atts):
 		assert isinstance(item, CompilerMenuItem)
@@ -1194,8 +1217,7 @@ class Compiler(Node):
 			self.items.append(node)
 		node.parent = self
 
-		#move cursor to first child. this should go somewhere else.
-		#log(node)
+		#move cursor to first child or somewhere sensible. this should go somewhere else.
 		if isinstance(node, Syntaxed):
 			for i in node.syntax:
 				if isinstance(i, ch):
@@ -1204,17 +1226,16 @@ class Compiler(Node):
 		elif isinstance(node, FunctionCall):
 			if len(node.args) > 0:
 				self.root.post_render_move_caret = node.args[0]
-		#elif isinstance(node, WidgetedValue):
-		#	if len(node.value) > 0:
-		#		self.root.post_render_move_caret = the next item..
+		elif isinstance(node, WidgetedValue):
+			if len(node.widget.text) > 0:
+				self.root.post_render_move_caret += 2
+				#another hacky option: post_render_move_caret_after
+				#nonhacky option: render out a tag acting as an anchor to move the cursor to
+				#this would be also useful above
+
 		#todo etc. make the cursor move naturally
 
-
-
-
-
 	def menu(self, atts):
-
 
 		i = self.mine(atts)
 		if i == None:
@@ -1229,7 +1250,6 @@ class Compiler(Node):
 				text = self.items[i]
 
 		#print 'menu for:',text
-
 
 		scope = self.scope()
 		nodecls = [x for x in scope if isinstance(x, NodeclBase)]

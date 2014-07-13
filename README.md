@@ -25,8 +25,8 @@ if the latest commit doesnt run, git checkout HEAD^ until you find one that does
 intro
 ===
 talk to us in [irc://irc.freenode.net/lemonparty](irc://irc.freenode.net/lemonparty)  
-old notes:  http://goo.gl/jesK0R ..i kinda stopped working on that one (fuck google docs!)  
-might move everything into lemon nodes :), or a .md on github..  
+old notes:  http://goo.gl/jesK0R
+new notes: stuff/the_doc.py
 
 
 
@@ -36,10 +36,10 @@ files:
 * nodes.py: AST classes - "nodes"
 * widgets.py textbox, number box, button..
 * element.py - both widgets and nodes descend from Element
-* project.py: project() "projects" the AST tree onto a grid of text
-* tags.py: the result of calling element.render() is a list of tags, these are analogous to html tags
-* menu.py
-* colors.py: supposed to keep color settings in one place, doesnt get much love
+* project.py: project() "projects" the AST tree into a grid of text
+* tags.py: the results of calling element.render(), analogous to html tags
+* frames.py: the panels: Root, Menu, Info
+* colors.py: color settings
 * there are other files around, mostly mess and notes. 
 * the_doc.py: an attempt to migrate all documentation into lemon
 
@@ -50,4 +50,11 @@ license
 not decided yet, some standard license or this experiment: <https://github.com/koo5/Free-Man-License> 
 
 
+
+critical gui todos:
+===
+* start actually doing some parsing
+* replace pygame or employ a widget framework, at least to manage the panels on the screen
+* implement editing functionality, not just insert / delete node, + later more complicated tagged text - nodes transformation
+* all around finish things
 

@@ -186,11 +186,20 @@ def process_event(event):
 		resize(event.dict['size'])
 		render()
 
+	if event.type == pygame.ACTIVEEVENT:
+		if event.gain:
+			reset_cursor_blink_timer()
+		else:
+			pygame.time.set_timer(pygame.USEREVENT + 1, 0)#disable
+			root.cursor_blink_phase = False
+		draw()
+
+
 
 def reset_cursor_blink_timer():
 	if not args.dontblink:
 		pygame.time.set_timer(pygame.USEREVENT + 1, 800)
-		root.cursor_blink_phase = True
+	root.cursor_blink_phase = True
 
 
 
