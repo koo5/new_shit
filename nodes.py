@@ -1257,8 +1257,10 @@ class Compiler(Node):
 
 		scope = self.scope()
 		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
-		if b['builtinfunctiondecl'] in nodecls:#with the simplistic "scope" being simply items above us, some Compiler in builtins might not see it
-			nodecls.remove(b['builtinfunctiondecl'])
+		#things a user just cant instantiate
+		for x in ['builtinpythonfunctiondecl', 'builtinfunctiondecl']:
+			if b[x] in nodecls:#with the simplistic "scope" being simply items above us, some Compiler in builtins might not see it
+				nodecls.remove(b[x])
 		menu = flatten([x.palette(scope, text) for x in nodecls])
 
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
@@ -1457,7 +1459,8 @@ class PassedFunctionCall(Syntaxed):
 
 
 class BuiltinFunctionDecl(FunctionDefinitionBase):
-	"""lemon internal builtin function, leaves type-checking to the function"""
+	"""lemon internal builtin function,
+	leaves type-checking to the function"""
 	def __init__(self, kids):
 		super(BuiltinFunctionDecl, self).__init__(kids)
 
@@ -1480,71 +1483,24 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def name(s):
 		return s._name
 
-#todo: rewrite these into BuiltinPythonFunctionDecl now
 
+#user cant instantiate it, but we make a decl anyway,
+#because we need to display it, its in builtins,
+#its just like a normal function, FunctionCall can
+#find it there..
 SyntaxedNodecl(BuiltinFunctionDecl,
 			   [t("builtin function"), ch("name"), t(":"), ch("sig")],
 				{'sig': b['function signature list'],
 				 'name': b['text']})
 
-def b_squared(args):
-	return Number(args[0] * args[0])
 
-BuiltinFunctionDecl.create("squared",
-						   b_squared,
-	[	TypedArgument({'name': Text("number"), 'type': Ref(b['number'])}),
-		Text("squared")])
-
-def b_list_squared(args):
-	r = List() #todo:type
-	[r.add(Number(i.pyval*i.pyval)) for i in args[0].items]
-	return r
-
-BuiltinFunctionDecl.create("list squared",
-						   b_list_squared,
-	[	TypedArgument({'name': Text("list of numbers"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})}),
-		Text(", squared")])
-
-def b_multiply(args):
-	return Number(args[0].pyval * args[1].pyval)
-
-BuiltinFunctionDecl.create("multiply",
-						   b_multiply,
-	[	TypedArgument({'name': Text("left"), 'type': Ref(b['number'])}),
-		Text("*"),
-		TypedArgument({'name': Text("right"), 'type': Ref(b['number'])})])
-
-def b_sum(args):
-	return Number(sum([i.pyval for i in args[0].items]))
-
-BuiltinFunctionDecl.create("sum",
-						   b_sum,
-	[	Text("the sum of"),
-		TypedArgument({'name': Text("list"), 'type': b['list'].make_type({'itemtype': Ref(b['number'])})})])
-
-def b_range(args):
-	if not isinstance(args[0], Number) or not isinstance(args[1], Number):
-		return Text("error:)")
-	r = List()
-	r.decl = b["list"].make_type({'itemtype': Ref(b['number'])})
-	r.items = [Number(i) for i in range(args[0].pyval, args[1].pyval + 1)]
-	r.fix_parents()
-	return r
-
-BuiltinFunctionDecl.create("range",
-						   b_range,
-	[	Text("numbers from"),
-		TypedArgument({'name': Text('from'), 'type': Ref(b['number'])}),
-		Text("to"),
-		TypedArgument({'name': Text('to'), 'type': Ref(b['number'])})
-		])
-
-
+#lets leave print a BuiltinFunctionDecl until we have type conversions
 def b_print(args):
 	print(args[0].to_python_str())
 	return Void()
 
-BuiltinFunctionDecl.create("print",
+BuiltinFunctionDecl.create(
+	"print",
 	b_print,
 	[ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
 
@@ -1651,9 +1607,9 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	this is just a step from user-addable python function
 	"""
 	@staticmethod
-	def create(fun, sig, ret, note=""):
+	def create(fun, sig, ret, name, note):
 		x = BuiltinPythonFunctionDecl.fresh()
-		x._name = fun.__name__
+		x._name = name
 		b[fun] = x #we dont need to adress these from python code, so i dont put a string there
 		x.ch.name.widget.value = fun.__name__
 		x.fun = fun
@@ -1665,11 +1621,11 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 
 	def _call(self, args):
 		#translate args to python values, call operator function
-		self.check(args)
-		args = [arg.pyval for arg in args]
+		self.check(args) #todo
+		args = [arg.pyval for arg in args] #todo implement pyval getter of list
 		python_result = self.fun(*args)#is this how you unpack?
 		lemon_result = self.ret.make_inst()
-		lemon_result.pyval = python_result
+		lemon_result.pyval = python_result #todo implement pyval assignments
 
 SyntaxedNodecl(BuiltinPythonFunctionDecl,
 		[
@@ -1690,37 +1646,69 @@ def add_operators():
 	#file into some reasonable modules would still create complications
 	import operator as op
 
-	def numb():
+	def num_arg():
 		return TypedArgument({'name':Text("number"), 'type':b['number']})
 
-	def o(function, signature, return_type = int, **kwargs):
+	def num_list():
+		return  b["list"].make_type({'itemtype': Ref(b['number'])})
+
+	def num_list_arg():
+		return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})
+
+
+	def pfn(function, signature, return_type = int, **kwargs):
 		if return_type == int:
 			return_type = Ref(b['number'])
 		elif return_type == bool:
 			return_type = Ref(b['bool'])
+		#else: assert
 		if 'note' in kwargs:
 			note = kwargs['note']
 		else:
 			note = ""
+		if 'name' in kwargs:
+			name = kwargs['name']
+		else:
+			name = function.__name__
+
 			
 		BuiltinPythonFunctionDecl.create(
 			function,
 			signature,
 			return_type,
+		    name,
 			note)
 
-	o(op.abs, [Text("abs("), numb(), Text(")")])
-	o(op.add, [numb(), Text("+"), numb()])
-	o(op.div, [numb(), Text("/"), numb()])
-#	o(op.eq,  [numb(), Text("=="), numb()], bool)
-#	o(op.ge,  [numb(), Text(">="), numb()], bool)
-#	o(op.gt,  [numb(), Text(">="), numb()], bool)
-#	o(op.le,  [numb(), Text("<="), numb()], bool)
-#	o(op.lt,  [numb(), Text("<="), numb()], bool)
-	o(op.mod, [numb(), Text("%"), numb()])
-	o(op.mul, [numb(), Text("*"), numb()])
-	o(op.neg, [Text("-"), numb()])
-	o(op.sub, [numb(), Text("-"), numb()])
+	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
+	pfn(op.add, [num_arg(), Text("+"), num_arg()])
+	pfn(op.div, [num_arg(), Text("/"), num_arg()])
+#	o(op.eq,  [num_arg(), Text("=="), num_arg()], bool)
+#	o(op.ge,  [num_arg(), Text(">="), num_arg()], bool)
+#	o(op.gt,  [num_arg(), Text(">="), num_arg()], bool)
+#	o(op.le,  [num_arg(), Text("<="), num_arg()], bool)
+#	o(op.lt,  [num_arg(), Text("<="), num_arg()], bool)
+	pfn(op.mod, [num_arg(), Text("%"), num_arg()])
+	pfn(op.mul, [num_arg(), Text("*"), num_arg()])
+	pfn(op.neg, [Text("-"), num_arg()])
+	pfn(op.sub, [num_arg(), Text("-"), num_arg()])
+
+	import math
+
+	def b_squared(arg):
+		return arg * arg
+	pfn(b_squared, [num_arg(), Text("squared")], name = "squared")
+
+	def b_list_squared(arg):
+		return [b_squared(i) for i in arg]
+	pfn(b_list_squared, [num_list_arg(), Text(", squared")], num_list(), name = "squared")
+
+	pfn(sum, [Text("the sum of"), num_list_arg()], num_list(), name = "summed")
+
+	def b_range(min, max):
+		return range(min, max + 1)
+	pfn(b_range, [Text("numbers from"), num_arg(), Text("to"), num_arg()],
+		num_list(), name = "range", note="inclusive")
+
 
 add_operators()
 

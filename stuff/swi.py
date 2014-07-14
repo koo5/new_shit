@@ -3,8 +3,10 @@ from pyswip import *
 
 #ok  so another hassle with pyswip is that swi-prolog in ubuntu ships
 #compiled without shared lib. bummer.
-
-
+#https://code.google.com/p/pyswip/wiki/INSTALL
+#and the problem im trying to solve here is that the prolog data type that python
+#objects should be "converted" to isnt implemented..what was it?
+#so i create two proxy dicts...
 #http://stackoverflow.com/questions/12428026/safely-iterating-over-weakkeydictionary-and-weakvaluedictionary
 
 py2pl = weakref.WeakKeyDictionary()
