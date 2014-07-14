@@ -1,7 +1,5 @@
 import pygame
-import fuzzywuzzy
 from fuzzywuzzy import fuzz
-
 
 #from collections import OrderedDict
 from odict import OrderedDict #be compatible with older python
@@ -9,28 +7,25 @@ from odict import OrderedDict #be compatible with older python
 from compiler.ast import flatten
 #import weakref
 
-
 from dotdict import dotdict
-from logger import plog, log
+from logger import log
 import element
 import widgets
 from menu_items import MenuItem
 import tags
 #better would be ch, wi, te, ?
-from tags import ChildTag as ch, WidgetTag as w, TextTag, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, AttTag#, MenuTag
+from tags import ChildTag, ElementTag, WidgetTag, AttTag, TextTag, ColorTag, EndTag, IndentTag, DedentTag, NewlineTag, ArrowTag   #, MenuTag
+
+# this block is for assert
 import tags as asstags
 asstags.asselement = element
+#
+
 
 import project
 import colors
 
-
-
-
 b = OrderedDict() #for staging the builtins module and referencing builtin nodes from python code
-
-
-
 
 class val(list):
 	"""
@@ -46,7 +41,7 @@ class val(list):
 		assert(isinstance(x, Node))
 		super(val, self).append(x)
 		return x
-	
+
 	def set(self, x):
 		"""constants call this..but if they are in a compiler..too bad"""
 		assert(isinstance(x, Node))
@@ -55,9 +50,6 @@ class val(list):
 		else:
 			super(val, self).append(x)
 		return x
-
-
-
 
 class Node(element.Element):
 	"""a node is more than an element,
@@ -97,11 +89,13 @@ class Node(element.Element):
 	def eval(self):
 		r = self._eval()
 		assert isinstance(r, Node), str(self) + " _eval is borked"
+
 		if self.isconst:
 			self.runtime.value.set(r)
 			#log("const" + str(self)) todo:figure out how const would propagate (to compiler)
 		else:
 			self.runtime.value.append(r)
+
 		self.runtime.evaluated = True
 		r.parent = self.parent
 
@@ -122,6 +116,7 @@ class Node(element.Element):
 				print self, "has no parent"
 				return None
 	"""
+
 	@classmethod
 	def fresh(cls):
 		return cls()
@@ -161,7 +156,7 @@ class Node(element.Element):
 		elem = self
 		yield AttTag("node", elem)
 		for l in elem.render():
-			yield l 
+			yield l
 		yield [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
 		#results of eval
@@ -192,14 +187,16 @@ class Syntaxed(Node):
 		self.check_slots(self.slots)
 		self.syntax_index = 0 #alternative syntaxes arent supported now..but will be again
 		self.ch = Children()
+
 		assert(len(kids) == len(self.slots))
+
 		for k in self.slots.iterkeys():
-			self.setch(k, kids[k])
+			self.set_child(k, kids[k])
 
 	def fix_parents(self):
 		self._fix_parents(self.ch._dict.values())
 
-	def setch(self, name, item):
+	def set_child(self, name, item):
 		assert(isinstance(name, str))
 		assert(isinstance(item, Node))
 		item.parent = self
@@ -215,15 +212,18 @@ class Syntaxed(Node):
 				self.ch[k] = new
 				new.parent = self
 				return
-		else_raise_hell()
+
+                raise Exception("We should never get here")
 		#todo:refactor into find_child or something
+
 	def delete_child(self, child):
 		for k,v in self.ch.iteritems():
 			if v == child:
 				self.ch[k] = self.create_kids(self.slots)[k]
 				new.parent = self
 				return
-		shit()
+
+                raise Exception("We should never get here")
 		#self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
 
 	def flatten(self):
@@ -307,11 +307,6 @@ class Syntaxed(Node):
 	def slots(self):
 		return self.decl.instance_slots
 
-
-
-
-
-
 class Collapsible(Node):
 	"""Collapsible - List or Dict -
 	they dont have a title, just a collapse button, right of which first item is rendered
@@ -320,7 +315,7 @@ class Collapsible(Node):
 	vm_oneline = 1
 	vm_multiline = 2
 	def __init__(self):
-		super(Collapsible, self).__init__()	
+		super(Collapsible, self).__init__()
 		self.view_mode_widget = widgets.NState(self, 0, ("+","v","-"))
 
 	@property
@@ -331,12 +326,12 @@ class Collapsible(Node):
 		s.view_mode_widget.value = m
 
 	def render(self):
-		yield [w('view_mode_widget')] + [indent()]
+		yield [WidgetTag('view_mode_widget')] + [IndentTag()]
 		if self.view_mode > 0:
 			for i in self.render_items():
 				yield i
-		yield [dedent()]
-	
+		yield [DedentTag()]
+
 	@classmethod
 	#watch out: List has its own
 	def fresh(cls, decl):
@@ -344,19 +339,17 @@ class Collapsible(Node):
 		r.decl = decl
 		return r
 
-
-
 class Dict(Collapsible):
 	def __init__(self):
 		super(Dict, self).__init__()
 		self.items = OrderedDict()
-		
+
 	def render_items(self):
 		r = []
 		for key, item in self.items.iteritems():
-			r += [t(key), t(":"), indent(), nl()]
+			r += [TextTag(key), TextTag(":"), IndentTag(), NewlineTag()]
 			r += [ElementTag(item)]
-			r += [dedent(), nl()]
+			r += [DedentTag(), NewlineTag()]
 		return r
 
 	def __getitem__(self, i):
@@ -388,17 +381,17 @@ class List(Collapsible):
 		self.items = []
 
 	def render_items(self):
-		yield t('[')
+		yield TextTag('[')
 		for item in self.items:
 			yield ElementTag(item)
 			if self.view_mode == 2:
-				yield nl()
+				yield NewlineTag()
 			else:
-				yield t(', ')
+				yield TextTag(', ')
 			#we will have to work towards having this kind of syntax
 			#defined declaratively so Compiler can deal with it
-		yield t(']')
-		
+		yield TextTag(']')
+
 
 	def __getitem__(self, i):
 		return self.items[i]
@@ -412,7 +405,7 @@ class List(Collapsible):
 		self._fix_parents(self.items)
 
 	def on_keypress(self, e):
-		
+
 		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
 			item_index = self.insertion_pos(e.frame, e.cursor)
 			if len(self.items) > item_index:
@@ -516,24 +509,28 @@ class Statements(List):
 		r = cls()
 		r.newline()
 		return r
+
 	@property
 	def item_type(self):
 		return b['statement']
+
 	@staticmethod
 	def match(text):
 		return None
+
 	def render_items(self):
 		r = []
 		for item in self.items:
 			r += [ElementTag(item)]
 			if self.view_mode == 2:
-				r+= [nl()]
+				r+= [NewlineTag()]
 			else:
-				r+= [t(', ')]
+				r+= [TextTag(', ')]
 			#we will have to work towards having this kind of syntax
 			#defined declaratively so Compiler can deal with it
 		r += []
 		return r
+
 	def run(self):
 		[i.eval() for i in self.items]
 		return Text("it ran.")
@@ -545,18 +542,21 @@ class Void(Node):
 	def __init__(self):
 		super(Void, self).__init__()
 	def render(self):
-		return [t('void')]
+		return [TextTag('void')]
 	def to_python_str(self):
 		return "void"
 
 class Banana(Node):
+	"""runtime error.
+	and bananas is gonna be a compile error. joking. maybe."""
 	def __init__(self, text):
 		super(Banana, self).__init__()
 		self.text = text
 	def render(self):
-		return [t(self.text)]
+		return [TextTag(self.text)]
 	def to_python_str(self):
 		return "banana"
+
 
 
 class WidgetedValue(Node):
@@ -564,18 +564,24 @@ class WidgetedValue(Node):
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
 		self.isconst = True#this doesnt propagate to Compiler yet
+
 	@property
 	def pyval(self):
 		return self.widget.value
+
 	@pyval.setter
 	def pyval(self, val):
 		self.widget.value = val
+
 	def render(self):
-		return [w('widget')]
+		return [WidgetTag('widget')]
+
 	def to_python_str(self):
 		return str(self.pyval)
+
 	def copy(s):
 		return s.eval()
+
 	def flatten(self):
 		return [self]
 
@@ -584,6 +590,7 @@ class Number(WidgetedValue):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
 		self.widget.brackets = ('','')
+
 	def _eval(self):
 		return Number(self.pyval)
 
@@ -592,8 +599,6 @@ class Number(WidgetedValue):
 		"return score"
 		if text.isdigit():
 			return 300
-
-
 
 class Text(WidgetedValue):
 
@@ -688,10 +693,12 @@ class Ref(Node):
 		super(Ref, self).__init__()
 		self.target = target
 	def render(self):
-		return [t('*'), tags.ArrowTag(self.target), t(self.name)]
+		return [TextTag('*'), ArrowTag(self.target), TextTag(self.name)]
+
 	@property
 	def name(self):
 		return self.target.name
+
 	def works_as(self, type):
 		return self.target.works_as(type)
 	def inst_fresh(self):
@@ -705,11 +712,14 @@ class VarRef(Node):
 		self.target = target
 		assert isinstance(target, UntypedVar)
 		log("varref target:"+str(target))
+
 	def render(self):
-		return [t('$'), tags.ArrowTag(self.target), t(self.name)]
+		return [TextTag('$'), ArrowTag(self.target), TextTag(self.name)]
+
 	@property
 	def name(self):
 		return self.target.name
+
 	def _eval(s):
 		return s.target.runtime.value.val
 
@@ -717,8 +727,10 @@ class Exp(Node):
 	def __init__(self, type):
 		super(Exp, self).__init__()
 		self.type = type
+
 	def render(self):
-		return [w("type"), t('expr')]
+		return [WidgetTag("type"), TextTag('expr')]
+
 	@property
 	def name(self):
 		return self.type.name + " expr"
@@ -733,30 +745,31 @@ class NodeclBase(Node):
 		super(NodeclBase, self).__init__()
 		self.instance_class = instance_class
 		self.decl = None
+
 	def render(self):
-		return [t("builtin node:"), t(self.name)]
+		return [TextTag("builtin node:"), TextTag(self.name)]
 		# t(str(self.instance_class))]
+
 	@property
 	def name(self):
 		return self.instance_class.__name__.lower() #i dunno why tolower..deal with it..or change it..
+
 	def instantiate(self, kids):
 		return self.instance_class(kids)
+
 	def inst_fresh(self):
 		""" fresh creates default children"""
 		return self.instance_class.fresh()
+
 	def palette(self, scope, text):
 			return [CompilerMenuItem(self.instance_class.fresh())] + \
 				   self.instance_class.cls_palette(scope)
-
 
 	def works_as(self, type):
 		if isinstance(type, Ref):
 			type = type.target
 		if self == type: return True
 		#todo:go thru definitions and IsSubclassOfs, in what scope tho?
-
-
-
 
 
 class TypeNodecl(NodeclBase):
@@ -767,6 +780,7 @@ class TypeNodecl(NodeclBase):
 		super(TypeNodecl, self).__init__(Ref)
 		b['type'] = self #add me to builtins
 		Ref.decl = self
+
 	def palette(self, scope, text):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Ref(x)) for x in nodecls]
@@ -776,6 +790,7 @@ class VarRefNodecl(NodeclBase):
 		super(VarRefNodecl, self).__init__(VarRef)
 		b['varref'] = self #add me to builtins
 		VarRef.decl = self
+
 	def palette(self, scope, text):
 		r = []
 		for x in scope:
@@ -798,8 +813,6 @@ class ExpNodecl(NodeclBase):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Exp(x)) for x in nodecls]
 
-
-
 class Nodecl(NodeclBase):
 	"""for simple nodes (Number, Text, Bool)"""
 	def __init__(self, instance_class):
@@ -818,8 +831,6 @@ class Nodecl(NodeclBase):
 			value = i()
 			score = 0
 		return CompilerMenuItem(value, score)
-
-
 
 
 class SyntaxedNodecl(NodeclBase):
@@ -854,17 +865,22 @@ class ParametricType(Syntaxed):
 	def __init__(self, kids, decl):
 		self.decl = decl
 		super(ParametricType, self).__init__(kids)
+
 	@property
 	def slots(self):
 		return self.decl.type_slots
+
 	@property
 	def syntaxes(self):
 		return [self.decl.type_syntax]
+
 	def inst_fresh(self):
 		return self.decl.instance_class.fresh(self)
+
 	@classmethod
 	def fresh(cls, decl):
 		return cls(cls.create_kids(decl.type_slots), decl)
+
 	@property
 	def name(self):
 		return "parametric type (fix this)"
@@ -888,8 +904,10 @@ class ParametricNodecl(NodeclBase):
 		super(ParametricNodecl, self).__init__(instance_class)
 		self.type_slots = type_slots
 		self.type_syntax = type_syntax
+
 	def make_type(self, kids):
 		return ParametricType(kids, self)
+
 	def palette(self, scope, text):
 		return [CompilerMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
@@ -917,16 +935,17 @@ class WorksAs(Syntaxed):
 	def __init__(self, kids):
 		super(WorksAs, self).__init__(kids)
 		b[self] = self
+
 	@classmethod
 	def b(cls, sub, sup):
 		cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
-
 
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
 		b[self.ch.name.pyval] = self
+
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
 
@@ -934,15 +953,14 @@ class Union(Syntaxed):
 	def __init__(self, children):
 		super(Union, self).__init__(children)
 
-
 SyntaxedNodecl(SyntacticCategory,
-			   [t("syntactic category:"), ch("name")],
+			   [TextTag("syntactic category:"), ChildTag("name")],
 			   {'name': 'text'})
 SyntaxedNodecl(WorksAs,
-			   [ch("sub"), t("works as"), ch("sup")],
+			   [ChildTag("sub"), TextTag("works as"), ChildTag("sup")],
 			   {'sub': 'type', 'sup': 'type'})
 SyntaxedNodecl(Definition,
-			   [t("define"), ch("name"), t("as"), ch("type")], #expression?
+			   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
 			   {'name': 'text', 'type': 'type'})
 
 SyntacticCategory({'name': Text("statement")})
@@ -952,10 +970,10 @@ WorksAs.b("number", "expression")
 WorksAs.b("text", "expression")
 
 b['list'] = ParametricNodecl(List,
-				 [t("list of"), ch("itemtype")],
+				 [TextTag("list of"), ChildTag("itemtype")],
 				 {'itemtype': b['type']})
 b['dict'] = ParametricNodecl(Dict,
-				 [t("dict from"), ch("keytype"), t("to"), ch("valtype")],
+				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
 				 {'keytype': b['type'], 'valtype': Exp(b['type'])})
 
 WorksAs.b("list", "expression")
@@ -964,13 +982,13 @@ WorksAs.b("dict", "expression")
 #Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 SyntaxedNodecl(Module,
-			   ["module:\n", ch("statements"),  t("end.")],
+			   ["module:\n", ChildTag("statements"),  TextTag("end.")],
 			   {'statements': b['statements']})
 
 Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})})
 
 SyntaxedNodecl(Union,
-			   [t("union of"), ch("items")],
+			   [TextTag("union of"), ChildTag("items")],
 			   {'items': b['list'].make_type({'itemtype': b['type']})}) #todo:should work with the definition from above instead
 b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
 
@@ -981,15 +999,17 @@ class UntypedVar(Syntaxed):
 		super(UntypedVar, self).__init__(kids)
 
 SyntaxedNodecl(UntypedVar,
-			   [ch("name")],
+			   [ChildTag("name")],
 			   {'name': 'text'})
 
 class For(Syntaxed):
 	def __init__(self, children):
 		super(For, self).__init__(children)
+
 	@property
 	def vardecls(s):
 		return [s.ch.item]
+
 	def _eval(s):
 		itemvar = s.ch.item.compiled
 		assert isinstance(itemvar, UntypedVar)
@@ -1003,8 +1023,8 @@ class For(Syntaxed):
 		return Void()
 
 SyntaxedNodecl(For,
-			   [t("for"), ch("item"), t("in"), ch("items"),
-			        ":\n", ch("body")],
+			   [TextTag("for"), ChildTag("item"), ("in"), ChildTag("items"),
+			        ":\n", ChildTag("body")],
 			   {'item': b['untypedvar'],
 			    'items': Exp(
 				    b['list'].make_type({
@@ -1020,17 +1040,12 @@ class Filter(Syntaxed):
 """
 
 
-
-
 """
 compiler node
 
 todo:hack it so that the first node, when a second node is added, is set as the
 leftmost child of the second node..or maybe not..dunno
 """
-
-
-
 
 
 class Compiler(Node):
@@ -1139,14 +1154,14 @@ class Compiler(Node):
 
 	def render(self):
 		if len(self.items) == 0: #hint at the type expected
-			return [ColorTag("compiler hint"), t('('+self.type.name+')'), EndTag()]
+			return [ColorTag("compiler hint"), TextTag('('+self.type.name+')'), EndTag()]
 
 		r = [AttTag("compiler body", self)]
 		for i, item in enumerate(self.items):
 			r += [AttTag("compiler item", i)]
 			if isinstance(item, (str, unicode)):
 				for j, c in enumerate(item):
-					r += [AttTag("compiler item char", j), t(c), EndTag()]
+					r += [AttTag("compiler item char", j), TextTag(c), EndTag()]
 			else:
 				r += [ElementTag(item)]
 			r += [EndTag()]
@@ -1248,8 +1263,8 @@ class Compiler(Node):
 		#move cursor to first child or somewhere sensible. this should go somewhere else.
 		if isinstance(node, Syntaxed):
 			for i in node.syntax:
-				if isinstance(i, ch):
-					self.root.post_render_move_caret = node.ch[i.name]
+				if isinstance(i, child):
+					self.root.post_render_move_caret = node.child[i.name]
 					break
 		elif isinstance(node, FunctionCall):
 			if len(node.args) > 0:
@@ -1260,7 +1275,6 @@ class Compiler(Node):
 				#another hacky option: post_render_move_caret_after
 				#nonhacky option: render out a tag acting as an anchor to move the cursor to
 				#this would be also useful above
-
 		#todo etc. make the cursor move naturally
 
 	def menu(self, atts):
@@ -1323,7 +1337,7 @@ class Compiler(Node):
 			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
 			#search thru an actual rendering(including children)
 			r =     v.render()
-			re = " ".join([i.text for i in r if isinstance(i, t)])
+			re = " ".join([i.text for i in r if isinstance(i, TextTag)])
 			item.score += fuzz.partial_ratio(re, text)
 
 
@@ -1331,9 +1345,9 @@ class Compiler(Node):
 		menu.reverse()#umm...
 		return menu
 
-	def delete_child(s, ch):
+	def delete_child(s, child):
 		log("del")
-		del s.items[s.items.index(ch)]
+		del s.items[s.items.index(child)]
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection
@@ -1349,9 +1363,7 @@ class CompilerMenuItem(MenuItem):
 	#PlaceholderMenuItem is not an Element, but still has tags(),
 	#called by project.project called from draw()
 	def tags(self):
-		return [w('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
-		#and abusing "w" for "widget" here...not just here...
-
+		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
 
 
 """
@@ -1359,9 +1371,6 @@ class CompilerMenuItem(MenuItem):
 functions
 
 """
-
-
-
 
 #todo function arguments:#mode = eval/pass, untyped argument,
 #todo optional function return type
@@ -1372,7 +1381,7 @@ class TypedArgument(Syntaxed):
 		super(TypedArgument, self).__init__(kids)
 
 SyntaxedNodecl(TypedArgument,
-			   [ch("name"), t("-"), ch("type")],
+			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
 			   {'name': 'text', 'type': 'type'})
 
 class TypedArgument(Syntaxed):
@@ -1380,7 +1389,7 @@ class TypedArgument(Syntaxed):
 		super(TypedArgument, self).__init__(kids)
 
 SyntaxedNodecl(TypedArgument,
-			   [ch("name"), t("-"), ch("type")],
+			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
 			   {'name': 'text', 'type': 'type'})
 
 tmp = b['union'].inst_fresh()
@@ -1456,11 +1465,8 @@ class FunctionDefinition(FunctionDefinitionBase):
 	def vardecls(s):
 		return s.args
 
-
-
-
 SyntaxedNodecl(FunctionDefinition,
-			   [t("deffun:"), ch("sig"), t(":\n"), ch("body")],
+			   [TextTag("deffun:"), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
 				{'sig': b['function signature list'],
 				 'body': b['statements']})
 
@@ -1474,10 +1480,10 @@ class PassedFunctionCall(Syntaxed):
 		self.arguments = List([Placeholder() for x in range(len(self.definition.signature.items.items))], vertical=False) #todo:filter out Texts
 
 	def render(self):
-		r = [t('(call)')]
+		r = ['(call)']
 		for i in self.definition.signature.items:
 			if isinstance(i, Text):
-				r += [t(i.widget.text)]
+				r += [(i.widget.text)]
 			elif isinstance(i, ArgumentDefinition):
 				r += [ElementTag(self.arguments.items[i])]
 
@@ -1516,7 +1522,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 #its just like a normal function, FunctionCall can
 #find it there..
 SyntaxedNodecl(BuiltinFunctionDecl,
-			   [t("builtin function"), ch("name"), t(":"), ch("sig")],
+			   [TextTag("builtin function"), ChildTag("name"), TextTag(":"), ChildTag("sig")],
 				{'sig': b['function signature list'],
 				 'name': b['text']})
 
@@ -1563,11 +1569,11 @@ class FunctionCall(Node):
 		argument_index = 0
 		sig = self.target.sig.compiled
 		if not isinstance(sig, List):
-			r+=[t("sig not a List, " + str(sig))]
+			r+=[TextTag("sig not a List, " + str(sig))]
 		else:
 			for v in [v.compiled for v in sig]:
 				if isinstance(v, Text):
-					r += [t(v.pyval)]
+					r += [TextTag(v.pyval)]
 				elif isinstance(v, TypedArgument):
 					r += [ElementTag(self.args[argument_index])]
 					argument_index+=1
@@ -1582,9 +1588,6 @@ class FunctionCall(Node):
 	def flatten(self):
 		return [self] + flatten([v.flatten() for v in self.args])
 
-
-
-
 class FunctionCallNodecl(NodeclBase):
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(Ref)
@@ -1597,19 +1600,12 @@ class FunctionCallNodecl(NodeclBase):
 FunctionCallNodecl()
 
 
-
-
-
-
-
-
-
 class Clock(Node):
 	def __init__(self):
 		super(Clock,self).__init__()
 		self.datetime = __import__("datetime")
 	def render(self):
-		return [t(str(self.datetime.datetime.now()))]
+		return [TextTag(str(self.datetime.datetime.now()))]
 	def _eval(self):
 		return Text(str(self.datetime.datetime.now()))
 
@@ -1620,9 +1616,8 @@ class PythonEval(Syntaxed):
 		super(PythonEval, self).__init__(children)
 
 SyntaxedNodecl(PythonEval,
-			   [t("python eval"), ch("text")],
+			   [TextTag("python eval"), ChildTag("text")],
 			   {'text': Exp(b['text'])})
-
 
 
 class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
@@ -1660,9 +1655,9 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 
 SyntaxedNodecl(BuiltinPythonFunctionDecl,
 		[
-		t("builtin python function"), ch("name"), 
-		t("with signature"), ch("sig"),
-		t("return type"), ch("ret")
+		TextTag("builtin python function"), ChildTag("name"), 
+		TextTag("with signature"), ChildTag("sig"),
+		TextTag("return type"), ChildTag("ret")
 		],
 		{
 		'sig': b['function signature list'],
@@ -1749,9 +1744,6 @@ add_operators()
 
 #Const({'name': Text("meaning of life"), 'value': Number(42)})
 """the end"""
-
-
-
 
 def make_root():
 	r = Root()
