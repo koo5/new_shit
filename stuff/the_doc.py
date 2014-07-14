@@ -547,3 +547,10 @@ a builtin function or a class.
 
 
 
+http://programmers.stackexchange.com/questions/208677/how-to-handle-divide-by-zero-in-a-language-that-doesnt-support-exceptions
+"If you divie floating point numbers, Nan or Inf would be nice (have a look at IEEE 754 to understand why). If you divide integers, you may stop the program, divide by 0 should never be allowed"
+ i like "(to n)"<stickittothemain> yeah, i didnt want to copy python exactly<sirdancealot> should go steal that right away<stickittothemain> i'll make a better example<sirdancealot> actually that raises some curious questions about lemon. Something tells me that rather than implementing it as a new function, it could be an alternative syntax for the "numbers from X to Y" i have<sirdancealot> an alternative syntax where the first argument is hidden<sirdancealot> which would make it empty i guess<sirdancealot> which would result in Bananas<sirdancealot> (compilation error, ok)<sirdancealot> i think gremble_ wouldnt agree with calling it Bananas<sirdancealot> so, it raises the question if we want such compilation errors to just produce a vlue and continue executon
+ serious languag will not compiler/have exceptions etc ofc, but its still interesting experiment
+[for live programming. is it?]
+
+
