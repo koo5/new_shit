@@ -1010,7 +1010,11 @@ leftmost child of the second node..or maybe not..dunno
 
 
 class Compiler(Node):
-	"""the awkward input node with orange brackets"""
+	"""the awkward input node AKA the Beast
+
+	im thinking about rewriting this into nodes agaon. with smarter cursor movement.
+
+	"""
 	def __init__(self, type):
 		super(Compiler, self).__init__()
 		self.type = type

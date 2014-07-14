@@ -1,6 +1,10 @@
 import weakref
 from pyswip import *
 
+#ok  so another hassle with pyswip is that swi-prolog in ubuntu ships
+#compiled without shared lib. bummer.
+
+
 #http://stackoverflow.com/questions/12428026/safely-iterating-over-weakkeydictionary-and-weakvaluedictionary
 
 py2pl = weakref.WeakKeyDictionary()
@@ -37,3 +41,23 @@ def node_works_as(*a):
 	a[0]
 
 registerForeign(node_works_as, arity=2)
+
+
+
+
+
+"""
+#nodes.pyswip.prolog._original_sys_exit
+#+prolog.consult("wat.pl")
++node_works_as = pyswip.Functor("node_works_as", 2)
++
++               X = pyswip.Variable()
++               for t in self.types:
++                       q = pyswip.Query(node_works_as(X, t))
++                       while q.nextSolution():
++                               v = str(X.value)
++                               print v
++                               r += [it(protos[v])]
++               q.closeQuery()
++
+"""
