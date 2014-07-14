@@ -1,1 +1,2 @@
-python -O new_shit.py
+python -O main.py $@
+

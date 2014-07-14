@@ -231,6 +231,8 @@ def loop():
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--eightbit', action='store_true',
+				   help='try to be compatible with 8 bit color mode.')
 parser.add_argument('--dontblink', action='store_true',
 				   help='dont blink the cursor.')
 parser.add_argument('--log-events', action='store_true',
@@ -271,6 +273,7 @@ display.set_icon(icon)
 change_font_size()
 colors.cache(args)
 
+frames.args = args
 root = frames.Root()
 if args.noalpha:
 	root.arrows_visible = False

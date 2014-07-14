@@ -18,21 +18,29 @@ class Frame(object):
 #	def on_keypress(self, e):
 #	def draw(self):
 
-	def draw_lines(self): #we didnt start the fire...
-		s = pygame.Surface((self.rect.w, self.rect.h))
-		s.fill(colors.bg)
+	def draw(self):
+		surface = pygame.Surface((self.rect.w, self.rect.h), 0)#, pygame.display.get_surface())
+		if colors.bg != (0,0,0):
+			surface.fill(colors.bg)
+		self._draw(surface)
+		return surface
+
+	def draw_lines(self, surf, highlight=None, transparent=False):
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
 				x = font_width * col
 				y = font_height * row
 				fg = color(char[1]['color'])
-				bg = color("bg")
-				sur = font.render(
-					char[0],True,
-					fg,
-					bg)
-				s.blit(sur,(x,y))
-		return s
+				bg = color("highlighted bg" if (
+					'node' in char[1] and
+					char[1]['node'] == highlight and
+					not args.eightbit) else "bg")
+				if transparent:
+					sur = font.render(char[0],1,fg)
+				else:#its either arrows or highlighting, you cant have everything, hehe
+					sur = font.render(char[0],1,fg,bg)
+				surf.blit(sur,(x,y))
+
 
 	def under_cr(self, (c, r)):
 		try:
@@ -157,7 +165,7 @@ class Root(Frame):
 		self.generate_arrows()
 		self.do_post_render_move_caret()
 
-		if __debug__:
+		if __debug__:  #todo: __debug__projection__ or something
 			assert(isinstance(self.lines, list))
 			for l in self.lines:
 				assert(isinstance(l, list))
@@ -180,32 +188,16 @@ class Root(Frame):
 				r.append(((a[0],a[1]),target))
 		self.arrows = r
 
-	def draw_lines(self, surf):
-		uc = self.under_cursor()
-		for row, line in enumerate(self.lines):
-			for col, char in enumerate(line):
-				x = font_width * col
-				y = font_height * row
-				fg = color(char[1]['color'])
-				#bg = color("bg" if not char[1]['node'] == uc else "highlighted bg")
-				if self.arrows_visible:
-					sur = font.render(char[0],1,fg)
-				else:
-					sur = font.render(char[0],1,fg,(0,0,0,0))
-				surf.blit(sur,(x,y))
-
 	def draw_arrows(s, surface):
 		#todo: real arrows would be cool
 		for ((c,r),(c2,r2)) in s.arrows:
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
 			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
 
-	def draw(self):
-		surf = pygame.Surface((self.rect.w, self.rect.h), 0)#, pygame.display.get_surface())
+	def _draw(self, surf):
 		self.draw_arrows(surf)
-		self.draw_lines(surf)
+		self.draw_lines(surf, self.under_cursor(), self.arrows_visible)
 		self.draw_cursor(surf)
-		return surf
 
 	def draw_cursor(self, s):
 		if self.cursor_blink_phase:
@@ -362,10 +354,9 @@ class Menu(Frame):
 			self.sel = 0
 		self._items = value
 
-	def draw(s):
-		surface = s.draw_lines()
+	def _draw(s, surface):
+		s.draw_lines(surface)
 		s.draw_rects(surface)
-		return surface
 
 	def generate_rects(s):
 		s.rects = dict()
@@ -496,9 +487,8 @@ class Info(Frame):
 		r += [EndTag()]
 		s.lines = project.project_tags(r, s.cols, s).lines
 
-	def draw(s):
-		surface = s.draw_lines()
-		return surface
+	def _draw(s, surface):
+		s.draw_lines(surface)
 
 
 #todo: function definition / insight frame? preferably able to float in multiple numbers around the code

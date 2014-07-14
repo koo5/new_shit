@@ -451,6 +451,14 @@ class List(Collapsible):
 		r.fix_parents()
 		return r
 
+	@property
+	def pyval(self):
+		return [i.pyval for i in self.items]
+	@pyval.setter
+	def pyval(self, val):
+		self.items = [to_lemon(i) for i in val]
+		self.fix_parents()
+
 	def flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items])
 
@@ -528,7 +536,7 @@ class Statements(List):
 		return r
 	def run(self):
 		[i.eval() for i in self.items]
-		return Text("banana")
+		return Text("it ran.")
 
 
 
@@ -541,6 +549,15 @@ class Void(Node):
 	def to_python_str(self):
 		return "void"
 
+class Banana(Node):
+	def __init__(self, text):
+		super(Banana, self).__init__()
+		self.text = text
+	def render(self):
+		return [t(self.text)]
+	def to_python_str(self):
+		return "banana"
+
 
 class WidgetedValue(Node):
 	"""basic one-widget values"""
@@ -550,6 +567,9 @@ class WidgetedValue(Node):
 	@property
 	def pyval(self):
 		return self.widget.value
+	@pyval.setter
+	def pyval(self, val):
+		self.widget.value = val
 	def render(self):
 		return [w('widget')]
 	def to_python_str(self):
@@ -674,6 +694,10 @@ class Ref(Node):
 		return self.target.name
 	def works_as(self, type):
 		return self.target.works_as(type)
+	def inst_fresh(self):
+		"""you work as a type, you have to provide this"""
+		return self.target.inst_fresh()
+
 
 class VarRef(Node):
 	def __init__(self, target):
@@ -1392,16 +1416,19 @@ class FunctionDefinitionBase(Syntaxed):
 	def sig(self):
 		return self.ch.sig
 
-	#def typecheck():
-		#for i, arg in enumerate(args):
-		#	if not arg.type.eq(self.arg_types[i]):
-		#		log("well this is bad")
+	def typecheck(self, args):
+		for i, arg in enumerate(args):
+			#if not arg.type.eq(self.arg_types[i]):
+			if isinstance(self.arg_types[i], Ref) and not arg.decl == self.arg_types[i].target:
+				log("well this is bad")
+				return Banana(str(arg.decl.name) +" != "+str(self.arg_types[i].name))
+		return True
 
 	def call(self, args):
 		args = [arg.eval() for arg in args]
 		assert(len(args) == len(self.arg_types))
 		r = self._call(args)
-		assert isinstance(r, Node)
+		assert isinstance(r, Node), "_call returned "+str(r)
 		return r
 
 	def _eval(s):
@@ -1617,15 +1644,19 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		x.ch.sig.items = sig
 		x.ch.ret = ret
 		x.note = note
+		x.ret = ret
 		x.fix_parents()
 
 	def _call(self, args):
 		#translate args to python values, call operator function
-		self.check(args) #todo
+		checker_result = self.typecheck(args)
+		if checker_result != True:
+			return checker_result
 		args = [arg.pyval for arg in args] #todo implement pyval getter of list
 		python_result = self.fun(*args)#is this how you unpack?
-		lemon_result = self.ret.make_inst()
+		lemon_result = self.ret.inst_fresh()
 		lemon_result.pyval = python_result #todo implement pyval assignments
+		return lemon_result
 
 SyntaxedNodecl(BuiltinPythonFunctionDecl,
 		[
@@ -1647,7 +1678,7 @@ def add_operators():
 	import operator as op
 
 	def num_arg():
-		return TypedArgument({'name':Text("number"), 'type':b['number']})
+		return TypedArgument({'name':Text("number"), 'type':Ref(b['number'])})
 
 	def num_list():
 		return  b["list"].make_type({'itemtype': Ref(b['number'])})
@@ -1702,7 +1733,7 @@ def add_operators():
 		return [b_squared(i) for i in arg]
 	pfn(b_list_squared, [num_list_arg(), Text(", squared")], num_list(), name = "squared")
 
-	pfn(sum, [Text("the sum of"), num_list_arg()], num_list(), name = "summed")
+	pfn(sum, [Text("the sum of"), num_list_arg()], name = "summed")
 
 	def b_range(min, max):
 		return range(min, max + 1)
@@ -1733,4 +1764,13 @@ def make_root():
 	return r
 
 
+
+def to_lemon(x):
+	if isinstance(x, (str, unicode)):
+		return Text(x)
+	elif isinstance(x, (int, float)):
+		return Number(x)
+	else:
+		raise Exception("i dunno how to convert that")
+	#elif isinstance(x, list):
 
