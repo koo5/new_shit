@@ -1229,7 +1229,6 @@ class Compiler(Node):
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection
-print MenuItem
 class CompilerMenuItem(MenuItem):
 	def __init__(self, value, score = 0):
 		super(CompilerMenuItem, self).__init__()
@@ -1322,6 +1321,7 @@ class FunctionDefinitionBase(Syntaxed):
 		return r
 
 	def _eval(s):
+		"""this is when the declaration is evaluated, not when we are called"""
 		return Text("OK")
 
 
@@ -1375,7 +1375,7 @@ class PassedFunctionCall(Syntaxed):
 
 
 class BuiltinFunctionDecl(FunctionDefinitionBase):
-
+	"""lemon internal builtin function, leaves type-checking to the function"""
 	def __init__(self, kids):
 		super(BuiltinFunctionDecl, self).__init__(kids)
 
@@ -1398,6 +1398,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def name(s):
 		return s._name
 
+#todo: rewrite these into BuiltinPythonFunctionDecl now
 
 SyntaxedNodecl(BuiltinFunctionDecl,
 			   [t("builtin function"), ch("name"), t(":"), ch("sig")],
@@ -1556,6 +1557,91 @@ class PythonEval(Syntaxed):
 SyntaxedNodecl(PythonEval,
 			   [t("python eval"), ch("text")],
 			   {'text': Exp(b['text'])})
+
+
+
+class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
+	"""checks args, 
+	converts to python values, 
+	calls python function, 
+	converts to lemon value
+	
+	this is just a step from user-addable python function
+	"""
+	@staticmethod
+	def create(fun, sig, ret, note=""):
+		x = BuiltinPythonFunctionDecl.fresh()
+		x._name = fun.__name__
+		b[fun] = x #we dont need to adress these from python code, so i dont put a string there
+		x.ch.name.widget.value = fun.__name__
+		x.fun = fun
+		x.ch.sig = List()
+		x.ch.sig.items = sig
+		x.ch.ret = ret
+		x.note = note
+		x.fix_parents()
+
+	def _call(self, args):
+		#translate args to python values, call operator function
+		self.check(args)
+		args = [arg.pyval for arg in args]
+		python_result = self.fun(*args)#is this how you unpack?
+		lemon_result = self.ret.make_inst()
+		lemon_result.pyval = python_result
+
+SyntaxedNodecl(BuiltinPythonFunctionDecl,
+		[
+		t("builtin python function"), ch("name"), 
+		t("with signature"), ch("sig"),
+		t("return type"), ch("ret")
+		],
+		{
+		'sig': b['function signature list'],
+		"ret": b['type'],
+		'name': b['text']
+		})
+
+
+
+def add_operators():
+	#we'll place this somewhere else, but later i guess, splitting this
+	#file into some reasonable modules would still create complications
+	import operator as op
+
+	def numb():
+		return TypedArgument({'name':Text("number"), 'type':b['number']})
+
+	def o(function, signature, return_type = int, **kwargs):
+		if return_type == int:
+			return_type = Ref(b['number'])
+		elif return_type == bool:
+			return_type = Ref(b['bool'])
+		if 'note' in kwargs:
+			note = kwargs['note']
+		else:
+			note = ""
+			
+		BuiltinPythonFunctionDecl.create(
+			function,
+			signature,
+			return_type,
+			note)
+
+	o(op.abs, [Text("abs("), numb(), Text(")")])
+	o(op.add, [numb(), Text("+"), numb()])
+	o(op.div, [numb(), Text("/"), numb()])
+#	o(op.eq,  [numb(), Text("=="), numb()], bool)
+#	o(op.ge,  [numb(), Text(">="), numb()], bool)
+#	o(op.gt,  [numb(), Text(">="), numb()], bool)
+#	o(op.le,  [numb(), Text("<="), numb()], bool)
+#	o(op.lt,  [numb(), Text("<="), numb()], bool)
+	o(op.mod, [numb(), Text("%"), numb()])
+	o(op.mul, [numb(), Text("*"), numb()])
+	o(op.neg, [Text("-"), numb()])
+	o(op.sub, [numb(), Text("-"), numb()])
+
+add_operators()
+
 
 
 
