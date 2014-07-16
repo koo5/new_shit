@@ -188,4 +188,3 @@ def find(node, lines):
 if __debug__:
 	test_squash()
 
-#⇾node⇽...would be nice...pygames font dont do unicode:<

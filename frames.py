@@ -136,8 +136,8 @@ class Root(Frame):
 			s.move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
-			#todo
-			s.cursor_c = 0
+			if s.move_cursor_v(-1):
+				s.cursor_c = len(s.lines[s.cursor_r])
 		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 
 	def move_cursor_v(s, count):
@@ -158,14 +158,12 @@ class Root(Frame):
 		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 
 	def render(self):
-
 		p = project.project(self.root, self.cols, self, self.scroll_lines + self.rows)
-		self.lines = p.lines
-		self.arrows = p.arrows
-		self.generate_arrows()
+		self.lines = p.lines[self.scroll_lines:]
+		self.arrows = self.complete_arrows(p.arrows)
 		self.do_post_render_move_caret()
 
-		if __debug__:  #todo: __debug__projection__ or something
+		if __debug__:  #todo: __debug__projection__ or something, this is eating quite some cpu i think and only checks the projection code (i think)
 			assert(isinstance(self.lines, list))
 			for l in self.lines:
 				assert(isinstance(l, list))
@@ -177,20 +175,21 @@ class Root(Frame):
 					assert(i[1]['node'])
 					assert(i[1].has_key('char_index'))
 
-	def generate_arrows(self):
+	#todo: clean this up ugh, oh and arrows are broken, the source point stays stuck when you scoll
+	def complete_arrows(self, arrows):
 		if not self.arrows_visible:
-			self.arrows = []
-			return
+			return []
 		r = []
-		for a in self.arrows:
+		for a in arrows:
 			target = project.find(a[2], self.lines)
 			if target:
 				r.append(((a[0],a[1]),target))
-		self.arrows = r
+		return r
 
 	def draw_arrows(s, surface):
 		#todo: real arrows would be cool
 		for ((c,r),(c2,r2)) in s.arrows:
+			print c,r,c2,r2
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
 			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
 
@@ -465,8 +464,8 @@ class Info(Frame):
 		return len(s.lines) * font_height
 
 	def update(s):
-		s.items = s.top_info[:]
-
+		s.items = []
+		
 		uc = s.root.under_cursor()
 		s.items.append(s.hierarchy_infoitem)
 		s.hierarchy_infoitem.contents = [
@@ -477,6 +476,7 @@ class Info(Frame):
 			s.deffun_infoitem.contents = ["=>", ElementTag(uc.target)]
 			s.items.append(s.deffun_infoitem)
 
+		s.items += s.top_info[:]
 
 	def render(s):
 		s.update()

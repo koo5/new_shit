@@ -220,7 +220,7 @@ class Syntaxed(Node):
 		for k,v in self.ch._dict.iteritems():
 			if v == child:
 				self.ch[k] = self.create_kids(self.slots)[k]
-				new.parent = self
+				self.ch[k].parent = self
 				return
 
                 raise Exception("We should never get here")
@@ -236,7 +236,7 @@ class Syntaxed(Node):
 			assert(isinstance(slots, dict))
 			for name, slot in slots.iteritems():
 				assert(isinstance(name, str))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition))
+				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
 
 	@property
@@ -306,6 +306,10 @@ class Syntaxed(Node):
 	@property
 	def slots(self):
 		return self.decl.instance_slots
+
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.ch)+"')"
+
 
 class Collapsible(Node):
 	"""Collapsible - List or Dict -
@@ -472,7 +476,8 @@ class List(Collapsible):
 
 	@property
 	def item_type(self):
-		assert(isinstance(self.decl, ParametricType))
+		assert "decl" in self.__dict__, "parent="+str(self.parent)+" contents="+str(self.items)
+		assert isinstance(self.decl, ParametricType)
 		return self.decl.ch.itemtype
 
 	def above(self, item):
@@ -498,6 +503,8 @@ class List(Collapsible):
 		if ch in s.items:
 			s.items.remove(ch)
 
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.item_type)+"')"
 
 
 class Statements(List):
@@ -704,6 +711,8 @@ class Ref(Node):
 	def inst_fresh(self):
 		"""you work as a type, you have to provide this"""
 		return self.target.inst_fresh()
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.target)+"')"
 
 
 class VarRef(Node):
@@ -771,6 +780,8 @@ class NodeclBase(Node):
 		if self == type: return True
 		#todo:go thru definitions and IsSubclassOfs, in what scope tho?
 
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
 
 class TypeNodecl(NodeclBase):
 	""" "pass me a type" kind of value
@@ -892,6 +903,9 @@ class ParametricType(Syntaxed):
 	#or do we want to display the name as a node?
 	#you cant render a different nodes syntax as your own
 	#make a new kind of tag for this?
+
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 
 
@@ -1357,6 +1371,10 @@ class Compiler(Node):
 		log("del")
 		del s.items[s.items.index(child)]
 
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.type)+"')"
+
+
 class CompilerMenuItem(MenuItem):
 	def __init__(self, value, score = 0):
 		super(CompilerMenuItem, self).__init__()
@@ -1364,7 +1382,6 @@ class CompilerMenuItem(MenuItem):
 		value.parent = self
 		self.score = score
 		self.brackets_color = (0,255,255)
-		#(and so needs brackets_color)
 
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
@@ -1517,8 +1534,10 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		b[name] = x
 		x.ch.name.widget.value = name
 		x.fun = fun
-		x.ch.sig = List()
+		x.ch.sig = b['function signature list'].inst_fresh()
 		x.ch.sig.items = sig
+		for i in sig:
+			assert(isinstance(i, (Text, TypedArgument)))
 		x.fix_parents()
 
 	def _call(self, args):
@@ -1642,14 +1661,18 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	this is just a step from user-addable python function
 	"""
 	@staticmethod
+	#todo:refactor to BuiltinFunctionDecl.create
 	def create(fun, sig, ret, name, note):
 		x = BuiltinPythonFunctionDecl.fresh()
 		x._name = name
 		b[fun] = x #we dont need to adress these from python code, so i dont put a string there
 		x.ch.name.widget.value = fun.__name__
 		x.fun = fun
-		x.ch.sig = List()
+		x.ch.sig = b['function signature list'].inst_fresh()
 		x.ch.sig.items = sig
+		x.ch.sig.fix_parents()
+		for i in sig:
+			assert(isinstance(i, (Text, TypedArgument)))
 		x.ch.ret = ret
 		x.note = note
 		x.ret = ret
@@ -1715,7 +1738,7 @@ def add_operators():
 			function,
 			signature,
 			return_type,
-		    name,
+			name,
 			note)
 
 	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
@@ -1750,6 +1773,127 @@ def add_operators():
 
 
 add_operators()
+
+
+"""
+we got drunk and wanted to implement regex input. i will hide this to its own module asap.
+"""
+#regex is list of chunks
+#chunk is matcher + quantifier
+#matcher is:
+#chars
+#range
+#or
+
+SyntacticCategory({'name': Text("chunk of regex")})
+SyntacticCategory({'name': Text("regex quantifier")})
+SyntacticCategory({'name': Text("regex matcher")})
+#WorksAs.b("expression", "statement")
+
+class Regex(Syntaxed):
+	pass
+
+SyntaxedNodecl(Regex,
+	[ChildTag('chunks')],
+	{'chunks': b["list"].make_type({'itemtype': Ref(b['chunk of regex'])})})
+
+class RegexFollowedBy(Syntaxed):
+	pass
+SyntaxedNodecl(RegexFollowedBy,
+	["followed by"],
+	{})
+
+class QuantifiedChunk(Syntaxed):
+	 pass
+SyntaxedNodecl(QuantifiedChunk,
+	[ChildTag("quantifier"), ChildTag("matcher")],
+	{"quantifier": b['regex quantifier'],
+	"matcher": b['regex matcher']})
+
+class UnquantifiedChunk(Syntaxed):
+	pass
+SyntaxedNodecl(UnquantifiedChunk,
+	[ChildTag("matcher")],
+	{"matcher": b['regex matcher']})
+
+#i skew the grammar a bit so it will be easier to construct things in the stupid gui#kay
+#normally i think it would be defined #hmm nvm
+
+class RegexZeroOrMore(Syntaxed):
+	pass
+SyntaxedNodecl(RegexZeroOrMore,
+	['zero or more'],{})
+
+class RegexChars(Syntaxed):
+	pass
+SyntaxedNodecl(RegexChars,
+	[ChildTag("text")],
+	{'text': b['text']})
+class RegexRange(Syntaxed):
+	pass
+SyntaxedNodecl(RegexRange,
+	['[', ChildTag("text"), ']'],
+	{'text': b['text']})
+
+
+
+def b_match(regex, text):
+	import re
+	#...
+
+BuiltinPythonFunctionDecl.create(
+	b_match, 
+	[
+	Text('number of matches of'),
+	TypedArgument({'name': Text('regex'), 'type':Ref(b['regex'])}),
+	Text('with'), 
+	TypedArgument({'name': Text('text'), 'type':Ref(b['text'])})],
+	Ref(b['number']), #i should add bools and more complex types........
+	"match",
+	"regex")
+
+
+"""
+Quantifiers
+'a?' : 'a' 0 or 1 times
+'a*' : 'a' 0 or more times
+'a+' : 'a' 1 or more times
+'a{9}': 2 'a's
+'a{2, 9}': between 2 and 9 'a's
+'a{2,}' : 2 or more 'a's
+'a{,5}' : up to 5 'a's
+
+Ranges:
+'[a]': 'a'
+'[a-z]': anything within the letters 'a' to 'z'
+'[0-9]': same, but with numbers
+'(a)' : 'a'#group?yes#ok no groups for us for now
+'(a|b|c)': 'a' or 'b' or 'c'#i think this should be kept, because i think it
+is the only way to match a quantity of alternations#i see
+'a|b' : 'a' or 'b' (without group)
+'^a' : 'a' at start of string
+'a$' : 'a' at end of string
+
+Tah-dah!#you really like typing.
+"""
+
+#alright
+#about time to split nodes.py into modules....
+#hmm
+#bet you 5 bucks this wont run:D
+#if i copy paste this into my IDE, fix up the code above and it runs, do you owe me?
+#no
+#damn
+#lets try running it :P
+#not yet..
+#but lets do it here
+#but it's probably a valid lemon program
+
+
+
+
+
+
 
 
 

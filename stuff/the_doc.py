@@ -578,3 +578,8 @@ ncurses interface
 
 * all around finish things
 
+
+
+
+
+#⇾node⇽...would be nice...pygames font dont do unicode:<
