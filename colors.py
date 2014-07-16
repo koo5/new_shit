@@ -15,7 +15,7 @@ default_colors = {
 	"compiler hint":(100,100,100),
 	"text brackets":(0,255,0),
 	"compiler brackets":(255,255,0),
-	"node brackets":(150,150,150),
+	"node brackets":(250,150,150),
 	"number buttons":(80,80,255),
 	"menu item extra info":(0,200,0)
 	}
