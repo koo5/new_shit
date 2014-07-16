@@ -10,7 +10,8 @@ class dotdict(object):
 		return s._dict[k]
 	def __getitem__ (s, k):
 		return s._dict[k]
-		
-	
+	def __repr__(s):
+		return str(s._dict)
+
 
 

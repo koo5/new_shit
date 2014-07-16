@@ -465,8 +465,8 @@ class Info(Frame):
 		return len(s.lines) * font_height
 
 	def update(s):
-		s.items = s.top_info[:]
-
+		s.items = []
+		
 		uc = s.root.under_cursor()
 		s.items.append(s.hierarchy_infoitem)
 		s.hierarchy_infoitem.contents = [
@@ -477,6 +477,7 @@ class Info(Frame):
 			s.deffun_infoitem.contents = ["=>", ElementTag(uc.target)]
 			s.items.append(s.deffun_infoitem)
 
+		s.items += s.top_info[:]
 
 	def render(s):
 		s.update()
