@@ -217,10 +217,10 @@ class Syntaxed(Node):
 		#todo:refactor into find_child or something
 
 	def delete_child(self, child):
-		for k,v in self.ch.iteritems():
+		for k,v in self.ch._dict.iteritems():
 			if v == child:
 				self.ch[k] = self.create_kids(self.slots)[k]
-				new.parent = self
+				self.ch[k].parent = self
 				return
 
                 raise Exception("We should never get here")
@@ -236,7 +236,7 @@ class Syntaxed(Node):
 			assert(isinstance(slots, dict))
 			for name, slot in slots.iteritems():
 				assert(isinstance(name, str))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition))
+				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
 
 	@property
@@ -306,6 +306,10 @@ class Syntaxed(Node):
 	@property
 	def slots(self):
 		return self.decl.instance_slots
+
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.ch)+"')"
+
 
 class Collapsible(Node):
 	"""Collapsible - List or Dict -
@@ -498,6 +502,8 @@ class List(Collapsible):
 		if ch in s.items:
 			s.items.remove(ch)
 
+	def __repr__(s):
+		return object.__repr__(s) + "('"+s.itemtype+"')"
 
 
 class Statements(List):
@@ -704,6 +710,8 @@ class Ref(Node):
 	def inst_fresh(self):
 		"""you work as a type, you have to provide this"""
 		return self.target.inst_fresh()
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.target)+"')"
 
 
 class VarRef(Node):
@@ -771,6 +779,8 @@ class NodeclBase(Node):
 		if self == type: return True
 		#todo:go thru definitions and IsSubclassOfs, in what scope tho?
 
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
 
 class TypeNodecl(NodeclBase):
 	""" "pass me a type" kind of value
@@ -892,6 +902,9 @@ class ParametricType(Syntaxed):
 	#or do we want to display the name as a node?
 	#you cant render a different nodes syntax as your own
 	#make a new kind of tag for this?
+
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 
 
@@ -1263,8 +1276,8 @@ class Compiler(Node):
 		#move cursor to first child or somewhere sensible. this should go somewhere else.
 		if isinstance(node, Syntaxed):
 			for i in node.syntax:
-				if isinstance(i, child):
-					self.root.post_render_move_caret = node.child[i.name]
+				if isinstance(i, ChildTag):
+					self.root.post_render_move_caret = node.ch[i.name]
 					break
 		elif isinstance(node, FunctionCall):
 			if len(node.args) > 0:
@@ -1348,6 +1361,10 @@ class Compiler(Node):
 	def delete_child(s, child):
 		log("del")
 		del s.items[s.items.index(child)]
+
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.type)+"')"
+
 
 # hack here, to make a menu item renderable by project.project
 #i think ill redo the screen layout as two panes of projection
@@ -1637,6 +1654,8 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		x.fun = fun
 		x.ch.sig = List()
 		x.ch.sig.items = sig
+		for i in sig:
+			assert(isinstance(i, (Text, TypedArgument)))
 		x.ch.ret = ret
 		x.note = note
 		x.ret = ret
@@ -1702,7 +1721,7 @@ def add_operators():
 			function,
 			signature,
 			return_type,
-		    name,
+			name,
 			note)
 
 	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
@@ -1737,6 +1756,127 @@ def add_operators():
 
 
 add_operators()
+
+
+"""
+we got drunk and wanted to implement regex input. i will hide this to its own module asap.
+"""
+#regex is list of chunks
+#chunk is matcher + quantifier
+#matcher is:
+#chars
+#range
+#or
+
+SyntacticCategory({'name': Text("chunk of regex")})
+SyntacticCategory({'name': Text("regex quantifier")})
+SyntacticCategory({'name': Text("regex matcher")})
+#WorksAs.b("expression", "statement")
+
+class Regex(Syntaxed):
+	pass
+
+SyntaxedNodecl(Regex,
+	[ChildTag('chunks')],
+	{'chunks': b["list"].make_type({'itemtype': Ref(b['chunk of regex'])})})
+
+class RegexFollowedBy(Syntaxed):
+	pass
+SyntaxedNodecl(RegexFollowedBy,
+	["followed by"],
+	{})
+
+class QuantifiedChunk(Syntaxed):
+	 pass
+SyntaxedNodecl(QuantifiedChunk,
+	[ChildTag("quantifier"), ChildTag("matcher")],
+	{"quantifier": b['regex quantifier'],
+	"matcher": b['regex matcher']})
+
+class UnquantifiedChunk(Syntaxed):
+	pass
+SyntaxedNodecl(UnquantifiedChunk,
+	[ChildTag("matcher")],
+	{"matcher": b['regex matcher']})
+
+#i skew the grammar a bit so it will be easier to construct things in the stupid gui#kay
+#normally i think it would be defined #hmm nvm
+
+class RegexZeroOrMore(Syntaxed):
+	pass
+SyntaxedNodecl(RegexZeroOrMore,
+	['zero or more'],{})
+
+class RegexChars(Syntaxed):
+	pass
+SyntaxedNodecl(RegexChars,
+	[ChildTag("text")],
+	{'text': b['text']})
+class RegexRange(Syntaxed):
+	pass
+SyntaxedNodecl(RegexRange,
+	['[', ChildTag("text"), ']'],
+	{'text': b['text']})
+
+
+
+def b_match(regex, text):
+	import re
+	#...
+
+BuiltinPythonFunctionDecl.create(
+	b_match, 
+	[
+	Text('number of matches of'),
+	TypedArgument({'name': Text('regex'), 'type':Ref(b['regex'])}),
+	Text('with'), 
+	TypedArgument({'name': Text('text'), 'type':Ref(b['text'])})],
+	b['number'], #i should add bools and more complex types........
+	"match",
+	"regex")
+
+
+"""
+Quantifiers
+'a?' : 'a' 0 or 1 times
+'a*' : 'a' 0 or more times
+'a+' : 'a' 1 or more times
+'a{9}': 2 'a's
+'a{2, 9}': between 2 and 9 'a's
+'a{2,}' : 2 or more 'a's
+'a{,5}' : up to 5 'a's
+
+Ranges:
+'[a]': 'a'
+'[a-z]': anything within the letters 'a' to 'z'
+'[0-9]': same, but with numbers
+'(a)' : 'a'#group?yes#ok no groups for us for now
+'(a|b|c)': 'a' or 'b' or 'c'#i think this should be kept, because i think it
+is the only way to match a quantity of alternations#i see
+'a|b' : 'a' or 'b' (without group)
+'^a' : 'a' at start of string
+'a$' : 'a' at end of string
+
+Tah-dah!#you really like typing.
+"""
+
+#alright
+#about time to split nodes.py into modules....
+#hmm
+#bet you 5 bucks this wont run:D
+#if i copy paste this into my IDE, fix up the code above and it runs, do you owe me?
+#no
+#damn
+#lets try running it :P
+#not yet..
+#but lets do it here
+#but it's probably a valid lemon program
+
+
+
+
+
+
 
 
 
