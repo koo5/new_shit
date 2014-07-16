@@ -407,8 +407,7 @@ class Menu(Frame):
 				self.move(1)
 				return True
 		if e.key == pygame.K_SPACE:
-			self.accept()
-			return True
+			return self.accept()
 
 	def mousedown(s,e,pos):
 		for i,r in s.rects.iteritems():
@@ -417,9 +416,10 @@ class Menu(Frame):
 				s.accept()
 
 	def accept(self):
-		if self.sel < len(self.items):
-				self.element.menu_item_selected(self.items[self.sel], self.root.atts)
-				self.sel = 0
+		if (self.sel < len(self.items) and
+				self.element.menu_item_selected(self.items[self.sel], self.root.atts)):
+			self.sel = 0
+			return True
 
 
 	def move(self, y):

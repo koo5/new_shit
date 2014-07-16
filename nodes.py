@@ -217,7 +217,7 @@ class Syntaxed(Node):
 		#todo:refactor into find_child or something
 
 	def delete_child(self, child):
-		for k,v in self.ch.iteritems():
+		for k,v in self.ch._dict.iteritems():
 			if v == child:
 				self.ch[k] = self.create_kids(self.slots)[k]
 				new.parent = self
@@ -1249,29 +1249,36 @@ class Compiler(Node):
 
 
 	def menu_item_selected(self, item, atts):
-		assert isinstance(item, CompilerMenuItem)
-		node = item.value
-
-		#add it to our items
-		i = self.mine(atts) #get index of my item under cursor
-		if i != None:
-			self.items[i] = node
+		assert isinstance(item, (CompilerMenuItem, DefaultCompilerMenuItem))
+		if isinstance(item, CompilerMenuItem):
+			node = item.value
+			#add it to our items
+			i = self.mine(atts) #get index of my item under cursor
+			if i != None:
+				self.items[i] = node
+			else:
+				self.items.append(node)
+			node.parent = self
+			self.post_insert_move_cursor(node)
+			return True
+		elif isinstance(item, DefaultCompilerMenuItem):
+			return False
 		else:
-			self.items.append(node)
-		node.parent = self
+			raise Exception("whats that shit, cowboy?")
 
+	def post_insert_move_cursor(s, node):
 		#move cursor to first child or somewhere sensible. this should go somewhere else.
 		if isinstance(node, Syntaxed):
 			for i in node.syntax:
-				if isinstance(i, child):
-					self.root.post_render_move_caret = node.child[i.name]
+				if isinstance(i, ChildTag):
+					s.root.post_render_move_caret = node.ch[i.name]
 					break
 		elif isinstance(node, FunctionCall):
 			if len(node.args) > 0:
-				self.root.post_render_move_caret = node.args[0]
+				s.root.post_render_move_caret = node.args[0]
 		elif isinstance(node, WidgetedValue):
 			if len(node.widget.text) > 0:
-				self.root.post_render_move_caret += 2
+				s.root.post_render_move_caret += 2
 				#another hacky option: post_render_move_caret_after
 				#nonhacky option: render out a tag acting as an anchor to move the cursor to
 				#this would be also useful above
