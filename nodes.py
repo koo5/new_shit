@@ -1730,19 +1730,22 @@ SyntaxedNodecl(BuiltinPythonFunctionDecl,
 
 
 
+def num_arg():
+	return TypedArgument({'name':Text("number"), 'type':Ref(b['number'])})
+
+def num_list():
+	return  b["list"].make_type({'itemtype': Ref(b['number'])})
+
+def num_list_arg():
+	return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})
+
+
+
+
 def add_operators():
 	#we'll place this somewhere else, but later i guess, splitting this
 	#file into some reasonable modules would still create complications
 	import operator as op
-
-	def num_arg():
-		return TypedArgument({'name':Text("number"), 'type':Ref(b['number'])})
-
-	def num_list():
-		return  b["list"].make_type({'itemtype': Ref(b['number'])})
-
-	def num_list_arg():
-		return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})
 
 
 	def pfn(function, signature, return_type = int, **kwargs):
@@ -1918,6 +1921,23 @@ Tah-dah!#you really like typing.
 
 
 
+
+
+
+#another test function:
+
+def b_limit_max(num, high_limit):
+	return min(num, high_limit)
+
+BuiltinPythonFunctionDecl.create(
+	b_limit_max,
+	[
+	num_arg(),
+	Text(', at most'), 
+	num_arg()],
+	Ref(b['number']),
+	"high limit",
+	"max")
 
 
 
