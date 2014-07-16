@@ -555,3 +555,26 @@ http://programmers.stackexchange.com/questions/208677/how-to-handle-divide-by-ze
 
 
 http://www.lispme.de/lispme/angif.htm
+
+
+
+
+todo / direction:
+===
+start actually doing some parsing:
+	im currently playing with unipycation
+replace pygame and/or employ a widget framework, at least to manage the panels on the screen
+
+editing, not just insert / delete node
+tagged text - nodes transformation:
+	this doesnt actually depend on parsing that much, can start right away(after figuring out how)
+
+save/load: at least a stupid serialization / deserialization
+
+ncurses interface
+
+
+
+
+* all around finish things
+

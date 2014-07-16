@@ -349,7 +349,7 @@ class Menu(Frame):
 	@items.setter
 	def items(self, value):
 		if self.sel > len(value) - 1:
-			self.sel = len(value) - 1
+			self.sel = len(value) - 1 #todo: a separate wishedfor_sel
 		if self.sel < 0:
 			self.sel = 0
 		self._items = value

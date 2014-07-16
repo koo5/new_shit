@@ -51,10 +51,3 @@ not decided yet, some standard license or this experiment: <https://github.com/k
 
 
 
-critical gui todos:
-===
-* start actually doing some parsing
-* replace pygame or employ a widget framework, at least to manage the panels on the screen
-* implement editing functionality, not just insert / delete node, + later more complicated tagged text - nodes transformation
-* all around finish things
-

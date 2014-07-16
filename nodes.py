@@ -1342,6 +1342,7 @@ class Compiler(Node):
 
 
 		menu.sort(key=lambda i: i.score)
+		menu.append(DefaultCompilerMenuItem(text))
 		menu.reverse()#umm...
 		return menu
 
@@ -1349,21 +1350,26 @@ class Compiler(Node):
 		log("del")
 		del s.items[s.items.index(child)]
 
-# hack here, to make a menu item renderable by project.project
-#i think ill redo the screen layout as two panes of projection
 class CompilerMenuItem(MenuItem):
 	def __init__(self, value, score = 0):
 		super(CompilerMenuItem, self).__init__()
 		self.value = value
 		value.parent = self
 		self.score = score
-		self.brackets_color = (0,0,255)
+		self.brackets_color = (0,255,255)
 		#(and so needs brackets_color)
 
-	#PlaceholderMenuItem is not an Element, but still has tags(),
-	#called by project.project called from draw()
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
+
+class DefaultCompilerMenuItem(MenuItem):
+	def __init__(self, text):
+		super(DefaultCompilerMenuItem, self).__init__()
+		self.text = text
+		self.brackets_color = (0,0,255)
+
+	def tags(self):
+		return [TextTag(self.text)]
 
 
 """
