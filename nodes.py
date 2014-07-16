@@ -506,6 +506,10 @@ class List(Collapsible):
 	def __repr__(s):
 		return object.__repr__(s) + "('"+str(s.item_type)+"')"
 
+def list_of(type_name):
+	"""helper to create a type"""
+	return b["list"].make_type({'itemtype': Ref(b[type_name])}
+
 
 class Statements(List):
 	def __init__(s):
@@ -543,7 +547,6 @@ class Statements(List):
 		return Text("it ran.")
 
 
-
 class Void(Node):
 	"i dont like it"
 	def __init__(self):
@@ -563,7 +566,6 @@ class Banana(Node):
 		return [TextTag(self.text)]
 	def to_python_str(self):
 		return "banana"
-
 
 
 class WidgetedValue(Node):
@@ -1894,7 +1896,46 @@ Tah-dah!#you really like typing.
 
 
 
+class EnumDef(Syntaxed):
+	"""basic one-widget values"""
+	def __init__(self):
+		super(WidgetedValue, self).__init__()
+		self.isconst = True#this doesnt propagate to Compiler yet
 
+	@property
+	def pyval(self):
+		return self.widget.value
+
+	@pyval.setter
+	def pyval(self, val):
+		self.widget.value = val
+
+	def render(self):
+		return [WidgetTag('widget')]
+
+	def to_python_str(self):
+		return str(self.pyval)
+
+	def copy(s):
+		return s.eval()
+
+	def flatten(self):
+		return [self]
+
+	def _eval(self):
+		return Number(self.pyval)
+
+	@staticmethod
+	def match(text):
+		"return score"
+		if text.isdigit():
+			return 300
+
+SyntaxedNodecl(EnumDef,
+			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
+			   {'name': Ref(b['text']).
+			   'options': list_of('text')}
+				)
 
 
 
