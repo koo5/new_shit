@@ -507,6 +507,7 @@ So yeah there would be both lemon text-o-widgets and some different widgets. but
 
 
 oh, and im eyeing pyglet again. pygame's Font cant do unicode. pyglet + SDL_ttf would work?
+update: the problem is how to be sure there is / find a system font that is monospace and has the characters we need. Even the old (current on my buntu 14.4) pygame can do UCS-1 (up to FFFF). 
 
 
 if somebody will want to do a JS version, there are python-to-js compiler/interpreter projects. what would be the implications of their use for $above/of $above for their use?

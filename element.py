@@ -8,7 +8,7 @@ class Element(event.EventDispatcher):
 	def __init__(self):
 		super(Element, self).__init__()
 		self.brackets_color = (200,0,0)
-		self.brackets = ('<','>')
+		self.brackets = (u"→",u"☎")#'<','>')
 		self._render_lines = {}
 
 	def on_keypress(self, event):

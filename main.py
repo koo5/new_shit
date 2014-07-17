@@ -7,6 +7,8 @@
 import argparse, sys, os
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
+os.environ['PYGAME_FREETYPE'] = '1'
+
 import pygame
 from pygame import display, image
 
@@ -21,7 +23,8 @@ import frames
 
 def change_font_size(by = 0):
 	args.font_size += by
-	frames.font = pygame.font.SysFont('monospace', args.font_size)
+	frames.font = pygame.font.Font('/home/kook/Downloads/unifont-7.0.03.ttf', args.font_size)
+#	frames.font = pygame.font.SysFont('monospace', args.font_size)
 	frames.font_width, frames.font_height = frames.font.size("X")
 
 
