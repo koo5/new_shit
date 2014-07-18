@@ -59,11 +59,38 @@ class Node(element.Element):
 	def __init__(self):
 		super(Node, self).__init__()
 		#self.color = (0,255,0,255) #i hate hardcoded colors
-		self.brackets_color = "node brackets"
+		self.brackets_color = "node brackets rainbow"
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
-
+	
+	@property
+	def brackets_color(s):
+		if s._brackets_color == "node brackets rainbow":
+			#hacky rainbow
+			c = colors.color("node brackets")
+			rb = pygame.Color(c[0],c[1],c[2],255)
+			rb.hsva = ((rb.hsva[0] + 40*s.number_of_ancestors)%360,
+						rb.hsva[1], rb.hsva[2], rb.hsva[3])
+			return rb.r, rb.g, rb.b
+		else:
+			return s._brackets_color
+	@brackets_color.setter
+	def brackets_color(s, c):
+		s._brackets_color = c#colors.color(c)
+	
+	@property
+	def number_of_ancestors(s):
+		r = 0
+		n = s
+		try:
+			while n.parent != None:
+				n = n.parent
+				r += 1
+		except AttributeError:
+			pass
+		return r
+		
 	def clear_runtime_dict(s):
 		s.runtime._dict.clear()
 		s.runtime.value = val()
