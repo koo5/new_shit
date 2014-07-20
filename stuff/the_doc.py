@@ -143,7 +143,7 @@ def the_doc():
 		Chapter("compost heap", 
 			Note("""unasked questions:
 					what does lemon stand for?
-					Language Editing Monster!""")
+					Language Editing Monster! / Like English, Maybe. Or Not.""")
 		
 					best syntax for literate-programming? one character starts comment block, different starts code block?
 		

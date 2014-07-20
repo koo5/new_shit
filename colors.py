@@ -21,6 +21,7 @@ default_colors = {
 	}
 
 colors = dotdict()
+colors._dict = dict(default_colors)
 
 def cache(args):
 	global colors, invert, mono

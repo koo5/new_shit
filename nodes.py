@@ -1,3 +1,20 @@
+
+
+"""
+notes on the current state of this constantly changing code:
+i use kids and children interchangeably.
+sometimes, i use s instead of self
+
+creation of new nodes. 
+__init__ usually takes children or value as arguments.
+fresh() calls it with some defaults (as the user would have it created)
+each class has a decl, which is an object descending from NodeclBase (nodecl for node declaration).
+nodecl can be thought of as a type, and objects pointing to them with their decls as values.
+nodecls have a set of functions for instantiating the values, and those need some cleanup
+"""
+
+
+
 import pygame
 from fuzzywuzzy import fuzz
 
@@ -57,6 +74,7 @@ class Node(element.Element):
 	every node class has a corresponding decl object
 	"""
 	def __init__(self):
+		"""overrides in subclasses may require children as arguments"""
 		super(Node, self).__init__()
 		#self.color = (0,255,0,255) #i hate hardcoded colors
 		self.brackets_color = "node brackets rainbow"
@@ -306,10 +324,13 @@ class Syntaxed(Node):
 			#if cls == For:
 			#	plog((v, easily_instantiable))
 			if v in easily_instantiable:
+				#log("easily instantiable:"+str(v))
 				a = v.inst_fresh()
 				#if v == b['statements']:
 					#a.newline()#so, statements should be its own class and be defined as list of statment at the same time,
 					#so the class could implement extra behavior like this?
+			elif isinstance(v, ParametricType):
+				a = v.inst_fresh()
 			else:
 				a = Compiler(v)
 			assert(isinstance(a, Node))
@@ -535,7 +556,7 @@ class List(Collapsible):
 
 def list_of(type_name):
 	"""helper to create a type"""
-	return b["list"].make_type({'itemtype': Ref(b[type_name])}
+	return b["list"].make_type({'itemtype': Ref(b[type_name])})
 
 
 class Statements(List):
@@ -915,10 +936,12 @@ class ParametricType(Syntaxed):
 		return [self.decl.type_syntax]
 
 	def inst_fresh(self):
+		"""todo:"""
 		return self.decl.instance_class.fresh(self)
 
 	@classmethod
 	def fresh(cls, decl):
+		"""create new parametric type"""
 		return cls(cls.create_kids(decl.type_slots), decl)
 
 	@property
@@ -1290,7 +1313,7 @@ class Compiler(Node):
 			return None
 
 
-
+	#todo: make previous item the first child of the inserted item if applicable
 	def menu_item_selected(self, item, atts):
 		assert isinstance(item, (CompilerMenuItem, DefaultCompilerMenuItem))
 		if isinstance(item, CompilerMenuItem):
@@ -1299,7 +1322,7 @@ class Compiler(Node):
 			i = self.mine(atts) #get index of my item under cursor
 			if i != None:
 				self.items[i] = node
-			else:
+			else:#?
 				self.items.append(node)
 			node.parent = self
 			self.post_insert_move_cursor(node)
@@ -1368,6 +1391,7 @@ class Compiler(Node):
 		for item in menu:
 			v = item.value
 			try:
+				print v.name, v.decl.name
 				item.score += fuzz.partial_ratio(v.name, text) #0-100
 			except Exception as e:
 				#print e
@@ -1808,7 +1832,7 @@ add_operators()
 we got drunk and wanted to implement regex input. i will hide this to its own module asap.
 """
 #regex is list of chunks
-#chunk is matcher + quantifier
+#chunk is matcher + quantifier | followed-by
 #matcher is:
 #chars
 #range
@@ -1922,48 +1946,52 @@ Tah-dah!#you really like typing.
 
 
 
-
-class EnumDef(Syntaxed):
-	"""basic one-widget values"""
+class EnumVal(Syntaxed):
 	def __init__(self):
-		super(WidgetedValue, self).__init__()
-		self.isconst = True#this doesnt propagate to Compiler yet
+		super(EnumDef, self, decl, value).__init__()
+		self.decl = decl
+		self.value = value
 
 	@property
 	def pyval(self):
-		return self.widget.value
+		return self.value
 
 	@pyval.setter
 	def pyval(self, val):
-		self.widget.value = val
+		self.value = val
 
 	def render(self):
-		return [WidgetTag('widget')]
+		return [t(self.to_python_str)]
 
 	def to_python_str(self):
-		return str(self.pyval)
+		text = self.decl.ch.options[self.value]
+		assert isinstance(text, Text)
+		return text.pyval
 
 	def copy(s):
 		return s.eval()
 
+	def _eval(self):
+		return EnumVal(self.decl, self.value)
+
 	def flatten(self):
 		return [self]
 
-	def _eval(self):
-		return Number(self.pyval)
+	#@staticmethod
+	#def match(text):
+	#	"return score"
+	#	if text.isdigit():
+	#		return 300
 
-	@staticmethod
-	def match(text):
-		"return score"
-		if text.isdigit():
-			return 300
 
-SyntaxedNodecl(EnumDef,
+class EnumType(Syntaxed):
+	def __init__(self, kids):
+		super(EnumType, self).__init__(kids)
+
+SyntaxedNodecl(EnumType,
 			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
-			   {'name': Ref(b['text']).
-			   'options': list_of('text')}
-				)
-
+			   {'name': b['text'],
+			   'options': list_of('text')})
 
 
 
@@ -1991,3 +2019,4 @@ def to_lemon(x):
 		raise Exception("i dunno how to convert that")
 	#elif isinstance(x, list):
 
+#todo: totally custom node
