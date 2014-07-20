@@ -35,3 +35,10 @@ def plog(*args):
 
 #def catch(fun):
 #	try:
+
+"""
+todo:
+function decorator that sets default logging_topic function-wise. should make topics available for args help
+tlog(topic, stuff...) - an override/one-shot
+i guess this is doable with python logger objects.
+"""

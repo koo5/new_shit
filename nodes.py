@@ -1364,8 +1364,6 @@ class Compiler(Node):
 			else:
 				text = self.items[i]
 
-		#print 'menu for:',text
-
 		scope = self.scope()
 		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
 		#things a user just cant instantiate
@@ -1387,20 +1385,21 @@ class Compiler(Node):
 		else:
 			exp = False
 
+		matchf = fuzz.partial_ratio
 
 		for item in menu:
 			v = item.value
 			try:
-				print v.name, v.decl.name
-				item.score += fuzz.partial_ratio(v.name, text) #0-100
+				item.scores.name = matchf(v.name, text), v.name #0-100
 			except Exception as e:
 				#print e
 				pass
-			item.score += fuzz.partial_ratio(v.decl.name, text) #0-100
-			#print item.value.decl, item.value.decl.works_as(type), type.target
+
+			item.scores.declname = 3*matchf(v.decl.name, text), v.decl.name #0-100
+
 
 			if item.value.decl.works_as(type):
-				item.score += 200
+				item.scores.worksas = 200
 			else:
 				item.invalid = True
 
@@ -1410,14 +1409,19 @@ class Compiler(Node):
 			#   		if isinstance(i, t):
 			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
 			#search thru an actual rendering(including children)
-			r =     v.render()
-			re = " ".join([i.text for i in r if isinstance(i, TextTag)])
-			item.score += fuzz.partial_ratio(re, text)
+			tags =     v.render()
+			texttags = " ".join([i.text for i in tags if isinstance(i, TextTag)])
+			item.scores.texttags = matchf(texttags, text), texttags
 
 
 		menu.sort(key=lambda i: i.score)
+
+		print ('MENU FOR:',text,"type:",self.type)*100
+		[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
+
 		menu.append(DefaultCompilerMenuItem(text))
 		menu.reverse()#umm...
+
 		return menu
 
 	def delete_child(s, child):
@@ -1433,11 +1437,18 @@ class CompilerMenuItem(MenuItem):
 		super(CompilerMenuItem, self).__init__()
 		self.value = value
 		value.parent = self
-		self.score = score
+		self.scores = dotdict()
 		self.brackets_color = (0,255,255)
+
+	@property
+	def score(s):
+		#print s.scores._dict
+		return sum([i if not isinstance(i, tuple) else i[0] for i in s.scores._dict.itervalues()])
 
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
+
+
 
 class DefaultCompilerMenuItem(MenuItem):
 	def __init__(self, text):

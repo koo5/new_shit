@@ -189,7 +189,7 @@ class Root(Frame):
 	def draw_arrows(s, surface):
 		#todo: real arrows would be cool
 		for ((c,r),(c2,r2)) in s.arrows:
-			print c,r,c2,r2
+			#print c,r,c2,r2
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
 			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
 
@@ -262,7 +262,9 @@ class Root(Frame):
 				s.cursor_top()
 			elif k == pygame.K_END:
 				s.cursor_bottom()
-
+			elif k == pygame.K_q:
+				#a quit shortcut that goes thru the event pickle/replay mechanism
+				exit()
 			else:
 				return False
 		else:
