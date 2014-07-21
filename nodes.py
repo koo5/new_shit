@@ -25,7 +25,7 @@ from compiler.ast import flatten
 #import weakref
 
 from dotdict import dotdict
-from logger import log
+from logger import log, topic
 import element
 import widgets
 from menu_items import MenuItem
@@ -1350,6 +1350,7 @@ class Compiler(Node):
 				#this would be also useful above
 		#todo etc. make the cursor move naturally
 
+	@topic("menu")
 	def menu(self, atts):
 
 		i = self.mine(atts)
@@ -1416,7 +1417,7 @@ class Compiler(Node):
 
 		menu.sort(key=lambda i: i.score)
 
-		print ('MENU FOR:',text,"type:",self.type)*100
+		#print ('MENU FOR:',text,"type:",self.type)*100
 		[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
 
 		menu.append(DefaultCompilerMenuItem(text))

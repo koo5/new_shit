@@ -1,9 +1,29 @@
 import traceback, logging
 from inspect import *
 
+#logging is really only for debugging purposes. users will have key/action log frame.
+
 #stickittothemain: todo: lets do the verbosity level thing or rather topics? and argument --log-events?
 
-#logging is really only for debugging purposes. users will have key/action log frame.
+topics = [""]
+
+class topic(object):
+	def __init__(s, topic):
+		s.topic = topic
+	def __call__(s, function):
+		"""this gets called right after init"""
+		def wrapper(*vargs):
+			topics.append(s.topic)
+			r = function(*vargs)
+			topics.pop()
+			return r
+		return wrapper
+
+@topic("banana")
+def dadada(xxx):
+	print xxx
+
+dadada(3343)
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
@@ -23,7 +43,7 @@ def ping(level = 1):
 
 def log(x):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
-	logging.debug(x)
+	logging.debug(topics[-1]+(": " if len(topics)>1 else "")+str(x))
 
 def plog(*args):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
@@ -38,7 +58,7 @@ def plog(*args):
 
 """
 todo:
-function decorator that sets default logging_topic function-wise. should make topics available for args help
-tlog(topic, stuff...) - an override/one-shot
-i guess this is doable with python logger objects.
+tlog(topic, stuff...) - override/one-shot topic
+
+i guess the whole topics thing should have python logging handlers as backend
 """
