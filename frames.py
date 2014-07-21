@@ -440,6 +440,10 @@ class Info(Frame):
 		super(Info, s).__init__()
 		#create all infoitems at __init__, makes persistence possible (for visibility state)
 		s.top_info = [InfoItem(i) for i in [
+			"READ THIS FIRST",
+			"hide these items by clicking the gray X next to each",
+			"unhide all by clicking the dots",
+			"this stuff will go to a menu but for now..",
 			"ctrl + =,- : font size", 
 			"f9 : only valid items in menu",
 			"f8 : toggle the silly blue lines from Refs to their targets",

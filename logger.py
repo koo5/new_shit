@@ -8,6 +8,7 @@ from inspect import *
 topics = [""]
 
 class topic(object):
+	"""decorator"""
 	def __init__(s, topic):
 		s.topic = topic
 	def __call__(s, function):
