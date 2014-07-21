@@ -796,6 +796,11 @@ class Module(Syntaxed):
 			return node.eval()
 
 
+
+
+
+
+
 class Ref(Node):
 	"""points to another node.
 	if a node already has a parent, you just want to point to it, not own it"""
@@ -905,9 +910,10 @@ class VarRefNodecl(NodeclBase):
 		super(VarRefNodecl, self).__init__(VarRef)
 		b['varref'] = self #add me to builtins
 		VarRef.decl = self
-
+	@topic("varrefs")
 	def palette(self, scope, text):
 		r = []
+		log(str(self.vardecls_scope))#should be vardecls_in_scope
 		for x in self.vardecls_scope:
 			assert isinstance(x, (UntypedVar, TypedArgument))
 			r += [CompilerMenuItem(VarRef(x))]
@@ -1041,6 +1047,60 @@ class ParametricNodecl(NodeclBase):
 	#if there is only one possible node type to instantiate..
 
 
+
+
+class EnumVal(Node):
+	def __init__(self, decl, value):
+		super(EnumVal, self).__init__()
+		self.decl = decl
+		self.value = value
+
+	@property
+	def pyval(self):
+		return self.value
+
+	@pyval.setter
+	def pyval(self, val):
+		self.value = val
+
+	def render(self):
+		return [TextTag(self.to_python_str())]
+
+	def to_python_str(self):
+		text = self.decl.ch.options[self.value].compiled
+		assert isinstance(text, Text)
+		return text.pyval
+
+	def copy(s):
+		return s.eval()
+
+	def _eval(self):
+		return EnumVal(self.decl, self.value)
+
+	def flatten(self):
+		return [self]
+
+	#@staticmethod
+	#def match(text):
+	#	"return score"
+	#	if text.isdigit():
+	#		return 300
+
+
+class EnumType(Syntaxed):
+	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
+	def __init__(self, kids):
+		super(EnumType, self).__init__(kids)
+	def palette(self, scope, text):
+		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
+		print ">",r
+		return r
+	def works_as(self, type):
+		if isinstance(type, Ref):
+			type = type.target
+		if self == type: return True
+
+
 """here we start putting stuff into b, which is then made into the builtins module"""
 
 TypeNodecl() #..so you can say that your function returns a type value, or something
@@ -1106,6 +1166,11 @@ b['dict'] = ParametricNodecl(Dict,
 WorksAs.b("list", "expression")
 WorksAs.b("dict", "expression")
 
+SyntaxedNodecl(EnumType,
+			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
+			   {'name': b['text'],
+			   'options': list_of('text')})
+
 #Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 SyntaxedNodecl(Module,
@@ -1167,6 +1232,11 @@ class Filter(Syntaxed):
 """
 
 
+def is_type(node):
+	return isinstance(node, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory, EnumType))
+
+
+
 """
 compiler node
 
@@ -1183,14 +1253,13 @@ class Compiler(Node):
 	"""
 	def __init__(self, type):
 		super(Compiler, self).__init__()
+		assert is_type(type), str(type)
 		self.type = type
-		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory))
-		#..in short, everything that works as a type..abstract it away later
 		self.items = []
-		self.brackets_color = "compiler brackets" #bye:)
-		self.brackets = ('{', '}')
-		self.decl = None #i am a free man, not a number!
+		self.decl = None
 		self.register_event_types('on_edit')
+		self.brackets_color = "compiler brackets"
+		self.brackets = ('{', '}')
 
 	@property
 	def compiled(self):
@@ -1481,7 +1550,7 @@ class Compiler(Node):
 		menu.sort(key=lambda i: i.score)
 
 		#print ('MENU FOR:',text,"type:",self.type)*100
-		#[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
+		[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
 
 		menu.append(DefaultCompilerMenuItem(text))
 		menu.reverse()#umm...
@@ -1581,22 +1650,38 @@ class FunctionDefinitionBase(Syntaxed):
 
 	@property
 	def args(self):
-		c = self.sig.compiled
-		if isinstance(c, List):
-			return [i for i in c if isinstance(i, (TypedArgument, UnevaluatedArgument))]
-		else:
-			log("sig not a List")
-			return []
+		return [i for i in self.sig if isinstance(i, (TypedArgument, UnevaluatedArgument))]
 
 	@property
 	def arg_types(self):
-		r = [i.ch.type if not isinstance(i, UnevaluatedArgument) else i.ch.argument.ch.type for i in self.args]
+		r = []
+		for i in self.args:
+			t = (i.ch.type if not isinstance(i, UnevaluatedArgument) else i.ch.argument.ch.type).compiled
+			r.append(t)
 		#log(str(r))
 		return r
 
 	@property
 	def sig(self):
-		return self.ch.sig
+		compiled_sig = self.ch.sig.compiled
+		if not isinstance(compiled_sig, List):
+			log("sig did not compile to list but to " +str(compiled_sig))
+			return [Text("bad sig")]#no parent..
+		r = [i.compiled for i in compiled_sig]
+		for i in r:
+			if not isinstance(i, (UnevaluatedArgument, TypedArgument, Text)):
+				return [Text("bad sig")]#no parent..
+		rr = []
+		for i in r:
+			if isinstance(i, (UnevaluatedArgument, TypedArgument)):
+				t = (i.ch.type if not isinstance(i, UnevaluatedArgument) else i.ch.argument.ch.type).compiled
+				if not is_type(t):
+					rr.append(Text(" ????? "))
+				else:
+					rr.append(i)
+			else:
+				rr.append(i)
+		return rr
 
 	@property
 	def vardecls(s):
@@ -1651,9 +1736,6 @@ class FunctionDefinition(FunctionDefinitionBase):
 				if vd.ch.name.pyval == name:
 					vd.runtime.value.append(ca.copy())
 
-	@property
-	def vardecls(s):
-		return s.args
 
 SyntaxedNodecl(FunctionDefinition,
 			   [TextTag("deffun:"), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
@@ -1735,8 +1817,10 @@ class FunctionCall(Node):
 		super(FunctionCall, self).__init__()
 		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
-		self.args = [Compiler(v) for v in self.target.arg_t
-		ypes] #this should go to fresh()
+		print self.target.arg_types
+		for i in self.target.arg_types:
+			assert not isinstance(i, Compiler), "%s to target %s is a dumbo" % (self, self.target)
+		self.args = [Compiler(v) for v in self.target.arg_types] #this should go to fresh()
 		self._fix_parents(self.args)
 
 	def delete_child(self, child):
@@ -1759,20 +1843,18 @@ class FunctionCall(Node):
 
 	def render(self):
 		r = []
-		sig = self.target.sig.compiled
-		if not isinstance(sig, List):
-			r+=[TextTag("sig not a List, " + str(sig))]
-		else:
-			argument_index = 0
-			assert len(self.args) == len([a for a in sig if isinstance(a, TypedArgument)])
-			for v in [v.compiled for v in sig]:
-				if isinstance(v, Text):
-					r += [TextTag(v.pyval)]
-				elif isinstance(v, TypedArgument):
-					r += [ElementTag(self.args[argument_index])]
-					argument_index+=1
-				else:
-					raise Exception("item in function signature is"+str(v))
+		sig = self.target.sig
+		assert isinstance(sig, list)
+		argument_index = 0
+		assert len(self.args) == len([a for a in sig if isinstance(a, TypedArgument)])
+		for v in sig:
+			if isinstance(v, Text):
+				r += [TextTag(v.pyval)]
+			elif isinstance(v, TypedArgument):
+				r += [ElementTag(self.args[argument_index])]
+				argument_index+=1
+			else:
+				raise Exception("item in function signature is"+str(v))
 		return r
 
 	@property
@@ -2055,63 +2137,6 @@ Tah-dah!#you really like typing.
 
 
 
-class EnumVal(Node):
-	def __init__(self, decl, value):
-		super(EnumVal, self).__init__()
-		self.decl = decl
-		self.value = value
-
-	@property
-	def pyval(self):
-		return self.value
-
-	@pyval.setter
-	def pyval(self, val):
-		self.value = val
-
-	def render(self):
-		return [TextTag(self.to_python_str())]
-
-	def to_python_str(self):
-		text = self.decl.ch.options[self.value].compiled
-		assert isinstance(text, Text)
-		return text.pyval
-
-	def copy(s):
-		return s.eval()
-
-	def _eval(self):
-		return EnumVal(self.decl, self.value)
-
-	def flatten(self):
-		return [self]
-
-	#@staticmethod
-	#def match(text):
-	#	"return score"
-	#	if text.isdigit():
-	#		return 300
-
-
-class EnumType(Syntaxed):
-	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
-	def __init__(self, kids):
-		super(EnumType, self).__init__(kids)
-	def palette(self, scope, text):
-		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
-		print ">",r
-		return r
-	def works_as(self, type):
-		if isinstance(type, Ref):
-			type = type.target
-		if self == type: return True
-
-SyntaxedNodecl(EnumType,
-			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
-			   {'name': b['text'],
-			   'options': list_of('text')})
-
-
 
 #Const({'name': Text("meaning of life"), 'value': Number(42)})
 """the end"""
@@ -2139,5 +2164,6 @@ def to_lemon(x):
 
 def is_flat(l):
 	return flatten(l) == l
+
 
 #todo: totally custom node
