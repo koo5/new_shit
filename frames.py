@@ -454,7 +454,7 @@ class Info(Frame):
 			"space: menu selection",
 			"",
 			"red <>'s enclose nodes or other widgets",
-			"green [text] are textboxes",
+			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
 			["Compiler looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
 			"(in gray) is the expected type",
 			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"

@@ -11,13 +11,13 @@ class topic(object):
 	"""decorator"""
 	def __init__(s, topic):
 		s.topic = topic
-	def __call__(s, function):
-		"""this gets called right after init"""
+	def __call__(s, function_with_decorator):
+		"""not actually called at call time. welcome to python."""
 		def wrapper(*vargs):
 			topics.append(s.topic)
-			r = function(*vargs)
+			result = function_with_decorator(*vargs)
 			topics.pop()
-			return r
+			return result
 		return wrapper
 
 @topic("banana")

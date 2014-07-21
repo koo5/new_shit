@@ -359,6 +359,8 @@ class Syntaxed(Node):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 
+
+
 class Collapsible(Node):
 	"""Collapsible - List or Dict -
 	they dont have a title, just a collapse button, right of which first item is rendered
@@ -682,6 +684,42 @@ class Text(WidgetedValue):
 		return 100
 
 
+
+
+class Unknown(WidgetedValue):
+	"""will probably serve as the text bits within a Compiler.
+	fow now tho, it should at least be the result of explosion,
+
+	explosion should replace a node with an Unknown for each TextTag and with its
+	child nodes. its a way to try to add more text-like freedom to the structured editor,
+
+	currently a copypasta of Text.
+	"""
+	def __init__(self, value=""):
+		super(Unknown, self).__init__()
+		self.widget = widgets.Text(self, value)
+		self.brackets_color = "text brackets"
+		self.brackets = ('?','?')
+
+	def render(self):
+		return self.widget.render()
+
+	def on_keypress(self, e):
+		return self.widget.on_keypress(e)
+
+	def _eval(self):
+		return Text(self.pyval)
+
+	def __repr__(s):
+		return object.__repr__(s) + "('"+s.pyval+"')"
+
+	@staticmethod
+	def match(text):
+		return 0
+
+
+
+
 class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
@@ -797,8 +835,8 @@ class Exp(Node):
 
 class NodeclBase(Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
-	know their python class ("instance_class"), syntax and shit
-	usually does something like instance_class.decl = self so we can instantiates the
+	know their python class ("instance_class"), syntax and shit.
+	usually do something like instance_class.decl = self so we can instantiate the
 	classes in code without going thru a corresponding nodecl"""
 	def __init__(self, instance_class):
 		super(NodeclBase, self).__init__()
@@ -828,7 +866,7 @@ class NodeclBase(Node):
 		if isinstance(type, Ref):
 			type = type.target
 		if self == type: return True
-		#todo:go thru definitions and IsSubclassOfs, in what scope tho?
+		#todo:go thru Definitions and SyntacticCategories...
 
 	def __repr__(s):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
@@ -946,7 +984,7 @@ class ParametricType(Syntaxed):
 
 	@property
 	def name(self):
-		return "parametric type (fix this)"
+		return "parametric type (probably list)"
 		#todo: refsyntax?
 	#@property
 	#def refsyntax(s):
@@ -1366,7 +1404,7 @@ class Compiler(Node):
 				text = self.items[i]
 
 		scope = self.scope()
-		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
+		nodecls = [x for x in scope if isinstance(x, (NodeclBase, EnumType))]
 		#things a user just cant instantiate
 		for x in ['builtinpythonfunctiondecl', 'builtinfunctiondecl']:
 			if b[x] in nodecls:#with the simplistic "scope" being simply items above us, some Compiler in builtins might not see it
@@ -1386,7 +1424,7 @@ class Compiler(Node):
 		else:
 			exp = False
 
-		matchf = fuzz.partial_ratio
+		matchf = fuzz.token_set_ratio#partial_ratio
 
 		for item in menu:
 			v = item.value
@@ -1411,7 +1449,9 @@ class Compiler(Node):
 			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
 			#search thru an actual rendering(including children)
 			tags =     v.render()
-			texttags = " ".join([i.text for i in tags if isinstance(i, TextTag)])
+			texts = [i.text for i in tags if isinstance(i, TextTag)]
+			print texts
+			texttags = " ".join(texts)
 			item.scores.texttags = matchf(texttags, text), texttags
 
 
@@ -1449,6 +1489,8 @@ class CompilerMenuItem(MenuItem):
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
 
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.value)+"')"
 
 
 class DefaultCompilerMenuItem(MenuItem):
@@ -1958,9 +2000,9 @@ Tah-dah!#you really like typing.
 
 
 
-class EnumVal(Syntaxed):
-	def __init__(self):
-		super(EnumDef, self, decl, value).__init__()
+class EnumVal(Node):
+	def __init__(self, decl, value):
+		super(EnumVal, self).__init__()
 		self.decl = decl
 		self.value = value
 
@@ -1973,10 +2015,10 @@ class EnumVal(Syntaxed):
 		self.value = val
 
 	def render(self):
-		return [t(self.to_python_str)]
+		return [TextTag(self.to_python_str())]
 
 	def to_python_str(self):
-		text = self.decl.ch.options[self.value]
+		text = self.decl.ch.options[self.value].compiled
 		assert isinstance(text, Text)
 		return text.pyval
 
@@ -1997,8 +2039,17 @@ class EnumVal(Syntaxed):
 
 
 class EnumType(Syntaxed):
+	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
 	def __init__(self, kids):
 		super(EnumType, self).__init__(kids)
+	def palette(self, scope, text):
+		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
+		print ">",r
+		return r
+	def works_as(self, type):
+		if isinstance(type, Ref):
+			type = type.target
+		if self == type: return True
 
 SyntaxedNodecl(EnumType,
 			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
