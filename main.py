@@ -11,6 +11,10 @@ import pygame
 from pygame import display, image
 
 from logger import log
+import frames
+import project
+import colors
+
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -34,12 +38,9 @@ def parse_args():
 				   default=False)
 	return parser.parse_args()
 
-import colors
+
 args = parse_args()
 colors.cache(args)
-import frames #colors must first be cached, and that depends on args
-#import project
-
 
 
 def change_font_size(by = 0):

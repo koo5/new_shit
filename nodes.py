@@ -1,3 +1,20 @@
+
+
+"""
+notes on the current state of this constantly changing code:
+i use kids and children interchangeably.
+sometimes, i use s instead of self
+
+creation of new nodes. 
+__init__ usually takes children or value as arguments.
+fresh() calls it with some defaults (as the user would have it created)
+each class has a decl, which is an object descending from NodeclBase (nodecl for node declaration).
+nodecl can be thought of as a type, and objects pointing to them with their decls as values.
+nodecls have a set of functions for instantiating the values, and those need some cleanup
+"""
+
+
+
 import pygame
 from fuzzywuzzy import fuzz
 
@@ -8,7 +25,7 @@ from compiler.ast import flatten
 #import weakref
 
 from dotdict import dotdict
-from logger import log
+from logger import log, topic
 import element
 import widgets
 from menu_items import MenuItem
@@ -57,6 +74,7 @@ class Node(element.Element):
 	every node class has a corresponding decl object
 	"""
 	def __init__(self):
+		"""overrides in subclasses may require children as arguments"""
 		super(Node, self).__init__()
 		#self.color = (0,255,0,255) #i hate hardcoded colors
 		self.brackets_color = "node brackets rainbow"
@@ -111,6 +129,22 @@ class Node(element.Element):
 
 		assert(r != None)
 		assert(flatten(r) == r)
+		return r
+
+	@property
+	def vardecls_scope(self):
+		"""what variable declarations does this node see?"""
+		r = []
+
+		#if isinstance(self.parent, List):
+		#	above = [x.compiled for x in self.parent.above(self)]
+		#	r += [i if isinstance(i, VariableDeclaration) for i in above]
+
+		if self.parent != None:
+			r += self.parent.vardecls
+			r += self.parent.vardecls_scope
+
+		assert(is_flat(r))
 		return r
 
 	def eval(self):
@@ -306,10 +340,13 @@ class Syntaxed(Node):
 			#if cls == For:
 			#	plog((v, easily_instantiable))
 			if v in easily_instantiable:
+				#log("easily instantiable:"+str(v))
 				a = v.inst_fresh()
 				#if v == b['statements']:
 					#a.newline()#so, statements should be its own class and be defined as list of statment at the same time,
 					#so the class could implement extra behavior like this?
+			elif isinstance(v, ParametricType):
+				a = v.inst_fresh()
 			else:
 				a = Compiler(v)
 			assert(isinstance(a, Node))
@@ -336,6 +373,8 @@ class Syntaxed(Node):
 
 	def __repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
+
+
 
 
 class Collapsible(Node):
@@ -533,6 +572,10 @@ class List(Collapsible):
 	def __repr__(s):
 		return object.__repr__(s) + "('"+str(s.item_type)+"')"
 
+def list_of(type_name):
+	"""helper to create a type"""
+	return b["list"].make_type({'itemtype': Ref(b[type_name])})
+
 
 class Statements(List):
 	def __init__(s):
@@ -570,7 +613,6 @@ class Statements(List):
 		return Text("it ran.")
 
 
-
 class Void(Node):
 	"i dont like it"
 	def __init__(self):
@@ -590,7 +632,6 @@ class Banana(Node):
 		return [TextTag(self.text)]
 	def to_python_str(self):
 		return "banana"
-
 
 
 class WidgetedValue(Node):
@@ -659,6 +700,42 @@ class Text(WidgetedValue):
 		return 100
 
 
+
+
+class Unknown(WidgetedValue):
+	"""will probably serve as the text bits within a Compiler.
+	fow now tho, it should at least be the result of explosion,
+
+	explosion should replace a node with an Unknown for each TextTag and with its
+	child nodes. its a way to try to add more text-like freedom to the structured editor,
+
+	currently a copypasta of Text.
+	"""
+	def __init__(self, value=""):
+		super(Unknown, self).__init__()
+		self.widget = widgets.Text(self, value)
+		self.brackets_color = "text brackets"
+		self.brackets = ('?','?')
+
+	def render(self):
+		return self.widget.render()
+
+	def on_keypress(self, e):
+		return self.widget.on_keypress(e)
+
+	def _eval(self):
+		return Text(self.pyval)
+
+	def __repr__(s):
+		return object.__repr__(s) + "('"+s.pyval+"')"
+
+	@staticmethod
+	def match(text):
+		return 0
+
+
+
+
 class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
@@ -719,6 +796,11 @@ class Module(Syntaxed):
 			return node.eval()
 
 
+
+
+
+
+
 class Ref(Node):
 	"""points to another node.
 	if a node already has a parent, you just want to point to it, not own it"""
@@ -746,7 +828,7 @@ class VarRef(Node):
 	def __init__(self, target):
 		super(VarRef, self).__init__()
 		self.target = target
-		assert isinstance(target, UntypedVar)
+		assert isinstance(target, (UntypedVar, TypedArgument))
 		log("varref target:"+str(target))
 
 	def render(self):
@@ -774,8 +856,8 @@ class Exp(Node):
 
 class NodeclBase(Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
-	know their python class ("instance_class"), syntax and shit
-	usually does something like instance_class.decl = self so we can instantiates the
+	know their python class ("instance_class"), syntax and shit.
+	usually do something like instance_class.decl = self so we can instantiate the
 	classes in code without going thru a corresponding nodecl"""
 	def __init__(self, instance_class):
 		super(NodeclBase, self).__init__()
@@ -805,7 +887,7 @@ class NodeclBase(Node):
 		if isinstance(type, Ref):
 			type = type.target
 		if self == type: return True
-		#todo:go thru definitions and IsSubclassOfs, in what scope tho?
+		#todo:go thru Definitions and SyntacticCategories...
 
 	def __repr__(s):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
@@ -828,7 +910,15 @@ class VarRefNodecl(NodeclBase):
 		super(VarRefNodecl, self).__init__(VarRef)
 		b['varref'] = self #add me to builtins
 		VarRef.decl = self
-
+	@topic("varrefs")
+	def palette(self, scope, text):
+		r = []
+		log(str(self.vardecls_scope))#should be vardecls_in_scope
+		for x in self.vardecls_scope:
+			assert isinstance(x, (UntypedVar, TypedArgument))
+			r += [CompilerMenuItem(VarRef(x))]
+		return r
+"""
 	def palette(self, scope, text):
 		r = []
 		for x in scope:
@@ -841,7 +931,7 @@ class VarRefNodecl(NodeclBase):
 					r += [CompilerMenuItem(VarRef(yc))]
 		#log (str(scope)+"varrefs:"+str(r))
 		return r
-
+"""
 class ExpNodecl(NodeclBase):
 	def __init__(self):
 		super(ExpNodecl, self).__init__(Exp)
@@ -913,15 +1003,17 @@ class ParametricType(Syntaxed):
 		return [self.decl.type_syntax]
 
 	def inst_fresh(self):
+		"""todo:"""
 		return self.decl.instance_class.fresh(self)
 
 	@classmethod
 	def fresh(cls, decl):
+		"""create new parametric type"""
 		return cls(cls.create_kids(decl.type_slots), decl)
 
 	@property
 	def name(self):
-		return "parametric type (fix this)"
+		return "parametric type (probably list)"
 		#todo: refsyntax?
 	#@property
 	#def refsyntax(s):
@@ -953,6 +1045,60 @@ class ParametricNodecl(NodeclBase):
 		return [CompilerMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
 	#if there is only one possible node type to instantiate..
+
+
+
+
+class EnumVal(Node):
+	def __init__(self, decl, value):
+		super(EnumVal, self).__init__()
+		self.decl = decl
+		self.value = value
+
+	@property
+	def pyval(self):
+		return self.value
+
+	@pyval.setter
+	def pyval(self, val):
+		self.value = val
+
+	def render(self):
+		return [TextTag(self.to_python_str())]
+
+	def to_python_str(self):
+		text = self.decl.ch.options[self.value].compiled
+		assert isinstance(text, Text)
+		return text.pyval
+
+	def copy(s):
+		return s.eval()
+
+	def _eval(self):
+		return EnumVal(self.decl, self.value)
+
+	def flatten(self):
+		return [self]
+
+	#@staticmethod
+	#def match(text):
+	#	"return score"
+	#	if text.isdigit():
+	#		return 300
+
+
+class EnumType(Syntaxed):
+	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
+	def __init__(self, kids):
+		super(EnumType, self).__init__(kids)
+	def palette(self, scope, text):
+		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
+		print ">",r
+		return r
+	def works_as(self, type):
+		if isinstance(type, Ref):
+			type = type.target
+		if self == type: return True
 
 
 """here we start putting stuff into b, which is then made into the builtins module"""
@@ -1020,6 +1166,11 @@ b['dict'] = ParametricNodecl(Dict,
 WorksAs.b("list", "expression")
 WorksAs.b("dict", "expression")
 
+SyntaxedNodecl(EnumType,
+			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
+			   {'name': b['text'],
+			   'options': list_of('text')})
+
 #Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 SyntaxedNodecl(Module,
@@ -1081,6 +1232,11 @@ class Filter(Syntaxed):
 """
 
 
+def is_type(node):
+	return isinstance(node, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory, EnumType))
+
+
+
 """
 compiler node
 
@@ -1097,14 +1253,13 @@ class Compiler(Node):
 	"""
 	def __init__(self, type):
 		super(Compiler, self).__init__()
+		assert is_type(type), str(type)
 		self.type = type
-		assert isinstance(type, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory))
-		#..in short, everything that works as a type..abstract it away later
 		self.items = []
-		self.brackets_color = "compiler brackets" #bye:)
-		self.brackets = ('{', '}')
-		self.decl = None #i am a free man, not a number!
+		self.decl = None
 		self.register_event_types('on_edit')
+		self.brackets_color = "compiler brackets"
+		self.brackets = ('{', '}')
 
 	@property
 	def compiled(self):
@@ -1288,7 +1443,7 @@ class Compiler(Node):
 			return None
 
 
-
+	#todo: make previous item the first child of the inserted item if applicable
 	def menu_item_selected(self, item, atts):
 		assert isinstance(item, (CompilerMenuItem, DefaultCompilerMenuItem))
 		if isinstance(item, CompilerMenuItem):
@@ -1297,7 +1452,7 @@ class Compiler(Node):
 			i = self.mine(atts) #get index of my item under cursor
 			if i != None:
 				self.items[i] = node
-			else:
+			else:#?
 				self.items.append(node)
 			node.parent = self
 			self.post_insert_move_cursor(node)
@@ -1325,6 +1480,7 @@ class Compiler(Node):
 				#this would be also useful above
 		#todo etc. make the cursor move naturally
 
+	@topic("menu")
 	def menu(self, atts):
 
 		i = self.mine(atts)
@@ -1339,10 +1495,8 @@ class Compiler(Node):
 			else:
 				text = self.items[i]
 
-		#print 'menu for:',text
-
 		scope = self.scope()
-		nodecls = [x for x in scope if isinstance(x, NodeclBase)]
+		nodecls = [x for x in scope if isinstance(x, (NodeclBase, EnumType))]
 		#things a user just cant instantiate
 		for x in ['builtinpythonfunctiondecl', 'builtinfunctiondecl']:
 			if b[x] in nodecls:#with the simplistic "scope" being simply items above us, some Compiler in builtins might not see it
@@ -1362,19 +1516,21 @@ class Compiler(Node):
 		else:
 			exp = False
 
+		matchf = fuzz.token_set_ratio#partial_ratio
 
 		for item in menu:
 			v = item.value
 			try:
-				item.score += fuzz.partial_ratio(v.name, text) #0-100
+				item.scores.name = matchf(v.name, text), v.name #0-100
 			except Exception as e:
 				#print e
 				pass
-			item.score += fuzz.partial_ratio(v.decl.name, text) #0-100
-			#print item.value.decl, item.value.decl.works_as(type), type.target
+
+			item.scores.declname = 3*matchf(v.decl.name, text), v.decl.name #0-100
+
 
 			if item.value.decl.works_as(type):
-				item.score += 200
+				item.scores.worksas = 200
 			else:
 				item.invalid = True
 
@@ -1384,14 +1540,21 @@ class Compiler(Node):
 			#   		if isinstance(i, t):
 			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
 			#search thru an actual rendering(including children)
-			r =     v.render()
-			re = " ".join([i.text for i in r if isinstance(i, TextTag)])
-			item.score += fuzz.partial_ratio(re, text)
+			tags =     v.render()
+			texts = [i.text for i in tags if isinstance(i, TextTag)]
+			#print texts
+			texttags = " ".join(texts)
+			item.scores.texttags = matchf(texttags, text), texttags
 
 
 		menu.sort(key=lambda i: i.score)
+
+		#print ('MENU FOR:',text,"type:",self.type)*100
+		[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
+
 		menu.append(DefaultCompilerMenuItem(text))
 		menu.reverse()#umm...
+
 		return menu
 
 	def delete_child(s, child):
@@ -1399,7 +1562,7 @@ class Compiler(Node):
 		del s.items[s.items.index(child)]
 
 	def __repr__(s):
-		return object.__repr__(s) + "('"+str(s.type)+"')"
+		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
 
 class CompilerMenuItem(MenuItem):
@@ -1407,11 +1570,20 @@ class CompilerMenuItem(MenuItem):
 		super(CompilerMenuItem, self).__init__()
 		self.value = value
 		value.parent = self
-		self.score = score
+		self.scores = dotdict()
 		self.brackets_color = (0,255,255)
+
+	@property
+	def score(s):
+		#print s.scores._dict
+		return sum([i if not isinstance(i, tuple) else i[0] for i in s.scores._dict.itervalues()])
 
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
+
+	def __repr__(s):
+		return object.__repr__(s) + "('"+str(s.value)+"')"
+
 
 class DefaultCompilerMenuItem(MenuItem):
 	def __init__(self, text):
@@ -1449,9 +1621,20 @@ SyntaxedNodecl(TypedArgument,
 			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
 			   {'name': 'text', 'type': 'type'})
 
+class UnevaluatedArgument(Syntaxed):
+	def __init__(self, kids):
+		super(UnevaluatedArgument, self).__init__(kids)
+
+SyntaxedNodecl(UnevaluatedArgument,
+			   [TextTag("unevaluated"), ChildTag("argument")],
+			   {'argument': 'typedargument'})
+
+
+
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
 tmp.ch["items"].add(Ref(b['typedargument']))
+tmp.ch["items"].add(Ref(b['unevaluatedargument']))
 Definition({'name': Text('function signature node'), 'type': tmp})
 
 tmp = b['list'].make_type({'itemtype': Ref(b['function signature node'])})
@@ -1467,33 +1650,67 @@ class FunctionDefinitionBase(Syntaxed):
 
 	@property
 	def args(self):
-		c = self.sig.compiled
-		if isinstance(c, List):
-			return [i for i in c if isinstance(i, TypedArgument)]
-		else:
-			log("sig not a List")
-			return []
+		return [i for i in self.sig if isinstance(i, (TypedArgument, UnevaluatedArgument))]
 
 	@property
 	def arg_types(self):
-		return [i.ch.type for i in self.args]
+		r = []
+		for i in self.args:
+			t = (i.ch.type if not isinstance(i, UnevaluatedArgument) else i.ch.argument.ch.type).compiled
+			r.append(t)
+		#log(str(r))
+		return r
 
 	@property
 	def sig(self):
-		return self.ch.sig
+		compiled_sig = self.ch.sig.compiled
+		if not isinstance(compiled_sig, List):
+			log("sig did not compile to list but to " +str(compiled_sig))
+			return [Text("bad sig")]#no parent..
+		r = [i.compiled for i in compiled_sig]
+		for i in r:
+			if not isinstance(i, (UnevaluatedArgument, TypedArgument, Text)):
+				return [Text("bad sig")]#no parent..
+		rr = []
+		for i in r:
+			if isinstance(i, (UnevaluatedArgument, TypedArgument)):
+				t = (i.ch.type if not isinstance(i, UnevaluatedArgument) else i.ch.argument.ch.type).compiled
+				if not is_type(t):
+					rr.append(Text(" ????? "))
+				else:
+					rr.append(i)
+			else:
+				rr.append(i)
+		return rr
+
+	@property
+	def vardecls(s):
+		r = [i if isinstance(i, TypedArgument) else i.ch.argument for i in s.args]
+		print ">>>>>>>>>>>", r
+		return r
 
 	def typecheck(self, args):
 		for i, arg in enumerate(args):
 			#if not arg.type.eq(self.arg_types[i]):
-			if isinstance(self.arg_types[i], Ref) and not arg.decl == self.arg_types[i].target:
-				log("well this is bad")
-				return Banana(str(arg.decl.name) +" != "+str(self.arg_types[i].name))
+			if isinstance(self.arg_types[i], Ref):
+				#we have a chance to compare those without prolog
+				if not arg.decl == self.arg_types[i].target:
+					log("well this is bad, decl %s of %s != %s" % (arg.decl, arg, self.arg_types[i].target))
+					return Banana(str(arg.decl.name) +" != "+str(self.arg_types[i].name))
 		return True
 
 	def call(self, args):
-		args = [arg.eval() for arg in args]
-		assert(len(args) == len(self.arg_types))
-		r = self._call(args)
+		"""common for all function definitions"""
+		evaluated_args = []
+		for i, arg in enumerate(args):
+			if not isinstance(self.sig[i], UnevaluatedArgument):
+				evaluated_args.append(arg.eval())
+			else:
+				evaluated_args.append(arg.compiled)
+		#print evaluated_args ,"<<<"
+		#args = [arg.eval() for arg in args]
+		assert(len(evaluated_args) == len(self.arg_types))
+		r = self._call(evaluated_args )
 		assert isinstance(r, Node), "_call returned "+str(r)
 		return r
 
@@ -1508,6 +1725,7 @@ class FunctionDefinition(FunctionDefinitionBase):
 		super(FunctionDefinition, self).__init__(kids)
 
 	def _call(self, call_args):
+		#call copy_args?
 		return self.ch.body.run()#Void()#
 
 	def copy_args(self, call_args):
@@ -1518,9 +1736,6 @@ class FunctionDefinition(FunctionDefinitionBase):
 				if vd.ch.name.pyval == name:
 					vd.runtime.value.append(ca.copy())
 
-	@property
-	def vardecls(s):
-		return s.args
 
 SyntaxedNodecl(FunctionDefinition,
 			   [TextTag("deffun:"), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
@@ -1602,6 +1817,9 @@ class FunctionCall(Node):
 		super(FunctionCall, self).__init__()
 		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
+		print self.target.arg_types
+		for i in self.target.arg_types:
+			assert not isinstance(i, Compiler), "%s to target %s is a dumbo" % (self, self.target)
 		self.args = [Compiler(v) for v in self.target.arg_types] #this should go to fresh()
 		self._fix_parents(self.args)
 
@@ -1625,19 +1843,18 @@ class FunctionCall(Node):
 
 	def render(self):
 		r = []
+		sig = self.target.sig
+		assert isinstance(sig, list)
 		argument_index = 0
-		sig = self.target.sig.compiled
-		if not isinstance(sig, List):
-			r+=[TextTag("sig not a List, " + str(sig))]
-		else:
-			for v in [v.compiled for v in sig]:
-				if isinstance(v, Text):
-					r += [TextTag(v.pyval)]
-				elif isinstance(v, TypedArgument):
-					r += [ElementTag(self.args[argument_index])]
-					argument_index+=1
-				else:
-					log("item in sig is"+str(v))
+		assert len(self.args) == len([a for a in sig if isinstance(a, TypedArgument)])
+		for v in sig:
+			if isinstance(v, Text):
+				r += [TextTag(v.pyval)]
+			elif isinstance(v, TypedArgument):
+				r += [ElementTag(self.args[argument_index])]
+				argument_index+=1
+			else:
+				raise Exception("item in function signature is"+str(v))
 		return r
 
 	@property
@@ -1706,12 +1923,12 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		x.fix_parents()
 
 	def _call(self, args):
-		#translate args to python values, call operator function
+		#translate args to python values, call python function
 		checker_result = self.typecheck(args)
 		if checker_result != True:
 			return checker_result
 		args = [arg.pyval for arg in args] #todo implement pyval getter of list
-		python_result = self.fun(*args)#is this how you unpack?
+		python_result = self.fun(*args)
 		lemon_result = self.ret.inst_fresh()
 		lemon_result.pyval = python_result #todo implement pyval assignments
 		return lemon_result
@@ -1809,7 +2026,7 @@ add_operators()
 we got drunk and wanted to implement regex input. i will hide this to its own module asap.
 """
 #regex is list of chunks
-#chunk is matcher + quantifier
+#chunk is matcher + quantifier | followed-by
 #matcher is:
 #chars
 #range
@@ -1924,28 +2141,6 @@ Tah-dah!#you really like typing.
 
 
 
-#another test function:
-
-def b_limit_max(num, high_limit):
-	return min(num, high_limit)
-
-BuiltinPythonFunctionDecl.create(
-	b_limit_max,
-	[
-	num_arg(),
-	Text(', at most'), 
-	num_arg()],
-	Ref(b['number']),
-	"high limit",
-	"max")
-
-
-
-
-
-
-
-
 #Const({'name': Text("meaning of life"), 'value': Number(42)})
 """the end"""
 
@@ -1970,3 +2165,8 @@ def to_lemon(x):
 		raise Exception("i dunno how to convert that")
 	#elif isinstance(x, list):
 
+def is_flat(l):
+	return flatten(l) == l
+
+
+#todo: totally custom node

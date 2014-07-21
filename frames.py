@@ -189,7 +189,7 @@ class Root(Frame):
 	def draw_arrows(s, surface):
 		#todo: real arrows would be cool
 		for ((c,r),(c2,r2)) in s.arrows:
-			print c,r,c2,r2
+			#print c,r,c2,r2
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
 			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
 
@@ -262,7 +262,9 @@ class Root(Frame):
 				s.cursor_top()
 			elif k == pygame.K_END:
 				s.cursor_bottom()
-
+			elif k == pygame.K_q:
+				#a quit shortcut that goes thru the event pickle/replay mechanism
+				exit()
 			else:
 				return False
 		else:
@@ -438,6 +440,10 @@ class Info(Frame):
 		super(Info, s).__init__()
 		#create all infoitems at __init__, makes persistence possible (for visibility state)
 		s.top_info = [InfoItem(i) for i in [
+			"READ THIS FIRST",
+			"hide these items by clicking the gray X next to each",
+			"unhide all by clicking the dots",
+			"this stuff will go to a menu but for now..",
 			"ctrl + =,- : font size", 
 			"f9 : only valid items in menu",
 			"f8 : toggle the silly blue lines from Refs to their targets",
@@ -448,7 +454,7 @@ class Info(Frame):
 			"space: menu selection",
 			"",
 			"red <>'s enclose nodes or other widgets",
-			"green [text] are textboxes",
+			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
 			["Compiler looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
 			"(in gray) is the expected type",
 			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"
