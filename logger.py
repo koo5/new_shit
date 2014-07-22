@@ -15,6 +15,8 @@ def topic(text):
 			result = function_with_decorator(*vargs, **kwargs)
 			topics.pop()
 			return result
+		if hasattr(function_with_decorator, "levent_constraints"):
+			wrapped_function.levent_constraints = function_with_decorator.levent_constraints
 		return wrapped_function
 	return decorator_inner_crap
 

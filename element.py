@@ -21,27 +21,27 @@ class Element(event.EventDispatcher):
 		mro = reversed(mro)
 		for cls in mro:
 			#log(cls)
-			for member in cls.__dict__.itervalues():
-				if str(member) == "delete_self":
+			for member_name, member in cls.__dict__.iteritems():
+				if member_name == "delete_self":
 					log ("!!!" + str(member))
 				if hasattr(member, "levent_constraints"):
 					log("handler found:" + str(member))
 					#dicts arent hashable, so lets convert the constraints dict to tuple and save the dict in value
 					hash = tuple(member.levent_constraints.iteritems())
-					r[hash] = (member.levent_constraints, member)
+					r[hash] = (member.levent_constraints, member_name, member)
 				else:
-					for hash,(constraints,function) in r.iteritems():
-						if str(function) == str(member):
+					for hash,(constraints,name,function) in r.iteritems():
+						if name == member_name:
 							log("updating override")
 							#its overriden in a child class
-							r[hash] = (constraints, member)
+							r[hash] = (constraints, name, member)
 							break
 		log("returning "+str(r))
 		return r
 
 	def dispatch_levent(s, e):
 		log('dispatching '+str(e))
-		for constraints, function in s.levent_handlers.itervalues():
+		for constraints, function_name, function in s.levent_handlers.itervalues():
 			log ("for constraint" + str(constraints))
 			if "key" in constraints:
 				if constraints['key'] != e.key:
