@@ -228,6 +228,8 @@ class Node(element.Element):
 
 		yield EndTag()
 
+	def palette(self, scope, text):
+		return []
 
 class Children(dotdict):
 	pass
@@ -912,7 +914,7 @@ class VarRefNodecl(NodeclBase):
 		b['varref'] = self #add me to builtins
 		VarRef.decl = self
 	@topic("varrefs")
-	def palette(self, scope, text):
+	def palette(self, scope, text): #this has to be done differently, dont pass me a scope but a node
 		r = []
 		#log(str(self.vardecls_scope))#should be vardecls_in_scope
 		for x in self.vardecls_scope:
@@ -1095,7 +1097,7 @@ class EnumType(Syntaxed):
 		super(EnumType, self).__init__(kids)
 	def palette(self, scope, text):
 		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
-		print ">",r
+		#print ">",r
 		return r
 	def works_as(self, type):
 		if isinstance(type, Ref):
@@ -1137,6 +1139,11 @@ class Definition(Syntaxed):
 
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
+
+	def palette(self, scope, text):
+		return self.ch.type.palette(scope, text)
+
+
 
 class Union(Syntaxed):
 	def __init__(self, children):
@@ -1506,12 +1513,12 @@ class Compiler(Node):
 				text = self.items[i]
 
 		scope = self.scope()
-		nodecls = [x for x in scope if isinstance(x, (NodeclBase, EnumType))]
+		#nodecls = [x for x in scope if isinstance(x, (NodeclBase, EnumType))]
 		#things a user just cant instantiate
 		for x in ['builtinpythonfunctiondecl', 'builtinfunctiondecl']:
-			if b[x] in nodecls:#with the simplistic "scope" being simply items above us, some Compiler in builtins might not see it
-				nodecls.remove(b[x])
-		menu = flatten([x.palette(scope, text) for x in nodecls])
+			if b[x] in scope :#with the simplistic "scope" being simply items above us, some Compiler in builtins might not see it
+				scope.remove(b[x])
+		menu = flatten([x.palette(scope, text) for x in scope])
 
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
 		#first lets search for things in scope that are already of that type
