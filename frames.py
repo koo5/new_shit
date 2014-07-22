@@ -317,7 +317,7 @@ class Root(Frame):
 		element = self.under_cursor()
 
 		#new style handlers
-		if element.dispatch_event(e):
+		if element.dispatch_levent(event):
 			return True
 
 		while element != None and not element.on_keypress(event):

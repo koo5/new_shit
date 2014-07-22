@@ -13,12 +13,12 @@ class topic(object):
 		s.topic = topic
 	def __call__(s, function_with_decorator):
 		"""not actually called at call time. welcome to python."""
-		def wrapper(*vargs):
+		def topic_wrapper(*vargs, **kwargs):
 			topics.append(s.topic)
-			result = function_with_decorator(*vargs)
+			result = function_with_decorator(*vargs, **kwargs)
 			topics.pop()
 			return result
-		return wrapper
+		return topic_wrapper
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 

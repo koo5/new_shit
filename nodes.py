@@ -190,7 +190,7 @@ class Node(element.Element):
 			return True
 
 	#@LEvent(mod=pygame.KMOD_CTRL, key=pygame.K_DELETE)
-	@LEvent(ieie=pygame.K_DELETE)
+	@LEvent(key=pygame.K_DELETE, mod=pygame.KMOD_CTRL)
 	def delete_self(self):
 		self.parent.delete_child(self)
 
@@ -908,7 +908,7 @@ class VarRefNodecl(NodeclBase):
 	@topic("varrefs")
 	def palette(self, scope, text):
 		r = []
-		log(str(self.vardecls_scope))#should be vardecls_in_scope
+		#log(str(self.vardecls_scope))#should be vardecls_in_scope
 		for x in self.vardecls_scope:
 			assert isinstance(x, (UntypedVar, TypedArgument))
 			r += [CompilerMenuItem(VarRef(x))]

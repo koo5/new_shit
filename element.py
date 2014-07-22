@@ -4,6 +4,7 @@ import event #event module from pyglet, used to pass events from widgets to pare
 import input #lemon's input event decorator
 from logger import log, ping
 import tags
+import pygame
 
 class Element(event.EventDispatcher):
 	def __init__(self):
@@ -12,35 +13,54 @@ class Element(event.EventDispatcher):
 		self.brackets = ('<','>')
 		self._render_lines = {}
 		self.levent_handlers = self.find_levent_handlers()
+		log("eee"+str(self.levent_handlers))
 
 	def find_levent_handlers(s):
 		r = {}
-		for cls in type(s).mro():
-			for member in cls.__dict__:
+		mro = type(s).mro()
+		mro = reversed(mro)
+		for cls in mro:
+			#log(cls)
+			for member in cls.__dict__.itervalues():
+				if str(member) == "delete_self":
+					log ("!!!" + str(member))
 				if hasattr(member, "levent_constraints"):
+					log("handler found:" + str(member))
 					#dicts arent hashable, so lets convert the constraints dict to tuple and save the dict in value
 					r[tuple(member.levent_constraints.iteritems())] = (
-						member.levent_constraints, member)
+						member.levent_constraints, member.__name__)
+		log("returning "+str(r))
 		return r
 
 	def dispatch_levent(s, e):
-
-		for constraints, function in element.levent_handlers:
+		log('dispatching '+str(e))
+		for constraints, function in s.levent_handlers.itervalues():
+			log ("for constraint" + str(constraints))
 			if "key" in constraints:
-				if constraints['key'] != event.key:
+				if constraints['key'] != e.key:
+					log ("key doesnt match")
 					continue
 
 			if not "mod" in constraints:
-				mods = 0
+				cmods = 0
 			else:
-				mods = constraints['mod']
+				cmods = constraints['mod']
 
-			if (mods & event.mod != mods) or (event.mod & input.known_mods != mod):
-				continue
+			emods = e.mod
 
-			#got here? the handler matches
-			if function(s) != False:
+			if cmods & pygame.KMOD_CTRL:
+				if not emods & pygame.KMOD_CTRL:
+					continue
+			else:
+				if emods & pygame.KMOD_CTRL:
+					continue
+
+			log(str(function) + 'matches')
+			if getattr(s, function)() != False:
+				log('success')
 				return True
+			else:
+				log('failed')
 
 
 	def on_keypress(self, event):
