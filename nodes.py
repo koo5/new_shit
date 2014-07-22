@@ -33,7 +33,7 @@ import tags
 #better would be ch, wi, te, ?
 from tags import ChildTag, ElementTag, WidgetTag, AttTag, TextTag, ColorTag, EndTag, IndentTag, DedentTag, NewlineTag, ArrowTag   #, MenuTag
 
-from input import LEvent
+from input import levent
 
 # this block is for assert
 import tags as asstags
@@ -189,8 +189,8 @@ class Node(element.Element):
 			self.eval()
 			return True
 
-	#@LEvent(mod=pygame.KMOD_CTRL, key=pygame.K_DELETE)
-	@LEvent(key=pygame.K_DELETE, mod=pygame.KMOD_CTRL)
+	@topic("delete_self")
+	@levent(mod=pygame.KMOD_CTRL, key=pygame.K_DELETE)
 	def delete_self(self):
 		self.parent.delete_child(self)
 

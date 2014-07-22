@@ -7,18 +7,16 @@ from inspect import *
 
 topics = ["?"]
 
-class topic(object):
+def topic(text):
 	"""decorator"""
-	def __init__(s, topic):
-		s.topic = topic
-	def __call__(s, function_with_decorator):
-		"""not actually called at call time. welcome to python."""
-		def topic_wrapper(*vargs, **kwargs):
-			topics.append(s.topic)
+	def decorator_inner_crap(function_with_decorator):
+		def wrapped_function(*vargs, **kwargs):
+			topics.append(text)
 			result = function_with_decorator(*vargs, **kwargs)
 			topics.pop()
 			return result
-		return topic_wrapper
+		return wrapped_function
+	return decorator_inner_crap
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 

@@ -27,8 +27,15 @@ class Element(event.EventDispatcher):
 				if hasattr(member, "levent_constraints"):
 					log("handler found:" + str(member))
 					#dicts arent hashable, so lets convert the constraints dict to tuple and save the dict in value
-					r[tuple(member.levent_constraints.iteritems())] = (
-						member.levent_constraints, member.__name__)
+					hash = tuple(member.levent_constraints.iteritems())
+					r[hash] = (member.levent_constraints, member)
+				else:
+					for hash,(constraints,function) in r.iteritems():
+						if str(function) == str(member):
+							log("updating override")
+							#its overriden in a child class
+							r[hash] = (constraints, member)
+							break
 		log("returning "+str(r))
 		return r
 
@@ -56,7 +63,7 @@ class Element(event.EventDispatcher):
 					continue
 
 			log(str(function) + 'matches')
-			if getattr(s, function)() != False:
+			if function(s) != False:
 				log('success')
 				return True
 			else:
