@@ -251,7 +251,7 @@ class Syntaxed(Node):
 			self.set_child(k, kids[k])
 
 		self.ch._lock()
-		self.__setattr__ = self.lockeddown_setattr #must be somewhere in child class
+		self.lock()
 
 	def fix_parents(self):
 		self._fix_parents(self.ch._dict.values())
@@ -561,7 +561,10 @@ class List(Collapsible):
 	def fresh(cls, decl):
 		r = cls()
 		r.decl = decl
-		r.newline()
+		try:
+			r.newline()
+		except NameError as e:
+			pass#hack to allow calling fresh before Compiler was defined
 		return r
 
 	def delete_child(s, ch):
@@ -1172,11 +1175,10 @@ SyntaxedNodecl(EnumType,
 
 Definition({'name': Text("bool"), 'type': EnumType({
 	'name': Text("bool"),
-	'options':b['list'].make_type({'itemtype': Ref(b['text'])})
-})})
+	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
 tmp = [Text('false'), Text('true')]
 tmp2 = b['bool'].ch.type.ch.options
-tmp2.i11tems = tmp
+tmp2.items = tmp
 
 
 #Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
@@ -1775,6 +1777,8 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	"""lemon internal builtin function,
 	leaves type-checking to the function"""
 	def __init__(self, kids):
+		self._name = 777
+		self.fun = 777
 		super(BuiltinFunctionDecl, self).__init__(kids)
 
 	@staticmethod
@@ -1912,6 +1916,11 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	
 	this is just a step from user-addable python function
 	"""
+	def __init__(self, kids):
+		self.ret= 777
+		self.note = 777
+		super(BuiltinPythonFunctionDecl, self).__init__(kids)
+
 	@staticmethod
 	#todo:refactor to BuiltinFunctionDecl.create
 	def create(fun, sig, ret, name, note):

@@ -9,6 +9,8 @@ import pygame
 class Element(event.EventDispatcher):
 	def __init__(self):
 		super(Element, self).__init__()
+		if not hasattr(self, "parent"):#probably not needed
+			self.parent = 666
 		self.brackets_color = (200,0,0)
 		self.brackets = ('<','>')
 		self._render_lines = {}
@@ -16,12 +18,13 @@ class Element(event.EventDispatcher):
 		log("eee"+str(self.levent_handlers))
 
 	def lock(s):	#called somewhere in child class
-		s.__setattr__ = s.lockeddown_setattr
-		s.bananana = True
+		s._locked = True
+		#s.bananana = True
 
-	def lockeddown_setattr(self, k, v):
-		self.__getattribute__(k)
-		self.k = v
+	def __setattr__(s, k, v):
+		if hasattr(s, "_locked"):
+			s.__getattribute__(k)#we are lockd, try if it exists
+		object.__setattr__(s, k, v)
 
 	def find_levent_handlers(s):
 		r = {}
