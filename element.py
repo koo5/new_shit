@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import event
+import event #event module from pyglet, used to pass events from widgets to parent nodes
+import input #lemon's input event decorator
 from logger import log, ping
 import tags
 
@@ -10,6 +11,37 @@ class Element(event.EventDispatcher):
 		self.brackets_color = (200,0,0)
 		self.brackets = ('<','>')
 		self._render_lines = {}
+		self.levent_handlers = self.find_levent_handlers()
+
+	def find_levent_handlers(s):
+		r = {}
+		for cls in type(s).mro():
+			for member in cls.__dict__:
+				if hasattr(member, "levent_constraints"):
+					#dicts arent hashable, so lets convert the constraints dict to tuple and save the dict in value
+					r[tuple(member.levent_constraints.iteritems())] = (
+						member.levent_constraints, member)
+		return r
+
+	def dispatch_levent(s, e):
+
+		for constraints, function in element.levent_handlers:
+			if "key" in constraints:
+				if constraints['key'] != event.key:
+					continue
+
+			if not "mod" in constraints:
+				mods = 0
+			else:
+				mods = constraints['mod']
+
+			if (mods & event.mod != mods) or (event.mod & input.known_mods != mod):
+				continue
+
+			#got here? the handler matches
+			if function(s) != False:
+				return True
+
 
 	def on_keypress(self, event):
 #		ping()

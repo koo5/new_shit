@@ -33,6 +33,8 @@ import tags
 #better would be ch, wi, te, ?
 from tags import ChildTag, ElementTag, WidgetTag, AttTag, TextTag, ColorTag, EndTag, IndentTag, DedentTag, NewlineTag, ArrowTag   #, MenuTag
 
+from input import LEvent
+
 # this block is for assert
 import tags as asstags
 asstags.asselement = element
@@ -182,19 +184,13 @@ class Node(element.Element):
 	def fresh(cls):
 		return cls()
 
-	@classmethod
-	def cls_palette(cls, scope):
-		"generate menu item(s) with node(s) of this class"
-		return []
-
 	def on_keypress(self, e):
-		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
-			self.delete_self()
-			return True
 		if e.key == pygame.K_F7:
 			self.eval()
 			return True
 
+	#@LEvent(mod=pygame.KMOD_CTRL, key=pygame.K_DELETE)
+	@LEvent(ieie=pygame.K_DELETE)
 	def delete_self(self):
 		self.parent.delete_child(self)
 
@@ -880,8 +876,7 @@ class NodeclBase(Node):
 		return self.instance_class.fresh()
 
 	def palette(self, scope, text):
-			return [CompilerMenuItem(self.instance_class.fresh())] + \
-				   self.instance_class.cls_palette(scope)
+			return [CompilerMenuItem(self.instance_class.fresh())]
 
 	def works_as(self, type):
 		if isinstance(type, Ref):
@@ -1550,7 +1545,7 @@ class Compiler(Node):
 		menu.sort(key=lambda i: i.score)
 
 		#print ('MENU FOR:',text,"type:",self.type)*100
-		[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
+		#[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
 
 		menu.append(DefaultCompilerMenuItem(text))
 		menu.reverse()#umm...
@@ -1817,7 +1812,7 @@ class FunctionCall(Node):
 		super(FunctionCall, self).__init__()
 		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
-		print self.target.arg_types
+		#print self.target.arg_types
 		for i in self.target.arg_types:
 			assert not isinstance(i, Compiler), "%s to target %s is a dumbo" % (self, self.target)
 		self.args = [Compiler(v) for v in self.target.arg_types] #this should go to fresh()

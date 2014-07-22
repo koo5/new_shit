@@ -5,7 +5,7 @@ from inspect import *
 
 #stickittothemain: todo: lets do the verbosity level thing or rather topics? and argument --log-events?
 
-topics = [""]
+topics = ["?"]
 
 class topic(object):
 	"""decorator"""
@@ -19,12 +19,6 @@ class topic(object):
 			topics.pop()
 			return result
 		return wrapper
-
-@topic("banana")
-def dadada(xxx):
-	print xxx
-
-dadada(3343)
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
@@ -44,7 +38,7 @@ def ping(level = 1):
 
 def log(x):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
-	logging.debug(topics[-1]+(": " if len(topics)>1 else "")+str(x))
+	logging.debug(topics[-1]+(": ")+str(x)) # if len(topics)>1 else ""
 
 def plog(*args):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
@@ -58,8 +52,16 @@ def plog(*args):
 #	try:
 
 """
+@topic("banana")
+def dadada(xxx):
+	log(xxx)
+dadada(3343)
+"""
+
+"""
 todo:
 tlog(topic, stuff...) - override/one-shot topic
 
 i guess the whole topics thing should have python logging handlers as backend
 """
+

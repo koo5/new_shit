@@ -315,6 +315,11 @@ class Root(Frame):
 				log("handled by root frame")
 			return True
 		element = self.under_cursor()
+
+		#new style handlers
+		if element.dispatch_event(e):
+			return True
+
 		while element != None and not element.on_keypress(event):
 			element = element.parent
 		if element != None:#some element handled it
