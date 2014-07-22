@@ -15,6 +15,14 @@ class Element(event.EventDispatcher):
 		self.levent_handlers = self.find_levent_handlers()
 		log("eee"+str(self.levent_handlers))
 
+	def lock(s):	#called somewhere in child class
+		s.__setattr__ = s.lockeddown_setattr
+		s.bananana = True
+
+	def lockeddown_setattr(self, k, v):
+		self.__getattribute__(k)
+		self.k = v
+
 	def find_levent_handlers(s):
 		r = {}
 		mro = type(s).mro()

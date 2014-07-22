@@ -250,6 +250,9 @@ class Syntaxed(Node):
 		for k in self.slots.iterkeys():
 			self.set_child(k, kids[k])
 
+		self.ch._lock()
+		self.__setattr__ = self.lockeddown_setattr #must be somewhere in child class
+
 	def fix_parents(self):
 		self._fix_parents(self.ch._dict.values())
 
@@ -988,6 +991,7 @@ class ParametricType(Syntaxed):
 	def __init__(self, kids, decl):
 		self.decl = decl
 		super(ParametricType, self).__init__(kids)
+		self.lock()
 
 	@property
 	def slots(self):
@@ -1163,8 +1167,17 @@ WorksAs.b("dict", "expression")
 
 SyntaxedNodecl(EnumType,
 			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
-			   {'name': b['text'],
+			   {'name': 'text',
 			   'options': list_of('text')})
+
+Definition({'name': Text("bool"), 'type': EnumType({
+	'name': Text("bool"),
+	'options':b['list'].make_type({'itemtype': Ref(b['text'])})
+})})
+tmp = [Text('false'), Text('true')]
+tmp2 = b['bool'].ch.type.ch.options
+tmp2.i11tems = tmp
+
 
 #Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
