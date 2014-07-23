@@ -76,8 +76,8 @@ def project(root, cols, frame, rows_limit = False):
 	_project_elem(p, root)
 	return p
 
-def project_tags(tags, cols, frame):
-	p = new_p(cols, frame, False)
+def project_tags(tags, cols, frame, rows_limit = False):
+	p = new_p(cols, frame, rows_limit)
 	p._render_lines = {frame:[{}]}
 	_project_tags(p, p, tags)
 	return p
