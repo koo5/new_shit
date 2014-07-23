@@ -19,6 +19,11 @@ class Frame(object):
 #	def on_keypress(self, e):
 #	def draw(self):
 
+	def __init__(s):
+		s.rect = pygame.Rect((6,6,6,6))
+		s.lines = []
+		s.scroll_lines = 0
+
 	def draw(self):
 		surface = pygame.Surface((self.rect.w, self.rect.h), 0)#, pygame.display.get_surface())
 		if colors.bg != (0,0,0):
@@ -49,14 +54,17 @@ class Frame(object):
 		except:
 			return None
 
+	def click(s,e,pos):
+		cr = xy2cr(pos) #cursor column, row
+		n = s.under_cr(cr)
+		if log_events:
+			log(str(e) + " on " + str(n))
+		if not n or not n.on_mouse_press(e.button):
+			s.cursor_c, s.cursor_r = cr
+
 	def mousedown(s,e,pos):
 		if e.button == 1:
-			cr = xy2cr(pos) #cursor column, row
-			n = s.under_cr(cr)
-			if log_events:
-				log(str(e) + " on " + str(n))
-			if not n or not n.on_mouse_press(e.button):
-				s.cursor_c, s.cursor_r = cr
+			s.click(e,pos)
 		elif e.button == 4:
 			s.scroll(-1)
 		elif e.button == 5:
@@ -66,15 +74,6 @@ class Frame(object):
 		s.scroll_lines += l
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
-
-
-	def __init__(s):
-		s.rect = pygame.Rect((6,6,6,6))
-		s.lines = []
-
-	@property
-	def items_on_screen(s):
-		return s.items[s.scroll:s.scroll + s.rows]
 
 	@property
 	def rows(self):
@@ -98,7 +97,6 @@ class Root(Frame):
 		self.cursor_c = self.cursor_r = 0
 		self.root = nodes.make_root()
 		self.root.fix_parents()
-		self.scroll_lines = 0
 		self.arrows_visible = True
 		self.cursor_blink_phase = True
 		
@@ -352,10 +350,10 @@ class Root(Frame):
 class Menu(Frame):
 	def __init__(s):
 		super(Menu, s).__init__()
-		s.scroll = 0
 		s.sel = 0
 		s._items = []
 		s.valid_only = False
+		s._render_lines = {}#hack
 
 	@property
 	def items(self):
@@ -381,9 +379,19 @@ class Menu(Frame):
 		s.rects = dict()
 		for i in s.items_on_screen:
 			rl = i._render_lines[s]
-			startline = rl["startline"]
-			endline = rl["endline"]
+
+			startline = rl["startline"] - s.scroll_lines if "startline" in rl else 0
+			endline = rl["endline"]  - s.scroll_lines if "endline" in rl else s.rows
+
+			if endline < 0 or startline > s.rows:
+				continue
+			if startline < 0:
+				startline = 0
+			if endline > s.rows - 1:
+				endline = s.rows - 1
+
 			startchar = 0
+			print startline, endline+1
 			endchar = max([len(l) for l in s.lines[startline:endline+1]])
 			r = pygame.Rect(startchar * font_width,
 			                startline * font_height,
@@ -399,13 +407,18 @@ class Menu(Frame):
 				c = colors.menu_rect
 			draw.rect(surface, c, r, 1)
 
+	def tags(s):
+		s.items_on_screen = []
+		yield ColorTag("fg")
+		for i in s.items:
+			s.items_on_screen.append(i)
+			yield [ElementTag(i), "\n"]
+		yield EndTag()
+
 	def render(s, root):
 		s.generate_palette(root)
-		r = [ColorTag("fg")]
-		for i in s.items_on_screen:
-			r += [ElementTag(i), "\n"]
-		r += [EndTag()]
-		s.lines = project.project_tags(r, s.cols, s).lines
+		s.lines = project.project(s,
+		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:]
 		s.generate_rects()
 
 	def generate_palette(s,root):
@@ -432,7 +445,7 @@ class Menu(Frame):
 		if e.key == pygame.K_SPACE:
 			return self.accept()
 
-	def mousedown(s,e,pos):
+	def click(s,e,pos):
 		for i,r in s.rects.iteritems():
 			if r.collidepoint(pos):
 				s.sel = s.items_on_screen.index(i)
