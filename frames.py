@@ -1,5 +1,6 @@
 import pygame
 from pygame import draw
+from math import *
 
 from colors import color, colors
 import project
@@ -49,12 +50,22 @@ class Frame(object):
 			return None
 
 	def mousedown(s,e,pos):
-		cr = xy2cr(pos) #cursor column, row
-		n = s.under_cr(cr)
-		if log_events:
-			log(str(e) + " on " + str(n))
-		if not n or not n.on_mouse_press(e.button):
-			s.cursor_c, s.cursor_r = cr
+		if e.button == 1:
+			cr = xy2cr(pos) #cursor column, row
+			n = s.under_cr(cr)
+			if log_events:
+				log(str(e) + " on " + str(n))
+			if not n or not n.on_mouse_press(e.button):
+				s.cursor_c, s.cursor_r = cr
+		elif e.button == 4:
+			s.scroll(-1)
+		elif e.button == 5:
+			s.scroll(1)
+
+	def scroll(s,l):
+		s.scroll_lines += l
+		if s.scroll_lines < 0:
+			s.scroll_lines = 0
 
 
 	def __init__(s):
@@ -64,14 +75,6 @@ class Frame(object):
 	@property
 	def items_on_screen(s):
 		return s.items[s.scroll:s.scroll + s.rows]
-
-	#todo: should be used only in menu now
-	def render(s):
-		r = [ColorTag("fg")]
-		for i in s.items_on_screen:
-			r += [ElementTag(i), "\n"]
-		r += [EndTag()]
-		s.lines = project.project_tags(r, s.cols, s).lines
 
 	@property
 	def rows(self):
@@ -183,7 +186,7 @@ class Root(Frame):
 		for a in arrows:
 			target = project.find(a[2], self.lines)
 			if target:
-				r.append(((a[0],a[1]),target))
+				r.append(((a[0],a[1] - self.scroll_lines),target))
 		return r
 
 	def draw_arrows(s, surface):
@@ -192,6 +195,15 @@ class Root(Frame):
 			#print c,r,c2,r2
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
 			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
+			mmm = 20
+			aaa = 0.2
+			a = \
+				atan2(y-y2, x-x2)
+			ll = mmm * cos(a+aaa) + x2, mmm * sin(a+aaa) + y2
+			pygame.draw.line(surface, color("arrow"), ll,(x2,y2))
+			ll = mmm * cos(a-aaa) + x2, mmm * sin(a-aaa) + y2
+			pygame.draw.line(surface, color("arrow"), ll,(x2,y2))
+
 
 	def _draw(self, surf):
 		self.draw_arrows(surf)
@@ -273,14 +285,15 @@ class Root(Frame):
 					if isinstance(item, nodes.Syntaxed):
 						item.view_normalized = not item.view_normalized
 			el"""
-			if k == pygame.K_F8:
-				s.toggle_arrows()
-			elif k == pygame.K_F4:
+
+			if k == pygame.K_F4:
 				s.clear()
 			elif k == pygame.K_F5:
 				s.run()
 			elif k == pygame.K_F6:
 				s.run_line()
+			elif k == pygame.K_F8:
+				s.toggle_arrows()
 			elif k == pygame.K_UP:
 				s.move_cursor_v(-1)
 				s.and_sides(event)
@@ -315,6 +328,11 @@ class Root(Frame):
 				log("handled by root frame")
 			return True
 		element = self.under_cursor()
+
+		#new style handlers
+		if element != None and element.dispatch_levent(event):
+			return True
+
 		while element != None and not element.on_keypress(event):
 			element = element.parent
 		if element != None:#some element handled it
@@ -383,7 +401,11 @@ class Menu(Frame):
 
 	def render(s, root):
 		s.generate_palette(root)
-		super(Menu, s).render()
+		r = [ColorTag("fg")]
+		for i in s.items_on_screen:
+			r += [ElementTag(i), "\n"]
+		r += [EndTag()]
+		s.lines = project.project_tags(r, s.cols, s).lines
 		s.generate_rects()
 
 	def generate_palette(s,root):

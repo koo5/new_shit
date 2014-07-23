@@ -1,1 +1,3 @@
-grep -n print *py | grep -v "#"
+#!/usr/bin/env bash
+grep -n print $@ | grep -v "#"
+

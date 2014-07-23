@@ -5,26 +5,20 @@ from inspect import *
 
 #stickittothemain: todo: lets do the verbosity level thing or rather topics? and argument --log-events?
 
-topics = [""]
+topics = ["?"]
 
-class topic(object):
+def topic(text):
 	"""decorator"""
-	def __init__(s, topic):
-		s.topic = topic
-	def __call__(s, function_with_decorator):
-		"""not actually called at call time. welcome to python."""
-		def wrapper(*vargs):
-			topics.append(s.topic)
-			result = function_with_decorator(*vargs)
+	def decorator_inner_crap(function_with_decorator):
+		def wrapped_function(*vargs, **kwargs):
+			topics.append(text)
+			result = function_with_decorator(*vargs, **kwargs)
 			topics.pop()
 			return result
-		return wrapper
-
-@topic("banana")
-def dadada(xxx):
-	print xxx
-
-dadada(3343)
+		if hasattr(function_with_decorator, "levent_constraints"):
+			wrapped_function.levent_constraints = function_with_decorator.levent_constraints
+		return wrapped_function
+	return decorator_inner_crap
 
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
@@ -44,7 +38,7 @@ def ping(level = 1):
 
 def log(x):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
-	logging.debug(topics[-1]+(": " if len(topics)>1 else "")+str(x))
+	logging.debug(topics[-1]+(": ")+str(x)) # if len(topics)>1 else ""
 
 def plog(*args):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
@@ -58,8 +52,16 @@ def plog(*args):
 #	try:
 
 """
+@topic("banana")
+def dadada(xxx):
+	log(xxx)
+dadada(3343)
+"""
+
+"""
 todo:
 tlog(topic, stuff...) - override/one-shot topic
 
 i guess the whole topics thing should have python logging handlers as backend
 """
+
