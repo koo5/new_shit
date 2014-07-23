@@ -3,7 +3,7 @@
 """
 notes on the current state of this constantly changing code:
 i use kids and children interchangeably.
-sometimes, i use s instead of self
+sometimes i use s, sometimes self.
 
 creation of new nodes. 
 __init__ usually takes children or value as arguments.

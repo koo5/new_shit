@@ -104,7 +104,8 @@ class Root(Frame):
 		self.root.fix_parents()
 		self.arrows_visible = True
 		self.cursor_blink_phase = True
-		
+		self.menu_dirty = True
+
 	def and_sides(s,e):
 		if e.all[pygame.K_LEFT]: s.move_cursor_h(-1)
 		if e.all[pygame.K_RIGHT]: s.move_cursor_h(1)
@@ -356,24 +357,19 @@ class Menu(Frame):
 	def __init__(s):
 		super(Menu, s).__init__()
 		s.sel = 0
-		s._items = []
+		#index to items_on_screen. not ideal.
+		#todo: a separate wishedfor_sel
 		s.valid_only = False
 
 	@property
-	def items(self):
-		return self._items
+	def selected(s):
+		return s.items_on_screen[s.sel]
 
-	@property
-	def selected(self):
-		return self.items[self.sel]
-
-	@items.setter
-	def items(self, value):
-		if self.sel > len(value) - 1:
-			self.sel = len(value) - 1 #todo: a separate wishedfor_sel
-		if self.sel < 0:
-			self.sel = 0
-		self._items = value
+	def clamp_sel(s):
+		if s.sel >= len(s.items_on_screen):
+			s.sel = len(s.items_on_screen) - 1
+		if s.sel < 0:
+			s.sel = 0
 
 	def _draw(s, surface):
 		s.draw_lines(surface)
@@ -411,31 +407,27 @@ class Menu(Frame):
 				c = colors.menu_rect
 			draw.rect(surface, c, r, 1)
 
+	def render(s, root):
+		s.root_frame = root
+		s.project()
+		s.clamp_sel()
+		s.generate_rects()
+
 	def tags(s):
 		s.items_on_screen = []
 		yield ColorTag("fg")
-		for i in s.items:
+		for i in s.generate_palette():
 			s.items_on_screen.append(i)
 			yield [ElementTag(i), "\n"]
 		yield EndTag()
 
-	def render(s, root):
-		s.generate_palette(root)
-		s.project()
-		s.generate_rects()
-
-	def generate_palette(s,root):
-		e = root.under_cursor()
-		atts = root.atts
-		s.element = e
-		new_items = []
-		while e != None:
-			new_items += e.menu(atts)
-			e = e.parent
-		if s.valid_only:
-			new_items = [x for x in new_items if x.valid]
-		s.items = new_items
-
+	def generate_palette(s):
+		e = s.root_frame.under_cursor()
+		atts = s.root_frame.atts
+		if e != None:
+			for i in e.menu(atts):
+				if not s.valid_only or i.valid:
+					yield i
 
 	def on_keypress(self, e):
 		if e.mod & pygame.KMOD_CTRL:
