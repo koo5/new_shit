@@ -14,7 +14,8 @@ class Element(event.EventDispatcher):
 		self.brackets_color = (200,0,0)
 		self.brackets = ('<','>')
 		self._render_lines = {}
-		self.levent_handlers = self.find_levent_handlers()
+		if not hasattr(self, "levent_handlers"):
+			self.__class__.levent_handlers = self.find_levent_handlers()
 		log("eee"+str(self.levent_handlers))
 
 	def lock(s):	#called somewhere in child class
@@ -26,18 +27,19 @@ class Element(event.EventDispatcher):
 			s.__getattribute__(k)#we are lockd, try if it exists
 		object.__setattr__(s, k, v)
 
-	def find_levent_handlers(s):
+	@classmethod
+	def find_levent_handlers(cls):
 		r = {}
-		mro = type(s).mro()
+		mro = cls.mro()
 		mro = reversed(mro)
-		for cls in mro:
+		for c in mro:
 			#log(cls)
-			for member_name, member in cls.__dict__.iteritems():
+			for member_name, member in c.__dict__.iteritems():
 				if member_name == "delete_self":
 					log ("!!!" + str(member))
 				if hasattr(member, "levent_constraints"):
 					log("handler found:" + str(member))
-					#dicts arent hashable, so lets convert the constraints dict to tuple and save the dict in value
+					#dicts aren't hashable, so lets convert the constraints dict to tuple and save the dict in value
 					hash = tuple(member.levent_constraints.iteritems())
 					r[hash] = (member.levent_constraints, member_name, member)
 				else:
