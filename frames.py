@@ -268,6 +268,14 @@ class Root(Frame):
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible
 
+	def text_dump(s):
+		f = open("dump.txt", "w")
+		for l in s.lines:
+			for ch in l:
+				f.write(ch[0])
+			f.write("\n")
+		f.close()
+
 	def top_keypress(s, event):
 
 		k = event.key
@@ -281,6 +289,8 @@ class Root(Frame):
 				s.cursor_top()
 			elif k == pygame.K_END:
 				s.cursor_bottom()
+			elif k == pygame.K_d:
+				s.text_dump()
 			elif k == pygame.K_q:
 				#a quit shortcut that goes thru the event pickle/replay mechanism
 				exit()
