@@ -197,15 +197,18 @@ class Root(Frame):
 		for ((c,r),(c2,r2)) in s.arrows:
 			#print c,r,c2,r2
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
-			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
-			mmm = 20
+			#print (x,y),(x2,y2)
+			pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))
 			aaa = 0.2
 			a = \
 				atan2(y-y2, x-x2)
-			ll = mmm * cos(a+aaa) + x2, mmm * sin(a+aaa) + y2
-			pygame.draw.line(surface, color("arrow"), ll,(x2,y2))
-			ll = mmm * cos(a-aaa) + x2, mmm * sin(a-aaa) + y2
-			pygame.draw.line(surface, color("arrow"), ll,(x2,y2))
+			length = 20
+			s.arrow_side(length, a+20, x2,y2, surface)
+			s.arrow_side(length, a-20, x2,y2, surface)
+			
+	def arrow_side(s, length,a,x2,y2, surface):
+			x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
+			pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
 
 
 	def _draw(self, surf):
@@ -395,7 +398,7 @@ class Menu(Frame):
 				endline = s.rows - 1
 
 			startchar = 0
-			print startline, endline+1
+			#print startline, endline+1
 			endchar = max([len(l) for l in s.lines[startline:endline+1]])
 			r = pygame.Rect(startchar * font_width,
 			                startline * font_height,
