@@ -198,15 +198,18 @@ class Root(Frame):
 		for ((c,r),(c2,r2)) in s.arrows:
 			#print c,r,c2,r2
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
-			pygame.draw.line(surface, color("arrow"), (x,y),(x2,y2))
-			mmm = 20
+			#print (x,y),(x2,y2)
+			pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))
 			aaa = 0.2
 			a = \
 				atan2(y-y2, x-x2)
-			ll = mmm * cos(a+aaa) + x2, mmm * sin(a+aaa) + y2
-			pygame.draw.line(surface, color("arrow"), ll,(x2,y2))
-			ll = mmm * cos(a-aaa) + x2, mmm * sin(a-aaa) + y2
-			pygame.draw.line(surface, color("arrow"), ll,(x2,y2))
+			length = 20
+			s.arrow_side(length, a+20, x2,y2, surface)
+			s.arrow_side(length, a-20, x2,y2, surface)
+			
+	def arrow_side(s, length,a,x2,y2, surface):
+			x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
+			pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
 
 
 	def _draw(self, surf):
@@ -391,7 +394,7 @@ class Menu(Frame):
 				endline = s.rows - 1
 
 			startchar = 0
-			print startline, endline+1
+			#print startline, endline+1
 			endchar = max([len(l) for l in s.lines[startline:endline+1]])
 			r = pygame.Rect(startchar * font_width,
 			                startline * font_height,
@@ -422,7 +425,7 @@ class Menu(Frame):
 		yield EndTag()
 
 	def generate_palette(s):
-		e = s.root_frame.under_cursor()
+		e = s.element = s.root_frame.under_cursor()
 		atts = s.root_frame.atts
 		if e != None:
 			for i in e.menu(atts):
@@ -447,18 +450,14 @@ class Menu(Frame):
 				s.accept()
 
 	def accept(self):
-		if (self.sel < len(self.items) and
-				self.element.menu_item_selected(self.items[self.sel], self.root.atts)):
+		if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
 			self.sel = 0
 			return True
 
 
 	def move(self, y):
 		self.sel += y
-		if self.sel < 0: self.sel = 0
-		if self.sel >= len(self.items): self.sel = len(self.items) - 1
-		#print len(self.items), self.sel
-
+		self.clamp_sel()
 
 	def toggle_valid(s):
 		s.valid_only = not s.valid_only
@@ -470,24 +469,23 @@ class Info(Frame):
 		super(Info, s).__init__()
 		#create all infoitems at __init__, makes persistence possible (for visibility state)
 		s.top_info = [InfoItem(i) for i in [
-			"READ THIS FIRST",
-			"hide these items by clicking the gray X next to each",
+			"hide help items by clicking the gray X next to each",
 			"unhide all by clicking the dots",
 			"this stuff will go to a menu but for now..",
 			"ctrl + =,- : font size", 
-			"f9 : only valid items in menu",
-			"f8 : toggle the silly blue lines from Refs to their targets",
+			"f9 : only valid items in menu - doesnt do much atm",
+			"f8 : toggle the silly arrows from Refs to their targets",
 			"f5 : eval",
 			"f4 : clear eval results",
-			"f2 : replay previous session",
+			"f2 : replay previous session keypresses",
 			"ctrl + up, down: menu movement",
 			"space: menu selection",
 			"",
 			"red <>'s enclose nodes or other widgets",
 			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
-			["Compiler looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
+			["{Compiler} looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
 			"(in gray) is the expected type",
-			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"
+
 		]]
 		#,	"f12 : normalize syntaxes"
 		s.hierarchy_infoitem = InfoItem("bla")

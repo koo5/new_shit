@@ -210,7 +210,7 @@ def process_event(event):
 		mousedown(event)
 
 	if event.type == pygame.VIDEORESIZE:
-		resize(event.dict['size'])
+		resize(event.size)
 		render()
 
 	if event.type == pygame.ACTIVEEVENT:

@@ -617,25 +617,33 @@ class Statements(List):
 		return Text("it ran.")
 
 
-class Void(Node):
-	"i dont like it"
+class NoValue(Node):
 	def __init__(self):
-		super(Void, self).__init__()
+		super(NoValue, self).__init__()
 	def render(self):
 		return [TextTag('void')]
 	def to_python_str(self):
-		return "void"
+		return "no value"
 
 class Banana(Node):
-	"""runtime error.
-	and bananas is gonna be a compile error. joking. maybe."""
+	"""runtime error"""
 	def __init__(self, text):
 		super(Banana, self).__init__()
 		self.text = text
 	def render(self):
 		return [TextTag(self.text)]
 	def to_python_str(self):
-		return "banana"
+		return "runtime error"
+
+class Bananas(Node):
+	"""compilation error"""
+	def __init__(self, text):
+		super(Bananas, self).__init__()
+		self.text = text
+	def render(self):
+		return [TextTag(self.text)]
+	def to_python_str(self):
+		return "compilation error"
 
 
 class WidgetedValue(Node):
@@ -643,6 +651,7 @@ class WidgetedValue(Node):
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
 		self.isconst = True#this doesnt propagate to Compiler yet
+		#i guess its waiting for type inference
 
 	@property
 	def pyval(self):
@@ -867,6 +876,11 @@ class NodeclBase(Node):
 		super(NodeclBase, self).__init__()
 		self.instance_class = instance_class
 		self.decl = None
+
+	"""@property
+	def identification(s):
+		return """
+	identification = ['instance_class', 'name', ]
 
 	def render(self):
 		return [TextTag("builtin node:"), TextTag(self.name)]
@@ -1970,19 +1984,21 @@ SyntaxedNodecl(BuiltinPythonFunctionDecl,
 		})
 
 
+
+def num_arg():
+	return TypedArgument({'name':Text("number"), 'type':Ref(b['number'])})
+
+def num_list():
+	return  b["list"].make_type({'itemtype': Ref(b['number'])})
+
+def num_list_arg():
+	return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})
+
+
 def add_operators():
 	#we'll place this somewhere else, but later i guess, splitting this
 	#file into some reasonable modules would still create complications
 	import operator as op
-
-	def num_arg():
-		return TypedArgument({'name':Text("number"), 'type':Ref(b['number'])})
-
-	def num_list():
-		return  b["list"].make_type({'itemtype': Ref(b['number'])})
-
-	def num_list_arg():
-		return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})
 
 
 	def pfn(function, signature, return_type = int, **kwargs):
@@ -2171,7 +2187,7 @@ def make_root():
 	r.add(("builtins", b['module'].inst_fresh()))
 	r["builtins"].ch.statements.items = list(b.itervalues())
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
-	#r["builtins"].ch.statements.expanded = False
+	r["builtins"].ch.statements.view_mode = 0
 	return r
 
 
@@ -2188,5 +2204,8 @@ def to_lemon(x):
 def is_flat(l):
 	return flatten(l) == l
 
-
-#todo: totally custom node
+"""
+#todo: totally custom node:
+we have unevaluated arguments, so a function body can be thought of as a rule for
+evaluating the node. there could be other rules: display, debugging..?..
+"""
