@@ -273,14 +273,15 @@ class Root(Frame):
 					if isinstance(item, nodes.Syntaxed):
 						item.view_normalized = not item.view_normalized
 			el"""
-			if k == pygame.K_F8:
-				s.toggle_arrows()
-			elif k == pygame.K_F4:
+
+			if k == pygame.K_F4:
 				s.clear()
 			elif k == pygame.K_F5:
 				s.run()
 			elif k == pygame.K_F6:
 				s.run_line()
+			elif k == pygame.K_F8:
+				s.toggle_arrows()
 			elif k == pygame.K_UP:
 				s.move_cursor_v(-1)
 				s.and_sides(event)

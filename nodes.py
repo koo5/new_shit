@@ -134,7 +134,7 @@ class Node(element.Element):
 		return r
 
 	@property
-	def vardecls_scope(self):
+	def vardecls_in_scope(self):
 		"""what variable declarations does this node see?"""
 		r = []
 
@@ -144,7 +144,7 @@ class Node(element.Element):
 
 		if self.parent != None:
 			r += self.parent.vardecls
-			r += self.parent.vardecls_scope
+			r += self.parent.vardecls_in_scope
 
 		assert(is_flat(r))
 		return r
@@ -228,7 +228,7 @@ class Node(element.Element):
 
 		yield EndTag()
 
-	def palette(self, scope, text):
+	def palette(self, scope, text, node):
 		return []
 
 class Children(dotdict):
@@ -744,15 +744,15 @@ class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
-		self.post_render_move_caret = 0 #the frontend checks this
-		self.indent_length = 4 #is this even used?
+		self.post_render_move_caret = 0 #the frontend checks this.
+		## The reason is for example a textbox recieves a keyboard event,
+		## appends a character to its contents, and wants to move the cursor,
+		## but before re-rendering, it might move it beyond end of file
+		self.indent_length = 4 #not really used but would be nice to have it variable
 
 	def render(self):
 		#there has to be some default color for everything..
 		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
-
-	def scope(self):#unused(?)
-		return []
 
 	def delete_child(self, child):
 		log("I'm sorry Dave, I'm afraid I can't do that.")
@@ -883,7 +883,7 @@ class NodeclBase(Node):
 		""" fresh creates default children"""
 		return self.instance_class.fresh()
 
-	def palette(self, scope, text):
+	def palette(self, scope, text, node):
 			return [CompilerMenuItem(self.instance_class.fresh())]
 
 	def works_as(self, type):
@@ -904,7 +904,7 @@ class TypeNodecl(NodeclBase):
 		b['type'] = self #add me to builtins
 		Ref.decl = self
 
-	def palette(self, scope, text):
+	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Ref(x)) for x in nodecls]
 
@@ -914,10 +914,9 @@ class VarRefNodecl(NodeclBase):
 		b['varref'] = self #add me to builtins
 		VarRef.decl = self
 	@topic("varrefs")
-	def palette(self, scope, text): #this has to be done differently, dont pass me a scope but a node
+	def palette(self, scope, text, node):
 		r = []
-		#log(str(self.vardecls_scope))#should be vardecls_in_scope
-		for x in self.vardecls_scope:
+		for x in node.vardecls_in_scope:
 			assert isinstance(x, (UntypedVar, TypedArgument))
 			r += [CompilerMenuItem(VarRef(x))]
 		return r
@@ -940,7 +939,7 @@ class ExpNodecl(NodeclBase):
 		super(ExpNodecl, self).__init__(Exp)
 		b['exp'] = self #add me to builtins
 		Exp.decl = self
-	def palette(self, scope, text):
+	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Exp(x)) for x in nodecls]
 
@@ -952,7 +951,7 @@ class Nodecl(NodeclBase):
 		b[self.name] = self
 		instance_class.name = self.name
 
-	def palette(self, scope, text):
+	def palette(self, scope, text, node):
 		i = self.instance_class
 		m = i.match(text)
 		if m:
@@ -1045,7 +1044,7 @@ class ParametricNodecl(NodeclBase):
 	def make_type(self, kids):
 		return ParametricType(kids, self)
 
-	def palette(self, scope, text):
+	def palette(self, scope, text, node):
 		return [CompilerMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
 	#if there is only one possible node type to instantiate..
@@ -1095,7 +1094,7 @@ class EnumType(Syntaxed):
 	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
 	def __init__(self, kids):
 		super(EnumType, self).__init__(kids)
-	def palette(self, scope, text):
+	def palette(self, scope, text, node):
 		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
 		#print ">",r
 		return r
@@ -1140,8 +1139,8 @@ class Definition(Syntaxed):
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
 
-	def palette(self, scope, text):
-		return self.ch.type.palette(scope, text)
+	def palette(self, scope, text, node):
+		return self.ch.type.palette(scope, text, None)
 
 
 
@@ -1513,12 +1512,7 @@ class Compiler(Node):
 				text = self.items[i]
 
 		scope = self.scope()
-		#nodecls = [x for x in scope if isinstance(x, (NodeclBase, EnumType))]
-		#things a user just cant instantiate
-		for x in ['builtinpythonfunctiondecl', 'builtinfunctiondecl']:
-			if b[x] in scope :#with the simplistic "scope" being simply items above us, some Compiler in builtins might not see it
-				scope.remove(b[x])
-		menu = flatten([x.palette(scope, text) for x in scope])
+		menu = flatten([x.palette(scope, text, self) for x in scope])
 
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
 		#first lets search for things in scope that are already of that type
@@ -1809,6 +1803,8 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def name(s):
 		return s._name
 
+	def palette(self, scope, text, node):
+		return []
 
 #user cant instantiate it, but we make a decl anyway,
 #because we need to display it, its in builtins,
@@ -1888,7 +1884,7 @@ class FunctionCallNodecl(NodeclBase):
 		super(FunctionCallNodecl, self).__init__(Ref)
 		b['call'] = self
 		FunctionCall.decl = self
-	def palette(self, scope, text):
+	def palette(self, scope, text, node):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
 		return [CompilerMenuItem(FunctionCall(x)) for x in decls]
 
@@ -1957,6 +1953,10 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		lemon_result.pyval = python_result #todo implement pyval assignments
 		return lemon_result
 
+	def palette(self, scope, text, node):
+		return []
+
+
 SyntaxedNodecl(BuiltinPythonFunctionDecl,
 		[
 		TextTag("builtin python function"), ChildTag("name"), 
@@ -1968,7 +1968,6 @@ SyntaxedNodecl(BuiltinPythonFunctionDecl,
 		"ret": b['type'],
 		'name': b['text']
 		})
-
 
 
 def add_operators():
