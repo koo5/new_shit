@@ -12,7 +12,7 @@ from logger import log
 
 font = font_height = font_width = 666
 
-
+#gotta refactor stuff common to Menu and Info to some SimpleFrame or something
 
 class Frame(object):
 #	def on_mouse_press(self, e):
@@ -23,6 +23,11 @@ class Frame(object):
 		s.rect = pygame.Rect((6,6,6,6))
 		s.lines = []
 		s.scroll_lines = 0
+		s._render_lines = {}#hack
+
+	def project(s):
+		s.lines = project.project(s,
+		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:]
 
 	def draw(self):
 		surface = pygame.Surface((self.rect.w, self.rect.h), 0)#, pygame.display.get_surface())
@@ -353,7 +358,6 @@ class Menu(Frame):
 		s.sel = 0
 		s._items = []
 		s.valid_only = False
-		s._render_lines = {}#hack
 
 	@property
 	def items(self):
@@ -417,8 +421,7 @@ class Menu(Frame):
 
 	def render(s, root):
 		s.generate_palette(root)
-		s.lines = project.project(s,
-		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:]
+		s.project()
 		s.generate_rects()
 
 	def generate_palette(s,root):
@@ -519,14 +522,16 @@ class Info(Frame):
 
 		s.items += s.top_info[:]
 
-	def render(s):
-		s.update()
-		r = [ColorTag("help"), TextTag("help:  "), ElementTag(s.hidden_toggle), "\n"]
+	def tags(s):
+		yield [ColorTag("help"), TextTag("help:  "), ElementTag(s.hidden_toggle), "\n"]
 		for i in s.items:
 			if not s.hidden_toggle.value or i.visibility_toggle.value:
-				r += [ElementTag(i), "\n"]
-		r += [EndTag()]
-		s.lines = project.project_tags(r, s.cols, s).lines
+				yield [ElementTag(i), "\n"]
+		yield [EndTag()]
+
+	def render(s):
+		s.update()
+		s.project()
 
 	def _draw(s, surface):
 		s.draw_lines(surface)
