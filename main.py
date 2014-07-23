@@ -41,7 +41,7 @@ def parse_args():
 
 args = parse_args()
 colors.cache(args)
-
+small_help = True
 
 def change_font_size(by = 0):
 	args.font_size += by
@@ -51,14 +51,14 @@ def change_font_size(by = 0):
 
 
 def resize(size):
-	global screen_surface, screen_width, screen_height, info_height_max
+	global screen_surface, screen_width, screen_height
 	log("resize to "+str(size))
 	screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
-	info_height_max = screen_height / 2
 	resize_frames()
 
 def resize_frames():
+	info_height_max = screen_height / (10 if small_help else 2)
 	root.rect.topleft = (0,0)
 	root.rect.width = screen_width / 3 * 2
 	root.rect.height = screen_height
@@ -70,7 +70,7 @@ def resize_frames():
 
 
 def top_keypress(event):
-	global cursor_r,cursor_c, info_height_max
+	global cursor_r,cursor_c, small_help
 	k = event.key
 
 	if pygame.KMOD_CTRL & event.mod:
@@ -84,7 +84,7 @@ def top_keypress(event):
 		if k == pygame.K_ESCAPE:
 			bye()
 		elif k == pygame.K_F1:
-			info_height_max = screen_height / 10
+			small_help = not small_help
 		else:
 			return False
 	return True

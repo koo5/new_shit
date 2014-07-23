@@ -752,7 +752,7 @@ class Root(Dict):
 
 	def render(self):
 		#there has to be some default color for everything..
-		return [ColorTag((255,255,255,255))] + self.render_items() + [EndTag()]
+		return [ColorTag("fg")] + self.render_items() + [EndTag()]
 
 	def delete_child(self, child):
 		log("I'm sorry Dave, I'm afraid I can't do that.")
