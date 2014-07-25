@@ -1,0 +1,82 @@
+currently F8 switches between arrows and highlighting (technical issue with drawing). With arrows disabled, 
+the background of the node in cursor will be dark red.
+#writing context sensitive help and then dumping it is just...hmm#nvm#if i wasnt putting off integrating a widget toolkit,
+the context sensitive thing would work. all the global keys would be in a menu.
+
+this could work?
+
+global keys
+===
+#all quotes are gone. okay
+ctrl + =,- : font size
+f9 : only valid items in menu - doesnt do much atm
+f8 : toggle the silly arrows from Refs to their targets
+f5 : eval
+f4 : clear eval results
+f2 : replay previous session keypresses
+ctrl + up, down: menu movement
+space: menu selection
+ctrl - delete : try to delete current node
+
+
+nodes
+===
+
+red <>'s enclose nodes or other widgets
+green [text] are textboxes, you can type and maybe backspace
+
+
+Compiler 
+===
+better name would be parser.
+looks like this: {(type)}
+(in gray) is the expected type
+the contents of Compiler, if not empty, is text with embedded nodes, maybe like this:
+{make me a <*sandwich>}
+you should be able to edit the text, more or less, and insert nodes from the menu.
+this "text with nodes" thing isnt useful yet, but will be the basis of lemon interaction
+
+
+lists:
+===
+
+<<->(type)
+    (type)
+    (type)>
+
+is probably a list.
+<-> is a expand / collapse button
+program statements is a node that is more or less a list, too
+enter somewhere in the list body inserts new line/item
+
+
+numbers
+===
+like lists, but they have clickies
+
+<<->4<+>>
+
+dont go below zero!
+
+
+
+
+#is it safe to assume that most companies using lemon will be running unix or some variant? probably not, why?#nvm #
+i dont really try to even assume that some companies will really run lemon
+
+
+
+
+when you start lemon, you should see:
+program:
+    <module:
+    <<->{(statement)}
+        {(statement)}
+        >end.>
+builtins:
+    <module:
+    <<+>>end.>
+>
+
+#i was thinking about generating graph visualizations, it seemed pretty easy
+let me check it out again
