@@ -9,14 +9,17 @@ import pygame
 class Element(event.EventDispatcher):
 	def __init__(self):
 		super(Element, self).__init__()
-		if not hasattr(self, "parent"):#probably not needed
-			self.parent = 666
+		self._parent = 666
 		self.brackets_color = (200,0,0)
 		self.brackets = ('<','>')
 		self._render_lines = {}
 		if not hasattr(self, "levent_handlers"):
 			self.__class__.levent_handlers = self.find_levent_handlers()
-		log("eee"+str(self.levent_handlers))
+		#log("eee"+str(self.levent_handlers))
+
+	@property
+	def parent(s):
+		return s._parent.
 
 	def lock(s):	#called somewhere in child class
 		s._locked = True

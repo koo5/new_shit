@@ -219,11 +219,17 @@ class Node(element.Element):
 		#results of eval
 		if elem.runtime._dict.has_key("value") \
 				and elem.runtime._dict.has_key("evaluated") \
-				and not isinstance(elem.parent, Compiler):
-			yield [ColorTag((0,252,252)), TextTag("->")]
-
-			for v in elem.runtime.value:
-				yield ElementTag(v)
+				and not isinstance(elem.parent, Compiler): #dont show results of compiler's direct children
+			yield [ColorTag('eval results'), TextTag("->")]
+			v = elem.runtime.value
+			if len(v) > 1:
+				l = make_list()
+				l.items = v
+				l.fix_parents()#todo:automatize
+				yield [TextTag(str(len(v))), TextTag(" values:"), ElementTag(l)]
+			else:
+				for i in v:
+					yield ElementTag(i)
 			yield [TextTag("<-"), EndTag()]
 
 		yield EndTag()
@@ -244,7 +250,7 @@ class Syntaxed(Node):
 	def __init__(self, kids):
 		super(Syntaxed, self).__init__()
 		self.check_slots(self.slots)
-		self.syntax_index = 0 #alternative syntaxes arent supported now..but will be again
+		self.syntax_index = 0
 		self.ch = Children()
 
 		assert(len(kids) == len(self.slots))
@@ -366,7 +372,7 @@ class Syntaxed(Node):
 
 	@property
 	def syntaxes(self):
-		return [self.decl.instance_syntax] #got rid of multisyntaxedness for now
+		return self.decl.instance_syntaxes
 
 	@property
 	def slots(self):
@@ -543,7 +549,7 @@ class List(Collapsible):
 
 	@property
 	def item_type(self):
-		assert "decl" in self.__dict__, "parent="+str(self.parent)+" contents="+str(self.items)
+		assert hasattr(self, "decl"), "parent="+str(self.parent)+" contents="+str(self.items)
 		assert isinstance(self.decl, ParametricType)
 		return self.decl.ch.itemtype
 
@@ -877,10 +883,7 @@ class NodeclBase(Node):
 		self.instance_class = instance_class
 		self.decl = None
 
-	"""@property
-	def identification(s):
-		return """
-	identification = ['instance_class', 'name', ]
+	identification = ['instance_class', 'name']
 
 	def render(self):
 		return [TextTag("builtin node:"), TextTag(self.name)]
@@ -983,11 +986,14 @@ class SyntaxedNodecl(NodeclBase):
 	 children themselves are either Refs (pointing to other nodes),
 	 or owned nodes (their .parent points to us)
 	"""
-	def __init__(self, instance_class, instance_syntax, instance_slots):
+	def __init__(self, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
 		instance_class.decl = self
 		self.instance_slots = dict([(k, b[i] if isinstance(i, str) else i) for k,i in instance_slots.iteritems()])
-		self.instance_syntax = instance_syntax
+		if isinstance(instance_syntaxes[0], list):
+			self.instance_syntaxes = instance_syntaxes
+		else:
+			self.instance_syntaxes = [instance_syntaxes]
 		b[self.instance_class.__name__.lower()] = self
 
 	"""
@@ -1116,7 +1122,8 @@ class EnumType(Syntaxed):
 		if isinstance(type, Ref):
 			type = type.target
 		if self == type: return True
-
+	def inst_fresh(s):
+		return EnumVal(s, 0)
 
 """here we start putting stuff into b, which is then made into the builtins module"""
 
@@ -1172,8 +1179,10 @@ SyntaxedNodecl(Definition,
 			   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
 			   {'name': 'text', 'type': 'type'})
 
+SyntacticCategory({'name': Text("anything")})
 SyntacticCategory({'name': Text("statement")})
 SyntacticCategory({'name': Text("expression")})
+WorksAs.b("statement", "anything")
 WorksAs.b("expression", "statement")
 WorksAs.b("number", "expression")
 WorksAs.b("text", "expression")
@@ -1193,13 +1202,15 @@ SyntaxedNodecl(EnumType,
 			   {'name': 'text',
 			   'options': list_of('text')})
 
-Definition({'name': Text("bool"), 'type': EnumType({
-	'name': Text("bool"),
-	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
-tmp = [Text('false'), Text('true')]
-tmp2 = b['bool'].ch.type.ch.options
-tmp2.items = tmp
+#Definition({'name': Text("bool"), 'type': EnumType({
+#	'name': Text("bool"),
+#	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
+b['bool'] = EnumType({'name': Text("bool"),
+	'options':b['enumtype'].instance_slots["options"].inst_fresh()})
 
+b['bool'].ch.options.items = [Text('false'), Text('true')]
+b['false'] = EnumVal(b['bool'], 0)
+b['true'] = EnumVal(b['bool'], 0)
 
 #Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
@@ -1242,7 +1253,7 @@ class For(Syntaxed):
 			itemvar.runtime.value.append(item)
 			s.ch.body.run()
 
-		return Void()
+		return NoValue()
 
 SyntaxedNodecl(For,
 			   [TextTag("for"), ChildTag("item"), ("in"), ChildTag("items"),
@@ -1253,6 +1264,30 @@ SyntaxedNodecl(For,
 				        'itemtype': Ref(b['type'])
 				    })),
 			   'body': b['statements']})
+
+
+class If(Syntaxed):
+	def __init__(self, children):
+		super(If, self).__init__(children)
+
+	def _eval(s):
+		if s.ch.condition.eval():
+			s.ch.statements.run()
+
+		return NoValue()
+
+SyntaxedNodecl(If,
+			[
+				[TextTag("if"), ChildTag("condition"), ":\n", ChildTag("statements")],
+
+			],
+			{'condition': Exp(b['bool']),
+			'statements': b['statements']})
+
+"""...notes: formatting: we can speculate that we will get to having a multiline compiler,
+and that will allow for a more freestyle formatting...
+"""
+
 
 
 """
@@ -1833,7 +1868,7 @@ SyntaxedNodecl(BuiltinFunctionDecl,
 #lets leave print a BuiltinFunctionDecl until we have type conversions
 def b_print(args):
 	print(args[0].to_python_str())
-	return Void()
+	return NoValue()
 
 BuiltinFunctionDecl.create(
 	"print",
@@ -1991,6 +2026,9 @@ def num_arg():
 def num_list():
 	return  b["list"].make_type({'itemtype': Ref(b['number'])})
 
+def make_list(btype = 'anything'):
+	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
+
 def num_list_arg():
 	return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})
 
@@ -2027,17 +2065,17 @@ def add_operators():
 	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
 	pfn(op.add, [num_arg(), Text("+"), num_arg()])
 	pfn(op.div, [num_arg(), Text("/"), num_arg()])
-#	o(op.eq,  [num_arg(), Text("=="), num_arg()], bool)
-#	o(op.ge,  [num_arg(), Text(">="), num_arg()], bool)
-#	o(op.gt,  [num_arg(), Text(">="), num_arg()], bool)
-#	o(op.le,  [num_arg(), Text("<="), num_arg()], bool)
-#	o(op.lt,  [num_arg(), Text("<="), num_arg()], bool)
+	pfn(op.eq,  [num_arg(), Text("=="), num_arg()], bool)
+	pfn(op.ge,  [num_arg(), Text(">="), num_arg()], bool)
+	pfn(op.gt,  [num_arg(), Text(">="), num_arg()], bool)
+	pfn(op.le,  [num_arg(), Text("<="), num_arg()], bool)
+	pfn(op.lt,  [num_arg(), Text("<="), num_arg()], bool)
 	pfn(op.mod, [num_arg(), Text("%"), num_arg()])
 	pfn(op.mul, [num_arg(), Text("*"), num_arg()])
 	pfn(op.neg, [Text("-"), num_arg()])
 	pfn(op.sub, [num_arg(), Text("-"), num_arg()])
 
-	import math
+	#import math
 
 	def b_squared(arg):
 		return arg * arg
@@ -2059,7 +2097,7 @@ add_operators()
 
 
 """
-we got drunk and wanted to implement regex input. i will hide this to its own module asap.
+we got drunk and wanted to implement regex input. i will hide this in its own module asap.
 """
 #regex is list of chunks
 #chunk is matcher + quantifier | followed-by

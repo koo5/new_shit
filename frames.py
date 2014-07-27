@@ -460,9 +460,10 @@ class Menu(Frame):
 				s.accept()
 
 	def accept(self):
-		if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
-			self.sel = 0
-			return True
+		if len(self.items_on_screen) > self.sel:
+			if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
+				self.sel = 0
+				return True
 
 
 	def move(self, y):
