@@ -41,10 +41,20 @@ asstags.asselement = element
 #
 
 
-import project
+#import project
 import colors
 
-b = OrderedDict() #for staging the builtins module and referencing builtin nodes from python code
+#for staging the builtins module and referencing builtin nodes from python code
+b = OrderedDict()
+building_in = True
+def buildin(node, name=None):
+	if building_in:
+		if name == None:
+			b[node] = node
+		else:
+			b[name] = node
+
+
 
 class val(list):
 	"""
@@ -918,7 +928,7 @@ class TypeNodecl(NodeclBase):
 	"""
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
-		b['type'] = self #add me to builtins
+		buildin(self, 'type')
 		Ref.decl = self
 
 	def palette(self, scope, text, node):
@@ -928,7 +938,7 @@ class TypeNodecl(NodeclBase):
 class VarRefNodecl(NodeclBase):
 	def __init__(self):
 		super(VarRefNodecl, self).__init__(VarRef)
-		b['varref'] = self #add me to builtins
+		buildin(self, 'varref')
 		VarRef.decl = self
 	@topic("varrefs")
 	def palette(self, scope, text, node):
@@ -954,7 +964,7 @@ class VarRefNodecl(NodeclBase):
 class ExpNodecl(NodeclBase):
 	def __init__(self):
 		super(ExpNodecl, self).__init__(Exp)
-		b['exp'] = self #add me to builtins
+		buildin(self, 'exp')
 		Exp.decl = self
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
@@ -965,7 +975,7 @@ class Nodecl(NodeclBase):
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = self
-		b[self.name] = self
+		buildin(self, self.name)
 		instance_class.name = self.name
 
 	def palette(self, scope, text, node):
@@ -994,7 +1004,7 @@ class SyntaxedNodecl(NodeclBase):
 			self.instance_syntaxes = instance_syntaxes
 		else:
 			self.instance_syntaxes = [instance_syntaxes]
-		b[self.instance_class.__name__.lower()] = self
+		buildin(self, self.instance_class.__name__.lower())
 
 	"""
 	syntaxed match(items, nodes) :-
@@ -1138,15 +1148,14 @@ class SyntacticCategory(Syntaxed):
 	"""this is a syntactical category(?) of nodes, used for "statement" and "expression" """
 	def __init__(self, kids):
 		super(SyntacticCategory, self).__init__(kids)
-		b[self.ch.name.pyval] = self
+		buildin(self, self.ch.name.pyval)
 
 
 class WorksAs(Syntaxed):
 	"""a relation between two existing"""
 	def __init__(self, kids):
 		super(WorksAs, self).__init__(kids)
-		b[self] = self
-
+		buildin(self)
 	@classmethod
 	def b(cls, sub, sup):
 		cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
@@ -1155,7 +1164,7 @@ class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
-		b[self.ch.name.pyval] = self
+		buildin(self, self.ch.name.pyval)
 
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
@@ -1187,12 +1196,12 @@ WorksAs.b("expression", "statement")
 WorksAs.b("number", "expression")
 WorksAs.b("text", "expression")
 
-b['list'] = ParametricNodecl(List,
+buildin(ParametricNodecl(List,
 				 [TextTag("list of"), ChildTag("itemtype")],
-				 {'itemtype': b['type']})
-b['dict'] = ParametricNodecl(Dict,
+				 {'itemtype': b['type']}), 'list')
+buildin(ParametricNodecl(Dict,
 				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
-				 {'keytype': b['type'], 'valtype': Exp(b['type'])})
+				 {'keytype': b['type'], 'valtype': Exp(b['type'])}), 'dict')
 
 WorksAs.b("list", "expression")
 WorksAs.b("dict", "expression")
@@ -1205,8 +1214,8 @@ SyntaxedNodecl(EnumType,
 #Definition({'name': Text("bool"), 'type': EnumType({
 #	'name': Text("bool"),
 #	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
-b['bool'] = EnumType({'name': Text("bool"),
-	'options':b['enumtype'].instance_slots["options"].inst_fresh()})
+buildin(EnumType({'name': Text("bool"),
+	'options':b['enumtype'].instance_slots["options"].inst_fresh()}), 'bool')
 
 b['bool'].ch.options.items = [Text('false'), Text('true')]
 b['false'] = EnumVal(b['bool'], 0)
@@ -1835,7 +1844,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def create(name, fun, sig):
 		x = BuiltinFunctionDecl.fresh()
 		x._name = name
-		b[name] = x
+		buildin(x, name)
 		x.ch.name.widget.value = name
 		x.fun = fun
 		x.ch.sig = b['function signature list'].inst_fresh()
@@ -1931,7 +1940,7 @@ class FunctionCall(Node):
 class FunctionCallNodecl(NodeclBase):
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(Ref)
-		b['call'] = self
+		buildin(self, 'call')
 		FunctionCall.decl = self
 	def palette(self, scope, text, node):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
@@ -1978,7 +1987,7 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	def create(fun, sig, ret, name, note):
 		x = BuiltinPythonFunctionDecl.fresh()
 		x._name = name
-		b[fun] = x #we dont need to adress these from python code, so i dont put a string there
+		buildin(x)
 		x.ch.name.widget.value = fun.__name__
 		x.fun = fun
 		x.ch.sig = b['function signature list'].inst_fresh()
@@ -2054,7 +2063,6 @@ def add_operators():
 		else:
 			name = function.__name__
 
-			
 		BuiltinPythonFunctionDecl.create(
 			function,
 			signature,
@@ -2219,6 +2227,7 @@ Tah-dah!#you really like typing.
 """the end"""
 
 def make_root():
+	global building_in
 	r = Root()
 	r.add(("program", b['module'].inst_fresh()))
 	r["program"].ch.statements.newline()
@@ -2226,6 +2235,7 @@ def make_root():
 	r["builtins"].ch.statements.items = list(b.itervalues())
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 0
+	building_in = False
 	return r
 
 

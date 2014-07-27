@@ -5,6 +5,7 @@ import input #lemon's input event decorator
 from logger import log, ping
 import tags
 import pygame
+from weakref import ref as weakref
 
 class Element(event.EventDispatcher):
 	def __init__(self):
@@ -19,7 +20,16 @@ class Element(event.EventDispatcher):
 
 	@property
 	def parent(s):
-		return s._parent.
+		if type(s._parent) == weakref:
+			return s._parent()
+		else:
+			return s._parent
+	@parent.setter
+	def parent(s, v):
+		try:
+			s._parent = weakref(v)
+		except:
+			s._parent = v
 
 	def lock(s):	#called somewhere in child class
 		s._locked = True
@@ -107,7 +117,7 @@ class Element(event.EventDispatcher):
 		
 	@property
 	def root(self):
-		if self.__dict__.has_key('parent') and self.parent != None:
+		if self.parent != None:
 			return self.parent.root
 		else:
 			#log("root is "+str(self))
