@@ -3,7 +3,7 @@
 """
 notes on the current state of this constantly changing code:
 i use kids and children interchangeably.
-sometimes, i use s instead of self
+sometimes i use s, sometimes self.
 
 creation of new nodes. 
 __init__ usually takes children or value as arguments.
@@ -41,34 +41,23 @@ asstags.asselement = element
 #
 
 
-import project
+#import project
 import colors
 
-b = OrderedDict() #for staging the builtins module and referencing builtin nodes from python code
-
-class val(list):
-	"""
-	a list of Values
-	during execution, results of evaluation of every node is appended,
-	so there is a history visible"""
-	@property
-	def val(self):
-		"""the current value is the last one"""
-		return self[-1]
-
-	def append(self, x):
-		assert(isinstance(x, Node))
-		super(val, self).append(x)
-		return x
-
-	def set(self, x):
-		"""constants call this..but if they are in a compiler..too bad"""
-		assert(isinstance(x, Node))
-		if len(self) > 0:
-			self[0] = x
+#for staging the builtins module and referencing builtin nodes from python code
+b = OrderedDict()
+building_in = True
+def buildin(node, name=None):
+	if building_in:
+		if name == None:
+			b[node] = node
 		else:
-			super(val, self).append(x)
-		return x
+			b[name] = node
+
+
+def make_list(btype = 'anything'):
+	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
+
 
 class Node(element.Element):
 	"""a node is more than an element,
@@ -110,10 +99,16 @@ class Node(element.Element):
 		except AttributeError:
 			pass
 		return r
-		
+
 	def clear_runtime_dict(s):
 		s.runtime._dict.clear()
-		s.runtime.value = val()
+
+	def set_parent(s, v):
+		super(Node, s).set_parent(v)
+		if "value" in s.runtime._dict:
+			s.runtime.value.parent = s.parent
+
+	parent=property(element.Element.get_parent, set_parent)
 
 	@property
 	def compiled(self):
@@ -151,18 +146,23 @@ class Node(element.Element):
 
 	def eval(self):
 		r = self._eval()
-		assert isinstance(r, Node), str(self) + " _eval is borked"
+		assert isinstance(r, Node), str(self) + "._eval() is borked"
 
-		if self.isconst:
-			self.runtime.value.set(r)
+		#if self.isconst:
+		#	self.runtime.value.set(r)
 			#log("const" + str(self)) todo:figure out how const would propagate (to compiler)
-		else:
-			self.runtime.value.append(r)
-
-		self.runtime.evaluated = True
-		r.parent = self.parent
-
+		#else:
+		#	self.runtime.value.append(r)
+		self.append_value(r)
 		return r
+
+	def append_value(self, v):
+		if not "value" in self.runtime._dict:
+			self.runtime.value = make_list('anything')
+			self.runtime.value.parent = self.parent #also has to be kept updated in the parent property setter
+
+		self.runtime.value.append(v)
+		self.runtime.evaluated = True
 
 	def _eval(self):
 		self.runtime.unimplemented = True
@@ -217,13 +217,16 @@ class Node(element.Element):
 		yield [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
 		#results of eval
-		if elem.runtime._dict.has_key("value") \
+		if "value" in elem.runtime._dict \
 				and elem.runtime._dict.has_key("evaluated") \
-				and not isinstance(elem.parent, Compiler):
-			yield [ColorTag((0,252,252)), TextTag("->")]
-
-			for v in elem.runtime.value:
-				yield ElementTag(v)
+				and not isinstance(elem.parent, Compiler): #dont show results of compiler's direct children
+			yield [ColorTag('eval results'), TextTag("->")]
+			v = elem.runtime.value
+			if len(v.items) > 1:
+				yield [TextTag(str(len(v.items))), TextTag(" values:"), ElementTag(v)]
+			else:
+				for i in v.items:
+					yield ElementTag(i)
 			yield [TextTag("<-"), EndTag()]
 
 		yield EndTag()
@@ -244,7 +247,7 @@ class Syntaxed(Node):
 	def __init__(self, kids):
 		super(Syntaxed, self).__init__()
 		self.check_slots(self.slots)
-		self.syntax_index = 0 #alternative syntaxes arent supported now..but will be again
+		self.syntax_index = 0
 		self.ch = Children()
 
 		assert(len(kids) == len(self.slots))
@@ -366,7 +369,7 @@ class Syntaxed(Node):
 
 	@property
 	def syntaxes(self):
-		return [self.decl.instance_syntax] #got rid of multisyntaxedness for now
+		return self.decl.instance_syntaxes
 
 	@property
 	def slots(self):
@@ -399,6 +402,8 @@ class Collapsible(Node):
 	def render(self):
 		yield [WidgetTag('view_mode_widget')] + [IndentTag()]
 		if self.view_mode > 0:
+			if self.view_mode == 2:
+				yield TextTag("\n")
 			for i in self.render_items():
 				yield i
 		yield [DedentTag()]
@@ -543,7 +548,7 @@ class List(Collapsible):
 
 	@property
 	def item_type(self):
-		assert "decl" in self.__dict__, "parent="+str(self.parent)+" contents="+str(self.items)
+		assert hasattr(self, "decl"), "parent="+str(self.parent)+" contents="+str(self.items)
 		assert isinstance(self.decl, ParametricType)
 		return self.decl.ch.itemtype
 
@@ -563,10 +568,12 @@ class List(Collapsible):
 	def fresh(cls, decl):
 		r = cls()
 		r.decl = decl
+		"""
 		try:
 			r.newline()
 		except NameError as e:
 			pass#hack to allow calling fresh before Compiler was defined
+		"""
 		return r
 
 	def delete_child(s, ch):
@@ -575,6 +582,34 @@ class List(Collapsible):
 
 	def __repr__(s):
 		return object.__repr__(s) + "('"+str(s.item_type)+"')"
+
+	@property
+	def val(self):
+		"""
+		for "historic" reasons, when acting as a list of eval results.
+		during execution, results of evaluation of every node is appended,
+		so there is a history available.
+		current value is the last one.
+		we might split this into something like EvalResultsList
+		"""
+		return self[-1]
+
+	def append(self, x):
+		"""like add, but returns the item. historic reasons."""
+		assert(isinstance(x, Node))
+		self.items.append(x)
+		x.parent = self
+		return x
+"""
+	def set(self, x):
+		#constants should call this..but if they are in a compiler, isconst wont propagate yet
+		assert(isinstance(x, Node))
+		if len(self) > 0:
+			self[0] = x
+		else:
+			super(val, self).append(x)
+		return x
+"""
 
 def list_of(type_name):
 	"""helper to create a type"""
@@ -617,25 +652,33 @@ class Statements(List):
 		return Text("it ran.")
 
 
-class Void(Node):
-	"i dont like it"
+class NoValue(Node):
 	def __init__(self):
-		super(Void, self).__init__()
+		super(NoValue, self).__init__()
 	def render(self):
 		return [TextTag('void')]
 	def to_python_str(self):
-		return "void"
+		return "no value"
 
 class Banana(Node):
-	"""runtime error.
-	and bananas is gonna be a compile error. joking. maybe."""
+	"""runtime error"""
 	def __init__(self, text):
 		super(Banana, self).__init__()
 		self.text = text
 	def render(self):
 		return [TextTag(self.text)]
 	def to_python_str(self):
-		return "banana"
+		return "runtime error"
+
+class Bananas(Node):
+	"""compilation error"""
+	def __init__(self, text):
+		super(Bananas, self).__init__()
+		self.text = text
+	def render(self):
+		return [TextTag(self.text)]
+	def to_python_str(self):
+		return "compilation error"
 
 
 class WidgetedValue(Node):
@@ -643,6 +686,7 @@ class WidgetedValue(Node):
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
 		self.isconst = True#this doesnt propagate to Compiler yet
+		#i guess its waiting for type inference
 
 	@property
 	def pyval(self):
@@ -868,6 +912,8 @@ class NodeclBase(Node):
 		self.instance_class = instance_class
 		self.decl = None
 
+	identification = ['instance_class', 'name']
+
 	def render(self):
 		return [TextTag("builtin node:"), TextTag(self.name)]
 		# t(str(self.instance_class))]
@@ -901,7 +947,7 @@ class TypeNodecl(NodeclBase):
 	"""
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
-		b['type'] = self #add me to builtins
+		buildin(self, 'type')
 		Ref.decl = self
 
 	def palette(self, scope, text, node):
@@ -911,7 +957,7 @@ class TypeNodecl(NodeclBase):
 class VarRefNodecl(NodeclBase):
 	def __init__(self):
 		super(VarRefNodecl, self).__init__(VarRef)
-		b['varref'] = self #add me to builtins
+		buildin(self, 'varref')
 		VarRef.decl = self
 	@topic("varrefs")
 	def palette(self, scope, text, node):
@@ -937,7 +983,7 @@ class VarRefNodecl(NodeclBase):
 class ExpNodecl(NodeclBase):
 	def __init__(self):
 		super(ExpNodecl, self).__init__(Exp)
-		b['exp'] = self #add me to builtins
+		buildin(self, 'exp')
 		Exp.decl = self
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
@@ -948,7 +994,7 @@ class Nodecl(NodeclBase):
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = self
-		b[self.name] = self
+		buildin(self, self.name)
 		instance_class.name = self.name
 
 	def palette(self, scope, text, node):
@@ -969,12 +1015,15 @@ class SyntaxedNodecl(NodeclBase):
 	 children themselves are either Refs (pointing to other nodes),
 	 or owned nodes (their .parent points to us)
 	"""
-	def __init__(self, instance_class, instance_syntax, instance_slots):
+	def __init__(self, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
 		instance_class.decl = self
 		self.instance_slots = dict([(k, b[i] if isinstance(i, str) else i) for k,i in instance_slots.iteritems()])
-		self.instance_syntax = instance_syntax
-		b[self.instance_class.__name__.lower()] = self
+		if isinstance(instance_syntaxes[0], list):
+			self.instance_syntaxes = instance_syntaxes
+		else:
+			self.instance_syntaxes = [instance_syntaxes]
+		buildin(self, self.instance_class.__name__.lower())
 
 	"""
 	syntaxed match(items, nodes) :-
@@ -1102,7 +1151,8 @@ class EnumType(Syntaxed):
 		if isinstance(type, Ref):
 			type = type.target
 		if self == type: return True
-
+	def inst_fresh(s):
+		return EnumVal(s, 0)
 
 """here we start putting stuff into b, which is then made into the builtins module"""
 
@@ -1117,15 +1167,14 @@ class SyntacticCategory(Syntaxed):
 	"""this is a syntactical category(?) of nodes, used for "statement" and "expression" """
 	def __init__(self, kids):
 		super(SyntacticCategory, self).__init__(kids)
-		b[self.ch.name.pyval] = self
+		buildin(self, self.ch.name.pyval)
 
 
 class WorksAs(Syntaxed):
 	"""a relation between two existing"""
 	def __init__(self, kids):
 		super(WorksAs, self).__init__(kids)
-		b[self] = self
-
+		buildin(self)
 	@classmethod
 	def b(cls, sub, sup):
 		cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
@@ -1134,7 +1183,7 @@ class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
-		b[self.ch.name.pyval] = self
+		buildin(self, self.ch.name.pyval)
 
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
@@ -1158,18 +1207,20 @@ SyntaxedNodecl(Definition,
 			   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
 			   {'name': 'text', 'type': 'type'})
 
+SyntacticCategory({'name': Text("anything")})
 SyntacticCategory({'name': Text("statement")})
 SyntacticCategory({'name': Text("expression")})
+WorksAs.b("statement", "anything")
 WorksAs.b("expression", "statement")
 WorksAs.b("number", "expression")
 WorksAs.b("text", "expression")
 
-b['list'] = ParametricNodecl(List,
+buildin(ParametricNodecl(List,
 				 [TextTag("list of"), ChildTag("itemtype")],
-				 {'itemtype': b['type']})
-b['dict'] = ParametricNodecl(Dict,
+				 {'itemtype': b['type']}), 'list')
+buildin(ParametricNodecl(Dict,
 				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
-				 {'keytype': b['type'], 'valtype': Exp(b['type'])})
+				 {'keytype': b['type'], 'valtype': Exp(b['type'])}), 'dict')
 
 WorksAs.b("list", "expression")
 WorksAs.b("dict", "expression")
@@ -1179,13 +1230,15 @@ SyntaxedNodecl(EnumType,
 			   {'name': 'text',
 			   'options': list_of('text')})
 
-Definition({'name': Text("bool"), 'type': EnumType({
-	'name': Text("bool"),
-	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
-tmp = [Text('false'), Text('true')]
-tmp2 = b['bool'].ch.type.ch.options
-tmp2.items = tmp
+#Definition({'name': Text("bool"), 'type': EnumType({
+#	'name': Text("bool"),
+#	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
+buildin(EnumType({'name': Text("bool"),
+	'options':b['enumtype'].instance_slots["options"].inst_fresh()}), 'bool')
 
+b['bool'].ch.options.items = [Text('false'), Text('true')]
+b['false'] = EnumVal(b['bool'], 0)
+b['true'] = EnumVal(b['bool'], 0)
 
 #Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
@@ -1225,10 +1278,10 @@ class For(Syntaxed):
 		assert isinstance(items, List)
 		#r = b['list'].make_type({'itemtype': Ref(b['statement'])}).make_inst() #just a list of the "anything" type..dunno
 		for item in items:
-			itemvar.runtime.value.append(item)
+			itemvar.append_value(item)
 			s.ch.body.run()
 
-		return Void()
+		return NoValue()
 
 SyntaxedNodecl(For,
 			   [TextTag("for"), ChildTag("item"), ("in"), ChildTag("items"),
@@ -1239,6 +1292,32 @@ SyntaxedNodecl(For,
 				        'itemtype': Ref(b['type'])
 				    })),
 			   'body': b['statements']})
+
+
+class If(Syntaxed):
+	def __init__(self, children):
+		super(If, self).__init__(children)
+
+	def _eval(s):
+		c = s.ch.condition.eval()
+		#lets just do it by hand here..
+		if c.decl == b['bool'] and c.pyval == 1:
+			s.ch.statements.run()
+
+		return NoValue()
+
+SyntaxedNodecl(If,
+			[
+				[TextTag("if"), ChildTag("condition"), ":\n", ChildTag("statements")],
+
+			],
+			{'condition': Exp(b['bool']),
+			'statements': b['statements']})
+
+"""...notes: formatting: we can speculate that we will get to having a multiline compiler,
+and that will allow for a more freestyle formatting...
+"""
+
 
 
 """
@@ -1786,7 +1865,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def create(name, fun, sig):
 		x = BuiltinFunctionDecl.fresh()
 		x._name = name
-		b[name] = x
+		buildin(x, name)
 		x.ch.name.widget.value = name
 		x.fun = fun
 		x.ch.sig = b['function signature list'].inst_fresh()
@@ -1819,7 +1898,7 @@ SyntaxedNodecl(BuiltinFunctionDecl,
 #lets leave print a BuiltinFunctionDecl until we have type conversions
 def b_print(args):
 	print(args[0].to_python_str())
-	return Void()
+	return NoValue()
 
 BuiltinFunctionDecl.create(
 	"print",
@@ -1882,7 +1961,7 @@ class FunctionCall(Node):
 class FunctionCallNodecl(NodeclBase):
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(Ref)
-		b['call'] = self
+		buildin(self, 'call')
 		FunctionCall.decl = self
 	def palette(self, scope, text, node):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
@@ -1929,7 +2008,7 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	def create(fun, sig, ret, name, note):
 		x = BuiltinPythonFunctionDecl.fresh()
 		x._name = name
-		b[fun] = x #we dont need to adress these from python code, so i dont put a string there
+		buildin(x)
 		x.ch.name.widget.value = fun.__name__
 		x.fun = fun
 		x.ch.sig = b['function signature list'].inst_fresh()
@@ -2002,7 +2081,6 @@ def add_operators():
 		else:
 			name = function.__name__
 
-			
 		BuiltinPythonFunctionDecl.create(
 			function,
 			signature,
@@ -2013,17 +2091,17 @@ def add_operators():
 	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
 	pfn(op.add, [num_arg(), Text("+"), num_arg()])
 	pfn(op.div, [num_arg(), Text("/"), num_arg()])
-#	o(op.eq,  [num_arg(), Text("=="), num_arg()], bool)
-#	o(op.ge,  [num_arg(), Text(">="), num_arg()], bool)
-#	o(op.gt,  [num_arg(), Text(">="), num_arg()], bool)
-#	o(op.le,  [num_arg(), Text("<="), num_arg()], bool)
-#	o(op.lt,  [num_arg(), Text("<="), num_arg()], bool)
+	pfn(op.eq,  [num_arg(), Text("=="), num_arg()], bool)
+	pfn(op.ge,  [num_arg(), Text(">="), num_arg()], bool)
+	pfn(op.gt,  [num_arg(), Text(">="), num_arg()], bool)
+	pfn(op.le,  [num_arg(), Text("<="), num_arg()], bool)
+	pfn(op.lt,  [num_arg(), Text("<="), num_arg()], bool)
 	pfn(op.mod, [num_arg(), Text("%"), num_arg()])
 	pfn(op.mul, [num_arg(), Text("*"), num_arg()])
 	pfn(op.neg, [Text("-"), num_arg()])
 	pfn(op.sub, [num_arg(), Text("-"), num_arg()])
 
-	import math
+	#import math
 
 	def b_squared(arg):
 		return arg * arg
@@ -2045,7 +2123,7 @@ add_operators()
 
 
 """
-we got drunk and wanted to implement regex input. i will hide this to its own module asap.
+we got drunk and wanted to implement regex input. i will hide this in its own module asap.
 """
 #regex is list of chunks
 #chunk is matcher + quantifier | followed-by
@@ -2167,13 +2245,15 @@ Tah-dah!#you really like typing.
 """the end"""
 
 def make_root():
+	global building_in
 	r = Root()
 	r.add(("program", b['module'].inst_fresh()))
 	r["program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
 	r["builtins"].ch.statements.items = list(b.itervalues())
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
-	#r["builtins"].ch.statements.expanded = False
+	r["builtins"].ch.statements.view_mode = 0
+	building_in = False
 	return r
 
 
@@ -2190,5 +2270,8 @@ def to_lemon(x):
 def is_flat(l):
 	return flatten(l) == l
 
-
-#todo: totally custom node
+"""
+#todo: totally custom node:
+we have unevaluated arguments, so a function body can be thought of as a rule for
+evaluating the node. there could be other rules: display, debugging..?..
+"""

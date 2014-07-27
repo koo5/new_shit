@@ -1,2 +1,2 @@
-python -m cProfile -s cumulative  new_shit.py
+python -m cProfile -s cumulative main.py
 

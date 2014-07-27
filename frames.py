@@ -5,10 +5,11 @@ from math import *
 from colors import color, colors
 import project
 import nodes
+from element import Element
 from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 from menu_items import InfoItem
 import widgets
-from logger import log
+from logger import log, topic
 
 font = font_height = font_width = 666
 
@@ -104,7 +105,8 @@ class Root(Frame):
 		self.root.fix_parents()
 		self.arrows_visible = True
 		self.cursor_blink_phase = True
-		
+		self.menu_dirty = True
+
 	def and_sides(s,e):
 		if e.all[pygame.K_LEFT]: s.move_cursor_h(-1)
 		if e.all[pygame.K_RIGHT]: s.move_cursor_h(1)
@@ -267,6 +269,14 @@ class Root(Frame):
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible
 
+	def text_dump(s):
+		f = open("dump.txt", "w")
+		for l in s.lines:
+			for ch in l:
+				f.write(ch[0])
+			f.write("\n")
+		f.close()
+
 	def top_keypress(s, event):
 
 		k = event.key
@@ -280,6 +290,10 @@ class Root(Frame):
 				s.cursor_top()
 			elif k == pygame.K_END:
 				s.cursor_bottom()
+			elif k == pygame.K_d:
+				s.text_dump()
+			elif k == pygame.K_p:
+				s.dump_parents()
 			elif k == pygame.K_q:
 				#a quit shortcut that goes thru the event pickle/replay mechanism
 				exit()
@@ -325,6 +339,16 @@ class Root(Frame):
 		return True
 
 
+	@topic('parents')
+	def dump_parents(self):
+		element = self.under_cursor()
+		while element != None:
+			assert isinstance(element, Element), (assold, element)
+			log(str(element))
+			assold = element
+			element = element.parent
+
+
 	def on_keypress(self, event):
 		event.frame = self
 		event.cursor = (self.cursor_c, self.cursor_r)
@@ -339,7 +363,11 @@ class Root(Frame):
 		if element != None and element.dispatch_levent(event):
 			return True
 
-		while element != None and not element.on_keypress(event):
+		while element != None:
+			assert isinstance(element, Element), (assold, element)
+			if element.on_keypress(event):
+				break
+			assold = element
 			element = element.parent
 		if element != None:#some element handled it
 			if log_events:
@@ -359,24 +387,19 @@ class Menu(Frame):
 	def __init__(s):
 		super(Menu, s).__init__()
 		s.sel = 0
-		s._items = []
+		#index to items_on_screen. not ideal.
+		#todo: a separate wishedfor_sel
 		s.valid_only = False
 
 	@property
-	def items(self):
-		return self._items
+	def selected(s):
+		return s.items_on_screen[s.sel]
 
-	@property
-	def selected(self):
-		return self.items[self.sel]
-
-	@items.setter
-	def items(self, value):
-		if self.sel > len(value) - 1:
-			self.sel = len(value) - 1 #todo: a separate wishedfor_sel
-		if self.sel < 0:
-			self.sel = 0
-		self._items = value
+	def clamp_sel(s):
+		if s.sel >= len(s.items_on_screen):
+			s.sel = len(s.items_on_screen) - 1
+		if s.sel < 0:
+			s.sel = 0
 
 	def _draw(s, surface):
 		s.draw_lines(surface)
@@ -414,31 +437,27 @@ class Menu(Frame):
 				c = colors.menu_rect
 			draw.rect(surface, c, r, 1)
 
+	def render(s, root):
+		s.root_frame = root
+		s.project()
+		s.clamp_sel()
+		s.generate_rects()
+
 	def tags(s):
 		s.items_on_screen = []
 		yield ColorTag("fg")
-		for i in s.items:
+		for i in s.generate_palette():
 			s.items_on_screen.append(i)
 			yield [ElementTag(i), "\n"]
 		yield EndTag()
 
-	def render(s, root):
-		s.generate_palette(root)
-		s.project()
-		s.generate_rects()
-
-	def generate_palette(s,root):
-		e = root.under_cursor()
-		atts = root.atts
-		s.element = e
-		new_items = []
-		while e != None:
-			new_items += e.menu(atts)
-			e = e.parent
-		if s.valid_only:
-			new_items = [x for x in new_items if x.valid]
-		s.items = new_items
-
+	def generate_palette(s):
+		e = s.element = s.root_frame.under_cursor()
+		atts = s.root_frame.atts
+		if e != None:
+			for i in e.menu(atts):
+				if not s.valid_only or i.valid:
+					yield i
 
 	def on_keypress(self, e):
 		if e.mod & pygame.KMOD_CTRL:
@@ -458,18 +477,15 @@ class Menu(Frame):
 				s.accept()
 
 	def accept(self):
-		if (self.sel < len(self.items) and
-				self.element.menu_item_selected(self.items[self.sel], self.root.atts)):
-			self.sel = 0
-			return True
+		if len(self.items_on_screen) > self.sel:
+			if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
+				self.sel = 0
+				return True
 
 
 	def move(self, y):
 		self.sel += y
-		if self.sel < 0: self.sel = 0
-		if self.sel >= len(self.items): self.sel = len(self.items) - 1
-		#print len(self.items), self.sel
-
+		self.clamp_sel()
 
 	def toggle_valid(s):
 		s.valid_only = not s.valid_only
@@ -481,24 +497,23 @@ class Info(Frame):
 		super(Info, s).__init__()
 		#create all infoitems at __init__, makes persistence possible (for visibility state)
 		s.top_info = [InfoItem(i) for i in [
-			"READ THIS FIRST",
-			"hide these items by clicking the gray X next to each",
+			"hide help items by clicking the gray X next to each",
 			"unhide all by clicking the dots",
 			"this stuff will go to a menu but for now..",
 			"ctrl + =,- : font size", 
-			"f9 : only valid items in menu",
-			"f8 : toggle the silly blue lines from Refs to their targets",
+			"f9 : only valid items in menu - doesnt do much atm",
+			"f8 : toggle the silly arrows from Refs to their targets",
 			"f5 : eval",
 			"f4 : clear eval results",
-			"f2 : replay previous session",
+			"f2 : replay previous session keypresses",
 			"ctrl + up, down: menu movement",
 			"space: menu selection",
 			"",
 			"red <>'s enclose nodes or other widgets",
 			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
-			["Compiler looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
+			["{Compiler} looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
 			"(in gray) is the expected type",
-			"currently you can only insert nodes manually by selecting them from the menu, with prolog, the compiler will start guessing what you mean:)"
+
 		]]
 		#,	"f12 : normalize syntaxes"
 		s.hierarchy_infoitem = InfoItem("bla")

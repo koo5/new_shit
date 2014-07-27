@@ -11,6 +11,9 @@ class Widget(element.Element):
 	def __init__(self, parent):
 		super(Widget, self).__init__()
 		self.parent = parent
+	#def __repr__(s):
+	#	return object.__repr__(s) + "(parent:'"+str(s.parent)+"')"
+
 
 class Text(Widget):
 	def __init__(self, parent, text):
@@ -174,6 +177,7 @@ class NState(Widget):
 		self.toggle()
 		return True
 	def on_keypress(self, e):
+		#log("NState keypress")
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
 			self.toggle()
 			return True
