@@ -175,11 +175,13 @@ def do_keypress(e):
 
 	render()
 	
+	"""
 	try:
 		gc.collect()
 		objgraph.show_most_common_types(10)
 	except:
 		pass
+	"""
 
 def mousedown(e):
 	reset_cursor_blink_timer()

@@ -18,18 +18,19 @@ class Element(event.EventDispatcher):
 			self.__class__.levent_handlers = self.find_levent_handlers()
 		#log("eee"+str(self.levent_handlers))
 
-	@property
-	def parent(s):
+	def get_parent(s):
 		if type(s._parent) == weakref:
 			return s._parent()
 		else:
 			return s._parent
-	@parent.setter
-	def parent(s, v):
+
+	def set_parent(s, v):
 		try:
 			s._parent = weakref(v)
 		except:
 			s._parent = v
+
+	parent = property(get_parent, set_parent)
 
 	def lock(s):	#called somewhere in child class
 		s._locked = True
@@ -48,25 +49,25 @@ class Element(event.EventDispatcher):
 		for c in mro:
 			#log(cls)
 			for member_name, member in c.__dict__.iteritems():
-				if member_name == "delete_self":
-					log ("!!!" + str(member))
+				#if member_name == "delete_self":
+				#	log ("!!!" + str(member))
 				if hasattr(member, "levent_constraints"):
-					log("handler found:" + str(member))
+					#log("handler found:" + str(member))
 					#dicts aren't hashable, so lets convert the constraints dict to tuple and save the dict in value
 					hash = tuple(member.levent_constraints.iteritems())
 					r[hash] = (member.levent_constraints, member_name, member)
 				else:
 					for hash,(constraints,name,function) in r.iteritems():
 						if name == member_name:
-							log("updating override")
+							#log("updating override")
 							#its overriden in a child class
 							r[hash] = (constraints, name, member)
 							break
-		log("returning "+str(r))
+		#log("returning "+str(r))
 		return r
 
 	def dispatch_levent(s, e):
-		log('dispatching '+str(e))
+		#log('dispatching '+str(e))
 		for constraints, function_name, function in s.levent_handlers.itervalues():
 			log ("for constraint" + str(constraints))
 			if "key" in constraints:

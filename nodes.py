@@ -55,30 +55,9 @@ def buildin(node, name=None):
 			b[name] = node
 
 
+def make_list(btype = 'anything'):
+	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
 
-class val(list):
-	"""
-	a list of Values
-	during execution, results of evaluation of every node is appended,
-	so there is a history visible"""
-	@property
-	def val(self):
-		"""the current value is the last one"""
-		return self[-1]
-
-	def append(self, x):
-		assert(isinstance(x, Node))
-		super(val, self).append(x)
-		return x
-
-	def set(self, x):
-		"""constants call this..but if they are in a compiler..too bad"""
-		assert(isinstance(x, Node))
-		if len(self) > 0:
-			self[0] = x
-		else:
-			super(val, self).append(x)
-		return x
 
 class Node(element.Element):
 	"""a node is more than an element,
@@ -120,10 +99,16 @@ class Node(element.Element):
 		except AttributeError:
 			pass
 		return r
-		
+
 	def clear_runtime_dict(s):
 		s.runtime._dict.clear()
-		s.runtime.value = val()
+
+	def set_parent(s, v):
+		super(Node, s).set_parent(v)
+		if "value" in s.runtime._dict:
+			s.runtime.value.parent = s.parent
+
+	parent=property(element.Element.get_parent, set_parent)
 
 	@property
 	def compiled(self):
@@ -161,18 +146,23 @@ class Node(element.Element):
 
 	def eval(self):
 		r = self._eval()
-		assert isinstance(r, Node), str(self) + " _eval is borked"
+		assert isinstance(r, Node), str(self) + "._eval() is borked"
 
-		if self.isconst:
-			self.runtime.value.set(r)
+		#if self.isconst:
+		#	self.runtime.value.set(r)
 			#log("const" + str(self)) todo:figure out how const would propagate (to compiler)
-		else:
-			self.runtime.value.append(r)
-
-		self.runtime.evaluated = True
-		r.parent = self.parent
-
+		#else:
+		#	self.runtime.value.append(r)
+		self.append_value(r)
 		return r
+
+	def append_value(self, v):
+		if not "value" in self.runtime._dict:
+			self.runtime.value = make_list('anything')
+			self.runtime.value.parent = self.parent #also has to be kept updated in the parent property setter
+
+		self.runtime.value.append(v)
+		self.runtime.evaluated = True
 
 	def _eval(self):
 		self.runtime.unimplemented = True
@@ -227,18 +217,15 @@ class Node(element.Element):
 		yield [ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
 		#results of eval
-		if elem.runtime._dict.has_key("value") \
+		if "value" in elem.runtime._dict \
 				and elem.runtime._dict.has_key("evaluated") \
 				and not isinstance(elem.parent, Compiler): #dont show results of compiler's direct children
 			yield [ColorTag('eval results'), TextTag("->")]
 			v = elem.runtime.value
-			if len(v) > 1:
-				l = make_list()
-				l.items = v
-				l.fix_parents()#todo:automatize
-				yield [TextTag(str(len(v))), TextTag(" values:"), ElementTag(l)]
+			if len(v.items) > 1:
+				yield [TextTag(str(len(v.items))), TextTag(" values:"), ElementTag(v)]
 			else:
-				for i in v:
+				for i in v.items:
 					yield ElementTag(i)
 			yield [TextTag("<-"), EndTag()]
 
@@ -415,6 +402,8 @@ class Collapsible(Node):
 	def render(self):
 		yield [WidgetTag('view_mode_widget')] + [IndentTag()]
 		if self.view_mode > 0:
+			if self.view_mode == 2:
+				yield TextTag("\n")
 			for i in self.render_items():
 				yield i
 		yield [DedentTag()]
@@ -579,10 +568,12 @@ class List(Collapsible):
 	def fresh(cls, decl):
 		r = cls()
 		r.decl = decl
+		"""
 		try:
 			r.newline()
 		except NameError as e:
 			pass#hack to allow calling fresh before Compiler was defined
+		"""
 		return r
 
 	def delete_child(s, ch):
@@ -591,6 +582,34 @@ class List(Collapsible):
 
 	def __repr__(s):
 		return object.__repr__(s) + "('"+str(s.item_type)+"')"
+
+	@property
+	def val(self):
+		"""
+		for "historic" reasons, when acting as a list of eval results.
+		during execution, results of evaluation of every node is appended,
+		so there is a history available.
+		current value is the last one.
+		we might split this into something like EvalResultsList
+		"""
+		return self[-1]
+
+	def append(self, x):
+		"""like add, but returns the item. historic reasons."""
+		assert(isinstance(x, Node))
+		self.items.append(x)
+		x.parent = self
+		return x
+"""
+	def set(self, x):
+		#constants should call this..but if they are in a compiler, isconst wont propagate yet
+		assert(isinstance(x, Node))
+		if len(self) > 0:
+			self[0] = x
+		else:
+			super(val, self).append(x)
+		return x
+"""
 
 def list_of(type_name):
 	"""helper to create a type"""
@@ -1259,7 +1278,7 @@ class For(Syntaxed):
 		assert isinstance(items, List)
 		#r = b['list'].make_type({'itemtype': Ref(b['statement'])}).make_inst() #just a list of the "anything" type..dunno
 		for item in items:
-			itemvar.runtime.value.append(item)
+			itemvar.append_value(item)
 			s.ch.body.run()
 
 		return NoValue()
@@ -1280,7 +1299,9 @@ class If(Syntaxed):
 		super(If, self).__init__(children)
 
 	def _eval(s):
-		if s.ch.condition.eval():
+		c = s.ch.condition.eval()
+		#lets just do it by hand here..
+		if c.decl == b['bool'] and c.pyval == 1:
 			s.ch.statements.run()
 
 		return NoValue()
@@ -2034,9 +2055,6 @@ def num_arg():
 
 def num_list():
 	return  b["list"].make_type({'itemtype': Ref(b['number'])})
-
-def make_list(btype = 'anything'):
-	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
 
 def num_list_arg():
 	return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})

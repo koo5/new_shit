@@ -5,10 +5,11 @@ from math import *
 from colors import color, colors
 import project
 import nodes
+from element import Element
 from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 from menu_items import InfoItem
 import widgets
-from logger import log
+from logger import log, topic
 
 font = font_height = font_width = 666
 
@@ -291,6 +292,8 @@ class Root(Frame):
 				s.cursor_bottom()
 			elif k == pygame.K_d:
 				s.text_dump()
+			elif k == pygame.K_p:
+				s.dump_parents()
 			elif k == pygame.K_q:
 				#a quit shortcut that goes thru the event pickle/replay mechanism
 				exit()
@@ -336,6 +339,16 @@ class Root(Frame):
 		return True
 
 
+	@topic('parents')
+	def dump_parents(self):
+		element = self.under_cursor()
+		while element != None:
+			assert isinstance(element, Element), (assold, element)
+			log(str(element))
+			assold = element
+			element = element.parent
+
+
 	def on_keypress(self, event):
 		event.frame = self
 		event.cursor = (self.cursor_c, self.cursor_r)
@@ -350,7 +363,11 @@ class Root(Frame):
 		if element != None and element.dispatch_levent(event):
 			return True
 
-		while element != None and not element.on_keypress(event):
+		while element != None:
+			assert isinstance(element, Element), (assold, element)
+			if element.on_keypress(event):
+				break
+			assold = element
 			element = element.parent
 		if element != None:#some element handled it
 			if log_events:
