@@ -50,9 +50,11 @@ building_in = True
 def buildin(node, name=None):
 	if building_in:
 		if name == None:
-			b[node] = node
+			key = node
 		else:
-			b[name] = node
+			key = name
+		assert key not in b, str(key) + " already in builtins"
+		b[key] = node
 
 
 def make_list(btype = 'anything'):
@@ -1703,14 +1705,6 @@ SyntaxedNodecl(TypedArgument,
 			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
 			   {'name': 'text', 'type': 'type'})
 
-class TypedArgument(Syntaxed):
-	def __init__(self, kids):
-		super(TypedArgument, self).__init__(kids)
-
-SyntaxedNodecl(TypedArgument,
-			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
-			   {'name': 'text', 'type': 'type'})
-
 class UnevaluatedArgument(Syntaxed):
 	def __init__(self, kids):
 		super(UnevaluatedArgument, self).__init__(kids)
@@ -2238,6 +2232,15 @@ Tah-dah!#you really like typing.
 
 
 
+class Note(Syntaxed):
+	def __init__(self, kids):
+		self.text = widgets.Text(self, "")
+		super(Note,self).__init__(kids)
+
+SyntaxedNodecl(Note,
+			   [["note: ", WidgetTag("text")]],
+			   {'text': Exp(b['text'])})
+
 
 
 
@@ -2254,6 +2257,9 @@ def make_root():
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 0
 	building_in = False
+
+	#r.add(("toolbar", toolbar.build()))
+
 	return r
 
 
