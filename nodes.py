@@ -61,6 +61,11 @@ def make_list(btype = 'anything'):
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
 
 
+#def deserialize(d):
+#	scope = r["builtins"].scopes
+
+
+
 class Node(element.Element):
 	"""a node is more than an element,
 	in the editor, nodes can be cut'n'pasted around on their own
@@ -74,7 +79,12 @@ class Node(element.Element):
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
-	
+
+	def serialize(s):
+		return {
+			'class': s.__class__
+		}.update(s._serialize())
+
 	@property
 	def brackets_color(s):
 		if s._brackets_color == "node brackets rainbow":
@@ -259,6 +269,15 @@ class Syntaxed(Node):
 
 		self.ch._lock()
 		self.lock()
+
+	def _serialize(s):
+		return {'children': s.serialize_children()}
+
+	def serialize_children(s):
+		r = {}
+		for k, v in s.ch:
+			r[k] = v.serialize()
+		return r
 
 	def fix_parents(self):
 		self._fix_parents(self.ch._dict.values())
