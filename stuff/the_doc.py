@@ -344,8 +344,8 @@ PYTHONPATH=~/pygame_cffi pypy new_shit/new_shit.py
 
 
 Levels of detail
-IP systems also offer several levels of detail, allowing the programmer to "zoom in" or out. In the example above, the programmer could zoom out to get a level that would say something like:
-<<print the numbers 1 to 10>>
+"IP systems also offer several levels of detail, allowing the programmer to "zoom in" or out. In the example above, the programmer could zoom out to get a level that would say something like:
+<<print the numbers 1 to 10>>"
 en.wikipedia.org/wiki/Intentional_programming
 
 
@@ -410,7 +410,7 @@ some todo:
 * (?)or start extending the way Syntaxed specifies syntax now, like, for List, it would be '[', ListItemWithComma*, ListItem?, ']'
 * ListItemWithComma, ListItem...implies the concrete syntax nodes would co-exist with the AST nodes..(?)
 * triples: predicate definition node, accepts Text or URL as subject and object
-* math notations (solve pygame unicode problem first)
+* math notations (solve unicode font problem first)
 * add notes to nodes
 
 
@@ -506,7 +506,7 @@ code or something, maybe that text editor.
 So yeah there would be both lemon text-o-widgets and some different widgets. but who cares.
 
 
-oh, and im eyeing pyglet again. pygame's Font cant do unicode. pyglet + SDL_ttf would work?
+oh, and im eyeing pyglet again. 
 
 
 if somebody will want to do a JS version, there are python-to-js compiler/interpreter projects. what would be the implications of their use for $above/of $above for their use?
@@ -582,4 +582,27 @@ ncurses interface
 
 
 
-#⇾node⇽...would be nice...pygames font dont do unicode:<
+#⇾node⇽...would be nice...how to ensure having a good unicode font available? bundle?
+
+
+
+
+
+
+
+
+possible todo path towards an useful language:
+===
+save/load:
+	identification
+
+copy/paste	
+
+python eval:
+	class variable for environment	
+	phase 2: PythonEvalText, menu, __dict__
+
+structs
+
+
+

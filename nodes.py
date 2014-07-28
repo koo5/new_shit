@@ -1295,6 +1295,30 @@ SyntaxedNodecl(For,
 				    })),
 			   'body': b['statements']})
 
+class VarlessFor(Syntaxed):
+	def __init__(self, children):
+		self.it = b['untypedvar'].inst_fresh()
+		self.it.ch.name.pyval = "it"
+		super(VarlessFor, self).__init__(children)
+
+	@property
+	def vardecls(s):
+		return [s.it]
+
+	def _eval(s):
+		items = s.ch.items.eval()
+		assert isinstance(items, List)
+		for item in items:
+			s.it.append_value(item)
+			s.ch.body.run()
+		return NoValue()
+
+SyntaxedNodecl(VarlessFor,
+			   [TextTag("for"), ChildTag("items"),
+			        ":\n", ChildTag("body")],
+			   {'items': Exp(list_of('type')),
+			   'body': b['statements']})
+
 
 class If(Syntaxed):
 	def __init__(self, children):
@@ -1369,12 +1393,16 @@ class Compiler(Node):
 			if isinstance(i0, Node):
 				r = i0
 			#demodemodemo
-			elif isinstance(self.type, Ref):
-				if self.type.target == b['text']:
-					r = Text(i0)
-				if self.type.target == b['number']:
-					if Number.match(i0):
-						r = Number(i0)
+			type = self.type
+			if isinstance(self.type, Exp):
+				type = self.type.type
+			if isinstance(type, Ref):
+				type = type.target
+			if type == b['text']:
+				r = Text(i0)
+			if self.type == b['number']:
+				if Number.match(i0):
+					r = Number(i0)
 
 		r.parent = self
 		#log(self.items, "=>", r)
@@ -1578,7 +1606,7 @@ class Compiler(Node):
 		#todo etc. make the cursor move naturally
 
 	@topic("menu")
-	def menu(self, atts):
+	def menu(self, atts, debug = False):
 
 		i = self.mine(atts)
 		if i == None:
@@ -1641,8 +1669,9 @@ class Compiler(Node):
 
 		menu.sort(key=lambda i: i.score)
 
-		#print ('MENU FOR:',text,"type:",self.type)*100
-		#[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
+		if debug:
+			print ('MENU FOR:',text,"type:",self.type)
+			[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
 
 		menu.append(DefaultCompilerMenuItem(text))
 		menu.reverse()#umm...
@@ -2241,6 +2270,23 @@ SyntaxedNodecl(Note,
 			   [["note: ", WidgetTag("text")]],
 			   {'text': Exp(b['text'])})
 
+
+
+class ShellCommand(Syntaxed):
+	def __init__(self, kids):
+		super(ShellCommand, self).__init__(kids)
+
+	def _eval(s):
+		cmd = s.ch.command.eval()
+		import os
+		try:
+			return Text(str(os.system(cmd.pyval)))
+		except Exception as e:
+			return Text(str(e))
+
+SyntaxedNodecl(ShellCommand,
+			   [["bash:", ChildTag("command")]],
+			   {'command': Exp(b['text'])})
 
 
 
