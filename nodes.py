@@ -50,13 +50,28 @@ building_in = True
 def buildin(node, name=None):
 	if building_in:
 		if name == None:
-			b[node] = node
+			key = node
 		else:
-			b[name] = node
+			key = name
+		assert key not in b, str(key) + " already in builtins"
+		b[key] = node
 
 
 def make_list(btype = 'anything'):
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
+
+def is_type(node):
+	return isinstance(node, (NodeclBase, ParametricType, Ref, Exp, Definition, SyntacticCategory, EnumType))
+def is_decl(node):
+	return isinstance(node, (NodeclBase, ParametricTypeBase))
+
+
+def deserialize(d):
+	scope = r["builtins"].scopes
+	decls = [x for x in scope if is_decl(x)]
+	for d in decls:
+		print d.__class__.__name__
+
 
 
 class Node(element.Element):
@@ -72,7 +87,12 @@ class Node(element.Element):
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
-	
+
+	def serialize(s):
+		return {
+			'class': s.__class__
+		}.update(s._serialize())
+
 	@property
 	def brackets_color(s):
 		if s._brackets_color == "node brackets rainbow":
@@ -194,11 +214,6 @@ class Node(element.Element):
 	def delete_self(self):
 		self.parent.delete_child(self)
 
-	#i dont get any visitors here, nor should my code
-	def flatten(self):
-		print self, "flattens to self"
-		return [self]
-
 	def to_python_str(self):
 		return str(self)
 
@@ -231,8 +246,29 @@ class Node(element.Element):
 
 		yield EndTag()
 
+	#i dont get any visitors here, nor should my code
+	def flatten(self):
+		r = self._flatten()
+		#assert is_flat(r), (self, r)
+		#return r
+		return flatten(r)
+
+	def _flatten(self):
+		if not isinstance(self, (WidgetedValue, EnumVal, Ref)):
+			log("warning: "+str(self)+ "flattens to self")
+		return [self]
+
 	def palette(self, scope, text, node):
 		return []
+
+	def __repr__(s):
+		r = object.__repr__(s)
+		try:
+			r += "("+s.name+")"
+		except:
+			pass
+		return r
+
 
 class Children(dotdict):
 	pass
@@ -257,6 +293,15 @@ class Syntaxed(Node):
 
 		self.ch._lock()
 		self.lock()
+
+	def _serialize(s):
+		return {'children': s.serialize_children()}
+
+	def serialize_children(s):
+		r = {}
+		for k, v in s.ch:
+			r[k] = v.serialize()
+		return r
 
 	def fix_parents(self):
 		self._fix_parents(self.ch._dict.values())
@@ -291,7 +336,7 @@ class Syntaxed(Node):
                 raise Exception("We should never get here")
 		#self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
 
-	def flatten(self):
+	def _flatten(self):
 		assert(isinstance(v, Node) for v in self.ch._dict.itervalues())
 		return [self] + [v.flatten() for v in self.ch._dict.itervalues()]
 
@@ -328,7 +373,7 @@ class Syntaxed(Node):
 			if e.key == pygame.K_COMMA:
 				self.prev_syntax()
 				return True
-			if e.key == pygame.K_COLON:
+			if e.key == pygame.K_PERIOD:
 				self.next_syntax()
 				return True
 		return super(Syntaxed, self).on_keypress(e)
@@ -375,7 +420,7 @@ class Syntaxed(Node):
 	def slots(self):
 		return self.decl.instance_slots
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 
@@ -439,7 +484,7 @@ class Dict(Collapsible):
 		super(Dict, self).fix_parents()
 		self._fix_parents(self.items.values())
 
-	def flatten(self):
+	def _flatten(self):
 		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]#skip Widgets, for Settings
 
 	def add(self, (key, val)):
@@ -528,7 +573,7 @@ class List(Collapsible):
 		self.items = [to_lemon(i) for i in val]
 		self.fix_parents()
 
-	def flatten(self):
+	def _flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items])
 
 	def replace_child(self, child, new):
@@ -580,7 +625,7 @@ class List(Collapsible):
 		if ch in s.items:
 			s.items.remove(ch)
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.item_type)+"')"
 
 	@property
@@ -705,9 +750,6 @@ class WidgetedValue(Node):
 	def copy(s):
 		return s.eval()
 
-	def flatten(self):
-		return [self]
-
 class Number(WidgetedValue):
 	def __init__(self, value="0"):
 		super(Number, self).__init__()
@@ -740,7 +782,7 @@ class Text(WidgetedValue):
 	def _eval(self):
 		return Text(self.pyval)
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+s.pyval+"')"
 
 	@staticmethod
@@ -774,7 +816,7 @@ class Unknown(WidgetedValue):
 	def _eval(self):
 		return Text(self.pyval)
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+s.pyval+"')"
 
 	@staticmethod
@@ -868,7 +910,7 @@ class Ref(Node):
 	def inst_fresh(self):
 		"""you work as a type, you have to provide this"""
 		return self.target.inst_fresh()
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.target)+"')"
 
 
@@ -938,7 +980,7 @@ class NodeclBase(Node):
 		if self == type: return True
 		#todo:go thru Definitions and SyntacticCategories...
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
 
 class TypeNodecl(NodeclBase):
@@ -1038,7 +1080,10 @@ class SyntaxedNodecl(NodeclBase):
 					i.pyval
 	"""
 
-class ParametricType(Syntaxed):
+class ParametricTypeBase(Syntaxed):
+	pass
+
+class ParametricType(ParametricTypeBase):
 	"""like..list of <type>, the <type> will be a child of this node.
 	 ParametricType is instantiated by ParametricNodecl"""
 	def __init__(self, kids, decl):
@@ -1075,7 +1120,7 @@ class ParametricType(Syntaxed):
 	#you cant render a different nodes syntax as your own
 	#make a new kind of tag for this?
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 
@@ -1129,9 +1174,6 @@ class EnumVal(Node):
 	def _eval(self):
 		return EnumVal(self.decl, self.value)
 
-	def flatten(self):
-		return [self]
-
 	#@staticmethod
 	#def match(text):
 	#	"return score"
@@ -1139,9 +1181,10 @@ class EnumVal(Node):
 	#		return 300
 
 
-class EnumType(Syntaxed):
+class EnumType(ParametricTypeBase):
 	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
 	def __init__(self, kids):
+		self.instance_class = EnumVal
 		super(EnumType, self).__init__(kids)
 	def palette(self, scope, text, node):
 		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
@@ -1293,6 +1336,30 @@ SyntaxedNodecl(For,
 				    })),
 			   'body': b['statements']})
 
+class VarlessFor(Syntaxed):
+	def __init__(self, children):
+		self.it = b['untypedvar'].inst_fresh()
+		self.it.ch.name.pyval = "it"
+		super(VarlessFor, self).__init__(children)
+
+	@property
+	def vardecls(s):
+		return [s.it]
+
+	def _eval(s):
+		items = s.ch.items.eval()
+		assert isinstance(items, List), items
+		for item in items:
+			s.it.append_value(item)
+			s.ch.body.run()
+		return NoValue()
+
+SyntaxedNodecl(VarlessFor,
+			   [TextTag("for"), ChildTag("items"),
+			        ":\n", ChildTag("body")],
+			   {'items': Exp(list_of('type')),
+			   'body': b['statements']})
+
 
 class If(Syntaxed):
 	def __init__(self, children):
@@ -1326,9 +1393,6 @@ class Filter(Syntaxed):
 		super(Filter, self).__init__(kids)
 """
 
-
-def is_type(node):
-	return isinstance(node, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory, EnumType))
 
 
 
@@ -1367,12 +1431,16 @@ class Compiler(Node):
 			if isinstance(i0, Node):
 				r = i0
 			#demodemodemo
-			elif isinstance(self.type, Ref):
-				if self.type.target == b['text']:
-					r = Text(i0)
-				if self.type.target == b['number']:
-					if Number.match(i0):
-						r = Number(i0)
+			type = self.type
+			if isinstance(self.type, Exp):
+				type = self.type.type
+			if isinstance(type, Ref):
+				type = type.target
+			if type == b['text']:
+				r = Text(i0)
+			if self.type == b['number']:
+				if Number.match(i0):
+					r = Number(i0)
 
 		r.parent = self
 		#log(self.items, "=>", r)
@@ -1392,7 +1460,7 @@ class Compiler(Node):
 		super(Compiler, self).fix_parents()
 		self._fix_parents(self.nodes)
 
-	def flatten(self):
+	def _flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items if isinstance(v, Node)])
 
 	def add(self, item):
@@ -1576,7 +1644,7 @@ class Compiler(Node):
 		#todo etc. make the cursor move naturally
 
 	@topic("menu")
-	def menu(self, atts):
+	def menu(self, atts, debug = False):
 
 		i = self.mine(atts)
 		if i == None:
@@ -1639,8 +1707,9 @@ class Compiler(Node):
 
 		menu.sort(key=lambda i: i.score)
 
-		#print ('MENU FOR:',text,"type:",self.type)*100
-		#[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
+		if debug:
+			print ('MENU FOR:',text,"type:",self.type)
+			[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
 
 		menu.append(DefaultCompilerMenuItem(text))
 		menu.reverse()#umm...
@@ -1651,7 +1720,7 @@ class Compiler(Node):
 		log("del")
 		del s.items[s.items.index(child)]
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
 
@@ -1671,7 +1740,7 @@ class CompilerMenuItem(MenuItem):
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
 
 
@@ -1694,14 +1763,6 @@ functions
 #todo function arguments:#mode = eval/pass, untyped argument,
 #todo optional function return type
 #todo: show and hide argument names. syntaxed?
-
-class TypedArgument(Syntaxed):
-	def __init__(self, kids):
-		super(TypedArgument, self).__init__(kids)
-
-SyntaxedNodecl(TypedArgument,
-			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
-			   {'name': 'text', 'type': 'type'})
 
 class TypedArgument(Syntaxed):
 	def __init__(self, kids):
@@ -1955,7 +2016,7 @@ class FunctionCall(Node):
 	def name(s):
 		return s.target.name
 
-	def flatten(self):
+	def _flatten(self):
 		return [self] + flatten([v.flatten() for v in self.args])
 
 class FunctionCallNodecl(NodeclBase):
@@ -2052,6 +2113,9 @@ SyntaxedNodecl(BuiltinPythonFunctionDecl,
 
 def num_arg():
 	return TypedArgument({'name':Text("number"), 'type':Ref(b['number'])})
+
+def text_arg():
+	return TypedArgument({'name':Text("text"), 'type':Ref(b['text'])})
 
 def num_list():
 	return  b["list"].make_type({'itemtype': Ref(b['number'])})
@@ -2238,7 +2302,59 @@ Tah-dah!#you really like typing.
 
 
 
+class Note(Syntaxed):
+	def __init__(self, kids):
+		self.text = widgets.Text(self, "")
+		super(Note,self).__init__(kids)
 
+SyntaxedNodecl(Note,
+			   [["note: ", WidgetTag("text")]],
+			   {'text': Exp(b['text'])})
+
+
+
+class ShellCommand(Syntaxed):
+	def __init__(self, kids):
+		super(ShellCommand, self).__init__(kids)
+
+	def _eval(s):
+		cmd = s.ch.command.eval()
+		import os
+		try:
+			return Text(str(os.system(cmd.pyval)))
+		except Exception as e:
+			return Text(str(e))
+
+SyntaxedNodecl(ShellCommand,
+			   [["bash:", ChildTag("command")]],
+			   {'command': Exp(b['text'])})
+
+
+class FilesystemPath(Syntaxed):
+	def __init__(self, kids):
+		self.status = widgets.Text(self, "(status)")
+		self.status.color = "compiler hint"
+		super(FilesystemPath, self).__init__(kids)
+
+	def _eval(s):
+		p = s.ch.path.eval().pyval
+		from os import path
+		s.status.text = "(valid)" if path.exists(p) else "(invalid)"
+		return Text(p)
+
+
+SyntaxedNodecl(FilesystemPath,
+			   [[ChildTag("path")],
+			    [ChildTag("path"), WidgetTag("status")]],
+			   {'path': Exp(b['text'])})
+
+def b_files_in_dir(dir):
+	import os
+	for x in os.walk(dir):
+		return x[2]
+	return []
+
+BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
 
 
 #Const({'name': Text("meaning of life"), 'value': Number(42)})
@@ -2254,6 +2370,9 @@ def make_root():
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 0
 	building_in = False
+
+	#r.add(("toolbar", toolbar.build()))
+
 	return r
 
 

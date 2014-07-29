@@ -10,6 +10,7 @@ from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 from menu_items import InfoItem
 import widgets
 from logger import log, topic
+import graph
 
 font = font_height = font_width = 666
 
@@ -294,9 +295,10 @@ class Root(Frame):
 				s.text_dump()
 			elif k == pygame.K_p:
 				s.dump_parents()
+			elif k == pygame.K_g:
+				graph.gen_graph(s.root)
 			elif k == pygame.K_q:
-				#a quit shortcut that goes thru the event pickle/replay mechanism
-				exit()
+				exit()#a quit shortcut that goes thru the event pickle/replay mechanism
 			else:
 				return False
 		else:
@@ -464,11 +466,21 @@ class Menu(Frame):
 			if e.key == pygame.K_UP:
 				self.move(-1)
 				return True
-			if e.key == pygame.K_DOWN:
+			elif e.key == pygame.K_DOWN:
 				self.move(1)
+				return True
+			elif e.key == pygame.K_m:
+				self.menu_dump()
 				return True
 		if e.key == pygame.K_SPACE:
 			return self.accept()
+
+	def menu_dump(s):
+		e = s.element = s.root_frame.under_cursor()
+		atts = s.root_frame.atts
+		if e != None:
+			e.menu(atts, True)
+
 
 	def click(s,e,pos):
 		for i,r in s.rects.iteritems():
@@ -480,6 +492,7 @@ class Menu(Frame):
 		if len(self.items_on_screen) > self.sel:
 			if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
 				self.sel = 0
+				self.scroll_lines = 0
 				return True
 
 

@@ -69,10 +69,10 @@ class Element(event.EventDispatcher):
 	def dispatch_levent(s, e):
 		#log('dispatching '+str(e))
 		for constraints, function_name, function in s.levent_handlers.itervalues():
-			log ("for constraint" + str(constraints))
+			#log ("for constraint" + str(constraints))
 			if "key" in constraints:
 				if constraints['key'] != e.key:
-					log ("key doesnt match")
+					#log ("key doesnt match")
 					continue
 
 			if not "mod" in constraints:
