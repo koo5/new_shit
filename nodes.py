@@ -61,7 +61,7 @@ def make_list(btype = 'anything'):
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
 
 def is_type(node):
-	return isinstance(node, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory, EnumType))
+	return isinstance(node, (NodeclBase, ParametricType, Ref, Exp, Definition, SyntacticCategory, EnumType))
 def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase))
 
@@ -214,11 +214,6 @@ class Node(element.Element):
 	def delete_self(self):
 		self.parent.delete_child(self)
 
-	#i dont get any visitors here, nor should my code
-	def flatten(self):
-		print self, "flattens to self"
-		return [self]
-
 	def to_python_str(self):
 		return str(self)
 
@@ -251,8 +246,29 @@ class Node(element.Element):
 
 		yield EndTag()
 
+	#i dont get any visitors here, nor should my code
+	def flatten(self):
+		r = self._flatten()
+		#assert is_flat(r), (self, r)
+		#return r
+		return flatten(r)
+
+	def _flatten(self):
+		if not isinstance(self, (WidgetedValue, EnumVal, Ref)):
+			log("warning: "+str(self)+ "flattens to self")
+		return [self]
+
 	def palette(self, scope, text, node):
 		return []
+
+	def __repr__(s):
+		r = object.__repr__(s)
+		try:
+			r += "("+s.name+")"
+		except:
+			pass
+		return r
+
 
 class Children(dotdict):
 	pass
@@ -320,7 +336,7 @@ class Syntaxed(Node):
                 raise Exception("We should never get here")
 		#self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
 
-	def flatten(self):
+	def _flatten(self):
 		assert(isinstance(v, Node) for v in self.ch._dict.itervalues())
 		return [self] + [v.flatten() for v in self.ch._dict.itervalues()]
 
@@ -404,7 +420,7 @@ class Syntaxed(Node):
 	def slots(self):
 		return self.decl.instance_slots
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 
@@ -468,7 +484,7 @@ class Dict(Collapsible):
 		super(Dict, self).fix_parents()
 		self._fix_parents(self.items.values())
 
-	def flatten(self):
+	def _flatten(self):
 		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]#skip Widgets, for Settings
 
 	def add(self, (key, val)):
@@ -557,7 +573,7 @@ class List(Collapsible):
 		self.items = [to_lemon(i) for i in val]
 		self.fix_parents()
 
-	def flatten(self):
+	def _flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items])
 
 	def replace_child(self, child, new):
@@ -609,7 +625,7 @@ class List(Collapsible):
 		if ch in s.items:
 			s.items.remove(ch)
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.item_type)+"')"
 
 	@property
@@ -734,9 +750,6 @@ class WidgetedValue(Node):
 	def copy(s):
 		return s.eval()
 
-	def flatten(self):
-		return [self]
-
 class Number(WidgetedValue):
 	def __init__(self, value="0"):
 		super(Number, self).__init__()
@@ -769,7 +782,7 @@ class Text(WidgetedValue):
 	def _eval(self):
 		return Text(self.pyval)
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+s.pyval+"')"
 
 	@staticmethod
@@ -803,7 +816,7 @@ class Unknown(WidgetedValue):
 	def _eval(self):
 		return Text(self.pyval)
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+s.pyval+"')"
 
 	@staticmethod
@@ -897,7 +910,7 @@ class Ref(Node):
 	def inst_fresh(self):
 		"""you work as a type, you have to provide this"""
 		return self.target.inst_fresh()
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.target)+"')"
 
 
@@ -967,7 +980,7 @@ class NodeclBase(Node):
 		if self == type: return True
 		#todo:go thru Definitions and SyntacticCategories...
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
 
 class TypeNodecl(NodeclBase):
@@ -1107,7 +1120,7 @@ class ParametricType(ParametricTypeBase):
 	#you cant render a different nodes syntax as your own
 	#make a new kind of tag for this?
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 
@@ -1160,9 +1173,6 @@ class EnumVal(Node):
 
 	def _eval(self):
 		return EnumVal(self.decl, self.value)
-
-	def flatten(self):
-		return [self]
 
 	#@staticmethod
 	#def match(text):
@@ -1450,7 +1460,7 @@ class Compiler(Node):
 		super(Compiler, self).fix_parents()
 		self._fix_parents(self.nodes)
 
-	def flatten(self):
+	def _flatten(self):
 		return [self] + flatten([v.flatten() for v in self.items if isinstance(v, Node)])
 
 	def add(self, item):
@@ -1710,7 +1720,7 @@ class Compiler(Node):
 		log("del")
 		del s.items[s.items.index(child)]
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
 
@@ -1730,7 +1740,7 @@ class CompilerMenuItem(MenuItem):
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
 
-	def __repr__(s):
+	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
 
 
@@ -2006,7 +2016,7 @@ class FunctionCall(Node):
 	def name(s):
 		return s.target.name
 
-	def flatten(self):
+	def _flatten(self):
 		return [self] + flatten([v.flatten() for v in self.args])
 
 class FunctionCallNodecl(NodeclBase):
