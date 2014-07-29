@@ -60,9 +60,17 @@ def buildin(node, name=None):
 def make_list(btype = 'anything'):
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
 
+def is_type(node):
+	return isinstance(node, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory, EnumType))
+def is_decl(node):
+	return isinstance(node, (NodeclBase, ParametricTypeBase))
 
-#def deserialize(d):
-#	scope = r["builtins"].scopes
+
+def deserialize(d):
+	scope = r["builtins"].scopes
+	decls = [x for x in scope if is_decl(x)]
+	for d in decls:
+		print d.__class__.__name__
 
 
 
@@ -349,7 +357,7 @@ class Syntaxed(Node):
 			if e.key == pygame.K_COMMA:
 				self.prev_syntax()
 				return True
-			if e.key == pygame.K_COLON:
+			if e.key == pygame.K_PERIOD:
 				self.next_syntax()
 				return True
 		return super(Syntaxed, self).on_keypress(e)
@@ -1059,7 +1067,10 @@ class SyntaxedNodecl(NodeclBase):
 					i.pyval
 	"""
 
-class ParametricType(Syntaxed):
+class ParametricTypeBase(Syntaxed):
+	pass
+
+class ParametricType(ParametricTypeBase):
 	"""like..list of <type>, the <type> will be a child of this node.
 	 ParametricType is instantiated by ParametricNodecl"""
 	def __init__(self, kids, decl):
@@ -1160,9 +1171,10 @@ class EnumVal(Node):
 	#		return 300
 
 
-class EnumType(Syntaxed):
+class EnumType(ParametricTypeBase):
 	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
 	def __init__(self, kids):
+		self.instance_class = EnumVal
 		super(EnumType, self).__init__(kids)
 	def palette(self, scope, text, node):
 		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
@@ -1326,7 +1338,7 @@ class VarlessFor(Syntaxed):
 
 	def _eval(s):
 		items = s.ch.items.eval()
-		assert isinstance(items, List)
+		assert isinstance(items, List), items
 		for item in items:
 			s.it.append_value(item)
 			s.ch.body.run()
@@ -1371,9 +1383,6 @@ class Filter(Syntaxed):
 		super(Filter, self).__init__(kids)
 """
 
-
-def is_type(node):
-	return isinstance(node, (Ref, NodeclBase, Exp, ParametricType, Definition, SyntacticCategory, EnumType))
 
 
 
@@ -2095,6 +2104,9 @@ SyntaxedNodecl(BuiltinPythonFunctionDecl,
 def num_arg():
 	return TypedArgument({'name':Text("number"), 'type':Ref(b['number'])})
 
+def text_arg():
+	return TypedArgument({'name':Text("text"), 'type':Ref(b['text'])})
+
 def num_list():
 	return  b["list"].make_type({'itemtype': Ref(b['number'])})
 
@@ -2307,6 +2319,32 @@ SyntaxedNodecl(ShellCommand,
 			   [["bash:", ChildTag("command")]],
 			   {'command': Exp(b['text'])})
 
+
+class FilesystemPath(Syntaxed):
+	def __init__(self, kids):
+		self.status = widgets.Text(self, "(status)")
+		self.status.color = "compiler hint"
+		super(FilesystemPath, self).__init__(kids)
+
+	def _eval(s):
+		p = s.ch.path.eval().pyval
+		from os import path
+		s.status.text = "(valid)" if path.exists(p) else "(invalid)"
+		return Text(p)
+
+
+SyntaxedNodecl(FilesystemPath,
+			   [[ChildTag("path")],
+			    [ChildTag("path"), WidgetTag("status")]],
+			   {'path': Exp(b['text'])})
+
+def b_files_in_dir(dir):
+	import os
+	for x in os.walk(dir):
+		return x[2]
+	return []
+
+BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
 
 
 #Const({'name': Text("meaning of life"), 'value': Number(42)})
