@@ -7,10 +7,11 @@ sometimes i use s, sometimes self.
 
 creation of new nodes. 
 __init__ usually takes children or value as arguments.
-fresh() calls it with some defaults (as the user would have it created)
+fresh() calls it with some defaults (as the user would have it inserted from the menu)
 each class has a decl, which is an object descending from NodeclBase (nodecl for node declaration).
-nodecl can be thought of as a type, and objects pointing to them with their decls as values.
+nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
 nodecls have a set of functions for instantiating the values, and those need some cleanup
+and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
 
@@ -947,8 +948,8 @@ class Exp(Node):
 class NodeclBase(Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
 	know their python class ("instance_class"), syntax and shit.
-	usually do something like instance_class.decl = self so we can instantiate the
-	classes in code without going thru a corresponding nodecl"""
+	usually does something like instance_class.decl = self, so we can instantiate the
+	classes in code without going thru a corresponding nodecl.inst_fresh()"""
 	def __init__(self, instance_class):
 		super(NodeclBase, self).__init__()
 		self.instance_class = instance_class
@@ -978,7 +979,7 @@ class NodeclBase(Node):
 		if isinstance(type, Ref):
 			type = type.target
 		if self == type: return True
-		#todo:go thru Definitions and SyntacticCategories...
+		#todo:go thru Definitions and SyntacticCategories...this is a prolog thing
 
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
