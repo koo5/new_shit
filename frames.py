@@ -10,6 +10,7 @@ from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 from menu_items import InfoItem
 import widgets
 from logger import log, topic
+import graph
 
 font = font_height = font_width = 666
 
@@ -294,9 +295,10 @@ class Root(Frame):
 				s.text_dump()
 			elif k == pygame.K_p:
 				s.dump_parents()
+			elif k == pygame.K_g:
+				graph.gen_graph(s.root)
 			elif k == pygame.K_q:
-				#a quit shortcut that goes thru the event pickle/replay mechanism
-				exit()
+				exit()#a quit shortcut that goes thru the event pickle/replay mechanism
 			else:
 				return False
 		else:
