@@ -29,6 +29,7 @@ class Text(Widget):
 		pos = e.atts["char_index"]
 		return self._keypress(e, pos)
 
+	keys = ["text editing"]
 	def _keypress(self, e, pos):
 		#first things that a text field should pass up
 		if e.mod & pygame.KMOD_CTRL:
@@ -91,6 +92,7 @@ class Button(Widget):
 	def on_mouse_press(self, button):
 		ping()
 		self.dispatch_event('on_click', self)
+	keys = ["return, space: press button"]
 	def on_keypress(self, e):
 		ping()
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
@@ -176,6 +178,7 @@ class NState(Widget):
 	def on_mouse_press(self, button):
 		self.toggle()
 		return True
+	keys = ["return, space: toggle"]
 	def on_keypress(self, e):
 		#log("NState keypress")
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
@@ -201,6 +204,7 @@ class Toggle(Widget):
 		self.dispatch_event('on_change', self)
 	def on_mouse_press(self, button):
 		self.toggle()
+	keys = ["return, space: toggle"]
 	def on_keypress(self, e):
 		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
 			self.toggle()

@@ -48,6 +48,10 @@ files:
 license
 ===
 not decided yet, some standard license or this experiment: <https://github.com/koo5/Free-Man-License> 
+By contributing to lemon, you agree to granting me nonexclusive rights to use your contribution (with attribution) within lemon, in any way, including relicensing and reselling. 
+also, the patent claim protection clauses like in http://www.gnu.org/licenses/agpl-3.0.html apply.
+some other options: http://www.gnu.org/licenses/gpl-faq.html#AssignCopyright
+
 
 
 

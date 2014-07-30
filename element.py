@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 
+import pygame
+from weakref import ref as weakref
+
 import event #event module from pyglet, used to pass events from widgets to parent nodes
 import input #lemon's input event decorator
 from logger import log, ping
 import tags
-import pygame
-from weakref import ref as weakref
 
 class Element(event.EventDispatcher):
+	help = []
+	keys = []
+	keys_help_items = None
 	def __init__(self):
 		super(Element, self).__init__()
 		self._parent = 666
@@ -137,12 +141,24 @@ class Element(event.EventDispatcher):
 	def menu(self, atts):
 		return []
 
-	def hierarchy_info(self):
-		r = []
+	def generate_keys_help_items(s):
+		help = []
+		for c in s.__class__.mro():
+			if c == Element:
+				break
+			if "keys" in c.__dict__:
+				help += c.keys
+
+		from menu_items import InfoItem
+		s.keys_help_items = [InfoItem(x) for x in help]
+
+	"""
+	def create_notes_items(s):
 		if self.__dict__.has_key("notes"):
-			r += [InfoMenuItem(self.notes)]
-		r += [InfoMenuItem("element: " + str(self))]
-		return r
+			s.notes_items = [InfoItem(self.notes)]
+		else:
+			s.notes_items = []
+	"""
 
 	def menu_item_selected(self, item, atts):
 		if self.parent:
@@ -155,3 +171,8 @@ class Element(event.EventDispatcher):
 	#	def is_active(self):
 	#		return False
 """
+
+	def long__repr__(s):
+		return object.__repr__(s)
+
+

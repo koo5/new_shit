@@ -1,13 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""
 try:
 	import objgraph, gc
 except:
 	pass
-
+"""
 
 import argparse, sys, os
+import pickle, copy
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 import pygame
@@ -41,17 +43,13 @@ def parse_args():
 				   default=False)
 	return parser.parse_args()
 
-
 args = parse_args()
 colors.cache(args)
-small_help = True
 
 def change_font_size(by = 0):
 	args.font_size += by
 	frames.font = pygame.font.SysFont('monospace', args.font_size)
 	frames.font_width, frames.font_height = frames.font.size("X")
-
-
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
@@ -60,17 +58,20 @@ def resize(size):
 	screen_width, screen_height = screen_surface.get_size()
 	resize_frames()
 
+sidebar = None
 def resize_frames():
-	info_height_max = screen_height / (10 if small_help else 2)
 	root.rect.topleft = (0,0)
 	root.rect.width = screen_width / 3 * 2
 	root.rect.height = screen_height
-	menu.rect.topleft = (root.rect.w, 0)
-	info_height = min(info.used_height, info_height_max)
-	menu.rect.size = (screen_width - root.rect.width, screen_height - info_height)
-	info.rect.topleft = (root.rect.w, menu.rect.h)
-	info.rect.size = (menu.rect.width,	info_height)
+	if sidebar != None:
+		sidebar.rect.topleft = (root.rect.w, 0)
+		sidebar.rect.width = screen_width - root.rect.width
+		sidebar.rect.height = screen_height
 
+def cycle_sidebar():
+	global sidebar
+	sidebar = sidebars[sidebars.index(sidebar) + 1]
+	resize_frames()
 
 def top_keypress(event):
 	global cursor_r,cursor_c, small_help
@@ -87,7 +88,7 @@ def top_keypress(event):
 		if k == pygame.K_ESCAPE:
 			bye()
 		elif k == pygame.K_F1:
-			small_help = not small_help
+			cycle_sidebar()
 		else:
 			return False
 	return True
@@ -120,8 +121,9 @@ class KeypressEvent(object):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod)))
 
+
+
 replay = []
-import pickle, copy
 
 def do_replay(ff):
 	global replay, fast_forward
@@ -138,7 +140,7 @@ def do_replay(ff):
 	for i in replay:
 		display.set_caption(display.get_caption()[0] + " " + i.uni)
 		log(i.uni)
-		do_keypress(copy.deepcopy(i))
+		handle_keypress(copy.deepcopy(i))
 	fast_forward = False
 
 
@@ -161,13 +163,13 @@ def keypress(event):
 					pickle.dump(replay, f)
 				except pickle.PicklingError as error:
 					print error, ", are you profiling?"
-		do_keypress(copy.deepcopy(e))
+		handle_keypress(copy.deepcopy(e))
 
-def do_keypress(e):
+def handle_keypress(e):
 	if top_keypress(e):
 		if args.log_events:
 			log("handled by main top")
-	elif menu.on_keypress(e):
+	elif sidebar.on_keypress(e):
 		if args.log_events:
 			log("handled by menu")
 	else:
@@ -193,7 +195,7 @@ def mousedown(e):
 		if e.button == 5: change_font_size(-1)
 		render()
 	else:
-		for f in all_frames:
+		for f in [sidebar, root]:
 			if f.rect.collidepoint(e.pos):
 				pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
 				f.mousedown(e, pos)
@@ -242,17 +244,14 @@ def reset_cursor_blink_timer():
 
 def render():
 	root.render()
-	info.render()
-	resize_frames()
-	menu.render(root)
+	sidebar.render()
 	draw()
 
 
 def draw():
 	if not fast_forward:
 		screen_surface.blit(root.draw(),root.rect.topleft)
-		screen_surface.blit(menu.draw(),menu.rect.topleft)
-		screen_surface.blit(info.draw(),info.rect.topleft)
+		screen_surface.blit(sidebar.draw(),sidebar.rect.topleft)
 		pygame.display.flip()
 
 def bye():
@@ -271,34 +270,28 @@ def loop():
 pygame.display.init()
 pygame.font.init()
 
-
-#try to set SDL keyboard settings to system settings
-
-try:
-	s = os.popen('xset -q  | grep "repeat delay"').read().split()
-	repeat_delay, repeat_rate = int(s[3]), int(s[6])
-	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
-except:
-	pass
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
-screen_surface = None
-display.set_caption('lemon operating language v 0.0 streamlined insane prototype with types')
+#screen_surface = None
+display.set_caption('lemon operating language prototype v 0.1')
 icon = image.load('icon32x32.png')
 display.set_icon(icon)
 
 change_font_size()
 
 frames.args = args
+frames.log_events = args.log_events
+
 root = frames.Root()
 if args.noalpha:
 	root.arrows_visible = False
-menu = frames.Menu()
-menu.root = root
-info = frames.Info()
-info.root = root
-all_frames = [root, menu, info]
-fast_forward = False
-frames.log_events = args.log_events
+
+sidebars = [frames.Intro(root),
+            frames.GlobalKeys(root),
+            frames.Menu(root),
+            frames.NodeInfo(root)]
+            #frames.ContextInfo(root)]
+sidebars.append(sidebars[0])
+sidebar = sidebars[0]
 
 def fuck_sdl():
 	"""SDL insists that you must give your new window some size
@@ -322,8 +315,18 @@ def fuck_sdl():
 resize((666,666))
 try:
 	resize(fuck_sdl())
-except:
-	print "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize"
+except Exception as e:
+	print e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize"
+
+
+#try to set SDL keyboard settings to system settings
+try:
+	s = os.popen('xset -q  | grep "repeat delay"').read().split()
+	repeat_delay, repeat_rate = int(s[3]), int(s[6])
+	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
+except Exception as e:
+	print e, "cant fix sdl keyboard repeat delay/rate"
+
 
 
 root.render()
@@ -331,15 +334,18 @@ try:
 	root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
 	root.cursor_c += 1
 except Exception as e:
-	print e, ", cant move cursor"
+	print e, ", cant set initial cursor position"
 
+
+fast_forward = False
 
 if args.replay:
 	do_replay(True)
+
 render()
 
 
-pygame.time.set_timer(pygame.USEREVENT, 100) #poll for SIGINT
+pygame.time.set_timer(pygame.USEREVENT, 333) #poll for SIGINT
 reset_cursor_blink_timer()
 def main():
 	while True:

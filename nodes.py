@@ -28,8 +28,8 @@ from compiler.ast import flatten
 from dotdict import dotdict
 from logger import log, topic
 import element
-import widgets
 from menu_items import MenuItem
+import widgets
 import tags
 #better would be ch, wi, te, ?
 from tags import ChildTag, ElementTag, WidgetTag, AttTag, TextTag, ColorTag, EndTag, IndentTag, DedentTag, NewlineTag, ArrowTag   #, MenuTag
@@ -205,6 +205,8 @@ class Node(element.Element):
 	def fresh(cls):
 		return cls()
 
+	keys = ["f7: evaluate",
+	        "ctrl del: delete"]
 	def on_keypress(self, e):
 		if e.key == pygame.K_F7:
 			self.eval()
@@ -369,6 +371,8 @@ class Syntaxed(Node):
 			self.syntax_index = len(self.syntaxes)-1
 		log("next")
 
+	keys = ["ctrl ,: previos syntax",
+			"ctrl .: next syntax"]
 	def on_keypress(self, e):
 		if pygame.KMOD_CTRL & e.mod:
 			if e.key == pygame.K_COMMA:
@@ -526,6 +530,8 @@ class List(Collapsible):
 		super(List, self).fix_parents()
 		self._fix_parents(self.items)
 
+	keys = ["ctrl del: delete item",
+			"return: add item"]
 	def on_keypress(self, e):
 
 		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
@@ -777,6 +783,7 @@ class Text(WidgetedValue):
 	def render(self):
 		return self.widget.render()
 
+	#hmm
 	def on_keypress(self, e):
 		return self.widget.on_keypress(e)
 
@@ -1090,7 +1097,7 @@ class ParametricType(ParametricTypeBase):
 	def __init__(self, kids, decl):
 		self.decl = decl
 		super(ParametricType, self).__init__(kids)
-		self.lock()
+		#self.lock()
 
 	@property
 	def slots(self):
@@ -1527,6 +1534,9 @@ class Compiler(Node):
 			r += [EndTag()]
 		r += [EndTag()]
 		return r
+
+	keys = ["text editing",
+			"ctrl del: delete item"]
 
 	def on_keypress(s, e):
 
@@ -2315,6 +2325,7 @@ SyntaxedNodecl(Note,
 
 
 class ShellCommand(Syntaxed):
+	info = ["runs a command with os.system"]
 	def __init__(self, kids):
 		super(ShellCommand, self).__init__(kids)
 
