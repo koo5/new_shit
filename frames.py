@@ -6,15 +6,15 @@ from colors import color, colors
 import project
 import nodes
 from element import Element
-from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 from menu_items import InfoItem
+from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 import widgets
 from logger import log, topic
 import graph
 
 font = font_height = font_width = 666
 
-#gotta refactor stuff common to Menu and Info to some SimpleFrame or something
+#todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
 class Frame(object):
 #	def on_mouse_press(self, e):
@@ -26,6 +26,10 @@ class Frame(object):
 		s.lines = []
 		s.scroll_lines = 0
 		s._render_lines = {}#hack
+
+	def on_keypress(self, event):
+		return False
+
 
 	def project(s):
 		s.lines = project.project(s,
@@ -116,6 +120,7 @@ class Root(Frame):
 		if event.all[pygame.K_UP]: s.move_cursor_v(-1)
 		if event.all[pygame.K_DOWN]: s.move_cursor_v(1)
 
+	@property
 	def under_cursor(self):
 		return self.under_cr((self.cursor_c, self.cursor_r))
 
@@ -216,7 +221,7 @@ class Root(Frame):
 
 	def _draw(self, surf):
 		self.draw_arrows(surf)
-		self.draw_lines(surf, self.under_cursor(), self.arrows_visible)
+		self.draw_lines(surf, self.under_cursor, self.arrows_visible)
 		self.draw_cursor(surf)
 
 	def draw_cursor(self, s):
@@ -232,15 +237,15 @@ class Root(Frame):
 
 
 	def prev_elem(s):
-		e = s.under_cursor()
+		e = s.under_cursor
 		while s.move_cursor_h(-1):
-			if e != s.under_cursor():
+			if e != s.under_cursor:
 				break
 
 	def next_elem(s):
-		e = s.under_cursor()
+		e = s.under_cursor
 		while s.move_cursor_h(1):
-			if e != s.under_cursor():
+			if e != s.under_cursor:
 				break
 
 	def cursor_home(s):
@@ -262,7 +267,7 @@ class Root(Frame):
 		s.root['program'].run()
 
 	def run_line(s):
-		s.root['program'].run_line(s.under_cursor())
+		s.root['program'].run_line(s.under_cursor)
 
 	def clear(s):
 		s.root['program'].clear()
@@ -343,7 +348,7 @@ class Root(Frame):
 
 	@topic('parents')
 	def dump_parents(self):
-		element = self.under_cursor()
+		element = self.under_cursor
 		while element != None:
 			assert isinstance(element, Element), (assold, element)
 			log(str(element))
@@ -359,7 +364,7 @@ class Root(Frame):
 			if log_events:
 				log("handled by root frame")
 			return True
-		element = self.under_cursor()
+		element = self.under_cursor
 
 		#new style handlers
 		if element != None and element.dispatch_levent(event):
@@ -386,8 +391,9 @@ class Root(Frame):
 
 
 class Menu(Frame):
-	def __init__(s):
+	def __init__(s, root):
 		super(Menu, s).__init__()
+		s.root = root
 		s.sel = 0
 		#index to items_on_screen. not ideal.
 		#todo: a separate wishedfor_sel
@@ -439,8 +445,8 @@ class Menu(Frame):
 				c = colors.menu_rect
 			draw.rect(surface, c, r, 1)
 
-	def render(s, root):
-		s.root_frame = root
+	def render(s):
+
 		s.project()
 		s.clamp_sel()
 		s.generate_rects()
@@ -454,8 +460,8 @@ class Menu(Frame):
 		yield EndTag()
 
 	def generate_palette(s):
-		e = s.element = s.root_frame.under_cursor()
-		atts = s.root_frame.atts
+		e = s.element = s.root.under_cursor
+		atts = s.root.atts
 		if e != None:
 			for i in e.menu(atts):
 				if not s.valid_only or i.valid:
@@ -476,8 +482,8 @@ class Menu(Frame):
 			return self.accept()
 
 	def menu_dump(s):
-		e = s.element = s.root_frame.under_cursor()
-		atts = s.root_frame.atts
+		e = s.element = s.root.under_cursor
+		atts = s.root.atts
 		if e != None:
 			e.menu(atts, True)
 
@@ -504,57 +510,25 @@ class Menu(Frame):
 		s.valid_only = not s.valid_only
 
 
-class Info(Frame):
 
-	def __init__(s):
-		super(Info, s).__init__()
-		#create all infoitems at __init__, makes persistence possible (for visibility state)
-		s.top_info = [InfoItem(i) for i in [
-			"hide help items by clicking the gray X next to each",
-			"unhide all by clicking the dots",
-			"this stuff will go to a menu but for now..",
-			"ctrl + =,- : font size", 
-			"f9 : only valid items in menu - doesnt do much atm",
-			"f8 : toggle the silly arrows from Refs to their targets",
-			"f5 : eval",
-			"f4 : clear eval results",
-			"f2 : replay previous session keypresses",
-			"ctrl + up, down: menu movement",
-			"space: menu selection",
-			"",
-			"red <>'s enclose nodes or other widgets",
-			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
-			["{Compiler} looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
-			"(in gray) is the expected type",
 
-		]]
-		#,	"f12 : normalize syntaxes"
-		s.hierarchy_infoitem = InfoItem("bla")
-		s.deffun_infoitem = InfoItem("bla")
+
+class InfoFrame(Frame):
+	info = []
+	def __init__(s, root):
+		super(InfoFrame, s).__init__()
+		s.root = root
 		s.hidden_toggle = widgets.Toggle(s, True, ("(.....)", "(...)"))
 		s.hidden_toggle.color = s.hidden_toggle.brackets_color = "info item visibility toggle"
-
-	@property
-	def used_height(s):
-		return len(s.lines) * font_height
+		s.name = s.__class__.__name__
+		#create *all* infoitems at __init__, will make persistence possible (for visibility state)
+		s.default_items = [InfoItem(i) for i in s.info]
 
 	def update(s):
-		s.items = []
-		
-		uc = s.root.under_cursor()
-		s.items.append(s.hierarchy_infoitem)
-		s.hierarchy_infoitem.contents = [
-			str(s.root.cursor_c) + ":"+
-			str(s.root.cursor_r)+ ":" + str(uc)]
-
-		if isinstance(uc, nodes.FunctionCall):
-			s.deffun_infoitem.contents = ["=>", ElementTag(uc.target)]
-			s.items.append(s.deffun_infoitem)
-
-		s.items += s.top_info[:]
+		s.items = s.default_items[:]
 
 	def tags(s):
-		yield [ColorTag("help"), TextTag("help:  "), ElementTag(s.hidden_toggle), "\n"]
+		yield [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle), "\n"]
 		for i in s.items:
 			if not s.hidden_toggle.value or i.visibility_toggle.value:
 				yield [ElementTag(i), "\n"]
@@ -566,6 +540,62 @@ class Info(Frame):
 
 	def _draw(s, surface):
 		s.draw_lines(surface)
+
+
+
+class GlobalKeys(InfoFrame):
+	info = ["ctrl + =,- : font size",
+			"f5 : eval",
+			"f4 : clear eval results",
+			"f2 : replay keypresses from previous session",
+			"ctrl + up, down: menu movement",
+			"space: menu selection",
+	        "ctrl + d : dump root frame to dump.txt",
+	        "ctrl + p : dump parents",
+	        "ctrl + g : generate graph.gif",
+
+			"f9 : only valid items in menu - doesnt do much atm",
+			"f8 : toggle the silly arrows from Refs to their targets, (and current node highlighting, oops)"]
+
+class NodeInfo(InfoFrame):
+	def __init__(s, root):
+		super(NodeInfo, s).__init__(root)
+		#s.node_infoitem = InfoItem("bla")
+		#s.deffun_infoitem = InfoItem("bla")
+
+	def update(s):
+		super(NodeInfo, s).update()
+		uc = s.root.under_cursor
+		while uc != None:
+			s.items.append(InfoItem([
+				str(s.root.cursor_c) + ":"+
+				str(s.root.cursor_r)+ ":" + uc.long__repr__()]))
+
+
+			if isinstance(uc, nodes.FunctionCall):
+				s.items.append(InfoItem(["target=", ElementTag(uc.target)]))
+
+
+			if uc.keys_help_items == None:
+				uc.generate_keys_help_items()
+			s.items += uc.keys_help_items
+
+			uc = uc.parent
+
+class Intro(InfoFrame):
+	info = ["welcome to lemon!",
+		    "press F1 to cycle this sidebar",
+			"hide help items by clicking the gray X next to each",
+			"unhide all by clicking the dots",
+	        "scrolling with mousewheel is supported",
+	        "",
+			"nodes:",
+			"red <>'s enclose nodes or other widgets",
+			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
+			["{Compiler} looks like this: ", ElementTag(nodes.Compiler(nodes.b['type']))],
+			"(in gray) is the expected type",
+		    "see intro.txt for hopefully more info"]
+
 
 
 #todo: function definition / insight frame? preferably able to float in multiple numbers around the code
