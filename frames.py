@@ -283,6 +283,16 @@ class Root(Frame):
 			f.write("\n")
 		f.close()
 
+	@topic('parents')
+	def dump_parents(self):
+		element = self.under_cursor
+		while element != None:
+			assert isinstance(element, Element), (assold, element)
+			log(str(element))
+			assold = element
+			element = element.parent
+
+
 	def top_keypress(s, event):
 
 		k = event.key
@@ -344,16 +354,6 @@ class Root(Frame):
 			else:
 				return False
 		return True
-
-
-	@topic('parents')
-	def dump_parents(self):
-		element = self.under_cursor
-		while element != None:
-			assert isinstance(element, Element), (assold, element)
-			log(str(element))
-			assold = element
-			element = element.parent
 
 
 	def on_keypress(self, event):
