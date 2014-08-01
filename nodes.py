@@ -714,23 +714,34 @@ class NoValue(Node):
 
 class Banana(Node):
 	"""runtime error"""
-	def __init__(self, text):
+	def __init__(self, text="error text"):
 		super(Banana, self).__init__()
 		self.text = text
 	def render(self):
-		return [TextTag(self.text)]
+		return ["error:", TextTag(self.text)]
 	def to_python_str(self):
 		return "runtime error"
+	@staticmethod
+	def match(v):
+		return False
 
 class Bananas(Node):
 	"""compilation error"""
-	def __init__(self, text):
+	def __init__(self, contents=[]):
 		super(Bananas, self).__init__()
-		self.text = text
+		self.contents = contents
 	def render(self):
-		return [TextTag(self.text)]
+		if len(self.contents) > 0:
+			return [TextTag("couldnt compile:" + str(len(self.contents)) + " items")]
+		else:
+			return [TextTag("?")]
 	def to_python_str(self):
 		return "compilation error"
+	def _eval(s):
+		return Bananas(s.contents)
+	@staticmethod
+	def match(v):
+		return False
 
 
 class WidgetedValue(Node):
@@ -769,8 +780,11 @@ class Number(WidgetedValue):
 	@staticmethod
 	def match(text):
 		"return score"
+		log("matching "+str(text) +" with Number")
 		if text.isdigit():
+			log("successs")
 			return 300
+		log("nope")
 
 class Text(WidgetedValue):
 
@@ -1210,7 +1224,7 @@ class EnumType(ParametricTypeBase):
 TypeNodecl() #..so you can say that your function returns a type value, or something
 VarRefNodecl()
 
-[Nodecl(x) for x in [Number, Text, Statements]]
+[Nodecl(x) for x in [Number, Text, Statements, Banana, Bananas]]
 
 """the stuff down here isnt well thought-out yet..the whole types thing.."""
 
@@ -1324,9 +1338,11 @@ class For(Syntaxed):
 
 	def _eval(s):
 		itemvar = s.ch.item.compiled
-		assert isinstance(itemvar, UntypedVar)
+		if not isinstance(itemvar, UntypedVar):
+			return Banana('itemvar isnt UntypedVar')
 		items = s.ch.items.eval()
-		assert isinstance(items, List)
+		if not isinstance(items, List):
+			return Banana('items isnt List')
 		#r = b['list'].make_type({'itemtype': Ref(b['statement'])}).make_inst() #just a list of the "anything" type..dunno
 		for item in items:
 			itemvar.append_value(item)
@@ -1430,9 +1446,8 @@ class Compiler(Node):
 
 	@property
 	def compiled(self):
-		#default result:
-		#raise an exception? make a NotCompiled node?
-		r = Text("?"+str(self.items))
+		#default result:		#raise an exception?
+		r = Bananas(self.items)
 
 		if len(self.items) == 1:
 			i0 = self.items[0]
@@ -1446,9 +1461,13 @@ class Compiler(Node):
 				type = type.target
 			if type == b['text']:
 				r = Text(i0)
-			if self.type == b['number']:
+
+			if type == b['number']:
 				if Number.match(i0):
 					r = Number(i0)
+					#log("parsed it to Number")
+				#else:
+				#	log("wtf")
 
 		r.parent = self
 		#log(self.items, "=>", r)
