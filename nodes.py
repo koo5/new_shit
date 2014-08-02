@@ -1453,21 +1453,23 @@ class Compiler(Node):
 			i0 = self.items[0]
 			if isinstance(i0, Node):
 				r = i0
-			#demodemodemo
-			type = self.type
-			if isinstance(self.type, Exp):
-				type = self.type.type
-			if isinstance(type, Ref):
-				type = type.target
-			if type == b['text']:
-				r = Text(i0)
+			else: #string
+				#demodemodemo
+				type = self.type
+				if isinstance(self.type, Exp):
+					type = self.type.type
+				if isinstance(type, Ref):
+					type = type.target
+				
+				if type == b['text']:
+					r = Text(i0)
 
-			if type == b['number']:
-				if Number.match(i0):
-					r = Number(i0)
-					#log("parsed it to Number")
-				#else:
-				#	log("wtf")
+				if type == b['number']:
+					if Number.match(i0):
+						r = Number(i0)
+						#log("parsed it to Number")
+					#else:
+					#	log("wtf")
 
 		r.parent = self
 		#log(self.items, "=>", r)

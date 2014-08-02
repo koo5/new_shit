@@ -249,13 +249,15 @@ class Root(Frame):
 				break
 
 	def cursor_home(s):
-		if s.cursor_c != 0:
-			s.cursor_c = 0
-		else:
-			s.cursor_c = s.first_nonblank()
+		if len(s.lines) > s.cursor_r:
+			if s.cursor_c != 0:
+				s.cursor_c = 0
+			else:
+				s.cursor_c = s.first_nonblank()
 
 	def cursor_end(s):
-		s.cursor_c = len(s.lines[s.cursor_r])
+		if len(s.lines) > s.cursor_r:
+			s.cursor_c = len(s.lines[s.cursor_r])
 
 	def cursor_top(s):
 		s.cursor_r = 0

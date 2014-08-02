@@ -7,7 +7,7 @@ default_colors = {
 	"highlighted bg":(40,0,0),
 	"arrow":(50,50,111),
 	"fg": (255,255,255),
-	"cursor": (255,255,0),
+	"cursor": (155,255,255),
 	"info item visibility toggle":(100,100,100),
 	"menu_rect_selected":(255,255,255),
 	"menu_rect":(0,0,255),
