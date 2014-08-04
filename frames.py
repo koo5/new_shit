@@ -108,7 +108,7 @@ class Root(Frame):
 		self.cursor_c = self.cursor_r = 0
 		self.root = nodes.make_root()
 		self.root.fix_parents()
-		self.arrows_visible = True
+		self.arrows_visible = False
 		self.cursor_blink_phase = True
 		self.menu_dirty = True
 
@@ -604,3 +604,77 @@ class Intro(InfoFrame):
 #status / action log window <- with keypresses too
 #toolbar (toolbar.py)
 #settings, the doc?
+
+
+"""
+class FunkyLog(Frame):
+
+	def __init__(s):
+		s.contents = []
+		s.scroll_lines = -6
+
+	def project(s):
+		s.lines = project.project(s,#gotta change project() to work with a list of cols
+		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:s.rows]
+
+
+	def update_fonts(s):
+		min = 6
+		s.fonts = []
+		for size in range(min, font_size+1, (font_size-min)/s.rows):
+			f = pygame.font.SysFont('monospace', size
+			w,h = f.size("X")
+			s.fonts.append((f,w,h))
+
+	def draw_lines(self, surf):
+		y = 0
+		for row, line in enumerate(self.lines):
+			font, font_width, font_height = s.fonts[row]
+			for col, char in enumerate(line):
+				x = font_width * col
+				fg = color(char[1]['color'])
+				bg = color("bg")
+				sur = font.render(char[0],1,fg,bg)
+				surf.blit(sur,(x,y))
+			y += font_height
+
+	def mousedown(s,e,pos):
+		if e.button == 4:
+			s.scroll(-1)
+		elif e.button == 5:
+			s.scroll(1)
+
+	def scroll(s,l):
+		s.scroll_lines += l
+
+	@property
+	def rows(self):
+		return 6
+
+	@property
+	def cols(self):
+		return self.rect.w / font_width
+"""
+
+
+class Log(InfoFrame):
+	def __init__(s):
+		super(Log, s).__init__(666)
+		s.items = []
+
+	def tags(s):
+		yield [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle), "\n"]
+		for i in s.items[-s.rows:]:
+			#if not s.hidden_toggle.value or i.visibility_toggle.value:
+				yield [ElementTag(i), "\n"]
+		yield [EndTag()]
+
+	def render(s):
+		s.project()
+
+	def project(s):
+		s.lines = project.project(s,
+		    s.cols, s).lines[-s.rows:]
+
+	def add(s, text):
+		s.items.append(InfoItem(text))

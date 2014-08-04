@@ -5,6 +5,8 @@ from inspect import *
 
 #stickittothemain: todo: lets do the verbosity level thing or rather topics? and argument --log-events?
 
+gui = None
+
 topics = ["?"]
 
 def topic(text):
@@ -38,7 +40,10 @@ def ping(level = 1):
 
 def log(x):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
-	logging.debug(topics[-1]+(": ")+str(x)) # if len(topics)>1 else ""
+	text = topics[-1]+(": ")+str(x) # if len(topics)>1 else ""
+	logging.debug(text)
+	if gui != None:
+		gui.add(text)
 
 def plog(*args):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments

@@ -15,6 +15,7 @@ os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 import pygame
 from pygame import display, image
 
+import logger
 from logger import log
 import frames
 import project
@@ -60,13 +61,18 @@ def resize(size):
 
 sidebar = None
 def resize_frames():
+	logframe.rect.height = 110
+	logframe.rect.width = screen_width
+	logframe.rect.topleft = (0, screen_height - logframe.rect.height)
+
 	root.rect.topleft = (0,0)
 	root.rect.width = screen_width / 3 * 2
-	root.rect.height = screen_height
+	root.rect.height = screen_height - logframe.rect.height
+
 	if sidebar != None:
 		sidebar.rect.topleft = (root.rect.w, 0)
 		sidebar.rect.width = screen_width - root.rect.width
-		sidebar.rect.height = screen_height
+		sidebar.rect.height = root.rect.height
 
 def cycle_sidebar():
 	global sidebar
@@ -245,6 +251,7 @@ def reset_cursor_blink_timer():
 def render():
 	root.render()
 	sidebar.render()
+	logframe.render()
 	draw()
 
 
@@ -252,6 +259,7 @@ def draw():
 	if not fast_forward:
 		screen_surface.blit(root.draw(),root.rect.topleft)
 		screen_surface.blit(sidebar.draw(),sidebar.rect.topleft)
+		screen_surface.blit(logframe.draw(),logframe.rect.topleft)
 		pygame.display.flip()
 
 def bye():
@@ -291,7 +299,10 @@ sidebars = [frames.Intro(root),
             frames.NodeInfo(root)]
             #frames.ContextInfo(root)]
 sidebars.append(sidebars[0])
-sidebar = sidebars[0]
+sidebar = sidebars[2]
+
+logframe = frames.Log()
+logger.gui = logframe
 
 def fuck_sdl():
 	"""SDL insists that you must give your new window some size

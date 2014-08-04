@@ -265,7 +265,7 @@ class Node(element.Element):
 
 	def unresolvize(s):
 		return {
-			'decl': s.decl.__class__
+			'decl': s.decl
 		}
 
 
@@ -307,21 +307,22 @@ def deserialize(d, r):
 
 	return new
 
-def test_serialization():
-	r = make_root()
+def test_serialization(r):
 
 	i = {
 	'decl' : 'number',
 	'text' : '4'
 	}
-
 	out = deserialize(i, r)
-
 	print out
 	u = out.unresolvize()
 	print u
-
 	print out.serialize()
+	#---
+	c = r['program'].ch.statements[0]
+	c.items.append("range")
+	c.menu_item_selected([i for i in c.menu_for_item()[1:] if isinstance(i.value, FunctionCall)][0])
+
 
 class Children(dotdict):
 	pass
@@ -1696,16 +1697,20 @@ class Parser(Node):
 		else: # no items in me
 			return None
 
+	def menu_item_selected(s, item, atts=None):
+		if atts == None:
+			i = 0
+		else:
+			i = s.mine(atts)
+		s.menu_item_selected_for_child(item, i)
 
 	#todo: make previous item the first child of the inserted item if applicable
-	def menu_item_selected(self, item, atts):
+	def menu_item_selected_for_child(self, item, child_index):
 		assert isinstance(item, (CompilerMenuItem, DefaultCompilerMenuItem))
 		if isinstance(item, CompilerMenuItem):
 			node = item.value
-			#add it to our items
-			i = self.mine(atts) #get index of my item under cursor
-			if i != None:
-				self.items[i] = node
+			if child_index != None:
+				self.items[child_index] = node
 			else:#?
 				self.items.append(node)
 			node.parent = self
@@ -1734,10 +1739,12 @@ class Parser(Node):
 				#this would be also useful above
 		#todo etc. make the cursor move naturally
 
-	@topic("menu")
 	def menu(self, atts, debug = False):
+		return self.menu_for_item(self.mine(atts), debug)
 
-		i = self.mine(atts)
+	@topic("menu")
+	def menu_for_item(self, i=0, debug = False):
+
 		if i == None:
 			if len(self.items) == 0:
 				text = ""
@@ -2202,8 +2209,8 @@ SyntaxedNodecl(BuiltinPythonFunctionDecl,
 
 
 
-def num_arg():
-	return TypedArgument({'name':Text("number"), 'type':Ref(b['number'])})
+def num_arg(name = "number"):
+	return TypedArgument({'name':Text(name), 'type':Ref(b['number'])})
 
 def text_arg():
 	return TypedArgument({'name':Text("text"), 'type':Ref(b['text'])})
@@ -2270,7 +2277,7 @@ def add_operators():
 
 	def b_range(min, max):
 		return range(min, max + 1)
-	pfn(b_range, [Text("numbers from"), num_arg(), Text("to"), num_arg()],
+	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
 		num_list(), name = "range", note="inclusive")
 
 
@@ -2455,6 +2462,7 @@ BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()],
 def make_root():
 	global building_in
 	r = Root()
+	r.add(("welcome", Text("Welcome to lemon! Press F1 to cycle the sidebar!")))
 	r.add(("program", b['module'].inst_fresh()))
 	r["program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
@@ -2464,7 +2472,7 @@ def make_root():
 	building_in = False
 
 	#r.add(("toolbar", toolbar.build()))
-
+	test_serialization(r)
 	return r
 
 
@@ -2488,4 +2496,3 @@ evaluating the node. there could be other rules: display, debugging..?..
 """
 
 
-test_serialization()
