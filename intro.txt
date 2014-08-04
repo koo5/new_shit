@@ -29,12 +29,12 @@ red <>'s enclose nodes or other widgets
 green [text] are textboxes, you can type and maybe backspace
 
 
-Compiler 
+Parser
 ==
 better name would be parser.
 looks like this: {(type)}
 (in gray) is the expected type
-the contents of Compiler, if not empty, is text with embedded nodes, maybe like this:
+the contents of Parser, if not empty, is text with embedded nodes, maybe like this:
 {make me a <*sandwich>}
 you should be able to edit the text, more or less, and insert nodes from the menu.
 this "text with nodes" thing isnt useful yet, but will be the basis of lemon interaction

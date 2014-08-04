@@ -10,7 +10,7 @@ functon project takes a list of tags created by root.tags()
 from tags import *
 from logger import ping, log
 import colors
-from nodes import Node, Compiler
+from nodes import Node, Parser
 from dotdict import dotdict
 
 if __debug__:

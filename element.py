@@ -175,4 +175,7 @@ class Element(event.EventDispatcher):
 	def long__repr__(s):
 		return object.__repr__(s)
 
+	def set_dirty(s):
+		s.root.dirty = True
+
 

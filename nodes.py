@@ -67,13 +67,6 @@ def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase))
 
 
-def deserialize(d):
-	scope = r["builtins"].scopes
-	decls = [x for x in scope if is_decl(x)]
-	for d in decls:
-		print d.__class__.__name__
-
-
 
 class Node(element.Element):
 	"""a node is more than an element,
@@ -88,11 +81,6 @@ class Node(element.Element):
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
-
-	def serialize(s):
-		return {
-			'class': s.__class__
-		}.update(s._serialize())
 
 	@property
 	def brackets_color(s):
@@ -237,7 +225,7 @@ class Node(element.Element):
 		#results of eval
 		if "value" in elem.runtime._dict \
 				and elem.runtime._dict.has_key("evaluated") \
-				and not isinstance(elem.parent, Compiler): #dont show results of compiler's direct children
+				and not isinstance(elem.parent, Parser): #dont show results of compiler's direct children
 			yield [ColorTag('eval results'), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
@@ -272,6 +260,68 @@ class Node(element.Element):
 			pass
 		return r
 
+	def serialize(s):
+		return Unresolved(s.unresolvize()).serialize()
+
+	def unresolvize(s):
+		return {
+			'decl': s.decl.__class__
+		}
+
+
+class Unresolved(Node):
+	def __init__(s, data):
+		s.data = data
+	def serialize(s):
+		r = {}
+		print "serializing Unresolved with data:", s.data
+		for k,v in s.data.iteritems():
+			if isinstance(v, (unicode, str)):
+				r[k] = v
+			elif k == "decl":
+				r[k] = v.name
+				print v.name
+			else:
+				r[k] = str(v)
+		return r
+
+
+def deserialize(d, r):
+	new = None
+	scope = r["builtins"].scope()
+	#print scope
+
+	if 'decl' in d:
+		print "looking for decl", d['decl']
+
+	decls = [x for x in scope if is_decl(x)]
+	for i in decls:
+		print "this is", i.name
+		if 'decl' in d and d['decl'] == i.name:
+			new = i.inst_fresh()
+			if 'text' in d:
+				new.text = d['text']
+			if 'children' in d:
+				new.ch._dict = {[(k, deserialize(v)) for k, v in d['children']]}
+			break
+
+	return new
+
+def test_serialization():
+	r = make_root()
+
+	i = {
+	'decl' : 'number',
+	'text' : '4'
+	}
+
+	out = deserialize(i, r)
+
+	print out
+	u = out.unresolvize()
+	print u
+
+	print out.serialize()
 
 class Children(dotdict):
 	pass
@@ -314,7 +364,7 @@ class Syntaxed(Node):
 		assert(isinstance(item, Node))
 		item.parent = self
 		self.ch[name] = item
-		#todo:log if not Compiler and not correct type
+		#todo:log if not Parser and not correct type
 
 	def replace_child(self, child, new):
 		"""child name or child value? thats a good question...its child the value!"""
@@ -337,7 +387,7 @@ class Syntaxed(Node):
 				return
 
                 raise Exception("We should never get here")
-		#self.replace_child(child, Compiler(b["text"])) #toho: create new_child()
+		#self.replace_child(child, Parser(b["text"])) #toho: create new_child()
 
 	def _flatten(self):
 		assert(isinstance(v, Node) for v in self.ch._dict.itervalues())
@@ -402,7 +452,7 @@ class Syntaxed(Node):
 			elif isinstance(v, ParametricType):
 				a = v.inst_fresh()
 			else:
-				a = Compiler(v)
+				a = Parser(v)
 			assert(isinstance(a, Node))
 			kids[k] = a
 		return kids
@@ -515,7 +565,7 @@ class List(Collapsible):
 			else:
 				yield TextTag(', ')
 			#we will have to work towards having this kind of syntax
-			#defined declaratively so Compiler can deal with it
+			#defined declaratively so Parser can deal with it
 		yield TextTag(']')
 
 
@@ -542,7 +592,7 @@ class List(Collapsible):
 		#???
 		if e.key == pygame.K_RETURN:
 			pos = self.insertion_pos(e.frame, e.cursor)
-			p = Compiler(self.item_type)
+			p = Parser(self.item_type)
 			p.parent = self
 			self.items.insert(pos, p)
 			return True
@@ -594,7 +644,7 @@ class List(Collapsible):
 		item.parent = self
 
 	def newline(self):
-		p = Compiler(self.item_type)
+		p = Parser(self.item_type)
 		p.parent = self
 		self.items.append(p)
 
@@ -624,7 +674,7 @@ class List(Collapsible):
 		try:
 			r.newline()
 		except NameError as e:
-			pass#hack to allow calling fresh before Compiler was defined
+			pass#hack to allow calling fresh before Parser was defined
 		"""
 		return r
 
@@ -695,7 +745,7 @@ class Statements(List):
 			else:
 				r+= [TextTag(', ')]
 			#we will have to work towards having this kind of syntax
-			#defined declaratively so Compiler can deal with it
+			#defined declaratively so Parser can deal with it
 		r += []
 		return r
 
@@ -746,9 +796,10 @@ class Bananas(Node):
 
 class WidgetedValue(Node):
 	"""basic one-widget values"""
+	is_const = True#this doesnt propagate to Parser yet
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
-		self.isconst = True#this doesnt propagate to Compiler yet
+
 		#i guess its waiting for type inference
 
 	@property
@@ -758,6 +809,14 @@ class WidgetedValue(Node):
 	@pyval.setter
 	def pyval(self, val):
 		self.widget.value = val
+
+	@property
+	def text(s):
+		return s.widget.text
+
+	@text.setter
+	def text(s, v):
+		s.widget.text = v
 
 	def render(self):
 		return [WidgetTag('widget')]
@@ -815,7 +874,7 @@ class Text(WidgetedValue):
 
 
 class Unknown(WidgetedValue):
-	"""will probably serve as the text bits within a Compiler.
+	"""will probably serve as the text bits within a Parser.
 	fow now tho, it should at least be the result of explosion,
 
 	explosion should replace a node with an Unknown for each TextTag and with its
@@ -857,6 +916,7 @@ class Root(Dict):
 		## appends a character to its contents, and wants to move the cursor,
 		## but before re-rendering, it might move it beyond end of file
 		self.indent_length = 4 #not really used but would be nice to have it variable
+		self.dirty = False
 
 	def render(self):
 		#there has to be some default color for everything..
@@ -885,10 +945,10 @@ class Module(Syntaxed):
 
 	def scope(self):
 		#crude, but for now..
-		if self != self.root["builtins"]:
-			return self.root["builtins"].ch.statements.items
-		else:
-			return [] #nothing above but Root
+		#if self != self.root["builtins"]:
+		return self.root["builtins"].ch.statements.items
+		#else:
+		#	return [] #nothing above but Root
 
 	def clear(self):
 		st = self.ch.statements
@@ -1421,21 +1481,22 @@ class Filter(Syntaxed):
 
 
 """
-compiler node
+Parser node
 
 todo:hack it so that the first node, when a second node is added, is set as the
 leftmost child of the second node..or maybe not..dunno
 """
 
 
-class Compiler(Node):
+class Parser(Node):
 	"""the awkward input node AKA the Beast
 
-	im thinking about rewriting this into nodes agaon. with smarter cursor movement.
+	im thinking about rewriting the items into nodes again.
+	 this time with smarter cursor movement.
 
 	"""
 	def __init__(self, type):
-		super(Compiler, self).__init__()
+		super(Parser, self).__init__()
 		assert is_type(type), str(type)
 		self.type = type
 		self.items = []
@@ -1468,8 +1529,6 @@ class Compiler(Node):
 					if Number.match(i0):
 						r = Number(i0)
 						#log("parsed it to Number")
-					#else:
-					#	log("wtf")
 
 		r.parent = self
 		#log(self.items, "=>", r)
@@ -1486,7 +1545,7 @@ class Compiler(Node):
 		return [i for i in s.items if isinstance(i, Node) ]
 
 	def fix_parents(self):
-		super(Compiler, self).fix_parents()
+		super(Parser, self).fix_parents()
 		self._fix_parents(self.nodes)
 
 	def _flatten(self):
@@ -1570,7 +1629,7 @@ class Compiler(Node):
 				atts = e.atts
 
 				if len(items) != 0:
-					#it's Compiler's closing bracket
+					#it's Parser's closing bracket
 					if not "compiler body" in atts or s != atts["compiler body"]:
 						if isinstance(items[-1], Node): #is my last item a node?
 							items.append("")
@@ -1594,11 +1653,11 @@ class Compiler(Node):
 					#there is never a closing bracket, the child handles it
 				else: # no items in me
 					s.items.append("")
-					#snap cursor to the beginning of Compiler
+					#snap cursor to the beginning of Parser
 					s.root.post_render_move_caret -= atts['char_index']
 					return s.edit_text(0, 0, e)
 
-		return super(Compiler, s).on_keypress(e)
+		return super(Parser, s).on_keypress(e)
 
 	"""
 	def mine(self, atts):
@@ -1607,7 +1666,7 @@ class Compiler(Node):
 			#if "compiler item" in atts and atts["compiler item"] in self.items:
 			return atts["compiler item"]
 		elif len(self.items) != 0 and atts["node"] == self:
-			#cursor is on the closing bracket of Compiler
+			#cursor is on the closing bracket of Parser
 			return len(self.items) - 1
 		#else None
 	"""
@@ -2006,14 +2065,14 @@ class FunctionCall(Node):
 		self.target = target
 		#print self.target.arg_types
 		for i in self.target.arg_types:
-			assert not isinstance(i, Compiler), "%s to target %s is a dumbo" % (self, self.target)
-		self.args = [Compiler(v) for v in self.target.arg_types] #this should go to fresh()
+			assert not isinstance(i, Parser), "%s to target %s is a dumbo" % (self, self.target)
+		self.args = [Parser(v) for v in self.target.arg_types] #this should go to fresh()
 		self._fix_parents(self.args)
 
 	def delete_child(self, child):
 		for i,a in enumerate(self.args):
 			if a == child:
-				self.args[i] = Compiler(self.target.arg_types[i])
+				self.args[i] = Parser(self.target.arg_types[i])
 				self.args[i].parent = self
 				return
 
@@ -2427,3 +2486,6 @@ def is_flat(l):
 we have unevaluated arguments, so a function body can be thought of as a rule for
 evaluating the node. there could be other rules: display, debugging..?..
 """
+
+
+test_serialization()
