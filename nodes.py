@@ -414,15 +414,15 @@ class Syntaxed(Node):
 		self.syntax_index  -= 1
 		if self.syntax_index < 0:
 			self.syntax_index = 0
-		log("prev")
+		log("previous syntax")
 
 	def next_syntax(self):
 		self.syntax_index  += 1
 		if self.syntax_index == len(self.syntaxes):
 			self.syntax_index = len(self.syntaxes)-1
-		log("next")
+		log("next syntax")
 
-	keys = ["ctrl ,: previos syntax",
+	keys = ["ctrl ,: previous syntax",
 			"ctrl .: next syntax"]
 	def on_keypress(self, e):
 		if pygame.KMOD_CTRL & e.mod:
@@ -1702,7 +1702,7 @@ class Parser(Node):
 			i = 0
 		else:
 			i = s.mine(atts)
-		s.menu_item_selected_for_child(item, i)
+		return s.menu_item_selected_for_child(item, i)
 
 	#todo: make previous item the first child of the inserted item if applicable
 	def menu_item_selected_for_child(self, item, child_index):
@@ -2055,8 +2055,11 @@ SyntaxedNodecl(BuiltinFunctionDecl,
 
 
 #lets leave print a BuiltinFunctionDecl until we have type conversions
+@topic("output")
 def b_print(args):
-	print(args[0].to_python_str())
+	o = args[0].to_python_str()
+	print o
+	log(o)
 	return NoValue()
 
 BuiltinFunctionDecl.create(

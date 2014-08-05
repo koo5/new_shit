@@ -175,7 +175,7 @@ class Root(Frame):
 		p = project.project(self.root, self.cols, self, self.scroll_lines + self.rows)
 		self.lines = p.lines[self.scroll_lines:]
 		self.arrows = self.complete_arrows(p.arrows)
-		self.do_post_render_move_caret()
+		self.do_post_render_move_cursor()
 
 		if __debug__:  #todo: __debug__projection__ or something, this is eating quite some cpu i think and only checks the projection code (i think)
 			assert(isinstance(self.lines, list))
@@ -372,22 +372,25 @@ class Root(Frame):
 		if element != None and element.dispatch_levent(event):
 			return True
 
+		#old style
 		while element != None:
 			assert isinstance(element, Element), (assold, element)
 			if element.on_keypress(event):
 				break
 			assold = element
 			element = element.parent
-		if element != None:#some element handled it
+
+		#some element handled it
+		if element != None:
 			if log_events:
 				log("handled by "+str(element))
 			return True
 
-	def do_post_render_move_caret(s):
+	def do_post_render_move_cursor(s):
 		if isinstance(s.root.post_render_move_caret, int):
 			s.move_cursor_h(s.root.post_render_move_caret)
 		else: #its a node
-			log(s.root.post_render_move_caret)
+			log("moving cursor to " +str(s.root.post_render_move_caret))
 			s.cursor_c, s.cursor_r = project.find(s.root.post_render_move_caret, s.lines)
 		s.root.post_render_move_caret = 0
 
@@ -664,17 +667,26 @@ class Log(InfoFrame):
 
 	def tags(s):
 		yield [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle), "\n"]
-		for i in s.items[-s.rows:]:
+		for i in s.items[-s.rows-1+s.scroll_lines:]:
 			#if not s.hidden_toggle.value or i.visibility_toggle.value:
 				yield [ElementTag(i), "\n"]
 		yield [EndTag()]
 
-	def render(s):
-		s.project()
-
 	def project(s):
 		s.lines = project.project(s,
-		    s.cols, s).lines[-s.rows:]
+		    s.cols, s).lines[-s.rows-1-s.scroll_lines:]
+		print s.rows, s.scroll_lines, len(s.lines), len([x for x in s.tags()])
+
+	def scroll(s,l):
+		s.scroll_lines += l
 
 	def add(s, text):
+
+		import time
+		text = time.strftime("%H:%M:%S:", time.localtime()) + text
+
 		s.items.append(InfoItem(text))
+		s.items = s.items[-30:]
+
+	def update(s):
+		pass

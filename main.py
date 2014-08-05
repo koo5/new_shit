@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""
+
 try:
 	import objgraph, gc
 except:
 	pass
-"""
+
 
 import argparse, sys, os
 import pickle, copy
@@ -129,7 +129,8 @@ class KeypressEvent(object):
 
 
 
-replay = []
+replay = [] #todo, dont pickle the whole array every time (slowdown). but preserving the ability to replay current session might be nice
+# http://stackoverflow.com/questions/12761991/how-to-use-append-with-pickle-in-python
 
 def do_replay(ff):
 	global replay, fast_forward
@@ -186,7 +187,7 @@ def handle_keypress(e):
 	"""
 	try:
 		gc.collect()
-		objgraph.show_most_common_types(10)
+		objgraph.show_most_common_types(30)
 	except:
 		pass
 	"""
@@ -201,7 +202,7 @@ def mousedown(e):
 		if e.button == 5: change_font_size(-1)
 		render()
 	else:
-		for f in [sidebar, root]:
+		for f in [logframe, sidebar, root]:
 			if f.rect.collidepoint(e.pos):
 				pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
 				f.mousedown(e, pos)
