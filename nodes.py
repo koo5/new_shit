@@ -286,43 +286,49 @@ class Unresolved(Node):
 		return r
 
 
-def deserialize(d, r):
-	new = None
+def serialized2unresolved(d, r):
+	new = Unresolved({})
 	scope = r["builtins"].scope()
 	#print scope
 
-	if 'decl' in d:
-		print "looking for decl", d['decl']
+	#if 'decl' in d:
+	#	print "looking for decl", d['decl']
 
 	decls = [x for x in scope if is_decl(x)]
+
 	for i in decls:
-		print "this is", i.name
+		#print "this is", i.name
 		if 'decl' in d and d['decl'] == i.name:
-			new = i.inst_fresh()
-			if 'text' in d:
-				new.text = d['text']
-			if 'children' in d:
-				new.ch._dict = {[(k, deserialize(v)) for k, v in d['children']]}
+			new.data['decl'] = i
 			break
+	if 'text' in d:
+		new.data['text'] = d['text']
+	#if 'children' in d:
+	#	new.data['children'] = {[(k, deserialize(v)) for k, v in d['children']]}
+
 
 	return new
-
+@topic ("serialization")
 def test_serialization(r):
 
 	i = {
 	'decl' : 'number',
 	'text' : '4'
 	}
-	out = deserialize(i, r)
+	out = serialized2unresolved(i, r)
 	print out
-	u = out.unresolvize()
-	print u
+	#u = out.unresolvize()
+	#print u
 	print out.serialize()
 	#---
 	c = r['program'].ch.statements[0]
 	c.items.append("range")
 	c.menu_item_selected([i for i in c.menu_for_item()[1:] if isinstance(i.value, FunctionCall)][0])
-
+	log(c.compiled)
+	log(c.compiled.unresolvize())
+	o = Unresolved(c.compiled.unresolvize()).serialize()
+	print o
+	print serialized2unresolved(o, r)
 
 class Children(dotdict):
 	pass
@@ -2122,7 +2128,7 @@ class FunctionCall(Node):
 
 class FunctionCallNodecl(NodeclBase):
 	def __init__(self):
-		super(FunctionCallNodecl, self).__init__(Ref)
+		super(FunctionCallNodecl, self).__init__(FunctionCall)
 		buildin(self, 'call')
 		FunctionCall.decl = self
 	def palette(self, scope, text, node):

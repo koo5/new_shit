@@ -38,8 +38,9 @@ def ping(level = 1):
 	line = f[1]+":"+str(f[2])+":"+f[3]+formatargvalues(a,b,c,d)
 	logging.debug(line)
 
-def log(x):
+def log(*vargs):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
+	x = ', '.join([str(x) for x in vargs])
 	text = topics[-1]+(": ")+str(x) # if len(topics)>1 else ""
 	logging.debug(text)
 	if gui != None:
