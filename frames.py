@@ -674,7 +674,7 @@ class Log(InfoFrame):
 
 	def project(s):
 		s.lines = project.project(s,
-		    s.cols, s).lines[-s.rows-1-s.scroll_lines:]
+		    s.cols, s).lines[-s.rows-1  -s.scroll_lines:]
 		print s.rows, s.scroll_lines, len(s.lines), len([x for x in s.tags()])
 
 	def scroll(s,l):

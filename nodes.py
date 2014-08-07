@@ -846,11 +846,11 @@ class Number(WidgetedValue):
 	@staticmethod
 	def match(text):
 		"return score"
-		log("matching "+str(text) +" with Number")
+		#log("matching "+str(text) +" with Number")
 		if text.isdigit():
-			log("successs")
+			#log("successs")
 			return 300
-		log("nope")
+		#log("nope")
 
 class Text(WidgetedValue):
 
@@ -1586,10 +1586,18 @@ class Parser(Node):
 		#item index, cursor position in item, event
 
 		text = s.items[ii]
-		text = text[:pos] + e.uni + text[pos:]
+
+		if e.key == pygame.K_BACKSPACE:
+			if pos > 0 and len(text) > 0 and pos <= len(text):
+				text = text[0:pos -1] + text[pos:]
+				s.root.post_render_move_caret -= 1
+
+		else:
+			text = text[:pos] + e.uni + text[pos:]
+			s.root.post_render_move_caret += len(e.uni)
+
 		s.items[ii] = text
 
-		s.root.post_render_move_caret += len(e.uni)
 		#log(self.text + "len: " + len(self.text))
 		s.dispatch_event('on_edit', s)
 		return True
@@ -1624,7 +1632,7 @@ class Parser(Node):
 
 	keys = ["text editing",
 			"ctrl del: delete item"]
-
+	"""
 	def on_keypress(s, e):
 
 		if not e.mod & pygame.KMOD_CTRL:
@@ -1665,18 +1673,32 @@ class Parser(Node):
 					return s.edit_text(0, 0, e)
 
 		return super(Parser, s).on_keypress(e)
+	"""
+	def on_keypress(s, e):
 
-	"""
-	def mine(self, atts):
-		#doesnt this need changes after the rewrite?
-		if "compiler body" in atts and self == atts["compiler body"]:
-			#if "compiler item" in atts and atts["compiler item"] in self.items:
-			return atts["compiler item"]
-		elif len(self.items) != 0 and atts["node"] == self:
-			#cursor is on the closing bracket of Parser
-			return len(self.items) - 1
-		#else None
-	"""
+		if e.mod & pygame.KMOD_CTRL:
+			return super(Parser, s).on_keypress(e)
+
+		assert s.root.post_render_move_caret == 0
+
+		items = s.items
+		atts = e.atts
+
+		i = s.mine(atts)
+		if i == None:
+			items.append("")
+			#snap cursor to the beginning of Parser
+			s.root.post_render_move_caret -= atts['char_index']
+			return s.edit_text(0, 0, e)
+		elif isinstance(items[i], (str, unicode)):
+			if "compiler item char" in atts:
+				ch = atts["compiler item char"]
+			else:
+				ch = len(items[i])
+			return s.edit_text(i, ch, e)
+		elif isinstance(items[i], Node):
+			items.insert(i, "")
+			return s.edit_text(i, 0, e)
 
 	def mine(s, atts):
 		"""
@@ -1690,7 +1712,7 @@ class Parser(Node):
 			if not "compiler body" in atts or s != atts["compiler body"]:
 				#we should only get an event if cursor is on us, so this
 				#only can be our closing bracket
-				return -1
+				return -1 #first from end
 			else:
 				ci = atts["compiler item"]
 				if "opening bracket" in atts:
@@ -1702,6 +1724,19 @@ class Parser(Node):
 					return ci
 		else: # no items in me
 			return None
+
+
+	"""
+	def mine(self, atts):
+		#doesnt this need changes after the rewrite?
+		if "compiler body" in atts and self == atts["compiler body"]:
+			#if "compiler item" in atts and atts["compiler item"] in self.items:
+			return atts["compiler item"]
+		elif len(self.items) != 0 and atts["node"] == self:
+			#cursor is on the closing bracket of Parser
+			return len(self.items) - 1
+		#else None
+	"""
 
 	def menu_item_selected(s, item, atts=None):
 		if atts == None:
