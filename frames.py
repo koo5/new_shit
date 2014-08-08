@@ -42,20 +42,23 @@ class Frame(object):
 		self._draw(surface)
 		return surface
 
-	def draw_lines(self, surf, highlight=None, transparent=False):
+	def draw_lines(self, surf, highlight=None, transparent=False, justbg=False):
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
 				x = font_width * col
 				y = font_height * row
-				fg = color(char[1]['color'])
 				bg = color("highlighted bg" if (
 					'node' in char[1] and
 					char[1]['node'] == highlight and
 					not args.eightbit) else "bg")
-				if transparent:
-					sur = font.render(char[0],1,fg)
-				else:#its either arrows or highlighting, you cant have everything, hehe
-					sur = font.render(char[0],1,fg,bg)
+				if justbg:
+					sur = font.render(' ',0,(0,0,0),bg)#guess i could just make a rectangle
+				else:
+					fg = color(char[1]['color'])
+					if transparent:
+						sur = font.render(char[0],1,fg)
+					else:#its either arrows or highlighting, you cant have everything, hehe
+						sur = font.render(char[0],1,fg,bg)
 				surf.blit(sur,(x,y))
 
 
@@ -108,7 +111,7 @@ class Root(Frame):
 		self.cursor_c = self.cursor_r = 0
 		self.root = nodes.make_root()
 		self.root.fix_parents()
-		self.arrows_visible = False
+		self.arrows_visible = True
 		self.cursor_blink_phase = True
 		self.menu_dirty = True
 
@@ -207,12 +210,11 @@ class Root(Frame):
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
 			#print (x,y),(x2,y2)
 			pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))
-			aaa = 0.2
-			a = \
-				atan2(y-y2, x-x2)
-			length = 20
-			s.arrow_side(length, a+20, x2,y2, surface)
-			s.arrow_side(length, a-20, x2,y2, surface)
+			a = atan2(y-y2, x-x2)
+			angle = 0.1
+			length = 40
+			s.arrow_side(length, a+angle, x2,y2, surface)
+			s.arrow_side(length, a-angle, x2,y2, surface)
 			
 	def arrow_side(s, length,a,x2,y2, surface):
 			x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
@@ -220,8 +222,13 @@ class Root(Frame):
 
 
 	def _draw(self, surf):
-		self.draw_arrows(surf)
-		self.draw_lines(surf, self.under_cursor, self.arrows_visible)
+		if self.arrows_visible:
+			self.draw_lines(surf, self.under_cursor, 666, True)
+			self.draw_arrows(surf)
+			self.draw_lines(surf, self.under_cursor, True)
+		else:
+			self.draw_arrows(surf)
+			self.draw_lines(surf, self.under_cursor, False)
 		self.draw_cursor(surf)
 
 	def draw_cursor(self, s):
@@ -675,7 +682,7 @@ class Log(InfoFrame):
 	def project(s):
 		s.lines = project.project(s,
 		    s.cols, s).lines[-s.rows-1  -s.scroll_lines:]
-		print s.rows, s.scroll_lines, len(s.lines), len([x for x in s.tags()])
+		#print s.rows, s.scroll_lines, len(s.lines), len([x for x in s.tags()])
 
 	def scroll(s,l):
 		s.scroll_lines += l

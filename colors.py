@@ -2,10 +2,10 @@ from logger import log
 from dotdict import dotdict
 
 default_colors = {
-	"info item text": (244,244,244),
+	"info item text": (224,224,224),
 	"bg": (0,0,0),
 	"highlighted bg":(40,0,0),
-	"arrow":(50,50,111),
+	"arrow":(150,150,111),
 	"fg": (255,255,255),
 	"cursor": (155,255,255),
 	"info item visibility toggle":(100,100,100),

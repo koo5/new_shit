@@ -73,6 +73,7 @@ class Node(element.Element):
 	in the editor, nodes can be cut'n'pasted around on their own
 	every node class has a corresponding decl object
 	"""
+	help = None
 	def __init__(self):
 		"""overrides in subclasses may require children as arguments"""
 		super(Node, self).__init__()
@@ -770,7 +771,7 @@ class NoValue(Node):
 		return "no value"
 
 class Banana(Node):
-	"""runtime error"""
+	help=["runtime error. try not to throw them."]
 	def __init__(self, text="error text"):
 		super(Banana, self).__init__()
 		self.text = text
@@ -783,17 +784,17 @@ class Banana(Node):
 		return False
 
 class Bananas(Node):
-	"""compilation error"""
+	help=["parsing error. your code is bananas."]
 	def __init__(self, contents=[]):
 		super(Bananas, self).__init__()
 		self.contents = contents
 	def render(self):
 		if len(self.contents) > 0:
-			return [TextTag("couldnt compile:" + str(len(self.contents)) + " items")]
+			return [TextTag("couldnt parse:" + str(len(self.contents)) + " items")]
 		else:
 			return [TextTag("?")]
 	def to_python_str(self):
-		return "compilation error"
+		return "parsing error"
 	def _eval(s):
 		return Bananas(s.contents)
 	@staticmethod
@@ -1038,15 +1039,39 @@ class NodeclBase(Node):
 	know their python class ("instance_class"), syntax and shit.
 	usually does something like instance_class.decl = self, so we can instantiate the
 	classes in code without going thru a corresponding nodecl.inst_fresh()"""
+	help = None
 	def __init__(self, instance_class):
 		super(NodeclBase, self).__init__()
 		self.instance_class = instance_class
 		self.decl = None
+		self.example = None
 
-	identification = ['instance_class', 'name']
+	#identification = ['instance_class', 'name']
+	def make_example(s):
+		return None
 
-	def render(self):
-		return [TextTag("builtin node:"), TextTag(self.name)]
+	def render(s):
+		yield [TextTag(s.name), TextTag(":"), IndentTag()]
+
+		h = None
+		if s.help != None:
+			h = s.help
+		elif s.instance_class.help != None:
+			h = s.instance_class.help
+		if h != None:
+			yield [TextTag("\n")] + h
+
+		if s.example == None:
+			s.example = s.make_example()
+			if s.example != None:
+				s.example.fix_parents()
+				s.example.parent = s
+		if s.example != None:
+			yield [TextTag("\nexample: "), ElementTag(s.example)]
+
+		#yield [TextTag("\nimplemented by: "+str(s.instance_class))]
+
+		yield DedentTag()
 		# t(str(self.instance_class))]
 
 	@property
@@ -1076,6 +1101,7 @@ class TypeNodecl(NodeclBase):
 	""" "pass me a type" kind of value
 	instantiates Refs ..maybe should be TypeRefs
 	"""
+	help = ["points to another node, like using a previously declared identifier. Used to point to types."]
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
 		buildin(self, 'type')
@@ -1085,7 +1111,24 @@ class TypeNodecl(NodeclBase):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [CompilerMenuItem(Ref(x)) for x in nodecls]
 
+	def make_example(s):
+		return Ref(b['number'])
+
 class VarRefNodecl(NodeclBase):
+	help=["points to a variable"]
+	def make_example(s):
+		item = b['untypedvar'].instantiate({'name':Text("example variable")})
+		items = list_of('text').inst_fresh()
+		items.items = [Text(x) for x in ['a','b','c']]
+		items.view_mode = 1
+		p = FunctionCall(b['print'])
+		p.args[0] = VarRef(item)
+		body = b['statements'].inst_fresh()
+		body.items = [p]#, Annotation(p, "this")]
+		return For({'item': item,
+					'items': items,
+					'body': body})
+
 	def __init__(self):
 		super(VarRefNodecl, self).__init__(VarRef)
 		buildin(self, 'varref')
@@ -1128,6 +1171,9 @@ class Nodecl(NodeclBase):
 		buildin(self, self.name)
 		instance_class.name = self.name
 
+	def make_example(s):
+		return s.inst_fresh()
+
 	def palette(self, scope, text, node):
 		i = self.instance_class
 		m = i.match(text)
@@ -1155,6 +1201,12 @@ class SyntaxedNodecl(NodeclBase):
 		else:
 			self.instance_syntaxes = [instance_syntaxes]
 		buildin(self, self.instance_class.__name__.lower())
+		self.example = None
+
+	def make_example(s):
+			return s.inst_fresh()
+
+
 
 	"""
 	syntaxed match(items, nodes) :-
@@ -1254,7 +1306,7 @@ class EnumVal(Node):
 
 	def to_python_str(self):
 		text = self.decl.ch.options[self.value].compiled
-		assert isinstance(text, Text)
+		assert isinstance(text, Text), text
 		return text.pyval
 
 	def copy(s):
@@ -1287,6 +1339,11 @@ class EnumType(ParametricTypeBase):
 		return EnumVal(s, 0)
 
 """here we start putting stuff into b, which is then made into the builtins module"""
+b[0] = Text(
+"""We start by declaring the existence of some types.
+Once declared, we can reference them from lemon code.
+Internally, each declaration is a Nodecl object. The type name is always a lowercased
+name of the python class that implements the type.""")
 
 TypeNodecl() #..so you can say that your function returns a type value, or something
 VarRefNodecl()
@@ -1296,14 +1353,15 @@ VarRefNodecl()
 """the stuff down here isnt well thought-out yet..the whole types thing.."""
 
 class SyntacticCategory(Syntaxed):
-	"""this is a syntactical category(?) of nodes, used for "statement" and "expression" """
+	help=['this is a syntactical category(?) of nodes, used for "statement" and "expression"']
+
 	def __init__(self, kids):
 		super(SyntacticCategory, self).__init__(kids)
 		buildin(self, self.ch.name.pyval)
 
 
 class WorksAs(Syntaxed):
-	"""a relation between two existing"""
+	help=["declares a subtype relation between two existing types"]
 	def __init__(self, kids):
 		super(WorksAs, self).__init__(kids)
 		buildin(self)
@@ -1313,6 +1371,7 @@ class WorksAs(Syntaxed):
 
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
+	help=['used just for types, currently.']
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
 		buildin(self, self.ch.name.pyval)
@@ -1324,8 +1383,8 @@ class Definition(Syntaxed):
 		return self.ch.type.palette(scope, text, None)
 
 
-
 class Union(Syntaxed):
+	help=['an union of types means that any type will satisfy']
 	def __init__(self, children):
 		super(Union, self).__init__(children)
 
@@ -1423,7 +1482,7 @@ SyntaxedNodecl(For,
 			   {'item': b['untypedvar'],
 			    'items': Exp(
 				    b['list'].make_type({
-				        'itemtype': Ref(b['type'])
+				        'itemtype': Ref(b['type'])#?
 				    })),
 			   'body': b['statements']})
 
@@ -1674,17 +1733,35 @@ class Parser(Node):
 
 		return super(Parser, s).on_keypress(e)
 	"""
+
+	@topic ("type tree")
+	def type_tree(s, type, scope, indent=0):
+		log(" "*indent, type)
+		for i in scope:
+			if is_decl(i):
+				for j in scope:
+					if isinstance(j, WorksAs):
+						if j.ch.sup == i:
+							type_tree(i, scope, indent+1)
+
+
+				s.type_tree(i, scope, indent + 1)
+
 	def on_keypress(s, e):
 
 		if e.mod & pygame.KMOD_CTRL:
-			return super(Parser, s).on_keypress(e)
+			if e.key == pygame.K_t:
+				s.type_tree(s.type, s.scope())
+				return True
+			else:
+				return super(Parser, s).on_keypress(e)
 
 		assert s.root.post_render_move_caret == 0
 
 		items = s.items
 		atts = e.atts
-
 		i = s.mine(atts)
+
 		if i == None:
 			items.append("")
 			#snap cursor to the beginning of Parser
@@ -1893,6 +1970,9 @@ class DefaultCompilerMenuItem(MenuItem):
 		return [TextTag(self.text)]
 
 
+
+
+
 """
 
 functions
@@ -2073,6 +2153,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		for i in sig:
 			assert(isinstance(i, (Text, TypedArgument)))
 		x.fix_parents()
+		b[name] = x
 
 	def _call(self, args):
 		return self.fun(args)
@@ -2118,7 +2199,10 @@ class FunctionCall(Node):
 		for i in self.target.arg_types:
 			assert not isinstance(i, Parser), "%s to target %s is a dumbo" % (self, self.target)
 		self.args = [Parser(v) for v in self.target.arg_types] #this should go to fresh()
-		self._fix_parents(self.args)
+		self.fix_parents()
+
+	def fix_parents(s):
+		s._fix_parents(s.args)
 
 	def delete_child(self, child):
 		for i,a in enumerate(self.args):
@@ -2454,6 +2538,16 @@ SyntaxedNodecl(Note,
 			   {'text': Exp(b['text'])})
 
 
+class Annotation(Node):
+	def __init__(self, target, text):
+		self.text = text
+		self.target = target
+		super(Annotation,self).__init__()
+
+	def render(s):
+		return [ArrowTag(s.target), TextTag(s.text)]
+
+
 
 class ShellCommand(Syntaxed):
 	info = ["runs a command with os.system"]
@@ -2512,7 +2606,7 @@ def make_root():
 	r.add(("builtins", b['module'].inst_fresh()))
 	r["builtins"].ch.statements.items = list(b.itervalues())
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
-	r["builtins"].ch.statements.view_mode = 0
+	r["builtins"].ch.statements.view_mode = 2
 	building_in = False
 
 	#r.add(("toolbar", toolbar.build()))
