@@ -43,6 +43,7 @@ class Frame(object):
 		return surface
 
 	def draw_lines(self, surf, highlight=None, transparent=False, justbg=False):
+		bg_cached = color("bg")
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
 				x = font_width * col
@@ -52,14 +53,16 @@ class Frame(object):
 					char[1]['node'] == highlight and
 					not args.eightbit) else "bg")
 				if justbg:
-					sur = font.render(' ',0,(0,0,0),bg)#guess i could just make a rectangle
+					if bg != bg_cached:
+						pygame.draw.rect(surf,bg,(x,y,font_width,font_height))
+				#	sur = font.render(' ',0,(0,0,0),bg)#guess i could just make a rectangle
 				else:
 					fg = color(char[1]['color'])
 					if transparent:
 						sur = font.render(char[0],1,fg)
 					else:#its either arrows or highlighting, you cant have everything, hehe
 						sur = font.render(char[0],1,fg,bg)
-				surf.blit(sur,(x,y))
+					surf.blit(sur,(x,y))
 
 
 	def under_cr(self, (c, r)):
