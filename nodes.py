@@ -1428,8 +1428,9 @@ buildin(EnumType({'name': Text("bool"),
 	'options':b['enumtype'].instance_slots["options"].inst_fresh()}), 'bool')
 
 b['bool'].ch.options.items = [Text('false'), Text('true')]
+buildin(Text("for use from within python:"))
 b['false'] = EnumVal(b['bool'], 0)
-b['true'] = EnumVal(b['bool'], 0)
+b['true'] = EnumVal(b['bool'], 1)
 
 #Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 

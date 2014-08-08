@@ -16,7 +16,7 @@ import pygame
 from pygame import display, image
 
 import logger
-from logger import log
+from logger import log, topic
 import frames
 import project
 import colors
@@ -108,6 +108,7 @@ class KeypressEvent(object):
 		self.key = e.key
 		self.mod = e.mod
 		self.all = pygame.key.get_pressed()
+		self.type = e.type
 
 		if args.webos:
 			self.webos_hack()
@@ -127,52 +128,53 @@ class KeypressEvent(object):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod)))
 
+class MousedownEvent(object):
+	def __init__(s, e):
+		s.pos = e.pos
+		s.button = e.button
+		s.type = e.type
 
 
-replay = [] #todo, dont pickle the whole array every time (slowdown). but preserving the ability to replay current session might be nice
-# http://stackoverflow.com/questions/12761991/how-to-use-append-with-pickle-in-python
-
+@topic ("replay")
 def do_replay(ff):
-	global replay, fast_forward
+	global fast_forward
+	import time
 	try:
 		with open("replay.p", "rb") as f:
-			replay = pickle.load(f)
-	except:
-		log("couldnt read replay.p")
-		replay = []
-	if ff:
-		fast_forward = True #ok, not much of a speedup. todo:dirtiness
-		display.set_caption("replaying...")
-		log("replaying...")
-	for i in replay:
-		display.set_caption(display.get_caption()[0] + " " + i.uni)
-		log(i.uni)
-		handle_keypress(copy.deepcopy(i))
-	fast_forward = False
+			if ff:
+				fast_forward = True #ok, not much of a speedup. todo:dirtiness
+				display.set_caption("replaying...")
+				log("replaying...")
+
+			while 1:
+				try:
+					e = pickle.load(f)
+
+					text = time.strftime("%H:%M:%S:", time.localtime()) + str(e)
+					display.set_caption(text)
+					log(str(e))
+
+					if e.type == pygame.KEYDOWN:
+						keypress(e)
+					elif e.type == pygame.MOUSEBUTTONDOWN:
+						mousedown(e)
+					else:
+						raise Exception("unexpected event type:", e)
+
+				except EOFError:
+					break
+
+			fast_forward = False
+
+	except IOError as e:
+		log("couldnt open replay.p",e)
 
 
-
-def keypress(event):
+def keypress(e):
 	reset_cursor_blink_timer()
-	e = KeypressEvent(event)
 	if args.log_events:
 		log(e)
 
-	if e.key == pygame.K_F2:
-		do_replay(e.mod & pygame.KMOD_SHIFT)
-	else:
-		if e.key == pygame.K_ESCAPE:
-			bye()
-		else:
-			replay.append(e)
-			with open("replay.p", "wb") as f:
-				try:
-					pickle.dump(replay, f)
-				except pickle.PicklingError as error:
-					print error, ", are you profiling?"
-		handle_keypress(copy.deepcopy(e))
-
-def handle_keypress(e):
 	if top_keypress(e):
 		if args.log_events:
 			log("handled by main top")
@@ -183,7 +185,7 @@ def handle_keypress(e):
 		root.on_keypress(e)
 
 	render()
-	
+
 	"""
 	try:
 		gc.collect()
@@ -191,6 +193,7 @@ def handle_keypress(e):
 	except:
 		pass
 	"""
+
 
 def mousedown(e):
 	reset_cursor_blink_timer()
@@ -210,6 +213,46 @@ def mousedown(e):
 				break
 
 
+def pickle_event(e):
+	with open("replay.p", "ab") as f:
+		try:
+			pickle.dump(e, f)
+		except pickle.PicklingError as error:
+			print error, ", are you profiling?"
+
+
+is_first_event = True
+def input_pygame_event(event):
+	global is_first_event
+
+	if event.type == pygame.KEYDOWN:
+		if event.key == pygame.K_F2:
+			do_replay(event.mod & pygame.KMOD_SHIFT)
+		else:
+			if event.key == pygame.K_ESCAPE:
+				bye()
+			else:
+				if is_first_event:
+					clear_replay()
+				e = KeypressEvent(event)
+				pickle_event(e)
+				keypress(e)
+				is_first_event = False
+
+	if event.type == pygame.MOUSEBUTTONDOWN:
+		if is_first_event:
+			clear_replay()
+		e = MousedownEvent(event)
+		pickle_event(e)
+		mousedown(e)
+		is_first_event = False
+
+
+def clear_replay():
+	f = open("replay.p", 'w')
+	f.truncate()
+	f.close()
+
 def process_event(event):
 
 	if event.type == pygame.USEREVENT:
@@ -222,11 +265,7 @@ def process_event(event):
 	if event.type == pygame.QUIT:
 		bye()
 
-	if event.type == pygame.KEYDOWN:
-		keypress(event)
-
-	if event.type == pygame.MOUSEBUTTONDOWN:
-		mousedown(event)
+	input_pygame_event(event)
 
 	if event.type == pygame.VIDEORESIZE:
 		resize(event.size)
@@ -281,7 +320,7 @@ pygame.font.init()
 
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 #screen_surface = None
-display.set_caption('lemon operating language prototype v 0.1')
+display.set_caption('lemon operating language v 0.1.2')
 icon = image.load('icon32x32.png')
 display.set_icon(icon)
 
@@ -357,7 +396,7 @@ if args.replay:
 render()
 
 
-pygame.time.set_timer(pygame.USEREVENT, 333) #poll for SIGINT
+pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT
 reset_cursor_blink_timer()
 def main():
 	while True:
