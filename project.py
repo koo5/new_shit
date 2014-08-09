@@ -2,9 +2,10 @@
 
 
 """
-functon project takes a list of tags created by root.tags()
- and outputs a list of lines
- line is a list of tuples: (character, attributes)
+take a list of tags (see tags.py) or an element and render everything into
+lines of tuples containing characters to be displayed on screen and their
+attributes (most importantly the element the char belongs to and color)
+line is a list of tuples: (character, attributes)
 """
 
 from tags import *
@@ -20,6 +21,7 @@ if __debug__:
 
 
 def squash(l):
+"""squash a stack of dicts into a single dict"""
 #	ping()
 #	if __debug__:
 #		assert(isinstance(l, list))
@@ -59,6 +61,7 @@ def attadd(atts, key, val):
 	atts.append((key, val))
 
 def new_p(cols, frame, rows_limit):
+"""build up the data structure that holds the parameters, state and results of the projection"""
 	p = dotdict()
 	p.width = cols
 	p.indent_width = 4
@@ -89,6 +92,8 @@ def _project_elem(p, elem):
 	#assert(isinstance(p.indent, int))
 	p.char_index = 0
 
+	#_render_lines holds information about how the element was rendered
+	#in a particular frame
 	elem._render_lines[p.frame] = {
 		"startchar": len(p.lines[-1]),
 		"startline": len(p.lines)-1}
@@ -110,7 +115,7 @@ def _project_tags(p, elem, tags):
 				return DONE
 	else:
 		tag = tags
-	#first some replaces
+	#first some simple replacements
 		if isinstance(tag, TextTag):
 			tag = tag.text
 		elif isinstance(tag, NewlineTag):
@@ -119,9 +124,11 @@ def _project_tags(p, elem, tags):
 		elif isinstance(tag, ChildTag):
 			assert(isinstance(elem, assnodes.Node))
 			assert(isinstance(elem.ch[tag.name], asselement.Element))
-			tag = ElementTag(elem.ch[tag.name]) #get child
+			tag = ElementTag(elem.ch[tag.name]) #get child of Syntaxed
 		elif isinstance(tag, WidgetTag):
-			tag = ElementTag(elem.__dict__[tag.name]) #get widget #?
+			#get the element as an attribute
+			#i think this should be getattr
+			tag = ElementTag(elem.__dict__[tag.name])
 
 	#now real stuff
 		if isinstance(tag, (str, unicode)):
@@ -177,6 +184,7 @@ def _project_tags(p, elem, tags):
 
 
 def find(node, lines):
+	"""return coordinates of element in rendered lines"""
 	assert(isinstance(node, asselement.Element))
 	for r,line in enumerate(lines):
 		for c,char in enumerate(line):

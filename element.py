@@ -9,6 +9,7 @@ from logger import log, ping
 import tags
 
 class Element(event.EventDispatcher):
+	"""an object that can be rendered"""
 	help = []
 	keys = []
 	keys_help_items = None
@@ -18,10 +19,13 @@ class Element(event.EventDispatcher):
 		self.brackets_color = (200,0,0)
 		self.brackets = ('<','>')
 		self._render_lines = {}
+		#new-style events
 		if not hasattr(self, "levent_handlers"):
 			self.__class__.levent_handlers = self.find_levent_handlers()
 		#log("eee"+str(self.levent_handlers))
 
+
+	#parent property wraps the weakrefing of parents
 	def get_parent(s):
 		if type(s._parent) == weakref:
 			return s._parent()
@@ -36,7 +40,10 @@ class Element(event.EventDispatcher):
 
 	parent = property(get_parent, set_parent)
 
-	def lock(s):	#called somewhere in child class
+
+
+	#after calling lock(), you cant set nonexisting attributes
+	def lock(s):
 		s._locked = True
 		#s.bananana = True
 
@@ -45,22 +52,33 @@ class Element(event.EventDispatcher):
 			s.__getattribute__(k)#we are lockd, try if it exists
 		object.__setattr__(s, k, v)
 
+
+
+	#new-style events, only used experimentally in one place so far,
+	#see input.py for the decorator that declares the event handlers
 	@classmethod
 	def find_levent_handlers(cls):
 		r = {}
 		mro = cls.mro()
 		mro = reversed(mro)
+		#for each class that cls is a descendant of, top to bottom:
 		for c in mro:
 			#log(cls)
+			#iterate thru all methods and other stuff declared in that class:
 			for member_name, member in c.__dict__.iteritems():
 				#if member_name == "delete_self":
 				#	log ("!!!" + str(member))
+				#the levent decorator was here:
 				if hasattr(member, "levent_constraints"):
 					#log("handler found:" + str(member))
-					#dicts aren't hashable, so lets convert the constraints dict to tuple and save the dict in value
+					#dicts aren't hashable, so lets convert the constraints dict
+					# to a tuple and save the dict in the value
+					#by "constraints" is meant the key combinations
 					hash = tuple(member.levent_constraints.iteritems())
 					r[hash] = (member.levent_constraints, member_name, member)
 				else:
+					#look if a previously found event handler function
+					# is overriden in child class, this time not wrapped
 					for hash,(constraints,name,function) in r.iteritems():
 						if name == member_name:
 							#log("updating override")
@@ -99,6 +117,7 @@ class Element(event.EventDispatcher):
 				return True
 			else:
 				log('failed')
+
 
 
 	def on_keypress(self, event):
@@ -145,7 +164,7 @@ class Element(event.EventDispatcher):
 		help = []
 		for c in s.__class__.mro():
 			if c == Element:
-				break
+				break #dont go further up to pyglets EventDispatcher
 			if "keys" in c.__dict__:
 				help += c.keys
 
@@ -175,6 +194,7 @@ class Element(event.EventDispatcher):
 	def long__repr__(s):
 		return object.__repr__(s)
 
+	#todo
 	def set_dirty(s):
 		s.root.dirty = True
 

@@ -1,3 +1,6 @@
+
+"""main frame, menu, log, info, help.."""
+
 import pygame
 from pygame import draw
 from math import *

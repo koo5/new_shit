@@ -1,4 +1,8 @@
 """
+this decorator can be used with a function that handles keypress events,
+would declare the accepted keys, they could be automatically displayed
+in help..
+
 new style handler return value:
 None: success
 False: failure

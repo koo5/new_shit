@@ -1,6 +1,8 @@
-
-
 """
+this file defines the AST classes of the language and everything around it.
+we also build up the builtins module along the way
+
+
 notes on the current state of this constantly changing code:
 i use kids and children interchangeably.
 sometimes i use s, sometimes self.

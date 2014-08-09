@@ -1,3 +1,5 @@
+"""dotdict: a simple object that wraps a dict and allows access by attributes"""
+
 #optimalization: what if we replaced it with an empty object?
 class dotdict(object):
 	def __init__(s):#todo:, seq=None, **kwargs):
