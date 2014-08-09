@@ -771,7 +771,7 @@ class NoValue(Node):
 		return "no value"
 
 class Banana(Node):
-	help=["runtime error. try not to throw them."]
+	help=["runtime error. try not to throw these."]
 	def __init__(self, text="error text"):
 		super(Banana, self).__init__()
 		self.text = text
@@ -790,11 +790,11 @@ class Bananas(Node):
 		self.contents = contents
 	def render(self):
 		if len(self.contents) > 0:
-			return [TextTag("couldnt parse:" + str(len(self.contents)) + " items")]
+			return [TextTag(self.to_python_str())]
 		else:
 			return [TextTag("?")]
 	def to_python_str(self):
-		return "parsing error"
+		return "couldnt parse " + str(len(self.contents)) + " items:"+str(self.contents)
 	def _eval(s):
 		return Bananas(s.contents)
 	@staticmethod
@@ -880,16 +880,15 @@ class Text(WidgetedValue):
 
 
 
-
+"""
 class Unknown(WidgetedValue):
-	"""will probably serve as the text bits within a Parser.
+	will probably serve as the text bits within a Parser.
 	fow now tho, it should at least be the result of explosion,
 
 	explosion should replace a node with an Unknown for each TextTag and with its
-	child nodes. its a way to try to add more text-like freedom to the structured editor,
+	child nodes. its a way to try to add more text-like freedom to the structured editor.
 
 	currently a copypasta of Text.
-	"""
 	def __init__(self, value=""):
 		super(Unknown, self).__init__()
 		self.widget = widgets.Text(self, value)
@@ -911,6 +910,7 @@ class Unknown(WidgetedValue):
 	@staticmethod
 	def match(text):
 		return 0
+"""
 
 
 
@@ -1186,6 +1186,7 @@ class Nodecl(NodeclBase):
 		return CompilerMenuItem(value, score)
 
 
+
 class SyntaxedNodecl(NodeclBase):
 	"""
 	child types of Syntaxed are like b["text"], they are "values",
@@ -1241,7 +1242,7 @@ class ParametricType(ParametricTypeBase):
 		return [self.decl.type_syntax]
 
 	def inst_fresh(self):
-		"""todo:"""
+		"""create new List or Dict"""
 		return self.decl.instance_class.fresh(self)
 
 	@classmethod
@@ -1266,7 +1267,6 @@ class ParametricType(ParametricTypeBase):
 
 
 
-
 class ParametricNodecl(NodeclBase):
 	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
 	only non Syntaxed types are parametric now(list and dict),
@@ -1283,6 +1283,7 @@ class ParametricNodecl(NodeclBase):
 		return [CompilerMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
 	#if there is only one possible node type to instantiate..
+
 
 
 
@@ -1416,6 +1417,19 @@ buildin(ParametricNodecl(Dict,
 WorksAs.b("list", "expression")
 WorksAs.b("dict", "expression")
 
+class ListOfAnything(ParametricType):
+	@topic ("ListOfAnything palette")
+	def palette(self, scope, text, node):
+		log(self.ch._dict)
+		i = self.inst_fresh()
+		i.view_mode = 1
+		i.newline()
+		return [CompilerMenuItem(i)]
+	def works_as(self, type):
+		return True
+
+buildin(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
+
 SyntaxedNodecl(EnumType,
 			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
 			   {'name': 'text',
@@ -1444,6 +1458,7 @@ SyntaxedNodecl(Union,
 			   [TextTag("union of"), ChildTag("items")],
 			   {'items': b['list'].make_type({'itemtype': b['type']})}) #todo:should work with the definition from above instead
 b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
+
 
 
 
@@ -1588,14 +1603,15 @@ class Parser(Node):
 					type = self.type.type
 				if isinstance(type, Ref):
 					type = type.target
-				
+
+#				if type == b['number']:
+				if Number.match(i0):
+					r = Number(i0)
+						#log("parsed it to Number")
+
 				if type == b['text']:
 					r = Text(i0)
 
-				if type == b['number']:
-					if Number.match(i0):
-						r = Number(i0)
-						#log("parsed it to Number")
 
 		r.parent = self
 		#log(self.items, "=>", r)
@@ -1644,15 +1660,14 @@ class Parser(Node):
 
 	def edit_text(s, ii, pos, e):
 		#item index, cursor position in item, event
-
 		text = s.items[ii]
-
 		if e.key == pygame.K_BACKSPACE:
 			if pos > 0 and len(text) > 0 and pos <= len(text):
 				text = text[0:pos -1] + text[pos:]
 				s.root.post_render_move_caret -= 1
-
 		else:
+			assert isinstance(text, (str, unicode)), (s.items, ii, text)
+			print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
 			text = text[:pos] + e.uni + text[pos:]
 			s.root.post_render_move_caret += len(e.uni)
 
@@ -1734,7 +1749,7 @@ class Parser(Node):
 
 		return super(Parser, s).on_keypress(e)
 	"""
-
+	"""
 	@topic ("type tree")
 	def type_tree(s, type, scope, indent=0):
 		log(" "*indent, type)
@@ -1747,7 +1762,7 @@ class Parser(Node):
 
 
 				s.type_tree(i, scope, indent + 1)
-
+	"""
 	def on_keypress(s, e):
 
 		if e.mod & pygame.KMOD_CTRL:
@@ -1756,6 +1771,13 @@ class Parser(Node):
 				return True
 			else:
 				return super(Parser, s).on_keypress(e)
+
+		if e.key == pygame.K_ESCAPE:
+			return False
+		if e.key == pygame.K_RETURN:
+			return False
+		if (not e.uni) and not e.key in [pygame.K_BACKSPACE]:
+			return False
 
 		assert s.root.post_render_move_caret == 0
 
@@ -1776,6 +1798,7 @@ class Parser(Node):
 			return s.edit_text(i, ch, e)
 		elif isinstance(items[i], Node):
 			items.insert(i, "")
+			assert isinstance(items[i], (str, unicode)), (items, i)
 			return s.edit_text(i, 0, e)
 
 	def mine(s, atts):
@@ -1790,7 +1813,7 @@ class Parser(Node):
 			if not "compiler body" in atts or s != atts["compiler body"]:
 				#we should only get an event if cursor is on us, so this
 				#only can be our closing bracket
-				return -1 #first from end
+				return len(s.items)-1 #first from end
 			else:
 				ci = atts["compiler item"]
 				if "opening bracket" in atts:
@@ -1840,13 +1863,20 @@ class Parser(Node):
 		else:
 			raise Exception("whats that shit, cowboy?")
 
+	@staticmethod
+	def first_child(node):
+		for i in node.syntax:
+			if isinstance(i, ChildTag):
+				return node.ch[i.name]
+		return node
+
 	def post_insert_move_cursor(s, node):
 		#move cursor to first child or somewhere sensible. this should go somewhere else.
 		if isinstance(node, Syntaxed):
-			for i in node.syntax:
-				if isinstance(i, ChildTag):
-					s.root.post_render_move_caret = node.ch[i.name]
-					break
+			fch = s.first_child(node)
+			if isinstance(fch, Syntaxed):
+				fch = s.first_child(fch)
+			s.root.post_render_move_caret = fch
 		elif isinstance(node, FunctionCall):
 			if len(node.args) > 0:
 				s.root.post_render_move_caret = node.args[0]
@@ -1856,6 +1886,9 @@ class Parser(Node):
 				#another hacky option: post_render_move_caret_after
 				#nonhacky option: render out a tag acting as an anchor to move the cursor to
 				#this would be also useful above
+		elif isinstance(node, List):
+			if len(node.items) > 0:
+				s.root.post_render_move_caret = node.items[0]
 		#todo etc. make the cursor move naturally
 
 	def menu(self, atts, debug = False):
