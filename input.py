@@ -22,8 +22,8 @@ def levent(**kwargs):
 	"""decorator"""
 	def decorator_inner_crap(function):
 		function.levent_constraints = kwargs
-		log(function)
-		log(hasattr(function, "levent_constraints"))
+		#log(function)
+		#log(hasattr(function, "levent_constraints"))
 		return function
 	return decorator_inner_crap
 

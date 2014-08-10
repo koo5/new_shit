@@ -11,7 +11,7 @@ class MenuItem(Element):
 
 
 class InfoItem(MenuItem):
-	"""simple item with some stuff and a hide button
+	"""simple item with some stuff and a hide button"""
 	def __init__(self, contents):
 		super(InfoItem, self).__init__()
 		if not isinstance(contents, list):

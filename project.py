@@ -21,7 +21,7 @@ if __debug__:
 
 
 def squash(l):
-"""squash a stack of dicts into a single dict"""
+	"""squash a stack of dicts into a single dict"""
 #	ping()
 #	if __debug__:
 #		assert(isinstance(l, list))
@@ -61,7 +61,7 @@ def attadd(atts, key, val):
 	atts.append((key, val))
 
 def new_p(cols, frame, rows_limit):
-"""build up the data structure that holds the parameters, state and results of the projection"""
+	"""build up the data structure that holds the parameters, state and results of the projection"""
 	p = dotdict()
 	p.width = cols
 	p.indent_width = 4

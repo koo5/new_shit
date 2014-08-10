@@ -14,6 +14,10 @@ each class has a decl, which is an object descending from NodeclBase (nodecl for
 nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
 nodecls have a set of functions for instantiating the values, and those need some cleanup
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
+
+
+
+
 """
 
 
@@ -299,35 +303,46 @@ def serialized2unresolved(d, r):
 
 	decls = [x for x in scope if is_decl(x)]
 
-	for i in decls:
-		#print "this is", i.name
-		if 'decl' in d and d['decl'] == i.name:
-			new.data['decl'] = i
-			break
+	if 'decl' in d:
+		for i in decls:
+			#print "this is", i.name
+		    if d['decl'] == i.name:
+				new.data['decl'] = i
+				break
 	if 'text' in d:
 		new.data['text'] = d['text']
+	if 'target' in d:
+		new.data['target'] = serialized2unresolved(d['target'], r)
+
 	#if 'children' in d:
 	#	new.data['children'] = {[(k, deserialize(v)) for k, v in d['children']]}
 
 
 	return new
+
+
 @topic ("serialization")
 def test_serialization(r):
 
+	#---from serialized to unresolved and back
+	print "1:"
 	i = {
 	'decl' : 'number',
 	'text' : '4'
 	}
 	out = serialized2unresolved(i, r)
 	print out
-	#u = out.unresolvize()
-	#print u
-	print out.serialize()
+	ser = out.serialize()
+	assert ser == i, (ser, i)
+
 	#---
+	print "2:"
+	#create the range call
 	c = r['program'].ch.statements[0]
 	c.items.append("range")
 	c.menu_item_selected([i for i in c.menu_for_item()[1:] if isinstance(i.value, FunctionCall)][0])
 	log(c.compiled)
+
 	log(c.compiled.unresolvize())
 	o = Unresolved(c.compiled.unresolvize()).serialize()
 	print o
@@ -2237,6 +2252,13 @@ class FunctionCall(Node):
 		self.args = [Parser(v) for v in self.target.arg_types] #this should go to fresh()
 		self.fix_parents()
 
+	def unresolvize(s):
+		r = super(FunctionCall, s).unresolvize()
+		r.update({
+			'target': s.target.unresolvize()
+		})
+		return r
+
 	def fix_parents(s):
 		s._fix_parents(s.args)
 
@@ -2326,8 +2348,21 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		self.note = 777
 		super(BuiltinPythonFunctionDecl, self).__init__(kids)
 
+	def unresolvize(s):
+		r = super(BuiltinPythonFunctionDecl, s).unresolvize()
+		r.update({
+			'ret': s.ret,
+		    'note': s.note,
+		    'name': s.name,
+		    'fun': s.fun,
+		    'sig': s.sig,
+
+		})
+		return r
+
 	@staticmethod
 	#todo:refactor to BuiltinFunctionDecl.create
+	#why do we have 2 kinds of names here?
 	def create(fun, sig, ret, name, note):
 		x = BuiltinPythonFunctionDecl.fresh()
 		x._name = name
@@ -2646,7 +2681,7 @@ def make_root():
 	building_in = False
 
 	#r.add(("toolbar", toolbar.build()))
-	test_serialization(r)
+	#test_serialization(r)
 	return r
 
 
