@@ -121,7 +121,7 @@ class Number(Text):
 		return [WidgetTag('minus_button'), TextTag(self.text), WidgetTag('plus_button')]
 	@property
 	def value(self):
-		return int(self.text)
+		return float(self.text)
 	@value.setter
 	def value(self, v):
 		self.text = str(v)
