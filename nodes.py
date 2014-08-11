@@ -22,7 +22,7 @@ and the whole language is very..umm..not well-founded...for now. improvements we
 
 
 
-import pygame
+#import pygame
 from fuzzywuzzy import fuzz
 
 #from collections import OrderedDict
@@ -94,7 +94,7 @@ class Node(element.Element):
 		if s._brackets_color == "node brackets rainbow":
 			#hacky rainbow
 			c = colors.color("node brackets")
-			rb = pygame.Color(c[0],c[1],c[2],255)
+			rb = colors.Color(c[0],c[1],c[2],255)
 			rb.hsva = ((rb.hsva[0] + 40*s.number_of_ancestors)%360,
 						rb.hsva[1], rb.hsva[2], rb.hsva[3])
 			return rb.r, rb.g, rb.b
@@ -281,13 +281,13 @@ class Unresolved(Node):
 		s.data = data
 	def serialize(s):
 		r = {}
-		print "serializing Unresolved with data:", s.data
+		log("serializing Unresolved with data:", s.data)
 		for k,v in s.data.iteritems():
 			if isinstance(v, (unicode, str)):
 				r[k] = v
 			elif k == "decl":
 				r[k] = v.name
-				print v.name
+				log(v.name)
 			else:
 				r[k] = str(v)
 		return r
@@ -306,7 +306,7 @@ def serialized2unresolved(d, r):
 	if 'decl' in d:
 		for i in decls:
 			#print "this is", i.name
-		    if d['decl'] == i.name:
+			if d['decl'] == i.name:
 				new.data['decl'] = i
 				break
 	if 'text' in d:
@@ -325,18 +325,18 @@ def serialized2unresolved(d, r):
 def test_serialization(r):
 
 	#---from serialized to unresolved and back
-	print "1:"
+	log("1:")
 	i = {
 	'decl' : 'number',
 	'text' : '4'
 	}
 	out = serialized2unresolved(i, r)
-	print out
+	log(out)
 	ser = out.serialize()
 	assert ser == i, (ser, i)
 
 	#---
-	print "2:"
+	log("2:")
 	#create the range call
 	c = r['program'].ch.statements[0]
 	c.items.append("range")
@@ -345,8 +345,8 @@ def test_serialization(r):
 
 	log(c.compiled.unresolvize())
 	o = Unresolved(c.compiled.unresolvize()).serialize()
-	print o
-	print serialized2unresolved(o, r)
+	log(o)
+	log(serialized2unresolved(o, r))
 
 class Children(dotdict):
 	pass
@@ -401,7 +401,7 @@ class Syntaxed(Node):
 				new.parent = self
 				return
 
-                raise Exception("We should never get here")
+		raise Exception("We should never get here")
 		#todo:refactor into find_child or something
 
 	def delete_child(self, child):
@@ -411,7 +411,7 @@ class Syntaxed(Node):
 				self.ch[k].parent = self
 				return
 
-                raise Exception("We should never get here")
+		raise Exception("We should never get here")
 		#self.replace_child(child, Parser(b["text"])) #toho: create new_child()
 
 	def _flatten(self):
@@ -567,7 +567,8 @@ class Dict(Collapsible):
 	def _flatten(self):
 		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]#skip Widgets, for Settings
 
-	def add(self, (key, val)):
+	def add(self, kv):
+		key, val = kv
 		assert(not self.items.has_key(key))
 		self.items[key] = val
 		assert(isinstance(key, str))
@@ -622,7 +623,8 @@ class List(Collapsible):
 			self.items.insert(pos, p)
 			return True
 
-	def insertion_pos(self, frame, (char, line)):
+	def insertion_pos(self, frame, cl):
+		(char, line) = cl
 		i = -1
 		for i, item in enumerate(self.items):
 			if (frame in item._render_lines and
@@ -1684,7 +1686,7 @@ class Parser(Node):
 				s.root.post_render_move_caret -= 1
 		else:
 			assert isinstance(text, (str, unicode)), (s.items, ii, text)
-			print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
+			#print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
 			text = text[:pos] + e.uni + text[pos:]
 			s.root.post_render_move_caret += len(e.uni)
 
@@ -2107,7 +2109,7 @@ class FunctionDefinitionBase(Syntaxed):
 	@property
 	def vardecls(s):
 		r = [i if isinstance(i, TypedArgument) else i.ch.argument for i in s.args]
-		print ">>>>>>>>>>>", r
+		#print ">>>>>>>>>>>", r
 		return r
 
 	def typecheck(self, args):
@@ -2231,7 +2233,7 @@ SyntaxedNodecl(BuiltinFunctionDecl,
 @topic("output")
 def b_print(args):
 	o = args[0].to_python_str()
-	print o
+	#print o
 	log(o)
 	return NoValue()
 
@@ -2705,3 +2707,11 @@ evaluating the node. there could be other rules: display, debugging..?..
 """
 
 
+"""todo:
+modules: how to declare imports, how to denote in menu items that a function is
+from some module..
+ipython parallel/pyrex/something distributedness
+dbpedia node
+curses, js(brython seems nice) frontends
+
+"""
