@@ -2,7 +2,6 @@
 
 """textbox, button, toggle.."""
 
-import pygame
 import element
 from logger import log, ping
 from tags import TextTag, ColorTag, EndTag, WidgetTag
@@ -33,20 +32,20 @@ class Text(Widget):
 	keys = ["text editing"]
 	def _keypress(self, e, pos):
 		#first things that a text field should pass up
-		if e.mod & pygame.KMOD_CTRL:
+		if e.mod & e.c.KMOD_CTRL:
 			return False
-		elif e.key == pygame.K_ESCAPE:
+		elif e.key == e.c.K_ESCAPE:
 			return False
-		elif e.key == pygame.K_RETURN:
+		elif e.key == e.c.K_RETURN:
 			return False
 
 		#editing keys
-		if e.key == pygame.K_BACKSPACE:
+		if e.key == e.c.K_BACKSPACE:
 			if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 				self.text = self.text[0:pos -1] + self.text[pos:]
 #				log(self.text)
 				self.root.post_render_move_caret = -1
-		elif e.key == pygame.K_DELETE:
+		elif e.key == e.c.K_DELETE:
 			if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
 				self.text = self.text[0:pos] + self.text[pos + 1:]
 
@@ -96,7 +95,7 @@ class Button(Widget):
 	keys = ["return, space: press button"]
 	def on_keypress(self, e):
 		ping()
-		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
+		if e.key == e.c.K_RETURN or e.key == e.c.K_SPACE:
 			self.dispatch_event('on_click', self)
 			return True
 	def render(self):
@@ -184,8 +183,7 @@ class NState(Widget):
 		return True
 	keys = ["return, space: toggle"]
 	def on_keypress(self, e):
-		#log("NState keypress")
-		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
+		if e.key == e.c.K_RETURN or e.key == e.c.K_SPACE:
 			self.toggle()
 			return True
 
@@ -210,6 +208,6 @@ class Toggle(Widget):
 		self.toggle()
 	keys = ["return, space: toggle"]
 	def on_keypress(self, e):
-		if e.key == pygame.K_RETURN or e.key == pygame.K_SPACE:
+		if e.key == e.c.K_RETURN or e.key == e.c.K_SPACE:
 			self.toggle()
 			return True

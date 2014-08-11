@@ -113,6 +113,11 @@ class KeypressEvent(object):
 		if args.webos:
 			self.webos_hack()
 
+	@property
+	def c(s):
+		"""key constants"""
+		return pygame.constants
+
 	def webos_hack(self):
 		if self.mod == 0b100000000000000:
 			if self.key == pygame.K_r:

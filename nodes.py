@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 this file defines the AST classes of the language and everything around it.
 we also build up the builtins module along the way
@@ -29,7 +30,8 @@ from fuzzywuzzy import fuzz
 from odict import OrderedDict #be compatible with older python
 
 from compiler.ast import flatten
-#import weakref
+
+#import uni
 
 from dotdict import dotdict
 from logger import log, topic
@@ -203,8 +205,12 @@ class Node(element.Element):
 	keys = ["f7: evaluate",
 	        "ctrl del: delete"]
 	def on_keypress(self, e):
-		if e.key == pygame.K_F7:
+		if e.key == e.c.K_F7:
 			self.eval()
+			return True
+
+		if e.key == e.c.K_DELETE and e.mod & e.c.KMOD_CTRL:
+			self.delete_self()
 			return True
 
 	@topic("delete_self")
@@ -449,11 +455,11 @@ class Syntaxed(Node):
 	keys = ["ctrl ,: previous syntax",
 			"ctrl .: next syntax"]
 	def on_keypress(self, e):
-		if pygame.KMOD_CTRL & e.mod:
-			if e.key == pygame.K_COMMA:
+		if e.c.KMOD_CTRL & e.mod:
+			if e.key == e.c.K_COMMA:
 				self.prev_syntax()
 				return True
-			if e.key == pygame.K_PERIOD:
+			if e.key == e.c.K_PERIOD:
 				self.next_syntax()
 				return True
 		return super(Syntaxed, self).on_keypress(e)
@@ -610,13 +616,13 @@ class List(Collapsible):
 			"return: add item"]
 	def on_keypress(self, e):
 
-		if e.key == pygame.K_DELETE and e.mod & pygame.KMOD_CTRL:
+		if e.key == e.c.K_DELETE and e.mod & e.c.KMOD_CTRL:
 			item_index = self.insertion_pos(e.frame, e.cursor)
 			if len(self.items) > item_index:
 				del self.items[item_index]
 			return True
 		#???
-		if e.key == pygame.K_RETURN:
+		if e.key == e.c.K_RETURN:
 			pos = self.insertion_pos(e.frame, e.cursor)
 			p = Parser(self.item_type)
 			p.parent = self
@@ -1698,12 +1704,12 @@ class Parser(Node):
 
 
 		"""
-				if e.key == pygame.K_BACKSPACE:
+				if e.key == e.c.K_BACKSPACE:
 					if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 						self.text = self.text[0:pos -1] + self.text[pos:]
 		#				log(self.text)
 						self.root.post_render_move_caret = -1
-				if e.key == pygame.K_DELETE:
+				if e.key == e.c.K_DELETE:
 					if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
 						self.text = self.text[0:pos] + self.text[pos + 1:]
 		"""
@@ -1729,10 +1735,10 @@ class Parser(Node):
 	"""
 	def on_keypress(s, e):
 
-		if not e.mod & pygame.KMOD_CTRL:
+		if not e.mod & e.c.KMOD_CTRL:
 			assert s.root.post_render_move_caret == 0
 
-			if e.uni and e.key not in [pygame.K_ESCAPE, pygame.K_RETURN]:
+			if e.uni and e.key not in [e.c.K_ESCAPE, e.c.K_RETURN]:
 
 				items = s.items
 				atts = e.atts
@@ -2689,6 +2695,7 @@ def make_root():
 
 
 def to_lemon(x):
+	print "to-lemon", x
 	if isinstance(x, (str, unicode)):
 		return Text(x)
 	elif isinstance(x, (int, float)):
@@ -2697,8 +2704,30 @@ def to_lemon(x):
 		raise Exception("i dunno how to convert that")
 	#elif isinstance(x, list):
 
+
 def is_flat(l):
 	return flatten(l) == l
+
+"""
+def ph_to_lemon(x):
+	return iter([to_lemon(x)])
+
+
+if __name__ == "__main__":
+	print "testing.."
+	e = uni.Engine("""
+"""
+
+do(1, A) :-
+	python:to_lemon(3, A).
+%	python:print(A).
+
+"""
+""", globals())
+
+	print [x for x in e.db.do.iter(1, None)]
+"""
+
 
 """
 #todo: totally custom node:
