@@ -23,7 +23,7 @@ and the whole language is very..umm..not well-founded...for now. improvements we
 
 
 
-#import pygame
+import pygame
 from fuzzywuzzy import fuzz
 
 #from collections import OrderedDict
@@ -283,8 +283,12 @@ class Node(element.Element):
 
 
 class Unresolved(Node):
-	def __init__(s, data):
-		s.data = data
+	def __init__(s, data, root = None):
+		if isinstance(data, dict):
+			s.data = data
+		elif isinstance(data, Node):
+			s.data = data.unresolvize()
+#		elif
 	def serialize(s):
 		r = {}
 		log("serializing Unresolved with data:", s.data)
@@ -332,11 +336,11 @@ def test_serialization(r):
 
 	#---from serialized to unresolved and back
 	log("1:")
-	i = {
+	ser = {
 	'decl' : 'number',
 	'text' : '4'
 	}
-	out = serialized2unresolved(i, r)
+	unr = Unresolved(i, r)
 	log(out)
 	ser = out.serialize()
 	assert ser == i, (ser, i)

@@ -1,5 +1,6 @@
 from logger import log
 from dotdict import dotdict
+from pygame.color import Color
 
 default_colors = {
 	"info item text": (224,224,224),

@@ -3,6 +3,7 @@ what is this
 a protoprototype of a structural editor and a programming language / user interface, inspired by inform 7, playing with natural language-like projections
 
 <http://imgur.com/a/otY8X#1>
+<http://imgur.com/Db7X5ft>
 
 
 
