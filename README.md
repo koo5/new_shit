@@ -10,10 +10,11 @@ a protoprototype of a structural editor and a programming language / user interf
 
 getting started
 ===
-\#requires pygame and fuzzywuzzy:
+\#requires pygame and fuzzywuzzy and colors:
 
 * apt-get install python-pygame python-pip
-* pip install --user fuzzywuzzy #or pip install fuzzywuzzy
+* pip install --user fuzzywuzzy colors
+#(or without --user)
 
 it should work with python 2.5, OrderedDict is bundled in
 

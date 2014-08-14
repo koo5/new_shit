@@ -1,4 +1,4 @@
-from colors import colors
+from lemon_colors import colors
 from element import Element
 import widgets
 from tags import TextTag, WidgetTag

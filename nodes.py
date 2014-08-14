@@ -21,15 +21,17 @@ and the whole language is very..umm..not well-founded...for now. improvements we
 
 """
 
-
-
-import pygame
+import sys
+sys.path.insert(0, 'fuzzywuzzy')
 from fuzzywuzzy import fuzz
 
 #from collections import OrderedDict
-from odict import OrderedDict #be compatible with older python
+try:
+	from collections import OrderedDict
+except:
+	from odict import OrderedDict #be compatible with older python
 
-from compiler.ast import flatten
+from utils import flatten
 
 #import uni
 
@@ -39,19 +41,14 @@ import element
 from menu_items import MenuItem
 import widgets
 import tags
-#better would be ch, wi, te, ?
 from tags import ChildTag, ElementTag, WidgetTag, AttTag, TextTag, ColorTag, EndTag, IndentTag, DedentTag, NewlineTag, ArrowTag   #, MenuTag
-
 from input import levent
+import lemon_colors as colors
+from keys import *
 
 # this block is for assert
 import tags as asstags
 asstags.asselement = element
-#
-
-
-#import project
-import colors
 
 #for staging the builtins module and referencing builtin nodes from python code
 b = OrderedDict()
@@ -96,10 +93,8 @@ class Node(element.Element):
 		if s._brackets_color == "node brackets rainbow":
 			#hacky rainbow
 			c = colors.color("node brackets")
-			rb = colors.Color(c[0],c[1],c[2],255)
-			rb.hsva = ((rb.hsva[0] + 40*s.number_of_ancestors)%360,
-						rb.hsva[1], rb.hsva[2], rb.hsva[3])
-			return rb.r, rb.g, rb.b
+			hsv = tuple(colors.rgb(*c).hsv)
+			return (hsv[0] + 40*s.number_of_ancestors)%360, hsv[1], hsv[2]
 		else:
 			return s._brackets_color
 	@brackets_color.setter
@@ -214,7 +209,7 @@ class Node(element.Element):
 			return True
 
 	@topic("delete_self")
-	@levent(mod=pygame.KMOD_CTRL, key=pygame.K_DELETE)
+	@levent(mod=KMOD_CTRL, key=K_DELETE)
 	def delete_self(self):
 		self.parent.delete_child(self)
 
@@ -357,6 +352,12 @@ def test_serialization(r):
 	o = Unresolved(c.compiled.unresolvize()).serialize()
 	log(o)
 	log(serialized2unresolved(o, r))
+
+"""
+NodeFinder?
+
+
+"""
 
 class Children(dotdict):
 	pass
@@ -1690,7 +1691,7 @@ class Parser(Node):
 	def edit_text(s, ii, pos, e):
 		#item index, cursor position in item, event
 		text = s.items[ii]
-		if e.key == pygame.K_BACKSPACE:
+		if e.key == K_BACKSPACE:
 			if pos > 0 and len(text) > 0 and pos <= len(text):
 				text = text[0:pos -1] + text[pos:]
 				s.root.post_render_move_caret -= 1
@@ -1794,18 +1795,18 @@ class Parser(Node):
 	"""
 	def on_keypress(s, e):
 
-		if e.mod & pygame.KMOD_CTRL:
-			if e.key == pygame.K_t:
+		if e.mod & KMOD_CTRL:
+			if e.key == K_t:
 				s.type_tree(s.type, s.scope())
 				return True
 			else:
 				return super(Parser, s).on_keypress(e)
 
-		if e.key == pygame.K_ESCAPE:
+		if e.key == K_ESCAPE:
 			return False
-		if e.key == pygame.K_RETURN:
+		if e.key == K_RETURN:
 			return False
-		if (not e.uni) and not e.key in [pygame.K_BACKSPACE]:
+		if (not e.uni) and not e.key in [K_BACKSPACE]:
 			return False
 
 		assert s.root.post_render_move_caret == 0
@@ -2699,7 +2700,7 @@ def make_root():
 
 
 def to_lemon(x):
-	print "to-lemon", x
+	print ("to-lemon", x)
 	if isinstance(x, (str, unicode)):
 		return Text(x)
 	elif isinstance(x, (int, float)):

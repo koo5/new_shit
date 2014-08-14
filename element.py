@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import pygame
 from weakref import ref as weakref
 
 import event #event module from pyglet, used to pass events from widgets to parent nodes
 import input #lemon's input event decorator
 from logger import log, ping
 import tags
+from keys import *
 
 class Element(event.EventDispatcher):
 	"""an object that can be rendered"""
@@ -104,11 +104,11 @@ class Element(event.EventDispatcher):
 
 			emods = e.mod
 
-			if cmods & pygame.KMOD_CTRL:
-				if not emods & pygame.KMOD_CTRL:
+			if cmods & KMOD_CTRL:
+				if not emods & KMOD_CTRL:
 					continue
 			else:
-				if emods & pygame.KMOD_CTRL:
+				if emods & KMOD_CTRL:
 					continue
 
 			log(str(function) + 'matches')

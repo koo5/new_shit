@@ -5,7 +5,9 @@ import pygame
 from pygame import draw
 from math import *
 
-from colors import color, colors
+import lemon_colors as colors
+from lemon_colors import color, colors
+
 import project
 import nodes
 from element import Element

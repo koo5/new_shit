@@ -610,3 +610,5 @@ priorities:
 persistence -> settings
 PythonFunction
 unipycation
+
+http://heritagerobotics.wordpress.com/2012/11/20/compiling-pygame-for-python-3-2-in-xubuntu/

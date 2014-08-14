@@ -19,8 +19,7 @@ import logger
 from logger import log, topic
 import frames
 import project
-import colors
-
+import lemon_colors as colors
 
 def parse_args():
 	parser = argparse.ArgumentParser()
