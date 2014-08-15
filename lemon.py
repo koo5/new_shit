@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+version=0.2
 
 try:
 	import objgraph, gc
@@ -74,7 +75,7 @@ class KeypressEvent(object):
 	def webos_hack(self):
 		if self.mod == 0b100000000000000:
 			if self.key == K_r:
-				self.key = .K_UP
+				self.key = K_UP
 			if self.key == K_c:
 				self.key = K_DOWN
 			if self.key == K_d:
@@ -205,7 +206,7 @@ def clear_replay():
 def handle3(e):
 	if e.type == MOUSEDOWN:
 		mousedown(e)
-	elif e.type == KEYPRESS
+	elif e.type == KEYPRESS:
 		keypress(e)
 	else:
 		raise 666

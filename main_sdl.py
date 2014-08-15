@@ -2,9 +2,12 @@
 # -*- coding: utf-8 -*-
 
 
+import os
+
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 import pygame
 from pygame import display, image
+from pygame import draw
 
 import lemon
 from lemon import logframe, root, sidebar
@@ -131,9 +134,6 @@ def draw():
 		pygame.display.flip()
 
 
-
-from pygame import draw
-
 def new_surface(self):
 	surface = pygame.Surface((self.rect.w, self.rect.h), 0)
 	if colors.bg != (0,0,0):
@@ -161,8 +161,51 @@ def draw_lines(self, surf, highlight=None, transparent=False, justbg=False):
 					sur = font.render(char[0],1,fg,bg)
 				surf.blit(sur,(x,y))
 
+def draw_arrows(s, surface):
+	for ((c,r),(c2,r2)) in s.arrows:
+		x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
+		pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))
+		a = atan2(y-y2, x-x2)
+		angle = 0.1
+		length = 40
+		s.arrow_side(length, a+angle, x2,y2, surface)
+		s.arrow_side(length, a-angle, x2,y2, surface)
+			
+def arrow_side(s, length,a,x2,y2, surface):
+	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
+	pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
 
 
+def root_draw(self, surf):
+	if self.arrows_visible:
+		self.draw_lines(surf, self.under_cursor, 666, True)
+		self.draw_arrows(surf)
+		self.draw_lines(surf, self.under_cursor, True)
+	else:
+		self.draw_arrows(surf)
+		self.draw_lines(surf, self.under_cursor, False)
+	draw_cursor(self, surf)
+
+def draw_cursor(self, surf):
+	if self.cursor_blink_phase:
+		x, y, y2 = self.cursor_xy()
+		pygame.draw.rect(surf, colors.cursor, (x, y, 1, y2 - y,))
+
+def menu_draw(s, surface):
+	draw_lines(s, surface)
+	draw_rects(s, surface)
+
+def menu_draw_rects(s, surface):
+	for i,r in s.rects.iteritems():
+		if i == s.selected:
+			c = colors.menu_rect_selected
+		else:
+			c = colors.menu_rect
+		draw.rect(surface, c, r, 1)
+
+
+def info_draw(s, surface):
+	draw_lines(s, surface)
 
 
 

@@ -174,39 +174,6 @@ class Root(Frame):
 				r.append(((a[0],a[1] - self.scroll_lines),target))
 		return r
 
-	def draw_arrows(s, surface):
-		#todo: real arrows would be cool
-		for ((c,r),(c2,r2)) in s.arrows:
-			#print c,r,c2,r2
-			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
-			#print (x,y),(x2,y2)
-			pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))
-			a = atan2(y-y2, x-x2)
-			angle = 0.1
-			length = 40
-			s.arrow_side(length, a+angle, x2,y2, surface)
-			s.arrow_side(length, a-angle, x2,y2, surface)
-			
-	def arrow_side(s, length,a,x2,y2, surface):
-			x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
-			pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
-
-
-	def _draw(self, surf):
-		if self.arrows_visible:
-			self.draw_lines(surf, self.under_cursor, 666, True)
-			self.draw_arrows(surf)
-			self.draw_lines(surf, self.under_cursor, True)
-		else:
-			self.draw_arrows(surf)
-			self.draw_lines(surf, self.under_cursor, False)
-		self.draw_cursor(surf)
-
-	def draw_cursor(self, s):
-		if self.cursor_blink_phase:
-			x, y, y2 = self.cursor_xy()
-			pygame.draw.rect(s, colors.cursor,
-						 (x, y, 1, y2 - y,))
 
 	def cursor_xy(s):
 		return (font_width * s.cursor_c,
@@ -392,10 +359,6 @@ class Menu(Frame):
 		if s.sel < 0:
 			s.sel = 0
 
-	def _draw(s, surface):
-		s.draw_lines(surface)
-		s.draw_rects(surface)
-
 	def generate_rects(s):
 		s.rects = dict()
 		for i in s.items_on_screen:
@@ -420,13 +383,6 @@ class Menu(Frame):
 			                (endline - startline+1) * font_height)
 			s.rects[i] = r
 
-	def draw_rects(s, surface):
-		for i,r in s.rects.iteritems():
-			if i == s.selected:
-				c = colors.menu_rect_selected
-			else:
-				c = colors.menu_rect
-			draw.rect(surface, c, r, 1)
 
 	def render(s):
 
@@ -520,10 +476,6 @@ class InfoFrame(Frame):
 	def render(s):
 		s.update()
 		s.project()
-
-	def _draw(s, surface):
-		s.draw_lines(surface)
-
 
 
 class GlobalKeys(InfoFrame):
