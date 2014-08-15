@@ -1,13 +1,11 @@
 
-"""main frame, menu, log, info, help.."""
-
-import pygame
-from pygame import draw
+"""root, menu, log, info, help.."""
+#todo:rename root to code
 from math import *
 
-import lemon_colors as colors
-from lemon_colors import color, colors
+import graph
 
+from lemon_colors import color, colors
 import project
 import nodes
 from element import Element
@@ -15,9 +13,6 @@ from menu_items import InfoItem
 from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 import widgets
 from logger import log, topic
-import graph
-
-font = font_height = font_width = 666
 
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
@@ -27,48 +22,17 @@ class Frame(object):
 #	def draw(self):
 
 	def __init__(s):
-		s.rect = pygame.Rect((6,6,6,6))
+		#s.rect = pygame.Rect((6,6,6,6))
 		s.lines = []
 		s.scroll_lines = 0
-		s._render_lines = {}#hack
+		s._render_lines = {}#hack to satisfy project_elem()
 
 	def on_keypress(self, event):
 		return False
 
-
 	def project(s):
 		s.lines = project.project(s,
 		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:]
-
-	def draw(self):
-		surface = pygame.Surface((self.rect.w, self.rect.h), 0)#, pygame.display.get_surface())
-		if colors.bg != (0,0,0):
-			surface.fill(colors.bg)
-		self._draw(surface)
-		return surface
-
-	def draw_lines(self, surf, highlight=None, transparent=False, justbg=False):
-		bg_cached = color("bg")
-		for row, line in enumerate(self.lines):
-			for col, char in enumerate(line):
-				x = font_width * col
-				y = font_height * row
-				bg = color("highlighted bg" if (
-					'node' in char[1] and
-					char[1]['node'] == highlight and
-					not args.eightbit) else "bg")
-				if justbg:
-					if bg != bg_cached:
-						pygame.draw.rect(surf,bg,(x,y,font_width,font_height))
-				#	sur = font.render(' ',0,(0,0,0),bg)#guess i could just make a rectangle
-				else:
-					fg = color(char[1]['color'])
-					if transparent:
-						sur = font.render(char[0],1,fg)
-					else:#its either arrows or highlighting, you cant have everything, hehe
-						sur = font.render(char[0],1,fg,bg)
-					surf.blit(sur,(x,y))
-
 
 	def under_cr(self, (c, r)):
 		try:
@@ -100,7 +64,6 @@ class Frame(object):
 	@property
 	def rows(self):
 		return self.rect.h / font_height
-
 
 	@property
 	def cols(self):
