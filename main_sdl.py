@@ -12,7 +12,7 @@ import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import args, frames
 from logger import log
-
+from lemon_colors import colors, color
 
 
 
@@ -36,9 +36,11 @@ def reset_cursor_blink_timer():
 	root.cursor_blink_phase = True
 
 def change_font_size(by = 0):
+	global font, font_width, font_height
 	args.font_size += by
-	frames.font = pygame.font.SysFont('monospace', args.font_size)
-	frames.font_width, frames.font_height = frames.font.size("X")
+	font = pygame.font.SysFont('monospace', args.font_size)
+	font_width, font_height = font.size("X")
+	frames.font_width, frames.font_height = font_width, font_height
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
@@ -155,6 +157,7 @@ def new_surface(self):
 	surface = pygame.Surface((self.rect.w, self.rect.h), 0)
 	if colors.bg != (0,0,0):
 		surface.fill(colors.bg)
+	return surface
 
 def draw_lines(self, surf, highlight=None, transparent=False, justbg=False):
 	bg_cached = color("bg")
@@ -174,7 +177,7 @@ def draw_lines(self, surf, highlight=None, transparent=False, justbg=False):
 				fg = color(char[1]['color'])
 				if transparent:
 					sur = font.render(char[0],1,fg)
-				else:#its either arrows or highlighting, you cant have everything, hehe
+				else:
 					sur = font.render(char[0],1,fg,bg)
 				surf.blit(sur,(x,y))
 
@@ -194,12 +197,12 @@ def arrow_side(s, length,a,x2,y2, surface):
 
 def root_draw(self, surf):
 	if self.arrows_visible:
-		self.draw_lines(surf, self.under_cursor, 666, True)
-		self.draw_arrows(surf)
-		self.draw_lines(surf, self.under_cursor, True)
+		draw_lines(self, surf, self.under_cursor, 666, True)
+		draw_arrows(self, surf)
+		draw_lines(self, surf, self.under_cursor, True)
 	else:
-		self.draw_arrows(surf)
-		self.draw_lines(surf, self.under_cursor, False)
+		draw_arrows(self, surf)
+		draw_lines(self, surf, self.under_cursor, False)
 	draw_cursor(self, surf)
 
 def draw_cursor(self, surf):

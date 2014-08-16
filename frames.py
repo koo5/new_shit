@@ -377,10 +377,10 @@ class Menu(Frame):
 			startchar = 0
 			#print startline, endline+1
 			endchar = max([len(l) for l in s.lines[startline:endline+1]])
-			r = pygame.Rect(startchar * font_width,
-			                startline * font_height,
-			                (endchar  - startchar) * font_width,
-			                (endline - startline+1) * font_height)
+			r = (startchar * font_width,
+			     startline * font_height,
+			     (endchar  - startchar) * font_width,
+			     (endline - startline+1) * font_height)
 			s.rects[i] = r
 
 
