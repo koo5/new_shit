@@ -25,13 +25,11 @@ import sys
 sys.path.insert(0, 'fuzzywuzzy')
 from fuzzywuzzy import fuzz
 
-#from collections import OrderedDict
 try:
 	from collections import OrderedDict
 except:
 	from odict import OrderedDict #be compatible with older python
 
-from utils import flatten
 
 #import uni
 
@@ -45,6 +43,7 @@ from tags import ChildTag, ElementTag, WidgetTag, AttTag, TextTag, ColorTag, End
 from input import levent
 import lemon_colors as colors
 from keys import *
+from utils import flatten
 
 # this block is for assert
 import tags as asstags

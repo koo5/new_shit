@@ -8,7 +8,6 @@ try:
 except:
 	pass
 
-
 import argparse, sys, os
 import pickle, copy
 
@@ -17,6 +16,11 @@ from logger import log, topic
 import frames
 import project
 import lemon_colors as colors
+from keys import *
+
+fast_forward = False # quickly replaying input events without drawing
+sidebar = None # active sidebar
+is_first_event = True # to know when to clear replay
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -43,7 +47,6 @@ def parse_args():
 args = parse_args()
 colors.cache(args)
 
-sidebar = None
 
 def cycle_sidebar():
 	global sidebar
@@ -51,9 +54,9 @@ def cycle_sidebar():
 
 def top_keypress(event):
 	k = event.key
-	if k == pygame.K_ESCAPE:
+	if k == K_ESCAPE:
 		bye()
-	elif k == pygame.K_F1:
+	elif k == K_F1:
 		cycle_sidebar()
 	else:
 		return False
@@ -67,7 +70,7 @@ class KeypressEvent(object):
 		self.key = key
 		self.mod = mod
 		self.all = all
-		self.type = keys.KEYDOWN
+		self.type = KEYDOWN
 
 		if args.webos:
 			self.webos_hack()
@@ -107,9 +110,9 @@ def do_replay(ff):
 				try:
 					e = pickle.load(f)
 					log(str(e))
-					if e.type == keys.KEYDOWN:
+					if e.type == KEYDOWN:
 						keypress(e)
-					elif e.type == pygame.MOUSEBUTTONDOWN:
+					elif e.type == MOUSEBUTTONDOWN:
 						mousedown(e)
 					else:
 						raise Exception("unexpected event type:", e)
@@ -188,7 +191,6 @@ def handle1(event):
 	if event.type == MOUSEBUTTONDOWN:
 		handle2(event)
 
-is_first_event = True
 def handle2(e):
 	global is_first_event
 	
@@ -216,6 +218,17 @@ def render():
 	sidebar.render()
 	logframe.render()
 
+def start():
+	root.render()
+	try:
+		root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
+		root.cursor_c += 1
+	except Exception as e:
+		print e, ", cant set initial cursor position"
+	if args.replay:
+		do_replay(True)
+	render()
+
 def bye():
 	log("deading")
 	sys.exit()
@@ -238,15 +251,5 @@ sidebar = sidebars[2]
 logframe = frames.Log()
 logger.gui = logframe
 
-def after_start():
-	root.render()
-	try:
-		root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
-		root.cursor_c += 1
-	except Exception as e:
-		print e, ", cant set initial cursor position"
-	fast_forward = False
-	if args.replay:
-		do_replay(True)
-	render()
+allframes = sidebars + [logframe, root]
 

@@ -1,17 +1,39 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
 import os
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 import pygame
 from pygame import display, image
-from pygame import draw
+from pygame import draw, Rect
 
 import lemon
-from lemon import logframe, root, sidebar
-from lemon import args
+from lemon import logframe, root, sidebars, allframes
+from lemon import args, frames
+from logger import log
+
+
+
+
+for f in allframes:
+	f.rect = pygame.Rect((6,6),(6,6))
+
+flags = pygame.RESIZABLE|pygame.DOUBLEBUF
+
+
+
+
+
+def render():
+	root.render()
+	sidebar.render()
+	logframe.render()
+
+def reset_cursor_blink_timer():
+	if not args.dontblink:
+		pygame.time.set_timer(pygame.USEREVENT + 1, 800)
+	root.cursor_blink_phase = True
 
 def change_font_size(by = 0):
 	args.font_size += by
@@ -34,12 +56,14 @@ def resize_frames():
 	lemon.root.rect.width = screen_width / 3 * 2
 	lemon.root.rect.height = screen_height - log_height
 
-	sidebar_rect = Rect()
-	sidebar_rect.topleft = (root.rect.w, 0)
+	sidebar_rect = Rect((root.rect.w, 0),(0,0))
 	sidebar_rect.width = screen_width - lemon. root.rect.width
 	sidebar_rect.height = root.rect.height
 	for frame in lemon.sidebars:
 		frame.rect = sidebar_rect
+
+
+
 
 def top_keypress(event):
 	ctrl = pygame.KMOD_CTRL & event.mod
@@ -52,7 +76,6 @@ def top_keypress(event):
 	#then general
 		return lemon.top_keypress()
 	return True
-
 
 def keypress(e):
 	reset_cursor_blink_timer()
@@ -69,7 +92,6 @@ def keypress(e):
 		pass
 	"""
 
-
 def mousedown(e):
 	reset_cursor_blink_timer()
 	#handle ctrl + mousewheel font changing
@@ -84,26 +106,26 @@ def mousedown(e):
 		lemon.mousedown(lemon.MousedownEvent(e.pos, e.button))
 		draw()
 
-
 def process_event(event):
-
 	if event.type == pygame.USEREVENT:
 		pass # we woke up python to poll for SIGINT
 
-	if event.type == pygame.USEREVENT + 1:
+	elif event.type == pygame.USEREVENT + 1:
 		root.cursor_blink_phase = not root.cursor_blink_phase
 		draw()
+		print "blink"
 
-	if event.type == pygame.QUIT:
-		bye()
+	elif event.type == pygame.KEYDOWN:
+		lemon.handle1(lemon.KeypressEvent(event))
 
-	lemon.input_pygame_event(event)
+	elif event.type == pygame.MOUSEBUTTONDOWN:
+		lemon.handle1(lemon.MouseDownEvent(event))
 
-	if event.type == pygame.VIDEORESIZE:
+	elif event.type == pygame.VIDEORESIZE:
 		resize(event.size)
 		render()
 
-	if event.type == pygame.ACTIVEEVENT:
+	elif event.type == pygame.ACTIVEEVENT:
 		if event.gain:
 			reset_cursor_blink_timer()
 		else:
@@ -111,28 +133,23 @@ def process_event(event):
 			root.cursor_blink_phase = False
 		draw()
 
+	elif event.type == pygame.QUIT:
+		bye()
 
 
-def reset_cursor_blink_timer():
-	if not args.dontblink:
-		pygame.time.set_timer(pygame.USEREVENT + 1, 800)
-	root.cursor_blink_phase = True
-
-
-
-def render():
-	root.render()
-	sidebar.render()
-	logframe.render()
 
 
 def draw():
-	if not lemon.fast_forward:
-		screen_surface.blit(root_draw(lemon.root, new_surface()), root.rect.topleft)
-		screen_surface.blit(sidebar_draw(lemon.sidebar), sidebar.rect.topleft)
-		screen_surface.blit(logframe_draw(lemon.logframe), logframe.rect.topleft)
-		pygame.display.flip()
-
+	if lemon.fast_forward:
+		return
+	#ok this is really hacky
+	screen_surface.blit(root_draw(root, new_surface(root)), root.rect.topleft)
+	if lemon.sidebar == lemon.menu:
+		screen_surface.blit(menu_draw(lemon.menu, new_surface(lemon.menu)), lemon.menu.rect.topleft)
+	else:
+		screen_surface.blit(info_draw(lemon.sidebar, new_surface(lemon.sidebar)), lemon.sidebar.rect.topleft)
+	screen_surface.blit(logframe_draw(logframe, new_surface(logframe)), logframe.rect.topleft)
+	pygame.display.flip()
 
 def new_surface(self):
 	surface = pygame.Surface((self.rect.w, self.rect.h), 0)
@@ -175,7 +192,6 @@ def arrow_side(s, length,a,x2,y2, surface):
 	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
 	pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
 
-
 def root_draw(self, surf):
 	if self.arrows_visible:
 		self.draw_lines(surf, self.under_cursor, 666, True)
@@ -203,7 +219,6 @@ def menu_draw_rects(s, surface):
 			c = colors.menu_rect
 		draw.rect(surface, c, r, 1)
 
-
 def info_draw(s, surface):
 	draw_lines(s, surface)
 
@@ -217,19 +232,6 @@ def bye():
 
 def loop():
 	process_event(pygame.event.wait())
-
-
-
-
-pygame.display.init()
-pygame.font.init()
-flags = pygame.RESIZABLE|pygame.DOUBLEBUF
-display.set_caption('lemon operating language v' + lemon.version)
-icon = image.load('icon32x32.png')
-display.set_icon(icon)
-change_font_size()
-
-
 
 def fuck_sdl():
 	"""SDL insists that you must give your new window some size
@@ -250,27 +252,30 @@ def fuck_sdl():
 				h = int(s[1])
 	return w,h
 
-resize((666,666))
-try:
-	resize(fuck_sdl())
-except Exception as e:
-	print e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize"
 
-
-#try to set SDL keyboard settings to system settings
-try:
-	s = os.popen('xset -q  | grep "repeat delay"').read().split()
-	repeat_delay, repeat_rate = int(s[3]), int(s[6])
-	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
-except Exception as e:
-	print e, "cant fix sdl keyboard repeat delay/rate"
-
-
-
-
-pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT
-reset_cursor_blink_timer()
 def main():
+
+	pygame.display.init()
+	pygame.font.init()
+	display.set_caption('lemon operating language v'+str(lemon.version))
+	icon = image.load('icon32x32.png')
+	display.set_icon(icon)
+	change_font_size()
+	resize((666,666))
+	try:
+		resize(fuck_sdl())
+	except Exception as e:
+		print e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize"
+	try:#try to set SDL keyboard settings to system settings
+		s = os.popen('xset -q  | grep "repeat delay"').read().split()
+		repeat_delay, repeat_rate = int(s[3]), int(s[6])
+		pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
+	except Exception as e:
+		print "cant fix sdl keyboard repeat delay/rate:", e
+	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
+	reset_cursor_blink_timer()
+	#todo:try sleep
+	lemon.start()
 	while True:
 		try:
 			loop()
