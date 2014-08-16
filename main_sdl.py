@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from math import *
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 import pygame
@@ -24,10 +25,9 @@ flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
 
 
-
 def render():
 	root.render()
-	sidebar.render()
+	lemon.sidebar.render()
 	logframe.render()
 
 def reset_cursor_blink_timer():
@@ -67,32 +67,11 @@ def resize_frames():
 
 
 
-def top_keypress(event):
-	ctrl = pygame.KMOD_CTRL & event.mod
-	#first platform specific stuff
-	if ctrl and event.uni == '=':
-		change_font_size(1)
-	elif ctrl and event.uni == '-':
-		change_font_size(-1)
-	else:
-	#then general
-		return lemon.top_keypress()
-	return True
-
 def keypress(e):
 	reset_cursor_blink_timer()
-	if args.log_events:
-		log(e)
-	lemon.keypress()
+	lemon.handle(lemon.KeypressEvent(e, pygame.key.get_pressed()))
 	render()
 	draw()
-	"""
-	try:
-		gc.collect()
-		objgraph.show_most_common_types(30)
-	except:
-		pass
-	"""
 
 def mousedown(e):
 	reset_cursor_blink_timer()
@@ -100,13 +79,20 @@ def mousedown(e):
 	if e.button in [4,5] and (
 		pygame.key.get_pressed()[pygame.K_LCTRL] or
 		pygame.key.get_pressed()[pygame.K_RCTRL]):
-		if e.button == 4: change_font_size(1)
-		if e.button == 5: change_font_size(-1)
-		render()
-		draw()
+			if e.button == 4: change_font_size(1)
+			if e.button == 5: change_font_size(-1)
 	else:
-		lemon.mousedown(lemon.MousedownEvent(e.pos, e.button))
-		draw()
+		lemon.handle(lemon.MousedownEvent(e))
+	render()
+	draw()
+
+def lemon_mousedown(e):
+	for f in [logframe, lemon.sidebar, root]:
+		if f.rect.collidepoint(e.pos):
+			pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
+			f.mousedown(e)
+			break
+lemon.mousedown = lemon_mousedown
 
 def process_event(event):
 	if event.type == pygame.USEREVENT:
@@ -118,10 +104,10 @@ def process_event(event):
 		print "blink"
 
 	elif event.type == pygame.KEYDOWN:
-		lemon.handle1(lemon.KeypressEvent(event))
+		keypress(event)
 
 	elif event.type == pygame.MOUSEBUTTONDOWN:
-		lemon.handle1(lemon.MouseDownEvent(event))
+		mousedown(event)
 
 	elif event.type == pygame.VIDEORESIZE:
 		resize(event.size)
@@ -144,13 +130,22 @@ def process_event(event):
 def draw():
 	if lemon.fast_forward:
 		return
-	#ok this is really hacky
-	screen_surface.blit(root_draw(root, new_surface(root)), root.rect.topleft)
-	if lemon.sidebar == lemon.menu:
-		screen_surface.blit(menu_draw(lemon.menu, new_surface(lemon.menu)), lemon.menu.rect.topleft)
+	#ok this is hacky
+	surf = new_surface(root)
+	root_draw(root, surf)
+	screen_surface.blit(surf, root.rect.topleft)
+
+	surf = new_surface(lemon.sidebar)
+	if isinstance(lemon.sidebar, frames.Menu):
+		menu_draw(lemon.sidebar, surf)
 	else:
-		screen_surface.blit(info_draw(lemon.sidebar, new_surface(lemon.sidebar)), lemon.sidebar.rect.topleft)
-	screen_surface.blit(logframe_draw(logframe, new_surface(logframe)), logframe.rect.topleft)
+		info_draw(lemon.sidebar, surf)
+	screen_surface.blit(surf, lemon.sidebar.rect.topleft)
+
+	surf = new_surface(logframe)
+	info_draw(logframe, surf)
+	screen_surface.blit(surf, logframe.rect.topleft)
+
 	pygame.display.flip()
 
 def new_surface(self):
@@ -188,8 +183,8 @@ def draw_arrows(s, surface):
 		a = atan2(y-y2, x-x2)
 		angle = 0.1
 		length = 40
-		s.arrow_side(length, a+angle, x2,y2, surface)
-		s.arrow_side(length, a-angle, x2,y2, surface)
+		arrow_side(s, length, a+angle, x2,y2, surface)
+		arrow_side(s, length, a-angle, x2,y2, surface)
 			
 def arrow_side(s, length,a,x2,y2, surface):
 	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
@@ -214,13 +209,13 @@ def menu_draw(s, surface):
 	draw_lines(s, surface)
 	draw_rects(s, surface)
 
-def menu_draw_rects(s, surface):
+def draw_rects(s, surface):
 	for i,r in s.rects.iteritems():
 		if i == s.selected:
 			c = colors.menu_rect_selected
 		else:
 			c = colors.menu_rect
-		draw.rect(surface, c, r, 1)
+		pygame.draw.rect(surface, c, r, 1)
 
 def info_draw(s, surface):
 	draw_lines(s, surface)
@@ -278,6 +273,7 @@ def main():
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 	reset_cursor_blink_timer()
 	#todo:try sleep
+	lemon.change_font_size = change_font_size
 	lemon.start()
 	while True:
 		try:

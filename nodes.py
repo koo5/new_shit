@@ -28,7 +28,7 @@ from fuzzywuzzy import fuzz
 try:
 	from collections import OrderedDict
 except:
-	from odict import OrderedDict #be compatible with older python
+	from odict import OrderedDict #be compatible with older python (2.4?)
 
 
 #import uni
@@ -93,7 +93,8 @@ class Node(element.Element):
 			#hacky rainbow
 			c = colors.color("node brackets")
 			hsv = tuple(colors.rgb(*c).hsv)
-			return (hsv[0] + 40*s.number_of_ancestors)%360, hsv[1], hsv[2]
+			hsv2 = colors.hsv((hsv[0] + 0.3*s.number_of_ancestors)%1, hsv[1], hsv[2])
+			return tuple(hsv2.rgb)
 		else:
 			return s._brackets_color
 	@brackets_color.setter
@@ -199,11 +200,11 @@ class Node(element.Element):
 	keys = ["f7: evaluate",
 	        "ctrl del: delete"]
 	def on_keypress(self, e):
-		if e.key == e.c.K_F7:
+		if e.key == K_F7:
 			self.eval()
 			return True
 
-		if e.key == e.c.K_DELETE and e.mod & e.c.KMOD_CTRL:
+		if e.key == K_DELETE and e.mod & KMOD_CTRL:
 			self.delete_self()
 			return True
 
@@ -459,11 +460,11 @@ class Syntaxed(Node):
 	keys = ["ctrl ,: previous syntax",
 			"ctrl .: next syntax"]
 	def on_keypress(self, e):
-		if e.c.KMOD_CTRL & e.mod:
-			if e.key == e.c.K_COMMA:
+		if KMOD_CTRL & e.mod:
+			if e.key == K_COMMA:
 				self.prev_syntax()
 				return True
-			if e.key == e.c.K_PERIOD:
+			if e.key == K_PERIOD:
 				self.next_syntax()
 				return True
 		return super(Syntaxed, self).on_keypress(e)
@@ -620,13 +621,13 @@ class List(Collapsible):
 			"return: add item"]
 	def on_keypress(self, e):
 
-		if e.key == e.c.K_DELETE and e.mod & e.c.KMOD_CTRL:
+		if e.key == K_DELETE and e.mod & KMOD_CTRL:
 			item_index = self.insertion_pos(e.frame, e.cursor)
 			if len(self.items) > item_index:
 				del self.items[item_index]
 			return True
 		#???
-		if e.key == e.c.K_RETURN:
+		if e.key == K_RETURN:
 			pos = self.insertion_pos(e.frame, e.cursor)
 			p = Parser(self.item_type)
 			p.parent = self
@@ -1708,12 +1709,12 @@ class Parser(Node):
 
 
 		"""
-				if e.key == e.c.K_BACKSPACE:
+				if e.key == K_BACKSPACE:
 					if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 						self.text = self.text[0:pos -1] + self.text[pos:]
 		#				log(self.text)
 						self.root.post_render_move_caret = -1
-				if e.key == e.c.K_DELETE:
+				if e.key == K_DELETE:
 					if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
 						self.text = self.text[0:pos] + self.text[pos + 1:]
 		"""
@@ -1739,10 +1740,10 @@ class Parser(Node):
 	"""
 	def on_keypress(s, e):
 
-		if not e.mod & e.c.KMOD_CTRL:
+		if not e.mod & KMOD_CTRL:
 			assert s.root.post_render_move_caret == 0
 
-			if e.uni and e.key not in [e.c.K_ESCAPE, e.c.K_RETURN]:
+			if e.uni and e.key not in [K_ESCAPE, K_RETURN]:
 
 				items = s.items
 				atts = e.atts

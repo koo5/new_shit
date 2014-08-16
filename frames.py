@@ -1,7 +1,6 @@
 
 """root, menu, log, info, help.."""
 #todo:rename root to code
-from math import *
 
 import graph
 
@@ -13,6 +12,7 @@ from menu_items import InfoItem
 from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 import widgets
 from logger import log, topic
+from keys import *
 
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
@@ -22,7 +22,7 @@ class Frame(object):
 #	def draw(self):
 
 	def __init__(s):
-		#s.rect = pygame.Rect((6,6,6,6))
+		#s.rect = Rect((6,6,6,6))
 		s.lines = []
 		s.scroll_lines = 0
 		s._render_lines = {}#hack to satisfy project_elem()
@@ -48,9 +48,9 @@ class Frame(object):
 		if not n or not n.on_mouse_press(e.button):
 			s.cursor_c, s.cursor_r = cr
 
-	def mousedown(s,e,pos):
+	def mousedown(s,e):
 		if e.button == 1:
-			s.click(e,pos)
+			s.click(e,e.pos)
 		elif e.button == 4:
 			s.scroll(-1)
 		elif e.button == 5:
@@ -87,12 +87,12 @@ class Root(Frame):
 		self.menu_dirty = True
 
 	def and_sides(s,e):
-		if e.all[pygame.K_LEFT]: s.move_cursor_h(-1)
-		if e.all[pygame.K_RIGHT]: s.move_cursor_h(1)
+		if e.all[K_LEFT]: s.move_cursor_h(-1)
+		if e.all[K_RIGHT]: s.move_cursor_h(1)
 
 	def and_updown(s,event):
-		if event.all[pygame.K_UP]: s.move_cursor_v(-1)
-		if event.all[pygame.K_DOWN]: s.move_cursor_v(1)
+		if event.all[K_UP]: s.move_cursor_v(-1)
+		if event.all[K_DOWN]: s.move_cursor_v(1)
 
 	@property
 	def under_cursor(self):
@@ -244,59 +244,59 @@ class Root(Frame):
 
 		k = event.key
 
-		if pygame.KMOD_CTRL & event.mod:
-			if k == pygame.K_LEFT:
+		if KMOD_CTRL & event.mod:
+			if k == K_LEFT:
 				s.prev_elem()
-			elif k == pygame.K_RIGHT:
+			elif k == K_RIGHT:
 				s.next_elem()
-			elif k == pygame.K_HOME:
+			elif k == K_HOME:
 				s.cursor_top()
-			elif k == pygame.K_END:
+			elif k == K_END:
 				s.cursor_bottom()
-			elif k == pygame.K_d:
+			elif k == K_d:
 				s.text_dump()
-			elif k == pygame.K_p:
+			elif k == K_p:
 				s.dump_parents()
-			elif k == pygame.K_g:
+			elif k == K_g:
 				graph.gen_graph(s.root)
-			elif k == pygame.K_q:
+			elif k == K_q:
 				exit()#a quit shortcut that goes thru the event pickle/replay mechanism
 			else:
 				return False
 		else:
-			"""if k == pygame.K_F12:
+			"""if k == K_F12:
 				for item in root.flatten():
 					if isinstance(item, nodes.Syntaxed):
 						item.view_normalized = not item.view_normalized
 			el"""
 
-			if k == pygame.K_F4:
+			if k == K_F4:
 				s.clear()
-			elif k == pygame.K_F5:
+			elif k == K_F5:
 				s.run()
-			elif k == pygame.K_F6:
+			elif k == K_F6:
 				s.run_line()
-			elif k == pygame.K_F8:
+			elif k == K_F8:
 				s.toggle_arrows()
-			elif k == pygame.K_UP:
+			elif k == K_UP:
 				s.move_cursor_v(-1)
 				s.and_sides(event)
-			elif k == pygame.K_DOWN:
+			elif k == K_DOWN:
 				s.move_cursor_v(+1)
 				s.and_sides(event)
-			elif k == pygame.K_LEFT:
+			elif k == K_LEFT:
 				s.move_cursor_h(-1)
 				s.and_updown(event)
-			elif k == pygame.K_RIGHT:
+			elif k == K_RIGHT:
 				s.move_cursor_h(+1)
 				s.and_updown(event)
-			elif k == pygame.K_HOME:
+			elif k == K_HOME:
 				s.cursor_home()
-			elif k == pygame.K_END:
+			elif k == K_END:
 				s.cursor_end()
-			elif k == pygame.K_PAGEUP:
+			elif k == K_PAGEUP:
 				s.move_cursor_v(-10)
-			elif k == pygame.K_PAGEDOWN:
+			elif k == K_PAGEDOWN:
 				s.move_cursor_v(10)
 			else:
 				return False
@@ -407,17 +407,17 @@ class Menu(Frame):
 					yield i
 
 	def on_keypress(self, e):
-		if e.mod & pygame.KMOD_CTRL:
-			if e.key == pygame.K_UP:
+		if e.mod & KMOD_CTRL:
+			if e.key == K_UP:
 				self.move(-1)
 				return True
-			elif e.key == pygame.K_DOWN:
+			elif e.key == K_DOWN:
 				self.move(1)
 				return True
-			elif e.key == pygame.K_m:
+			elif e.key == K_m:
 				self.menu_dump()
 				return True
-		if e.key == pygame.K_SPACE:
+		if e.key == K_SPACE:
 			return self.accept()
 
 	def menu_dump(s):
@@ -555,7 +555,7 @@ class FunkyLog(Frame):
 		min = 6
 		s.fonts = []
 		for size in range(min, font_size+1, (font_size-min)/s.rows):
-			f = pygame.font.SysFont('monospace', size
+			f = font.SysFont('monospace', size
 			w,h = f.size("X")
 			s.fonts.append((f,w,h))
 

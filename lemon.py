@@ -54,21 +54,25 @@ def cycle_sidebar():
 
 def top_keypress(event):
 	k = event.key
-	if k == K_ESCAPE:
-		bye()
-	elif k == K_F1:
+	ctrl = KMOD_CTRL & event.mod
+
+	if k == K_F1:
 		cycle_sidebar()
+	elif ctrl and event.uni == '=':
+		change_font_size(1)
+	elif ctrl and event.uni == '-':
+		change_font_size(-1)
+
 	else:
 		return False
 	return True
 
 
-
 class KeypressEvent(object):
-	def __init__(self, e):
-		self.uni = uni
-		self.key = key
-		self.mod = mod
+	def __init__(self, e, all):
+		self.uni = e.unicode
+		self.key = e.key
+		self.mod = e.mod
 		self.all = all
 		self.type = KEYDOWN
 
@@ -92,8 +96,8 @@ class KeypressEvent(object):
 
 class MousedownEvent(object):
 	def __init__(s, e):
-		s.pos = pos
-		s.button = button
+		s.pos = e.pos
+		s.button = e.button
 		s.type = e.type
 
 
@@ -127,10 +131,6 @@ def do_replay(ff):
 
 
 def keypress(e):
-	reset_cursor_blink_timer()
-	if args.log_events:
-		log(e)
-
 	if top_keypress(e):
 		if args.log_events:
 			log("handled by main top")
@@ -140,8 +140,6 @@ def keypress(e):
 	else:
 		root.on_keypress(e)
 
-	render()
-
 	"""
 	try:
 		gc.collect()
@@ -150,34 +148,7 @@ def keypress(e):
 		pass
 	"""
 
-
-def mousedown(e):
-	reset_cursor_blink_timer()
-	#handle ctrl + mousewheel font changing
-	if e.button in [4,5] and (
-		pygame.key.get_pressed()[pygame.K_LCTRL] or
-		pygame.key.get_pressed()[pygame.K_RCTRL]):
-		if e.button == 4: change_font_size(1)
-		if e.button == 5: change_font_size(-1)
-		render()
-	else:
-		for f in [logframe, sidebar, root]:
-			if f.rect.collidepoint(e.pos):
-				pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
-				f.mousedown(e, pos)
-				render()
-				break
-
-
-def pickle_event(e):
-	with open("replay.p", "ab") as f:
-		try:
-			pickle.dump(e, f)
-		except pickle.PicklingError as error:
-			print error, ", are you profiling?"
-
-
-def handle1(event):
+def handle(event):
 	if event.type == KEYDOWN:
 		if event.key == K_F2:
 			ff = event.mod & KMOD_SHIFT
@@ -186,32 +157,39 @@ def handle1(event):
 			if event.key == K_ESCAPE:
 				bye()
 			else:
-				handle2(event)
+				record_and_handle(event)
 
 	if event.type == MOUSEBUTTONDOWN:
-		handle2(event)
+		record_and_handle(event)
 
-def handle2(e):
+def record_and_handle(e):
 	global is_first_event
 	
 	if is_first_event:
 		clear_replay()
 	pickle_event(e)
-	handle3(e)
+	dispatch(e)
 	is_first_event = False
 
-def clear_replay():
-	f = open("replay.p", 'w')
-	f.truncate()
-	f.close()
-
-def handle3(e):
+def dispatch(e):
 	if e.type == MOUSEDOWN:
 		mousedown(e)
 	elif e.type == KEYPRESS:
 		keypress(e)
 	else:
 		raise 666
+
+def clear_replay():
+	f = open("replay.p", 'w')
+	f.truncate()
+	f.close()
+
+def pickle_event(e):
+	with open("replay.p", "ab") as f:
+		try:
+			pickle.dump(e, f)
+		except pickle.PicklingError as error:
+			print error, ", are you profiling?"
 
 def render():
 	root.render()
