@@ -264,12 +264,13 @@ def main():
 		resize(fuck_sdl())
 	except Exception as e:
 		print e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize"
+	repeat_delay, repeat_rate = 300, 30
 	try:#try to set SDL keyboard settings to system settings
 		s = os.popen('xset -q  | grep "repeat delay"').read().split()
 		repeat_delay, repeat_rate = int(s[3]), int(s[6])
-		pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
 	except Exception as e:
-		print "cant fix sdl keyboard repeat delay/rate:", e
+		print "cant get system keyboard repeat delay/rate:", e
+	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 	reset_cursor_blink_timer()
 	#todo:try sleep

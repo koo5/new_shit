@@ -1,7 +1,11 @@
 from logger import log
 from dotdict import dotdict
-from colors import *
-assert rgb
+try:
+	#im gonna have to ditch this crappy module
+	from colors import *
+	assert rgb
+except:
+	pass
 
 default_colors = {
 	"info item text": (224,224,224),
