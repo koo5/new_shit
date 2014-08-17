@@ -101,7 +101,6 @@ def process_event(event):
 	elif event.type == pygame.USEREVENT + 1:
 		root.cursor_blink_phase = not root.cursor_blink_phase
 		draw()
-		print "blink"
 
 	elif event.type == pygame.KEYDOWN:
 		keypress(event)
@@ -258,19 +257,23 @@ def main():
 	display.set_caption('lemon operating language v'+str(lemon.version))
 	icon = image.load('icon32x32.png')
 	display.set_icon(icon)
-	change_font_size()
+
 	resize((666,666))
 	try:
 		resize(fuck_sdl())
 	except Exception as e:
 		print e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize"
+
+	repeat_delay, repeat_rate = 300, 30
 	try:#try to set SDL keyboard settings to system settings
 		s = os.popen('xset -q  | grep "repeat delay"').read().split()
 		repeat_delay, repeat_rate = int(s[3]), int(s[6])
-		pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
 	except Exception as e:
-		print "cant fix sdl keyboard repeat delay/rate:", e
+		print "cant get system keyboard repeat delay/rate:", e
+	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
+	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 
+	change_font_size()
 	lemon.change_font_size = change_font_size
 	lemon.start()
 

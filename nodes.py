@@ -90,13 +90,14 @@ class Node(element.Element):
 	@property
 	def brackets_color(s):
 		if s._brackets_color == "node brackets rainbow":
-			#hacky rainbow
-			c = colors.color("node brackets")
-			hsv = tuple(colors.rgb(*c).hsv)
-			hsv2 = colors.hsv((hsv[0] + 0.3*s.number_of_ancestors)%1, hsv[1], hsv[2])
-			return tuple(hsv2.rgb)
-		else:
-			return s._brackets_color
+			try:#hacky rainbow
+				c = colors.color("node brackets")
+				hsv = tuple(colors.rgb(*c).hsv)
+				hsv2 = colors.hsv((hsv[0] + 0.3*s.number_of_ancestors)%1, hsv[1], hsv[2])
+				return tuple(hsv2.rgb)
+			except:
+				return colors.color("fg")
+		return s._brackets_color
 	@brackets_color.setter
 	def brackets_color(s, c):
 		s._brackets_color = c#colors.color(c)
