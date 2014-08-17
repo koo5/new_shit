@@ -270,11 +270,13 @@ def main():
 		pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
 	except Exception as e:
 		print "cant fix sdl keyboard repeat delay/rate:", e
-	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
-	reset_cursor_blink_timer()
-	#todo:try sleep
+
 	lemon.change_font_size = change_font_size
 	lemon.start()
+
+	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
+	reset_cursor_blink_timer()
+
 	while True:
 		try:
 			loop()
