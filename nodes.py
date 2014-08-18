@@ -15,11 +15,9 @@ each class has a decl, which is an object descending from NodeclBase (nodecl for
 nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
 nodecls have a set of functions for instantiating the values, and those need some cleanup
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
-
-
-
-
 """
+
+from lemon_six import iteritems, iterkeys, itervalues
 
 import sys
 sys.path.insert(0, 'fuzzywuzzy')
@@ -206,13 +204,15 @@ class Node(element.Element):
 			return True
 
 		if e.key == K_DELETE and e.mod & KMOD_CTRL:
-			self.delete_self()
+			self.parent.delete_child(self)
 			return True
 
+	"""
 	@topic("delete_self")
 	@levent(mod=KMOD_CTRL, key=K_DELETE)
 	def delete_self(self):
 		self.parent.delete_child(self)
+	"""
 
 	def to_python_str(self):
 		return str(self)
@@ -233,7 +233,7 @@ class Node(element.Element):
 
 		#results of eval
 		if "value" in elem.runtime._dict \
-				and elem.runtime._dict.has_key("evaluated") \
+				and "evaluated" in elem.runtime._dict \
 				and not isinstance(elem.parent, Parser): #dont show results of compiler's direct children
 			yield [ColorTag('eval results'), TextTag("->")]
 			v = elem.runtime.value
@@ -288,8 +288,8 @@ class Unresolved(Node):
 	def serialize(s):
 		r = {}
 		log("serializing Unresolved with data:", s.data)
-		for k,v in s.data.iteritems():
-			if isinstance(v, (unicode, str)):
+		for k,v in iteritems(s.data):
+			if isinstance(v, basestring):
 				r[k] = v
 			elif k == "decl":
 				r[k] = v.name
@@ -378,7 +378,7 @@ class Syntaxed(Node):
 
 		assert(len(kids) == len(self.slots))
 
-		for k in self.slots.iterkeys():
+		for k in iterkeys(self.slots):
 			self.set_child(k, kids[k])
 
 		self.ch._lock()
@@ -394,7 +394,7 @@ class Syntaxed(Node):
 		return r
 
 	def fix_parents(self):
-		self._fix_parents(self.ch._dict.values())
+		self._fix_parents(list(self.ch._dict.values()))
 
 	def set_child(self, name, item):
 		assert(isinstance(name, str))
@@ -405,9 +405,9 @@ class Syntaxed(Node):
 
 	def replace_child(self, child, new):
 		"""child name or child value? thats a good question...its child the value!"""
-		assert(child in self.ch.itervalues())
+		assert(child in itervalues(self.ch))
 		assert(isinstance(new, Node))
-		for k,v in self.ch.iteritems():
+		for k,v in iteritems(self.ch):
 			if v == child:
 				self.ch[k] = new
 				new.parent = self
@@ -417,7 +417,7 @@ class Syntaxed(Node):
 		#todo:refactor into find_child or something
 
 	def delete_child(self, child):
-		for k,v in self.ch._dict.iteritems():
+		for k,v in iteritems(self.ch._dict):
 			if v == child:
 				self.ch[k] = self.create_kids(self.slots)[k]
 				self.ch[k].parent = self
@@ -427,15 +427,15 @@ class Syntaxed(Node):
 		#self.replace_child(child, Parser(b["text"])) #toho: create new_child()
 
 	def _flatten(self):
-		assert(isinstance(v, Node) for v in self.ch._dict.itervalues())
-		return [self] + [v.flatten() for v in self.ch._dict.itervalues()]
+		assert(isinstance(v, Node) for v in itervalues(self.ch._dict))
+		return [self] + [v.flatten() for v in itervalues(self.ch._dict)]
 
 	@staticmethod
 	def check_slots(slots):
 		if __debug__:
 			assert(isinstance(slots, dict))
-			for name, slot in slots.iteritems():
-				assert(isinstance(name, str))
+			for name, slot in iteritems(slots):
+				assert(isinstance(name, basestring))
 				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
 
@@ -474,7 +474,7 @@ class Syntaxed(Node):
 	def create_kids(cls, slots):
 		cls.check_slots(slots)
 		kids = {}
-		for k, v in slots.iteritems(): #for each child:
+		for k, v in iteritems(slots):
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
 			easily_instantiable = [b[x] for x in [y for y in ['text', 'number',
 			    'statements', 'list', 'function signature list', 'untypedvar' ] if y in b]]
@@ -559,7 +559,7 @@ class Dict(Collapsible):
 
 	def render_items(self):
 		r = []
-		for key, item in self.items.iteritems():
+		for key, item in iteritems(self.items):
 			r += [TextTag(key), TextTag(":"), IndentTag(), NewlineTag()]
 			r += [ElementTag(item)]
 			r += [DedentTag(), NewlineTag()]
@@ -574,14 +574,14 @@ class Dict(Collapsible):
 
 	def fix_parents(self):
 		super(Dict, self).fix_parents()
-		self._fix_parents(self.items.values())
+		self._fix_parents(list(self.items.values()))
 
 	def _flatten(self):
-		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]#skip Widgets, for Settings
+		return [self] + [v.flatten() for v in itervalues(self.items) if isinstance(v, Node)]#skip Widgets, for Settings
 
 	def add(self, kv):
 		key, val = kv
-		assert(not self.items.has_key(key))
+		assert(key not in self.items)
 		self.items[key] = val
 		assert(isinstance(key, str))
 		assert(isinstance(val, element.Element))
@@ -1227,7 +1227,7 @@ class SyntaxedNodecl(NodeclBase):
 	def __init__(self, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
 		instance_class.decl = self
-		self.instance_slots = dict([(k, b[i] if isinstance(i, str) else i) for k,i in instance_slots.iteritems()])
+		self.instance_slots = dict([(k, b[i] if isinstance(i, str) else i) for k,i in iteritems(instance_slots)])
 		if isinstance(instance_syntaxes[0], list):
 			self.instance_syntaxes = instance_syntaxes
 		else:
@@ -1697,7 +1697,7 @@ class Parser(Node):
 				text = text[0:pos -1] + text[pos:]
 				s.root.post_render_move_caret -= 1
 		else:
-			assert isinstance(text, (str, unicode)), (s.items, ii, text)
+			assert isinstance(text, basestring), (s.items, ii, text)
 			#print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
 			text = text[:pos] + e.uni + text[pos:]
 			s.root.post_render_move_caret += len(e.uni)
@@ -1727,7 +1727,7 @@ class Parser(Node):
 		r = [AttTag("compiler body", self)]
 		for i, item in enumerate(self.items):
 			r += [AttTag("compiler item", i)]
-			if isinstance(item, (str, unicode)):
+			if isinstance(item, basestring):
 				for j, c in enumerate(item):
 					r += [AttTag("compiler item char", j), TextTag(c), EndTag()]
 			else:
@@ -1821,7 +1821,7 @@ class Parser(Node):
 			#snap cursor to the beginning of Parser
 			s.root.post_render_move_caret -= atts['char_index']
 			return s.edit_text(0, 0, e)
-		elif isinstance(items[i], (str, unicode)):
+		elif isinstance(items[i], basestring):
 			if "compiler item char" in atts:
 				ch = atts["compiler item char"]
 			else:
@@ -1829,7 +1829,7 @@ class Parser(Node):
 			return s.edit_text(i, ch, e)
 		elif isinstance(items[i], Node):
 			items.insert(i, "")
-			assert isinstance(items[i], (str, unicode)), (items, i)
+			assert isinstance(items[i], basestring), (items, i)
 			return s.edit_text(i, 0, e)
 
 	def mine(s, atts):
@@ -2016,7 +2016,7 @@ class CompilerMenuItem(MenuItem):
 	@property
 	def score(s):
 		#print s.scores._dict
-		return sum([i if not isinstance(i, tuple) else i[0] for i in s.scores._dict.itervalues()])
+		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
 
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
@@ -2489,7 +2489,7 @@ def add_operators():
 	pfn(sum, [Text("the sum of"), num_list_arg()], name = "summed")
 
 	def b_range(min, max):
-		return range(min, max + 1)
+		return list(range(min, max + 1))
 	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
 		num_list(), name = "range", note="inclusive")
 
@@ -2689,7 +2689,7 @@ def make_root():
 	r.add(("program", b['module'].inst_fresh()))
 	r["program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
-	r["builtins"].ch.statements.items = list(b.itervalues())
+	r["builtins"].ch.statements.items = list(itervalues(b))#hm
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
 	building_in = False
@@ -2702,7 +2702,7 @@ def make_root():
 
 def to_lemon(x):
 	print ("to-lemon", x)
-	if isinstance(x, (str, unicode)):
+	if isinstance(x, basestring):
 		return Text(x)
 	elif isinstance(x, (int, float)):
 		return Number(x)

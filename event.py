@@ -140,6 +140,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import inspect
+from lemon_six import get_method_self, str_and_uni
 
 EVENT_HANDLED = True 
 EVENT_UNHANDLED = None
@@ -391,7 +392,7 @@ class EventDispatcher(object):
         n_handler_args = len(handler_args)
 
         # Remove "self" arg from handler if it's a bound method
-        if inspect.ismethod(handler) and handler.im_self:
+        if inspect.ismethod(handler) and get_method_self(handler):
             n_handler_args -= 1
 
         # Allow *args varargs to overspecify arguments
@@ -407,9 +408,10 @@ class EventDispatcher(object):
         if n_handler_args != n_args:
             if inspect.isfunction(handler) or inspect.ismethod(handler):
                 descr = '%s at %s:%d' % (
-                    handler.func_name,
-                    handler.func_code.co_filename,
-                    handler.func_code.co_firstlineno)
+                    #handler.func_name,
+                    handler.__name__,
+                    get_function_code(handler).co_filename,
+                    get_function_code(handler).co_firstlineno)
             else:
                 descr = repr(handler)
             
@@ -449,7 +451,7 @@ class EventDispatcher(object):
             name = func.__name__
             self.set_handler(name, func)
             return args[0]
-        elif type(args[0]) in (str, unicode):   # @window.event('on_resize')
+        elif type(args[0]) in (str_and_uni):   # @window.event('on_resize')
             name = args[0]
             def decorator(func):
                 self.set_handler(name, func)

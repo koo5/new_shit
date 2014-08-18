@@ -7,7 +7,7 @@ lines of tuples containing characters to be displayed on screen and their
 attributes (most importantly the element the char belongs to and color)
 line is a list of tuples: (character, attributes)
 """
-
+from lemon_six import six_u
 from tags import *
 from logger import ping, log
 import colors
@@ -131,10 +131,10 @@ def _project_tags(p, elem, tags):
 			tag = ElementTag(elem.__dict__[tag.name])
 
 	#now real stuff
-		if isinstance(tag, (str, unicode)):
+		if isinstance(tag, basestring):
 			for char in tag:
 				attadd(p.atts, "char_index", p.char_index)
-				if char == "\n":
+				if char == "\n" or char == six_u("\n"):
 					if newline(p, elem) == DONE:
 						return DONE
 				else:

@@ -1,3 +1,4 @@
+from lemon_six import iteritems
 from logger import log
 from dotdict import dotdict
 try:
@@ -28,13 +29,13 @@ default_colors = {
 	}
 
 colors = dotdict()
-colors._dict = dict(default_colors)
+#colors._dict = dict(default_colors) #fix dotdict..but not needed..
 
 def cache(args):
 	global colors, invert, mono
 	invert = args.invert
 	mono = args.mono
-	colors._dict.update(dict([(k, modify(v)) for k,v in default_colors.iteritems()]))
+	colors._dict.update(dict([(k, modify(v)) for k,v in iteritems(default_colors)]))
 
 def modify(c, max=255):
 	if mono and c != (0,0,0):#||(0,0,0,0)

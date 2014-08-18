@@ -2,7 +2,7 @@ import collections
 
 def flatten_gen(x):
 	for y in x:
-		if isinstance(y, (unicode, str)) or not isinstance(y, list):
+		if isinstance(y, basestring) or not isinstance(y, list):
 			yield y
 		else:
 			for z in flatten_gen(y):

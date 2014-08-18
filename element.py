@@ -7,6 +7,7 @@ import input #lemon's input event decorator
 from logger import log, ping
 import tags
 from keys import *
+from lemon_six import *
 
 class Element(event.EventDispatcher):
 	"""an object that can be rendered"""
@@ -20,8 +21,8 @@ class Element(event.EventDispatcher):
 		self.brackets = ('<','>')
 		self._render_lines = {}
 		#new-style events
-		if not hasattr(self, "levent_handlers"):
-			self.__class__.levent_handlers = self.find_levent_handlers()
+		#if not hasattr(self, "levent_handlers"):
+		#self.__class__.levent_handlers = self.find_levent_handlers()
 		#log("eee"+str(self.levent_handlers))
 
 
@@ -53,7 +54,7 @@ class Element(event.EventDispatcher):
 		object.__setattr__(s, k, v)
 
 
-
+	"""
 	#new-style events, only used experimentally in one place so far,
 	#see input.py for the decorator that declares the event handlers
 	@classmethod
@@ -117,7 +118,7 @@ class Element(event.EventDispatcher):
 				return True
 			else:
 				log('failed')
-
+	"""
 
 
 	def on_keypress(self, event):

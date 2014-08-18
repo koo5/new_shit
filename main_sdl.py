@@ -14,6 +14,7 @@ from lemon import logframe, root, sidebars, allframes
 from lemon import args, frames
 from logger import log
 from lemon_colors import colors, color
+from lemon_six import iteritems
 
 
 
@@ -209,7 +210,7 @@ def menu_draw(s, surface):
 	draw_rects(s, surface)
 
 def draw_rects(s, surface):
-	for i,r in s.rects.iteritems():
+	for i,r in iteritems(s.rects):
 		if i == s.selected:
 			c = colors.menu_rect_selected
 		else:
@@ -262,14 +263,14 @@ def main():
 	try:
 		resize(fuck_sdl())
 	except Exception as e:
-		print e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize"
+		print (e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize")
 
 	repeat_delay, repeat_rate = 300, 30
 	try:#try to set SDL keyboard settings to system settings
 		s = os.popen('xset -q  | grep "repeat delay"').read().split()
 		repeat_delay, repeat_rate = int(s[3]), int(s[6])
 	except Exception as e:
-		print "cant get system keyboard repeat delay/rate:", e
+		print ("cant get system keyboard repeat delay/rate:", e)
 	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 

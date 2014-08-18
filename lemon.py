@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 version=0.2
 
 try:
@@ -189,7 +191,7 @@ def pickle_event(e):
 		try:
 			pickle.dump(e, f)
 		except pickle.PicklingError as error:
-			print error, ", are you profiling?"
+			print (error, ", are you profiling?")
 
 def render():
 	root.render()
@@ -202,7 +204,7 @@ def start():
 		root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
 		root.cursor_c += 1
 	except Exception as e:
-		print e, ", cant set initial cursor position"
+		print (e, ", cant set initial cursor position")
 	if args.replay:
 		do_replay(True)
 	render()

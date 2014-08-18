@@ -1,7 +1,11 @@
-"""dotdict: a simple object that wraps a dict and allows access by attributes"""
+
+from __future__ import print_function
 
 #optimalization: what if we replaced it with an empty object?
 class dotdict(object):
+	"""
+	a simple object that wraps a dict and allows access by attributes
+	"""
 	def __init__(s):#todo:, seq=None, **kwargs):
 		object.__setattr__(s, "_dict", dict())
 		object.__setattr__(s, "_locked", False)
@@ -9,10 +13,11 @@ class dotdict(object):
 		object.__setattr__(s, "_locked", True)
 	def __setattr__ (s, k, v):
 		if k == "_dict":
+			print("hmm", v)
 			object.__setattr__(s, "_dict", dict())#weird, shouldnt it set the value, not an empty dict?
 		else:
 			if object.__getattribute__(s, "_locked"):
-				if not k in s._dict.iterkeys():
+				if not k in s._dict:
 					raise Exception("setting an unknown item of a locked-down dotdict")
 			s._dict[k] = v
 	def __getattr__ (s, k):

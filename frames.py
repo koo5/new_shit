@@ -13,7 +13,7 @@ from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 import widgets
 from logger import log, topic
 from keys import *
-
+from lemon_six import six_u, iteritems
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
 class Frame(object):
@@ -34,7 +34,8 @@ class Frame(object):
 		s.lines = project.project(s,
 		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:]
 
-	def under_cr(self, (c, r)):
+	def under_cr(self, cr):
+		c,r = cr
 		try:
 			return self.lines[r][c][1]["node"]
 		except:
@@ -70,7 +71,8 @@ class Frame(object):
 		return self.rect.w / font_width
 
 
-def xy2cr((x, y)):
+def xy2cr(xy):
+	x,y = xy
 	c = x / font_width
 	r = y / font_height
 	return c, r
@@ -101,7 +103,7 @@ class Root(Frame):
 	def first_nonblank(self):
 		r = 0
 		for ch, a in self.lines[self.cursor_r]:
-			if ch in [" ", u" "]:
+			if ch in [" ", six_u(" ")]:
 				r += 1
 			else:
 				return r
@@ -157,11 +159,11 @@ class Root(Frame):
 				assert(isinstance(l, list))
 				for i in l:
 					assert(isinstance(i, tuple))
-					assert(isinstance(i[0], str) or isinstance(i[0], unicode))
+					assert(isinstance(i[0], basestring))
 					assert(len(i[0]) == 1)
 					assert(isinstance(i[1], dict))
 					assert(i[1]['node'])
-					assert(i[1].has_key('char_index'))
+					assert('char_index' in i[1])
 
 	#todo: clean this up ugh, oh and arrows are broken, the source point stays stuck when you scoll
 	def complete_arrows(self, arrows):
@@ -314,8 +316,8 @@ class Root(Frame):
 		element = self.under_cursor
 
 		#new style handlers
-		if element != None and element.dispatch_levent(event):
-			return True
+		#if element != None and element.dispatch_levent(event):
+		#	return True
 
 		#old style
 		while element != None:
@@ -428,7 +430,7 @@ class Menu(Frame):
 
 
 	def click(s,e,pos):
-		for i,r in s.rects.iteritems():
+		for i,r in iteritems(s.rects):
 			if collidepoint(r, pos):
 				s.sel = s.items_on_screen.index(i)
 				s.accept()
@@ -452,7 +454,6 @@ class Menu(Frame):
 
 def collidepoint(r, pos):
 	x, y = pos
-	print x,y,r
 	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]
 
 
