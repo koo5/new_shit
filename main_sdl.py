@@ -11,11 +11,13 @@ from pygame import draw, Rect
 
 import lemon
 from lemon import logframe, root, sidebars, allframes
-from lemon import args, frames
+from lemon import frames
 from logger import log
 from lemon_colors import colors, color
 from lemon_six import iteritems
+import lemon_args
 
+args = lemon.args = lemon_args.parse_args()
 
 
 for f in allframes:
