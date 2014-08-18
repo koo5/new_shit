@@ -89,7 +89,7 @@ def mousedown(e):
 def lemon_mousedown(e):
 	for f in [logframe, lemon.sidebar, root]:
 		if f.rect.collidepoint(e.pos):
-			pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
+			e.pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
 			f.mousedown(e)
 			break
 lemon.mousedown = lemon_mousedown

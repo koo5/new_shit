@@ -429,9 +429,10 @@ class Menu(Frame):
 
 	def click(s,e,pos):
 		for i,r in s.rects.iteritems():
-			if r.collidepoint(pos):
+			if collidepoint(r, pos):
 				s.sel = s.items_on_screen.index(i)
 				s.accept()
+				break
 
 	def accept(self):
 		if len(self.items_on_screen) > self.sel:
@@ -449,7 +450,10 @@ class Menu(Frame):
 		s.valid_only = not s.valid_only
 
 
-
+def collidepoint(r, pos):
+	x, y = pos
+	print x,y,r
+	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]
 
 
 class InfoFrame(Frame):
