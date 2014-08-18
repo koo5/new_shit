@@ -12,7 +12,7 @@ try:
 except:
 	pass
 
-import argparse, sys, os
+import sys, os
 import pickle, copy
 
 import logger
@@ -25,31 +25,6 @@ from keys import *
 fast_forward = False # quickly replaying input events without drawing
 sidebar = None # active sidebar
 is_first_event = True # to know when to clear replay
-
-def parse_args():
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--eightbit', action='store_true',
-				   help='try to be compatible with 8 bit color mode.')
-	parser.add_argument('--dontblink', action='store_true',
-				   help='dont blink the cursor.')
-	parser.add_argument('--log-events', action='store_true',
-				   help='what it says.')
-	parser.add_argument('--noalpha', action='store_true',
-				   help='avoid alpha blending')
-	parser.add_argument('--mono', action='store_true',
-				   help='no colors, just black and white')
-	parser.add_argument('--webos', action='store_true',
-				   help='webos keys hack')
-	parser.add_argument('--invert', action='store_true',
-				   help='invert colors')
-	parser.add_argument('--font_size', action='store_true',
-				   default=22)
-	parser.add_argument('--replay', action='store_true',
-				   default=False)
-	return parser.parse_args()
-
-args = parse_args()
-colors.cache(args)
 
 
 def cycle_sidebar():
@@ -201,6 +176,14 @@ def render():
 	logframe.render()
 
 def start():
+#	global root, sidebars, logframe, allframes
+	frames.args = args
+	frames.log_events = args.log_events
+	if args.noalpha:
+		root.arrows_visible = False
+	
+	colors.cache(args)
+
 	root.render()
 	try:
 		root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
@@ -211,23 +194,15 @@ def start():
 		do_replay(True)
 	render()
 
-def bye():
-	log("deading")
-	sys.exit()
-
-frames.args = args
-frames.log_events = args.log_events
 
 root = frames.Root()
-if args.noalpha:
-	root.arrows_visible = False
 
 sidebars = [frames.Intro(root),
             frames.GlobalKeys(root),
             frames.Menu(root),
             frames.NodeInfo(root)]
             #frames.ContextInfo(root)]#carry on...
-sidebars.append(sidebars[0])
+sidebars.append(sidebars[0])#sentinel:)
 sidebar = sidebars[2]
 
 logframe = frames.Log()
@@ -235,3 +210,6 @@ logger.gui = logframe
 
 allframes = sidebars + [logframe, root]
 
+def bye():
+	log("deading")
+	sys.exit()
