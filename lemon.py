@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import sys
-if sys.version_info[0] == 2:
-	from __future__ import print_function
+from __future__ import print_function
 
 version=0.2
 
