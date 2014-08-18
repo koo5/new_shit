@@ -71,30 +71,6 @@ except NameError:
         return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
 
 
-if PY3:
-    def get_unbound_function(unbound):
-        return unbound
-
-    create_bound_method = types.MethodType
-
-    Iterator = object
-else:
-    def get_unbound_function(unbound):
-        return unbound.im_func
-
-    def create_bound_method(func, obj):
-        return types.MethodType(func, obj, obj.__class__)
-
-    class Iterator(object):
-
-        def next(self):
-            return type(self).__next__(self)
-
-    callable = callable
-_add_doc(get_unbound_function,
-         """Get the function out of a possibly unbound function""")
-
-
 get_method_function = operator.attrgetter(_meth_func)
 get_method_self = operator.attrgetter(_meth_self)
 get_function_closure = operator.attrgetter(_func_closure)
@@ -173,3 +149,4 @@ if PY3:
 	str_and_uni = (str)
 else:
 	str_and_uni = (str, unicode)
+

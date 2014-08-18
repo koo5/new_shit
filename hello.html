@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="/src/brython.js"></script>
+</head>
+
+<body onload="brython(1)">
+<script type="text/python">
+from browser import document as doc
+from browser import alert
+from lemon_six import *
+
+for k,v in iteritems(dict(a=3,b=5)):
+	print(k,v)
+print (six_u("banana"))
+
+def echo(*args):
+    alert("Hello %s !" %doc["zone"].value)
+
+doc["test"].bind("click", echo)
+
+
+import lemon
+
+
+</script>
+<p>Your name is : <input id="zone"><button id="test">clic !</button>
+</body>
+
+</html>

@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
+import sys
+if sys.version_info[0] == 2:
+	from __future__ import print_function
 
 version=0.2
 
@@ -179,7 +181,7 @@ def dispatch(e):
 	elif e.type == KEYPRESS:
 		keypress(e)
 	else:
-		raise 666
+		raise Exception("ehh")
 
 def clear_replay():
 	f = open("replay.p", 'w')
