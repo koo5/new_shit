@@ -17,7 +17,7 @@ nodecls have a set of functions for instantiating the values, and those need som
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
-from lemon_six import iteritems, iterkeys, itervalues
+from lemon_six import iteritems, iterkeys, itervalues, str_and_uni
 
 import sys
 sys.path.insert(0, 'fuzzywuzzy')
@@ -289,7 +289,7 @@ class Unresolved(Node):
 		r = {}
 		log("serializing Unresolved with data:", s.data)
 		for k,v in iteritems(s.data):
-			if isinstance(v, basestring):
+			if isinstance(v, str_and_uni):
 				r[k] = v
 			elif k == "decl":
 				r[k] = v.name
@@ -435,7 +435,7 @@ class Syntaxed(Node):
 		if __debug__:
 			assert(isinstance(slots, dict))
 			for name, slot in iteritems(slots):
-				assert(isinstance(name, basestring))
+				assert(isinstance(name, str_and_uni))
 				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
 
@@ -1697,7 +1697,7 @@ class Parser(Node):
 				text = text[0:pos -1] + text[pos:]
 				s.root.post_render_move_caret -= 1
 		else:
-			assert isinstance(text, basestring), (s.items, ii, text)
+			assert isinstance(text, str_and_uni), (s.items, ii, text)
 			#print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
 			text = text[:pos] + e.uni + text[pos:]
 			s.root.post_render_move_caret += len(e.uni)
@@ -1727,7 +1727,7 @@ class Parser(Node):
 		r = [AttTag("compiler body", self)]
 		for i, item in enumerate(self.items):
 			r += [AttTag("compiler item", i)]
-			if isinstance(item, basestring):
+			if isinstance(item, str_and_uni):
 				for j, c in enumerate(item):
 					r += [AttTag("compiler item char", j), TextTag(c), EndTag()]
 			else:
@@ -1821,7 +1821,7 @@ class Parser(Node):
 			#snap cursor to the beginning of Parser
 			s.root.post_render_move_caret -= atts['char_index']
 			return s.edit_text(0, 0, e)
-		elif isinstance(items[i], basestring):
+		elif isinstance(items[i], str_and_uni):
 			if "compiler item char" in atts:
 				ch = atts["compiler item char"]
 			else:
@@ -1829,7 +1829,7 @@ class Parser(Node):
 			return s.edit_text(i, ch, e)
 		elif isinstance(items[i], Node):
 			items.insert(i, "")
-			assert isinstance(items[i], basestring), (items, i)
+			assert isinstance(items[i], str_and_uni), (items, i)
 			return s.edit_text(i, 0, e)
 
 	def mine(s, atts):
@@ -2702,7 +2702,7 @@ def make_root():
 
 def to_lemon(x):
 	print ("to-lemon", x)
-	if isinstance(x, basestring):
+	if isinstance(x, str_and_uni):
 		return Text(x)
 	elif isinstance(x, (int, float)):
 		return Number(x)

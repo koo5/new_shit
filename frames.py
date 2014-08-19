@@ -13,7 +13,7 @@ from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
 import widgets
 from logger import log, topic
 from keys import *
-from lemon_six import six_u, iteritems
+from lemon_six import six_u, iteritems, str_and_uni
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
 class Frame(object):
@@ -159,7 +159,7 @@ class Root(Frame):
 				assert(isinstance(l, list))
 				for i in l:
 					assert(isinstance(i, tuple))
-					assert(isinstance(i[0], basestring))
+					assert(isinstance(i[0], str_and_uni))
 					assert(len(i[0]) == 1)
 					assert(isinstance(i[1], dict))
 					assert(i[1]['node'])

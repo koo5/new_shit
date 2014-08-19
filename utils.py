@@ -1,8 +1,9 @@
 import collections
+from lemon_six import str_and_uni
 
 def flatten_gen(x):
 	for y in x:
-		if isinstance(y, basestring) or not isinstance(y, list):
+		if isinstance(y, str_and_uni) or not isinstance(y, list):
 			yield y
 		else:
 			for z in flatten_gen(y):
