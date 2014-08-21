@@ -4,9 +4,9 @@ from dotdict import dotdict
 try:
 	#im gonna have to ditch this crappy module
 	from colors import *
-	assert rgb
-except:
-	pass
+	assert rgb #assert we didnt import some outdated .pyc
+except ImportError as e:
+	print(e, "...but nevermind")
 
 default_colors = {
 	"info item text": (224,224,224),

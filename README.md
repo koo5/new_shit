@@ -32,30 +32,6 @@ new notes: stuff/the_doc.py
 
 
 
-files:
-===
-* main.py: the frontend, handles a window, events, drawing. run this one.
-* nodes.py: AST classes - "nodes"
-* widgets.py textbox, number box, button..
-* element.py - both widgets and nodes descend from Element
-* project.py: project() "projects" the AST tree into a grid of text
-* tags.py: the results of calling element.render(), analogous to html tags
-* frames.py: the panels: Root, Menu, Info
-* colors.py: color settings
-* there are other files around, mostly mess and notes. 
-* stuff/the_doc.py: an attempt to migrate all documentation into lemon
-
-
-
-license
-===
-not decided yet, some standard license or this experiment: <https://github.com/koo5/Free-Man-License> 
-By contributing to lemon, you agree to granting me nonexclusive rights to use your contribution (with attribution) within lemon, in any way, including relicensing and reselling. 
-also, the patent claim protection clauses like in http://www.gnu.org/licenses/agpl-3.0.html apply.
-some other options: http://www.gnu.org/licenses/gpl-faq.html#AssignCopyright
-
-
-
 things to do
 ===
 here are some (random) things that i think would help lemon further, sometimes directly, sometimes by making it more
@@ -94,5 +70,30 @@ some (messy) notes are also towards the end of stuff/the_doc.py
 
 * figure out how to have a better font in pygame
 
+* give me feedback on the builtins module which should for now serve as a de-facto reference to the language
 
+
+
+
+files:
+===
+* main.py: the frontend, handles a window, events, drawing. run this one.
+* nodes.py: AST classes - "nodes"
+* widgets.py textbox, number box, button..
+* element.py - both widgets and nodes descend from Element
+* project.py: project() "projects" the AST tree into a grid of text
+* tags.py: the results of calling element.render(), analogous to html tags
+* frames.py: the panels: Root, Menu, Info
+* colors.py: color settings
+* there are other files around, mostly mess and notes. 
+* stuff/the_doc.py: an attempt to migrate all documentation into lemon
+
+
+
+license
+===
+not decided yet, some standard license or this experiment: <https://github.com/koo5/Free-Man-License> 
+By contributing to lemon, you agree to granting me nonexclusive rights to use your contribution (with attribution) within lemon, in any way, including relicensing and reselling. 
+also, the patent claim protection clauses like in http://www.gnu.org/licenses/agpl-3.0.html apply.
+some other options: http://www.gnu.org/licenses/gpl-faq.html#AssignCopyright
 

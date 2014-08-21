@@ -269,14 +269,31 @@ class Node(element.Element):
 			pass
 		return r
 
-	def serialize(s):
-		return Unresolved(s.unresolvize()).serialize()
-
-	def unresolvize(s):
+	def deconstruct(s):
 		return {
 			'decl': s.decl
 		}
 
+
+class Deconstructed(Node):
+	def __init__(s, data, root = None):
+		if isinstance(data, dict):
+			s.data = data
+		elif isinstance(data, Node):
+			s.data = data.unresolvize()
+#		elif
+	def serialize(s):
+		r = {}
+		log("serializing Unresolved with data:", s.data)
+		for k,v in iteritems(s.data):
+			if isinstance(v, str_and_uni):
+				r[k] = v
+			elif k == "decl":
+				r[k] = v.name
+				log(v.name)
+			else:
+				r[k] = str(v)
+		return r
 
 class Unresolved(Node):
 	def __init__(s, data, root = None):

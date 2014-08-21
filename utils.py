@@ -1,4 +1,4 @@
-import collections
+#import collections
 from lemon_six import str_and_uni
 
 def flatten_gen(x):

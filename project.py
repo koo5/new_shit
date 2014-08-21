@@ -10,7 +10,6 @@ line is a list of tuples: (character, attributes)
 from lemon_six import six_u, str_and_uni
 from tags import *
 from logger import ping, log
-import colors
 from nodes import Node, Parser
 from dotdict import dotdict
 
