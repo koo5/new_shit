@@ -56,4 +56,43 @@ some other options: http://www.gnu.org/licenses/gpl-faq.html#AssignCopyright
 
 
 
+things to do
+===
+here are some (random) things that i think would help lemon further, sometimes directly, sometimes by making it more
+accesible/interesting to other people. Some understanding of lemon is always
+necessary though. I will be more than happy to explain every detail, but be prepared that it takes some time.
+some (messy) notes are also towards the end of stuff/the_doc.py 
+
+* support for more human languages.
+ would make lemon interesting as a non-english programming tool
+ 
+* help me learn unipycation, yield python or other logic programming functionality.
+ will be needed for a lot of features of lemon
+
+* try adding dbpedia, shell autocompletion or other nodes that have more dynamic menu.
+ lemon could find its use with semantic web stuff or attract smart semweb people.
+ play with the dynamic menu aspects
+ 
+* help me think thru persistence. node deconstruction/construction. copying,pasting etc
+
+* improve the user interaction with nodes or the context help "system"
+
+* add a generic python function node (from users perspective)
+
+* start building some language, like i7 or lambda calculus or some math symbols or whatever
+
+* add more standard library functions
+
+* ipython or any dumb way to distribute the gui to multiple windows/machines
+
+* help me with the license
+
+* brython, the idea is to give lemon a javascript frontend (everything pygame-specific is in main_sdl.py).
+ doesnt have to be very useful (lemon itself isnt yet), just an easy to show thing
+
+* in the same vein, a curses frontend for example. (lots of smart people out there are weird and prefer curses)
+
+* figure out how to have a better font in pygame
+
+
 
