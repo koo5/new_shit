@@ -37,7 +37,7 @@ things to do
 here are some (random) things that i think would help lemon further, sometimes directly, sometimes by making it more
 accesible/interesting to other people. Some understanding of lemon is always
 necessary though. I will be more than happy to explain every detail, but be prepared that it takes some time.
-some (messy) notes are also towards the end of stuff/the_doc.py 
+some (messy) notes are also towards the end of stuff/the_doc.py, and search for "todo" in the source files..
 
 * support for more human languages.
  would make lemon interesting as a non-english programming tool

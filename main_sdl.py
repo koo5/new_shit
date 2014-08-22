@@ -12,6 +12,7 @@ from pygame import draw, Rect
 import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import frames
+import logger
 from logger import log
 from lemon_colors import colors, color
 from lemon_six import iteritems
@@ -26,12 +27,18 @@ for f in allframes:
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
 
+def debug_out(text):
+	print(text)
+	logframe.add(text)
 
+logger.debug = debug_out
 
 def render():
 	root.render()
 	lemon.sidebar.render()
 	logframe.render()
+	if isinstanc(lemon.sidebar, lemon.Menu):
+		menu_generate_rects(lemon.sidebar)
 
 def reset_cursor_blink_timer():
 	if not args.dontblink:
@@ -43,7 +50,7 @@ def change_font_size(by = 0):
 	args.font_size += by
 	font = pygame.font.SysFont('monospace', args.font_size)
 	font_width, font_height = font.size("X")
-	frames.font_width, frames.font_height = font_width, font_height
+	resize_frames()
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
@@ -67,6 +74,10 @@ def resize_frames():
 	for frame in lemon.sidebars:
 		frame.rect = sidebar_rect
 
+	for f in allframes:
+		f.cols = f.rect.width / font_width
+		f.rows = f.rect.height / font_height
+		
 
 
 
@@ -222,6 +233,29 @@ def draw_rects(s, surface):
 def info_draw(s, surface):
 	draw_lines(s, surface)
 
+def menu_generate_rects(s):
+	s.rects = dict()
+	for i in s.items_on_screen:
+		rl = i._render_lines[s]
+
+		startline = rl["startline"] - s.scroll_lines if "startline" in rl else 0
+		endline = rl["endline"]  - s.scroll_lines if "endline" in rl else s.rows
+
+		if endline < 0 or startline > s.rows:
+			continue
+		if startline < 0:
+			startline = 0
+		if endline > s.rows - 1:
+			endline = s.rows - 1
+
+		startchar = 0
+		#print startline, endline+1
+		endchar = max([len(l) for l in s.lines[startline:endline+1]])
+		r = (startchar * font_width,
+		     startline * font_height,
+		     (endchar  - startchar) * font_width,
+		     (endline - startline+1) * font_height)
+		s.rects[i] = r
 
 
 
