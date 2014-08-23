@@ -37,7 +37,8 @@ def render():
 	root.render()
 	lemon.sidebar.render()
 	logframe.render()
-	if isinstanc(lemon.sidebar, lemon.Menu):
+	#log("boing")
+	if isinstance(lemon.sidebar, frames.Menu):
 		menu_generate_rects(lemon.sidebar)
 
 def reset_cursor_blink_timer():
@@ -45,20 +46,22 @@ def reset_cursor_blink_timer():
 		pygame.time.set_timer(pygame.USEREVENT + 1, 800)
 	root.cursor_blink_phase = True
 
+def user_change_font_size(by = 0):
+	change_font_size(by)
+	resize_frames()
+
 def change_font_size(by = 0):
 	global font, font_width, font_height
 	args.font_size += by
 	font = pygame.font.SysFont('monospace', args.font_size)
 	font_width, font_height = font.size("X")
-	resize_frames()
-
+	
 def resize(size):
 	global screen_surface, screen_width, screen_height
 	log("resize to "+str(size))
 	screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
-	resize_frames()
-
+	
 def resize_frames():
 	lemon.logframe.rect.height = log_height = 110
 	lemon.logframe.rect.width = screen_width
@@ -124,6 +127,7 @@ def process_event(event):
 
 	elif event.type == pygame.VIDEORESIZE:
 		resize(event.size)
+		resize_frames()
 		render()
 
 	elif event.type == pygame.ACTIVEEVENT:
@@ -258,7 +262,6 @@ def menu_generate_rects(s):
 		s.rects[i] = r
 
 
-
 def bye():
 	log("deading")
 	pygame.display.iconify()
@@ -311,8 +314,10 @@ def main():
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 
 	change_font_size()
-	lemon.change_font_size = change_font_size
+	resize_frames()
+	lemon.change_font_size = user_change_font_size
 	lemon.start()
+	render()
 
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 	reset_cursor_blink_timer()
