@@ -346,6 +346,9 @@ class Menu(Frame):
 
 	@property
 	def selected(s):
+		if s.sel < len(s.items_on_screen) or s.sel != -1:
+			return None
+		#log("sel:", s.sel, s.items_on_screen)
 		return s.items_on_screen[s.sel]
 
 	def clamp_sel(s):

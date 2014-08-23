@@ -13,6 +13,7 @@ from lemon_colors import colors, color
 from lemon_six import iteritems
 import lemon_args
 from rect import Rect
+import keys
 
 args = lemon.args = lemon_args.parse_args()
 
@@ -22,21 +23,20 @@ def debug_out(text):
 	logframe.add(text)
 	#print(text)
 	logfile.write(text+"\n")
+	logfile.flush()
 logger.debug = debug_out
 
 for f in allframes:
 	f.rect = Rect(6,6,6,6)
 
 def render():
-	root.render()
-	lemon.sidebar.render()
-	logframe.render()
+	lemon.render()
 
 def resize_frames():
 	screen_height, screen_width = scr.getmaxyx()
-	log(screen_height, screen_width)
+	log("HW",screen_height, screen_width)
 
-	lemon.logframe.rect.height = log_height = 4
+	lemon.logframe.rect.height = log_height = 15
 	lemon.logframe.rect.width = screen_width
 	lemon.logframe.rect.topleft = (0, screen_height - log_height)
 
@@ -55,7 +55,7 @@ def resize_frames():
 		f.rows = f.rect.height
 
 	for x,y in [(mainw, root), (logw, logframe), (sidebarw, lemon.sidebar)]:
-		log(y, (y.rect.y, y.rect.x),(y.rows,y.cols))
+		log("f",y, (y.rect.y, y.rect.x),(y.rows,y.cols))
 		x.resize(y.rows,y.cols)
 		x.mvwin(y.rect.y, y.rect.x)
 
@@ -67,19 +67,19 @@ def change_font_size():
 def draw():
 	if lemon.fast_forward:
 		return
+
 	#ok this is hacky
-	log("root")
+	#log("root")
 	draw_lines(root, mainw, root.under_cursor)
 	
-	
 	if isinstance(lemon.sidebar, frames.Menu):
-		log("menu")
+		#log("menu")
 		draw_lines(lemon.sidebar, sidebarw, lemon.sidebar.selected)
 	else:
-		log("info")
-		info_draw(lemon.sidebar, sidebarw)
+		#log("info")
+		draw_lines(lemon.sidebar, sidebarw)
 	
-	log("log")
+	#log("log")
 	draw_lines(logframe, logw)
 	
 	for w in [mainw, sidebarw, logw]:
@@ -87,29 +87,53 @@ def draw():
 	scr.refresh()
 
 def draw_lines(self, win, highlight=None):
-	try:
+		win.clear()
+	#try:
+		#log(self)
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
-				log(row,col,ord(char[0]))
-				win.addch(row,col,ord(char[0]))
-	except:
-		pass
+				#log(row,col,":",ord(char[0]))
+				if 'node' in char[1] and char[1]['node'] == highlight:
+					mode = c.A_BLINK + c.A_BOLD + c.A_REVERSE
+				else:
+					mode = 0
+				try:
+					win.addch(row,col,ord(char[0]), mode)
+				except c.error:
+					if (row+1, col+1) != win.getmaxyx():
+						log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
+						raise
+					
+#	except c.error as e:
+#		pass
 
 def bye():
 	sys.exit()
 
+curses2sdl = {
+c.KEY_UP: keys.K_UP,
+c.KEY_DOWN: keys.K_DOWN,
+c.KEY_LEFT: keys.K_LEFT,
+c.KEY_RIGHT: keys.K_RIGHT,
+c.KEY_HOME: keys.K_HOME,
+c.KEY_END: keys.K_END,
+c.KEY_PPAGE: keys.K_PAGEUP,
+c.KEY_NPAGE: keys.K_PAGEDOWN,
+c.KEY_END: keys.K_END}
+#c.KEY_: keys.K_,
+
 def loop():
 	render()
 	draw()
-	inp = scr.getch()
-	if inp == ord('q'):
-		bye()
-
+	inp = scr.getch(root.cursor_r,root.cursor_c)
+	if inp in curses2sdl:
+		lemon.handle(lemon.KeypressEvent([False]*(keys.K_MAX+1), False, curses2sdl[inp], 0))
+	log(inp)
 
 def main_func(stdscr):
 	global scr, mainw, logw, sidebarw
 	scr = stdscr
-
+	scr.keypad(1)
 	mainw = c.newwin(0,0,6,6)
 	logw = c.newwin(0,0,6,6)
 	sidebarw = c.newwin(0,0,6,6)
@@ -118,6 +142,8 @@ def main_func(stdscr):
 
 	lemon.change_font_size = change_font_size
 	lemon.start()
+	render()
+	draw()
 
 	while True:
 		loop()
@@ -127,6 +153,7 @@ if __name__ == "__main__":
 		c.wrapper(main_func)
 	except Exception as e:
 		log(e)
+		logfile.flush()
 		logfile.close()
 		raise
 

@@ -46,10 +46,10 @@ def top_keypress(event):
 
 
 class KeypressEvent(object):
-	def __init__(self, e, all):
-		self.uni = e.unicode
-		self.key = e.key
-		self.mod = e.mod
+	def __init__(self, all, uni, key, mod):
+		self.uni = uni
+		self.key = key
+		self.mod = mod
 		self.all = all
 		self.type = KEYDOWN
 
@@ -190,7 +190,7 @@ def start():
 		print (e, ", cant set initial cursor position")
 	if args.replay:
 		do_replay(True)
-	render()
+	#render()
 
 
 root = frames.Root()

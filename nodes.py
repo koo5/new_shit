@@ -1468,7 +1468,7 @@ WorksAs.b("dict", "expression")
 class ListOfAnything(ParametricType):
 	@topic ("ListOfAnything palette")
 	def palette(self, scope, text, node):
-		log(self.ch._dict)
+		#log(self.ch._dict)
 		i = self.inst_fresh()
 		i.view_mode = 1
 		i.newline()
