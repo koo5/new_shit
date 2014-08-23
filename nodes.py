@@ -280,8 +280,7 @@ class Deconstructed(Node):
 		if isinstance(data, dict):
 			s.data = data
 		elif isinstance(data, Node):
-			s.data = data.unresolvize()
-#		elif
+			s.data = data.deconstruct()
 	def serialize(s):
 		r = {}
 		log("serializing Unresolved with data:", s.data)
