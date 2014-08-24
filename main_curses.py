@@ -36,7 +36,7 @@ def resize_frames():
 	screen_height, screen_width = scr.getmaxyx()
 	log("HW",screen_height, screen_width)
 
-	lemon.logframe.rect.height = log_height = 15
+	lemon.logframe.rect.height = log_height = args.log_height
 	lemon.logframe.rect.width = screen_width
 	lemon.logframe.rect.topleft = (0, screen_height - log_height)
 
@@ -119,6 +119,7 @@ c.KEY_HOME: keys.K_HOME,
 c.KEY_END: keys.K_END,
 c.KEY_PPAGE: keys.K_PAGEUP,
 c.KEY_NPAGE: keys.K_PAGEDOWN,
+10: keys.K_RETURN,
 c.KEY_END: keys.K_END}
 #c.KEY_: keys.K_,
 
@@ -126,8 +127,11 @@ def loop():
 	render()
 	draw()
 	inp = scr.getch(root.cursor_r,root.cursor_c)
+	dummy_allkeys = [False]*(keys.K_MAX+1)
 	if inp in curses2sdl:
-		lemon.handle(lemon.KeypressEvent([False]*(keys.K_MAX+1), False, curses2sdl[inp], 0))
+		lemon.handle(lemon.KeypressEvent(dummy_allkeys, False, curses2sdl[inp], 0))
+	else:
+		lemon.handle(lemon.KeypressEvent(dummy_allkeys, unichr(inp), 0, 0))
 	log(inp)
 
 def main_func(stdscr):
