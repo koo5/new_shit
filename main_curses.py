@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
 import curses as c
 import sys
 
@@ -41,7 +42,7 @@ def resize_frames():
 	lemon.logframe.rect.topleft = (0, screen_height - log_height)
 
 	lemon.root.rect.topleft = (0,0)
-	lemon.root.rect.width = screen_width / 3 * 2
+	lemon.root.rect.width = screen_width // 3 * 2
 	lemon.root.rect.height = screen_height - log_height
 
 	sidebar_rect = Rect((root.rect.w, 0),(0,0))
@@ -94,7 +95,7 @@ def draw_lines(self, win, highlight=None):
 			for col, char in enumerate(line):
 				#log(row,col,":",ord(char[0]))
 				if 'node' in char[1] and char[1]['node'] == highlight:
-					mode = c.A_BLINK + c.A_BOLD + c.A_REVERSE
+					mode = c.A_BOLD + c.A_REVERSE
 				else:
 					mode = 0
 				try:

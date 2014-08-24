@@ -18,8 +18,8 @@ def parse_args():
 				   help='invert colors')
 	parser.add_argument('--replay', action='store_true',
 				   default=False)
-	parser.add_argument('--font_size', action='store_true',
+	parser.add_argument('--font-size', type=int,
 				   default=22)
-	parser.add_argument('--log_height', default=4, type=int)
+	parser.add_argument('--log-height', default=4, type=int)
 	return parser.parse_args()
 #args = parse_args()

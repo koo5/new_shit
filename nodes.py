@@ -17,7 +17,7 @@ nodecls have a set of functions for instantiating the values, and those need som
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
-from lemon_six import iteritems, iterkeys, itervalues, str_and_uni
+from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
 
 import sys
 sys.path.insert(0, 'fuzzywuzzy')
@@ -2467,6 +2467,7 @@ def add_operators():
 
 
 	def pfn(function, signature, return_type = int, **kwargs):
+		"""helper function to add a builtin python function"""
 		if return_type == int:
 			return_type = Ref(b['number'])
 		elif return_type == bool:
@@ -2490,7 +2491,12 @@ def add_operators():
 
 	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
 	pfn(op.add, [num_arg(), Text("+"), num_arg()])
-	pfn(op.div, [num_arg(), Text("/"), num_arg()])
+	if PY2:
+		pfn(op.div, [num_arg(), Text("/"), num_arg()])
+	else:
+		pfn(op.floordiv, [num_arg(), Text("//"), num_arg()])
+		pfn(op.truediv,  [num_arg(), Text("/"), num_arg()])
+	
 	pfn(op.eq,  [num_arg(), Text("=="), num_arg()], bool)
 	pfn(op.ge,  [num_arg(), Text(">="), num_arg()], bool)
 	pfn(op.gt,  [num_arg(), Text(">="), num_arg()], bool)
