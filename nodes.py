@@ -28,7 +28,6 @@ try:
 except:
 	from odict import OrderedDict #be compatible with older python (2.4?)
 
-
 #import uni
 
 from dotdict import dotdict
@@ -43,7 +42,7 @@ import lemon_colors as colors
 from keys import *
 from utils import flatten
 
-# this block is for assert
+# ass is for asserts
 import tags as asstags
 asstags.asselement = element
 
@@ -61,8 +60,11 @@ def buildin(node, name=None):
 
 
 def make_list(btype = 'anything'):
+	"make instance of List of given type"
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
 
+
+#crap
 def is_type(node):
 	return isinstance(node, (NodeclBase, ParametricType, Ref, Exp, Definition, SyntacticCategory, EnumType))
 def is_decl(node):
@@ -71,8 +73,8 @@ def is_decl(node):
 
 
 class Node(element.Element):
-	"""a node is more than an element,
-	in the editor, nodes can be cut'n'pasted around on their own
+	"""a node is more than an element, its a standalone unit.
+	nodes can added, cut'n'pasted around, evaluated etc.
 	every node class has a corresponding decl object
 	"""
 	help = None
@@ -88,7 +90,7 @@ class Node(element.Element):
 	@property
 	def brackets_color(s):
 		if s._brackets_color == "node brackets rainbow":
-			try:#hacky rainbow
+			try:#hacky rainbow depending on the colors module
 				c = colors.color("node brackets")
 				hsv = tuple(colors.rgb(*c).hsv)
 				hsv2 = colors.hsv((hsv[0] + 0.3*s.number_of_ancestors)%1, hsv[1], hsv[2])
@@ -96,9 +98,10 @@ class Node(element.Element):
 			except:
 				return colors.color("fg")
 		return s._brackets_color
+
 	@brackets_color.setter
 	def brackets_color(s, c):
-		s._brackets_color = c#colors.color(c)
+		s._brackets_color = c
 	
 	@property
 	def number_of_ancestors(s):
@@ -108,7 +111,7 @@ class Node(element.Element):
 			while n.parent != None:
 				n = n.parent
 				r += 1
-		except AttributeError:
+		except AttributeError: #crude, huh?
 			pass
 		return r
 
@@ -117,17 +120,19 @@ class Node(element.Element):
 
 	def set_parent(s, v):
 		super(Node, s).set_parent(v)
-		if "value" in s.runtime._dict:
+		if "value" in s.runtime._dict: #messy
 			s.runtime.value.parent = s.parent
 
+	#we are overriding the parent property of Element
 	parent=property(element.Element.get_parent, set_parent)
 
 	@property
 	def compiled(self):
+		"all nodes except Parser return themselves"
 		return self
 
 	def scope(self):
-		"""what does this node see?"""
+		"""what does this node see?..poc"""
 		r = []
 
 		if isinstance(self.parent, List):
@@ -142,7 +147,7 @@ class Node(element.Element):
 
 	@property
 	def vardecls_in_scope(self):
-		"""what variable declarations does this node see?"""
+		"""what variable declarations does this node see?..poc"""
 		r = []
 
 		#if isinstance(self.parent, List):
@@ -157,6 +162,7 @@ class Node(element.Element):
 		return r
 
 	def eval(self):
+		"call _eval, save result to s.runtime"
 		r = self._eval()
 		assert isinstance(r, Node), str(self) + "._eval() is borked"
 
@@ -169,6 +175,7 @@ class Node(element.Element):
 		return r
 
 	def append_value(self, v):
+		"store a result of evaluation or something"
 		if not "value" in self.runtime._dict:
 			self.runtime.value = make_list('anything')
 			self.runtime.value.parent = self.parent #also has to be kept updated in the parent property setter
@@ -194,10 +201,12 @@ class Node(element.Element):
 
 	@classmethod
 	def fresh(cls):
+		"make a new instance"
 		return cls()
 
 	keys = ["f7: evaluate",
-	        "ctrl del: delete"]
+		"ctrl del: delete"]
+	
 	def on_keypress(self, e):
 		if e.key == K_F7:
 			self.eval()
