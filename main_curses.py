@@ -121,6 +121,7 @@ c.KEY_END: keys.K_END,
 c.KEY_PPAGE: keys.K_PAGEUP,
 c.KEY_NPAGE: keys.K_PAGEDOWN,
 10: keys.K_RETURN,
+c.KEY_BACKSPACE: keys.K_BACKSPACE,
 c.KEY_END: keys.K_END}
 #c.KEY_: keys.K_,
 
