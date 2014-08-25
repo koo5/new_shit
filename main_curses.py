@@ -165,3 +165,5 @@ if __name__ == "__main__":
 
 #        stdscr.addstr(ypos[j],     xpos[j] - 1, "|.|")
 
+#maybe we could use one of the enters for menu selection..in sdl too
+#http://lists.gnu.org/archive/html/bug-ncurses/2011-01/msg00011.html

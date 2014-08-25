@@ -42,9 +42,10 @@ import lemon_colors as colors
 from keys import *
 from utils import flatten
 
-# ass is for asserts
-import tags as asstags
-asstags.asselement = element
+if __debug__:
+	# asses are stuff for assertions
+	import tags as asstags
+	asstags.asselement = element
 
 #for staging the builtins module and referencing builtin nodes from python code
 b = OrderedDict()
@@ -2781,3 +2782,7 @@ dbpedia node
 curses, js(brython seems nice) frontends
 
 """
+
+#maybe todo: make the calls to builtin explicit, not hidden in constructors
+"""todo: decide if declarative nodes like SyntacticCategory and Definition should have
+the name as a child node...it doesnt seem to make for a clear reading"""

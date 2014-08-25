@@ -72,6 +72,7 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 
 * give me feedback on the builtins module which should for now serve as a de-facto reference to the language
 
+* migrate the google doc to something saner, like github wiki? or to the_doc.py
 
 
 

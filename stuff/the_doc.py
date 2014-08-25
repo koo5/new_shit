@@ -627,3 +627,14 @@ stub event.py:
 
 https://techbase.kde.org/Development/Tutorials/Shell_Scripting_with_KDE_Dialogs
 http://linuxgazette.net/101/sunil.html
+
+
+
+
+
+adaptive/high level:
+http://www.whenappsfly.com/how-it-works/
+http://en.wikipedia.org/wiki/Metaobject_protocol
+http://norvig.com/adapaper-pcai.html
+
+
