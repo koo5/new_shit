@@ -638,3 +638,16 @@ http://en.wikipedia.org/wiki/Metaobject_protocol
 http://norvig.com/adapaper-pcai.html
 
 
+
+lesh:
+start with a Lesh node - thats the command line
+later: history or more fancy (xiki style) stuff or whatever
+one child of type LeshCommand
+->creates parser
+hack parser to offer LeshSnippet
+based on current word, not whole text
+or some boundary (|), this is also where you need to split the text into tokens
+hack(subclass?) snippet menu item to insert plain text
+
+menu movement with pgup pgdown, i dunno how to best handle the curses sequences yet
+
