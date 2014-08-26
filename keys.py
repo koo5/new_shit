@@ -256,3 +256,5 @@ KMOD_MODE = 16384
 #+manually added:
 KEYDOWN = KEYPRESS = 2
 MOUSEDOWN = MOUSEBUTTONDOWN = 5
+
+#https://github.com/jggatc/pyjsdl/blob/master/locals.py

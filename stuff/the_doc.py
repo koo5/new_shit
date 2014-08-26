@@ -583,8 +583,8 @@ ncurses interface
 
 
 #⇾node⇽...would be nice...how to ensure having a good unicode font available? bundle?
-
-
+http://stackoverflow.com/questions/586503/complete-monospaced-unicode-font
+gpl: we could offer to wget it - ..
 
 
 
@@ -612,3 +612,18 @@ PythonFunction
 unipycation
 
 http://heritagerobotics.wordpress.com/2012/11/20/compiling-pygame-for-python-3-2-in-xubuntu/
+
+
+
+stub event.py:
++
++	def register_event_types(self, types):
++		pass
++	def push_handlers(self, *args, **kwargs):
++		pass
++	def dispatch_event(self, event_type, *args):
++		pass
++
+
+https://techbase.kde.org/Development/Tutorials/Shell_Scripting_with_KDE_Dialogs
+http://linuxgazette.net/101/sunil.html

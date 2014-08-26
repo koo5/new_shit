@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="/src/brython.js"></script>
+</head>
+
+<body onload="brython(1)">
+<script type="text/python">
+from browser import document as doc
+
+def o(x):
+  doc["out"] <= x + ".. "
+  print ("loading "+x+"..")
+
+o("start")
+o ("lemon_six")
+import lemon_six
+o ("logger")
+import logger
+o ("lemon_colors")
+import lemon_colors
+o ("utils")
+import utils
+o ("element")
+import element
+o ("widgets")
+import widgets
+o ("nodes")
+import nodes
+o ("project")
+import project
+o ("lemon")
+import lemon
+o ("done.")
+
+</script>
+<p><div id="out">yo !</div>
+</body>
+
+</html>

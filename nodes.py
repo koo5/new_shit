@@ -15,11 +15,9 @@ each class has a decl, which is an object descending from NodeclBase (nodecl for
 nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
 nodecls have a set of functions for instantiating the values, and those need some cleanup
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
-
-
-
-
 """
+
+from lemon_six import iteritems, iterkeys, itervalues, str_and_uni
 
 import sys
 sys.path.insert(0, 'fuzzywuzzy')
@@ -29,7 +27,6 @@ try:
 	from collections import OrderedDict
 except:
 	from odict import OrderedDict #be compatible with older python (2.4?)
-
 
 #import uni
 
@@ -45,7 +42,7 @@ import lemon_colors as colors
 from keys import *
 from utils import flatten
 
-# this block is for assert
+# ass is for asserts
 import tags as asstags
 asstags.asselement = element
 
@@ -63,8 +60,11 @@ def buildin(node, name=None):
 
 
 def make_list(btype = 'anything'):
+	"make instance of List of given type"
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
 
+
+#crap
 def is_type(node):
 	return isinstance(node, (NodeclBase, ParametricType, Ref, Exp, Definition, SyntacticCategory, EnumType))
 def is_decl(node):
@@ -73,8 +73,8 @@ def is_decl(node):
 
 
 class Node(element.Element):
-	"""a node is more than an element,
-	in the editor, nodes can be cut'n'pasted around on their own
+	"""a node is more than an element, its a standalone unit.
+	nodes can added, cut'n'pasted around, evaluated etc.
 	every node class has a corresponding decl object
 	"""
 	help = None
@@ -90,7 +90,7 @@ class Node(element.Element):
 	@property
 	def brackets_color(s):
 		if s._brackets_color == "node brackets rainbow":
-			try:#hacky rainbow
+			try:#hacky rainbow depending on the colors module
 				c = colors.color("node brackets")
 				hsv = tuple(colors.rgb(*c).hsv)
 				hsv2 = colors.hsv((hsv[0] + 0.3*s.number_of_ancestors)%1, hsv[1], hsv[2])
@@ -98,9 +98,10 @@ class Node(element.Element):
 			except:
 				return colors.color("fg")
 		return s._brackets_color
+
 	@brackets_color.setter
 	def brackets_color(s, c):
-		s._brackets_color = c#colors.color(c)
+		s._brackets_color = c
 	
 	@property
 	def number_of_ancestors(s):
@@ -110,7 +111,7 @@ class Node(element.Element):
 			while n.parent != None:
 				n = n.parent
 				r += 1
-		except AttributeError:
+		except AttributeError: #crude, huh?
 			pass
 		return r
 
@@ -119,17 +120,19 @@ class Node(element.Element):
 
 	def set_parent(s, v):
 		super(Node, s).set_parent(v)
-		if "value" in s.runtime._dict:
+		if "value" in s.runtime._dict: #messy
 			s.runtime.value.parent = s.parent
 
+	#we are overriding the parent property of Element
 	parent=property(element.Element.get_parent, set_parent)
 
 	@property
 	def compiled(self):
+		"all nodes except Parser return themselves"
 		return self
 
 	def scope(self):
-		"""what does this node see?"""
+		"""what does this node see?..poc"""
 		r = []
 
 		if isinstance(self.parent, List):
@@ -144,7 +147,7 @@ class Node(element.Element):
 
 	@property
 	def vardecls_in_scope(self):
-		"""what variable declarations does this node see?"""
+		"""what variable declarations does this node see?..poc"""
 		r = []
 
 		#if isinstance(self.parent, List):
@@ -159,6 +162,7 @@ class Node(element.Element):
 		return r
 
 	def eval(self):
+		"call _eval, save result to s.runtime"
 		r = self._eval()
 		assert isinstance(r, Node), str(self) + "._eval() is borked"
 
@@ -171,6 +175,7 @@ class Node(element.Element):
 		return r
 
 	def append_value(self, v):
+		"store a result of evaluation or something"
 		if not "value" in self.runtime._dict:
 			self.runtime.value = make_list('anything')
 			self.runtime.value.parent = self.parent #also has to be kept updated in the parent property setter
@@ -196,23 +201,27 @@ class Node(element.Element):
 
 	@classmethod
 	def fresh(cls):
+		"make a new instance"
 		return cls()
 
 	keys = ["f7: evaluate",
-	        "ctrl del: delete"]
+		"ctrl del: delete"]
+	
 	def on_keypress(self, e):
 		if e.key == K_F7:
 			self.eval()
 			return True
 
 		if e.key == K_DELETE and e.mod & KMOD_CTRL:
-			self.delete_self()
+			self.parent.delete_child(self)
 			return True
 
+	"""
 	@topic("delete_self")
 	@levent(mod=KMOD_CTRL, key=K_DELETE)
 	def delete_self(self):
 		self.parent.delete_child(self)
+	"""
 
 	def to_python_str(self):
 		return str(self)
@@ -233,7 +242,7 @@ class Node(element.Element):
 
 		#results of eval
 		if "value" in elem.runtime._dict \
-				and elem.runtime._dict.has_key("evaluated") \
+				and "evaluated" in elem.runtime._dict \
 				and not isinstance(elem.parent, Parser): #dont show results of compiler's direct children
 			yield [ColorTag('eval results'), TextTag("->")]
 			v = elem.runtime.value
@@ -269,14 +278,31 @@ class Node(element.Element):
 			pass
 		return r
 
-	def serialize(s):
-		return Unresolved(s.unresolvize()).serialize()
-
-	def unresolvize(s):
+	def deconstruct(s):
 		return {
 			'decl': s.decl
 		}
 
+
+class Deconstructed(Node):
+	def __init__(s, data, root = None):
+		if isinstance(data, dict):
+			s.data = data
+		elif isinstance(data, Node):
+			s.data = data.unresolvize()
+#		elif
+	def serialize(s):
+		r = {}
+		log("serializing Unresolved with data:", s.data)
+		for k,v in iteritems(s.data):
+			if isinstance(v, str_and_uni):
+				r[k] = v
+			elif k == "decl":
+				r[k] = v.name
+				log(v.name)
+			else:
+				r[k] = str(v)
+		return r
 
 class Unresolved(Node):
 	def __init__(s, data, root = None):
@@ -288,8 +314,8 @@ class Unresolved(Node):
 	def serialize(s):
 		r = {}
 		log("serializing Unresolved with data:", s.data)
-		for k,v in s.data.iteritems():
-			if isinstance(v, (unicode, str)):
+		for k,v in iteritems(s.data):
+			if isinstance(v, str_and_uni):
 				r[k] = v
 			elif k == "decl":
 				r[k] = v.name
@@ -378,7 +404,7 @@ class Syntaxed(Node):
 
 		assert(len(kids) == len(self.slots))
 
-		for k in self.slots.iterkeys():
+		for k in iterkeys(self.slots):
 			self.set_child(k, kids[k])
 
 		self.ch._lock()
@@ -394,7 +420,7 @@ class Syntaxed(Node):
 		return r
 
 	def fix_parents(self):
-		self._fix_parents(self.ch._dict.values())
+		self._fix_parents(list(self.ch._dict.values()))
 
 	def set_child(self, name, item):
 		assert(isinstance(name, str))
@@ -405,9 +431,9 @@ class Syntaxed(Node):
 
 	def replace_child(self, child, new):
 		"""child name or child value? thats a good question...its child the value!"""
-		assert(child in self.ch.itervalues())
+		assert(child in itervalues(self.ch))
 		assert(isinstance(new, Node))
-		for k,v in self.ch.iteritems():
+		for k,v in iteritems(self.ch):
 			if v == child:
 				self.ch[k] = new
 				new.parent = self
@@ -417,7 +443,7 @@ class Syntaxed(Node):
 		#todo:refactor into find_child or something
 
 	def delete_child(self, child):
-		for k,v in self.ch._dict.iteritems():
+		for k,v in iteritems(self.ch._dict):
 			if v == child:
 				self.ch[k] = self.create_kids(self.slots)[k]
 				self.ch[k].parent = self
@@ -427,15 +453,15 @@ class Syntaxed(Node):
 		#self.replace_child(child, Parser(b["text"])) #toho: create new_child()
 
 	def _flatten(self):
-		assert(isinstance(v, Node) for v in self.ch._dict.itervalues())
-		return [self] + [v.flatten() for v in self.ch._dict.itervalues()]
+		assert(isinstance(v, Node) for v in itervalues(self.ch._dict))
+		return [self] + [v.flatten() for v in itervalues(self.ch._dict)]
 
 	@staticmethod
 	def check_slots(slots):
 		if __debug__:
 			assert(isinstance(slots, dict))
-			for name, slot in slots.iteritems():
-				assert(isinstance(name, str))
+			for name, slot in iteritems(slots):
+				assert(isinstance(name, str_and_uni))
 				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
 
@@ -474,7 +500,7 @@ class Syntaxed(Node):
 	def create_kids(cls, slots):
 		cls.check_slots(slots)
 		kids = {}
-		for k, v in slots.iteritems(): #for each child:
+		for k, v in iteritems(slots):
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
 			easily_instantiable = [b[x] for x in [y for y in ['text', 'number',
 			    'statements', 'list', 'function signature list', 'untypedvar' ] if y in b]]
@@ -559,7 +585,7 @@ class Dict(Collapsible):
 
 	def render_items(self):
 		r = []
-		for key, item in self.items.iteritems():
+		for key, item in iteritems(self.items):
 			r += [TextTag(key), TextTag(":"), IndentTag(), NewlineTag()]
 			r += [ElementTag(item)]
 			r += [DedentTag(), NewlineTag()]
@@ -574,14 +600,14 @@ class Dict(Collapsible):
 
 	def fix_parents(self):
 		super(Dict, self).fix_parents()
-		self._fix_parents(self.items.values())
+		self._fix_parents(list(self.items.values()))
 
 	def _flatten(self):
-		return [self] + [v.flatten() for v in self.items.itervalues() if isinstance(v, Node)]#skip Widgets, for Settings
+		return [self] + [v.flatten() for v in itervalues(self.items) if isinstance(v, Node)]#skip Widgets, for Settings
 
 	def add(self, kv):
 		key, val = kv
-		assert(not self.items.has_key(key))
+		assert(key not in self.items)
 		self.items[key] = val
 		assert(isinstance(key, str))
 		assert(isinstance(val, element.Element))
@@ -1227,7 +1253,7 @@ class SyntaxedNodecl(NodeclBase):
 	def __init__(self, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
 		instance_class.decl = self
-		self.instance_slots = dict([(k, b[i] if isinstance(i, str) else i) for k,i in instance_slots.iteritems()])
+		self.instance_slots = dict([(k, b[i] if isinstance(i, str) else i) for k,i in iteritems(instance_slots)])
 		if isinstance(instance_syntaxes[0], list):
 			self.instance_syntaxes = instance_syntaxes
 		else:
@@ -1697,7 +1723,7 @@ class Parser(Node):
 				text = text[0:pos -1] + text[pos:]
 				s.root.post_render_move_caret -= 1
 		else:
-			assert isinstance(text, (str, unicode)), (s.items, ii, text)
+			assert isinstance(text, str_and_uni), (s.items, ii, text)
 			#print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
 			text = text[:pos] + e.uni + text[pos:]
 			s.root.post_render_move_caret += len(e.uni)
@@ -1727,7 +1753,7 @@ class Parser(Node):
 		r = [AttTag("compiler body", self)]
 		for i, item in enumerate(self.items):
 			r += [AttTag("compiler item", i)]
-			if isinstance(item, (str, unicode)):
+			if isinstance(item, str_and_uni):
 				for j, c in enumerate(item):
 					r += [AttTag("compiler item char", j), TextTag(c), EndTag()]
 			else:
@@ -1821,7 +1847,7 @@ class Parser(Node):
 			#snap cursor to the beginning of Parser
 			s.root.post_render_move_caret -= atts['char_index']
 			return s.edit_text(0, 0, e)
-		elif isinstance(items[i], (str, unicode)):
+		elif isinstance(items[i], str_and_uni):
 			if "compiler item char" in atts:
 				ch = atts["compiler item char"]
 			else:
@@ -1829,7 +1855,7 @@ class Parser(Node):
 			return s.edit_text(i, ch, e)
 		elif isinstance(items[i], Node):
 			items.insert(i, "")
-			assert isinstance(items[i], (str, unicode)), (items, i)
+			assert isinstance(items[i], str_and_uni), (items, i)
 			return s.edit_text(i, 0, e)
 
 	def mine(s, atts):
@@ -2016,7 +2042,7 @@ class CompilerMenuItem(MenuItem):
 	@property
 	def score(s):
 		#print s.scores._dict
-		return sum([i if not isinstance(i, tuple) else i[0] for i in s.scores._dict.itervalues()])
+		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
 
 	def tags(self):
 		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
@@ -2489,7 +2515,7 @@ def add_operators():
 	pfn(sum, [Text("the sum of"), num_list_arg()], name = "summed")
 
 	def b_range(min, max):
-		return range(min, max + 1)
+		return list(range(min, max + 1))
 	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
 		num_list(), name = "range", note="inclusive")
 
@@ -2689,7 +2715,7 @@ def make_root():
 	r.add(("program", b['module'].inst_fresh()))
 	r["program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
-	r["builtins"].ch.statements.items = list(b.itervalues())
+	r["builtins"].ch.statements.items = list(itervalues(b))#hm
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
 	building_in = False
@@ -2702,7 +2728,7 @@ def make_root():
 
 def to_lemon(x):
 	print ("to-lemon", x)
-	if isinstance(x, (str, unicode)):
+	if isinstance(x, str_and_uni):
 		return Text(x)
 	elif isinstance(x, (int, float)):
 		return Number(x)
