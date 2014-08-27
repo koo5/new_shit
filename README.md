@@ -74,6 +74,9 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 
 * migrate the google doc to something saner, like github wiki? or to the_doc.py
 
+* add command line arguments or some other system to select/filter log messages by topic
+
+* revive the_doc.py, the settings module, add support for images or live graphic canvas..
 
 
 files:

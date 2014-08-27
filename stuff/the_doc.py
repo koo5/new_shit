@@ -401,6 +401,7 @@ https://github.com/zsh-users/zaw
 
 plan9 terminal too..
 
+http://satyajit.ranjeev.in/2014/07/06/introducing-edi.html
 
 
 

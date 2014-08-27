@@ -60,16 +60,16 @@ def buildin(node, name=None):
 		b[key] = node
 
 
+
+#crap logic, crap names, crap everything..the language is the most proof-of-conceptish i-have-no-idea-what-im-doing.
+def is_decl(node):
+	return isinstance(node, (NodeclBase, ParametricTypeBase))
+def is_type(node):
+	return is_decl(node) or isinstance(Ref, Exp, Definition, SyntacticCategory, EnumType))
+
 def make_list(btype = 'anything'):
 	"make instance of List of given type"
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
-
-
-#crap
-def is_type(node):
-	return isinstance(node, (NodeclBase, ParametricType, Ref, Exp, Definition, SyntacticCategory, EnumType))
-def is_decl(node):
-	return isinstance(node, (NodeclBase, ParametricTypeBase))
 
 
 
@@ -2179,6 +2179,8 @@ class FunctionDefinitionBase(Syntaxed):
 		"""this is when the declaration is evaluated, not when we are called"""
 		return Text("OK")
 
+	#def unresolvize():
+		#return super(
 
 class FunctionDefinition(FunctionDefinitionBase):
 
@@ -2292,8 +2294,8 @@ class FunctionCall(Node):
 		self.args = [Parser(v) for v in self.target.arg_types] #this should go to fresh()
 		self.fix_parents()
 
-	def unresolvize(s):
-		r = super(FunctionCall, s).unresolvize()
+	def deconstruct(s):
+		r = super(FunctionCall, s).deconstruct()
 		r.update({
 			'target': s.target.unresolvize()
 		})
@@ -2344,6 +2346,7 @@ class FunctionCall(Node):
 		return [self] + flatten([v.flatten() for v in self.args])
 
 class FunctionCallNodecl(NodeclBase):
+	"""offers function calls"""
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(FunctionCall)
 		buildin(self, 'call')
