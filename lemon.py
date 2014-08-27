@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+#frontend-agnostic middle, complicated by debug replay functionality
+
 from __future__ import print_function
 
 version=0.21
@@ -184,10 +186,10 @@ def start():
 
 	root.render()
 	try:
-		root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
+		root.cursor_c, root.cursor_r = project.find(root.root['some program'].ch.statements.items[0], root.lines)
 		root.cursor_c += 1
 	except Exception as e:
-		print (e, ", cant set initial cursor position")
+		print (e.__repr__(), ", cant set initial cursor position")
 	if args.replay:
 		do_replay(True)
 	#render()

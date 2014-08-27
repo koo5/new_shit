@@ -82,11 +82,9 @@ def resize_frames():
 		f.rows = f.rect.height / font_height
 		
 
-
-
 def keypress(e):
 	reset_cursor_blink_timer()
-	lemon.handle(lemon.KeypressEvent(e, pygame.key.get_pressed()))
+	lemon.handle(lemon.KeypressEvent(pygame.key.get_pressed(), e.unicode, e.key, e.mod))
 	render()
 	draw()
 
@@ -110,6 +108,19 @@ def lemon_mousedown(e):
 			f.mousedown(e)
 			break
 lemon.mousedown = lemon_mousedown
+
+def xy2cr(xy):
+	x,y = xy
+	c = x / font_width
+	r = y / font_height
+	return c, r
+
+def frame_click(s,e):
+	e.cr = xy2cr(e.pos) #mouse xy to column, row
+	if args.log_events:
+		log(str(e) + " on " + str(s.under_cr(e.cr)))
+	s.click_cr(e)
+frames.Frame.click = frame_click
 
 def process_event(event):
 	if event.type == pygame.USEREVENT:
@@ -219,8 +230,15 @@ def root_draw(self, surf):
 
 def draw_cursor(self, surf):
 	if self.cursor_blink_phase:
-		x, y, y2 = self.cursor_xy()
+		x, y, y2 = cursor_xy(self.cursor_c, self.cursor_r)
 		pygame.draw.rect(surf, colors.cursor, (x, y, 1, y2 - y,))
+
+def cursor_xy(c,r):
+	return (font_width * c,
+	        font_height * r,
+	        font_height * (r + 1))
+
+
 
 def menu_draw(s, surface):
 	draw_lines(s, surface)

@@ -41,17 +41,14 @@ class Frame(object):
 		except:
 			return None
 
-	def click(s,e,pos):
-		cr = xy2cr(pos) #cursor column, row
-		n = s.under_cr(cr)
-		if log_events:
-			log(str(e) + " on " + str(n))
-		if not n or not n.on_mouse_press(e.button):
-			s.cursor_c, s.cursor_r = cr
+	def click_cr(s,e):
+		node = s.under_cr(e.cr)
+		if not node or not node.on_mouse_press(e.button):
+			s.cursor_c, s.cursor_r = e.cr
 
 	def mousedown(s,e):
 		if e.button == 1:
-			s.click(e,e.pos)
+			s.click(e)
 		elif e.button == 4:
 			s.scroll(-1)
 		elif e.button == 5:
@@ -62,13 +59,6 @@ class Frame(object):
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
 
-
-
-def xy2cr(xy):
-	x,y = xy
-	c = x / font_width
-	r = y / font_height
-	return c, r
 
 
 class Root(Frame):
@@ -168,12 +158,6 @@ class Root(Frame):
 			if target:
 				r.append(((a[0],a[1] - self.scroll_lines),target))
 		return r
-
-
-	def cursor_xy(s):
-		return (font_width * s.cursor_c,
-		        font_height * s.cursor_r,
-		        font_height * (s.cursor_r + 1))
 
 
 	def prev_elem(s):
@@ -400,9 +384,9 @@ class Menu(Frame):
 			e.menu(atts, True)
 
 
-	def click(s,e,pos):
+	def click(s,e):
 		for i,r in iteritems(s.rects):
-			if collidepoint(r, pos):
+			if collidepoint(r, e.pos):
 				s.sel = s.items_on_screen.index(i)
 				s.accept()
 				break

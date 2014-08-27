@@ -82,6 +82,7 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 files:
 ===
 * main.py: the frontend, handles a window, events, drawing. run this one.
+* lemon.py: frontend-agnostic middle with debug replay functionality
 * nodes.py: AST classes - "nodes"
 * widgets.py textbox, number box, button..
 * element.py - both widgets and nodes descend from Element

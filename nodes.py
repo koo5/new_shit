@@ -17,6 +17,7 @@ nodecls have a set of functions for instantiating the values, and those need som
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
+#from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame
 from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
 
 import sys
@@ -65,7 +66,7 @@ def buildin(node, name=None):
 def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase))
 def is_type(node):
-	return is_decl(node) or isinstance(Ref, Exp, Definition, SyntacticCategory, EnumType))
+	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, SyntacticCategory, EnumType))
 
 def make_list(btype = 'anything'):
 	"make instance of List of given type"
@@ -82,6 +83,7 @@ class Node(element.Element):
 	def __init__(self):
 		"""overrides in subclasses may require children as arguments"""
 		super(Node, self).__init__()
+
 		#self.color = (0,255,0,255) #i hate hardcoded colors
 		self.brackets_color = "node brackets rainbow"
 		self.runtime = dotdict() #various runtime data herded into one place
@@ -716,7 +718,7 @@ class List(Collapsible):
 	@property
 	def item_type(self):
 		assert hasattr(self, "decl"), "parent="+str(self.parent)+" contents="+str(self.items)
-		assert isinstance(self.decl, ParametricType)
+		assert isinstance(self.decl, ParametricType), self
 		return self.decl.ch.itemtype
 
 	def above(self, item):
@@ -2179,8 +2181,21 @@ class FunctionDefinitionBase(Syntaxed):
 		"""this is when the declaration is evaluated, not when we are called"""
 		return Text("OK")
 
-	#def unresolvize():
-		#return super(
+	def unresolvize():
+		#return dict(super(FunctionDefinitionBase, self).un,
+		return {'resolve': True,
+		        'function':True,
+		        'sig':self.sig.deconstruct()}#but sig returns a list atm
+
+
+"""for function overloading, we could have a node that would be a "Variant" of
+	an original function, with different arguments.
+
+	the rationale is that the information that a call targets a particular function
+	is kept...
+	the fact that it might not be obvious that a variant is called should be offsettable with the ide
+	"""
+
 
 class FunctionDefinition(FunctionDefinitionBase):
 
@@ -2721,8 +2736,8 @@ def make_root():
 	global building_in
 	r = Root()
 	r.add(("welcome", Text("Welcome to lemon! Press F1 to cycle the sidebar!")))
-	r.add(("program", b['module'].inst_fresh()))
-	r["program"].ch.statements.newline()
+	r.add(("some program", b['module'].inst_fresh()))
+	r["some program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
 	r["builtins"].ch.statements.items = list(itervalues(b))#hm
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
