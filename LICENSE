@@ -1,0 +1,128 @@
+status
+===
+some files are from other people/projects, and have their own copyright notices, 
+see licenses in the licenses/ directory. The rest of lemon isnt currently shared under
+any license, but in the unlikely chance you want to use something, just ask.
+What follows are notes im collecting in an attempt to write my own license.
+
+
+
+introduction
+===
+i love working on lemon but wont be able to do it for free forever. The goal is to not throw away the chance for monetization, uphold the values of Free Software as much as possible, and make it still interesting for potential contributors to contribute. That implies either CLAs or a license functioning as such.
+Usual open source business models including dual-licensing can hardly apply to lemon. Most of its source code will be available from lemon itself, as in lemon the UI. As on ordinary programs written in lemon, programming languages usually have a MIT-style license for the standard library and GPL for the interpreter/compiler. In any case, it's pretty complicated. If anything in
+http://en.wikipedia.org/wiki/Business_models_for_open-source_software becomes viable, it would be only because the vision of the lemon UX has failed. The program's main goal is to be self-explanatory, easily extended, need no on-site training, no support.
+
+Also, trying to prove that licenses and lawyerspeak can work for people here. Im not the only person who would love to work on basically free software but cant find a way to monetize it.
+
+if you want to contribute to the program under your conditions instead, i hope we can work something out. 
+
+Going with some standard license is an option too.
+
+These are just preliminary notes that wouldn't pass as a proper license.
+
+
+
+notes
+===
+
+The intent of this license is to encourage <work on this> while ..
+
+avoiding pitfalls outlined in
+http://freedomdefined.org/Licenses/NC#The_Case_for_Free_Use:_Reasons_Not_to_Use_a_Creative_Commons_-NC_License
+
+1.Incompatibility:
+
+this license isn't non-commercial. Sale and any kind of reuse is
+encouraged. providing services and content covered by this license does
+not constitute "use", and is encouraged. license notice is required by
+law, to protect users from unknowingly violating it. (protect from the authors)
+(sucks, but in a semantic world, hopefully less)
+
+2. Basic and beneficial uses:
+solved by "over 7 permanent users"
+solved by "if i don't spot you, it's allright" (only going after the big fish) (?)
+
+comment: you can make money reselling the work, 
+
+links
+ http://www.falconpl.org/index.ftd?page_id=licensing
+ http://tarantsov.com/blog/2012/02/the-third-definition-of-open/
+ http://en.wikipedia.org/wiki/Business_models_for_open-source_software
+ http://www.drdobbs.com/open-source/the-conflict-at-the-heart-of-open-source/240168123  
+ http://sourcecontribute.com/2014/04/03/charging-for-freeopen-source-software/  
+ http://research.microsoft.com/en-us/projects/pex/msr-la.txt  
+
+fun
+ http://wonko.com/post/jsmin-isnt-welcome-on-google-code
+ http://www.groklaw.net/
+
+todo:
+ go thru the against-NC article again, add titles, quotes
+ projects killed by stupid licenses
+
+
+versioning - this work is always published under the current version of the license ... 
+
+contributor agreement?
+	http://en.wikipedia.org/wiki/Contributor_License_Agreement
+	'''With the Harmony CLA, "the contributor gives Canonical a licence to use their contributions. The contributor continues to own the copyright in the contribution, with full rights to re-use, re-distribute, and continue modifying the contributed code, allowing them to also share that contribution with other projects.'''
+	http://www.clahub.com/
+	technically, maybe CLA isnt necessary and could be just made part of the license?
+	http://lwn.net/Articles/592503/  
+	also the parts of GPL about patents apply
+
+base price on cost of living instead (of the permanent users?)
+
+free man license revision 0
+===
+this software is 
+
+define core authors?
+
+core authors can, at their option, publish this work or parts of it under a Free Software Foundation approved license (https://www.gnu.org/licenses/licenses.html) (or other license?)
+
+share alike,
+
+commercial use
+	in companies with permanently over 7 users: 
+	$1/user/year
+	covers any number of works covered by this license used
+
+free for all other purposes and uses
+
+you can distribute and sell, modify, yada yada
+
+what is derived work?
+
+half of the collected money goes to the Free Software Foundation or other (open source?) projects at the core authors option? your option?
+
+notes: define donations from the income?
+
+crazy shit:
+bounties - not part of the license i guess
+a roof - maximum collectible money before the software becomes free. slave software?
+"pay for a gpl version":-)
+
+
+
+how to define a user? basically give up and charge for only well-definable (desktop) use?
+dual licensing, crudely something like CC-NC + additional permissions for non-heavy use + a commercial license?
+maybe heavily adapt GPL
+
+
+http://www.gnu.org/licenses/lgpl.html
+
+
+
+
+avoid CLA by having that in the license, like GPL:
++patents
+
+
+
+https://tldrlegal.com/license/peer-production-license
+http://www.softwarefreedom.org/resources/
+https://github.com/wardi/urwid/issues/41
+https://news.ycombinator.com/item?id=7602237
+http://www.gnu.org/licenses/gpl-faq.html#AssignCopyright

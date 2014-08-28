@@ -20,7 +20,6 @@ import lemon_args
 
 args = lemon.args = lemon_args.parse_args()
 
-
 for f in allframes:
 	f.rect = pygame.Rect((6,6),(6,6))
 
@@ -80,7 +79,12 @@ def resize_frames():
 	for f in allframes:
 		f.cols = f.rect.width / font_width
 		f.rows = f.rect.height / font_height
-		
+
+
+def keypressevent__repr__(self):
+		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
+			(pygame.key.name(self.key), self.uni, bin(self.mod)))
+lemon.KeypressEvent.__repr__ = keypressevent__repr__
 
 def keypress(e):
 	reset_cursor_blink_timer()
@@ -246,6 +250,7 @@ def menu_draw(s, surface):
 
 def draw_rects(s, surface):
 	for i,r in iteritems(s.rects):
+		#print i ,s.selected
 		if i == s.selected:
 			c = colors.menu_rect_selected
 		else:

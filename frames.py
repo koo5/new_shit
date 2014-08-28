@@ -330,7 +330,8 @@ class Menu(Frame):
 
 	@property
 	def selected(s):
-		if s.sel < len(s.items_on_screen) or s.sel != -1:
+		assert(s.sel != -1)
+		if s.sel >= len(s.items_on_screen):
 			return None
 		#log("sel:", s.sel, s.items_on_screen)
 		return s.items_on_screen[s.sel]
@@ -341,9 +342,7 @@ class Menu(Frame):
 		if s.sel < 0:
 			s.sel = 0
 
-
 	def render(s):
-
 		s.project()
 		s.clamp_sel()
 

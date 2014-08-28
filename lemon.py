@@ -71,7 +71,7 @@ class KeypressEvent(object):
 
 	def __repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
-			(pygame.key.name(self.key), self.uni, bin(self.mod)))
+			(self.key, self.uni, bin(self.mod)))
 
 class MousedownEvent(object):
 	def __init__(s, e):
@@ -186,8 +186,12 @@ def start():
 
 	root.render()
 	try:
-		root.cursor_c, root.cursor_r = project.find(root.root['some program'].ch.statements.items[0], root.lines)
-		root.cursor_c += 1
+		if args.lesh:
+			something = root.root['lesh'].command_line
+		else:
+			something = root.root['some program'].ch.statements.items[0]
+		root.cursor_c, root.cursor_r = project.find(something, root.lines)
+		#root.cursor_c += 1
 	except Exception as e:
 		print (e.__repr__(), ", cant set initial cursor position")
 	if args.replay:
