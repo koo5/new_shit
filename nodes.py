@@ -1955,6 +1955,8 @@ class Parser(ParserBase):
 
 	#todo: make previous item the first child of the inserted item if applicable
 	def menu_item_selected_for_child(self, item, child_index, atts):
+		if isinstance(item, (LeshMenuItem)):
+			return False#hack
 		assert isinstance(item, (ParserMenuItem, DefaultParserMenuItem))
 		if isinstance(item, ParserMenuItem):
 			node = item.value
