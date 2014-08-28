@@ -10,6 +10,9 @@ def flatten_gen(x):
 				yield z
 
 def flatten(g):
+	"""i use flatten, then iterate over the resulting list,
+	in quite a few places. It maybe makes debugging easier and
+	i dont actually know how to visitor pattern."""
 	return list(flatten_gen(g))
 
 def test_flatten():

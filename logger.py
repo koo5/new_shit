@@ -13,7 +13,7 @@ gui = None
 topics = ["?"]
 
 def topic(text):
-	"""decorator"""
+	"""decorator to put before your function with a logging topic"""
 	def decorator_inner_crap(function_with_decorator):
 		def wrapped_function(*vargs, **kwargs):
 			topics.append(text)
@@ -25,29 +25,25 @@ def topic(text):
 		return wrapped_function
 	return decorator_inner_crap
 
-logging.basicConfig(level=logging.DEBUG, format='%(message)s')
-
 def bt(x):
 	bt = getouterframes(currentframe())
 	for f in reversed(bt):
 		a,b,c,d = getargvalues(f[0])
 		line = f[1]+":"+str(f[2])+":"+f[3]+formatargvalues(a,b,c,d)
-		logging.debug(line + (("    :    " + x) if (f == bt[0]) else ""))
+		debug(line + (("    :    " + x) if (f == bt[0]) else ""))
 
 def ping(level = 1):
 	bt = getouterframes(currentframe())
 	f = bt[level]
 	a,b,c,d = getargvalues(f[0])
 	line = f[1]+":"+str(f[2])+":"+f[3]+formatargvalues(a,b,c,d)
-	logging.debug(line)
+	debug(line)
 
 def log(*vargs):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
 	x = ', '.join([str(x) for x in vargs])
 	text = topics[-1]+(": ")+str(x) # if len(topics)>1 else ""
-	logging.debug(text)
-	if gui != None:
-		gui.add(text)
+	debug(text)
 
 def plog(*args):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
@@ -55,7 +51,7 @@ def plog(*args):
 	f = bt[1]
 	a,b,c,d = getargvalues(f[0])
 	line = f[1]+":"+str(f[2])+":"+f[3]+formatargvalues(a,b,c,d)
-	logging.debug(line+" logs: "+' '.join([str(x) for x in args]))
+	debug(line+" logs: "+' '.join([str(x) for x in args]))
 
 #def catch(fun):
 #	try:

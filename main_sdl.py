@@ -12,6 +12,7 @@ from pygame import draw, Rect
 import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import frames
+import logger
 from logger import log
 from lemon_colors import colors, color
 from lemon_six import iteritems
@@ -19,39 +20,47 @@ import lemon_args
 
 args = lemon.args = lemon_args.parse_args()
 
-
 for f in allframes:
 	f.rect = pygame.Rect((6,6),(6,6))
 
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
 
+def debug_out(text):
+	print(text)
+	logframe.add(text)
 
+logger.debug = debug_out
 
 def render():
 	root.render()
 	lemon.sidebar.render()
 	logframe.render()
+	#log("boing")
+	if isinstance(lemon.sidebar, frames.Menu):
+		menu_generate_rects(lemon.sidebar)
 
 def reset_cursor_blink_timer():
 	if not args.dontblink:
 		pygame.time.set_timer(pygame.USEREVENT + 1, 800)
 	root.cursor_blink_phase = True
 
+def user_change_font_size(by = 0):
+	change_font_size(by)
+	resize_frames()
+
 def change_font_size(by = 0):
 	global font, font_width, font_height
 	args.font_size += by
 	font = pygame.font.SysFont('monospace', args.font_size)
 	font_width, font_height = font.size("X")
-	frames.font_width, frames.font_height = font_width, font_height
-
+	
 def resize(size):
 	global screen_surface, screen_width, screen_height
 	log("resize to "+str(size))
 	screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
-	resize_frames()
-
+	
 def resize_frames():
 	lemon.logframe.rect.height = log_height = 110
 	lemon.logframe.rect.width = screen_width
@@ -67,12 +76,19 @@ def resize_frames():
 	for frame in lemon.sidebars:
 		frame.rect = sidebar_rect
 
+	for f in allframes:
+		f.cols = f.rect.width / font_width
+		f.rows = f.rect.height / font_height
 
 
+def keypressevent__repr__(self):
+		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
+			(pygame.key.name(self.key), self.uni, bin(self.mod)))
+lemon.KeypressEvent.__repr__ = keypressevent__repr__
 
 def keypress(e):
 	reset_cursor_blink_timer()
-	lemon.handle(lemon.KeypressEvent(e, pygame.key.get_pressed()))
+	lemon.handle(lemon.KeypressEvent(pygame.key.get_pressed(), e.unicode, e.key, e.mod))
 	render()
 	draw()
 
@@ -97,6 +113,19 @@ def lemon_mousedown(e):
 			break
 lemon.mousedown = lemon_mousedown
 
+def xy2cr(xy):
+	x,y = xy
+	c = x / font_width
+	r = y / font_height
+	return c, r
+
+def frame_click(s,e):
+	e.cr = xy2cr(e.pos) #mouse xy to column, row
+	if args.log_events:
+		log(str(e) + " on " + str(s.under_cr(e.cr)))
+	s.click_cr(e)
+frames.Frame.click = frame_click
+
 def process_event(event):
 	if event.type == pygame.USEREVENT:
 		pass # we woke up python to poll for SIGINT
@@ -113,6 +142,7 @@ def process_event(event):
 
 	elif event.type == pygame.VIDEORESIZE:
 		resize(event.size)
+		resize_frames()
 		render()
 
 	elif event.type == pygame.ACTIVEEVENT:
@@ -204,8 +234,15 @@ def root_draw(self, surf):
 
 def draw_cursor(self, surf):
 	if self.cursor_blink_phase:
-		x, y, y2 = self.cursor_xy()
+		x, y, y2 = cursor_xy(self.cursor_c, self.cursor_r)
 		pygame.draw.rect(surf, colors.cursor, (x, y, 1, y2 - y,))
+
+def cursor_xy(c,r):
+	return (font_width * c,
+	        font_height * r,
+	        font_height * (r + 1))
+
+
 
 def menu_draw(s, surface):
 	draw_lines(s, surface)
@@ -213,6 +250,7 @@ def menu_draw(s, surface):
 
 def draw_rects(s, surface):
 	for i,r in iteritems(s.rects):
+		#print i ,s.selected
 		if i == s.selected:
 			c = colors.menu_rect_selected
 		else:
@@ -222,7 +260,29 @@ def draw_rects(s, surface):
 def info_draw(s, surface):
 	draw_lines(s, surface)
 
+def menu_generate_rects(s):
+	s.rects = dict()
+	for i in s.items_on_screen:
+		rl = i._render_lines[s]
 
+		startline = rl["startline"] - s.scroll_lines if "startline" in rl else 0
+		endline = rl["endline"]  - s.scroll_lines if "endline" in rl else s.rows
+
+		if endline < 0 or startline > s.rows:
+			continue
+		if startline < 0:
+			startline = 0
+		if endline > s.rows - 1:
+			endline = s.rows - 1
+
+		startchar = 0
+		#print startline, endline+1
+		endchar = max([len(l) for l in s.lines[startline:endline+1]])
+		r = (startchar * font_width,
+		     startline * font_height,
+		     (endchar  - startchar) * font_width,
+		     (endline - startline+1) * font_height)
+		s.rects[i] = r
 
 
 def bye():
@@ -277,8 +337,10 @@ def main():
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 
 	change_font_size()
-	lemon.change_font_size = change_font_size
+	resize_frames()
+	lemon.change_font_size = user_change_font_size
 	lemon.start()
+	render()
 
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 	reset_cursor_blink_timer()

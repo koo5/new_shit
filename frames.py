@@ -41,17 +41,14 @@ class Frame(object):
 		except:
 			return None
 
-	def click(s,e,pos):
-		cr = xy2cr(pos) #cursor column, row
-		n = s.under_cr(cr)
-		if log_events:
-			log(str(e) + " on " + str(n))
-		if not n or not n.on_mouse_press(e.button):
-			s.cursor_c, s.cursor_r = cr
+	def click_cr(s,e):
+		node = s.under_cr(e.cr)
+		if not node or not node.on_mouse_press(e.button):
+			s.cursor_c, s.cursor_r = e.cr
 
 	def mousedown(s,e):
 		if e.button == 1:
-			s.click(e,e.pos)
+			s.click(e)
 		elif e.button == 4:
 			s.scroll(-1)
 		elif e.button == 5:
@@ -62,20 +59,6 @@ class Frame(object):
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
 
-	@property
-	def rows(self):
-		return self.rect.h / font_height
-
-	@property
-	def cols(self):
-		return self.rect.w / font_width
-
-
-def xy2cr(xy):
-	x,y = xy
-	c = x / font_width
-	r = y / font_height
-	return c, r
 
 
 class Root(Frame):
@@ -175,12 +158,6 @@ class Root(Frame):
 			if target:
 				r.append(((a[0],a[1] - self.scroll_lines),target))
 		return r
-
-
-	def cursor_xy(s):
-		return (font_width * s.cursor_c,
-		        font_height * s.cursor_r,
-		        font_height * (s.cursor_r + 1))
 
 
 	def prev_elem(s):
@@ -353,6 +330,10 @@ class Menu(Frame):
 
 	@property
 	def selected(s):
+		assert(s.sel != -1)
+		if s.sel >= len(s.items_on_screen):
+			return None
+		#log("sel:", s.sel, s.items_on_screen)
 		return s.items_on_screen[s.sel]
 
 	def clamp_sel(s):
@@ -361,36 +342,9 @@ class Menu(Frame):
 		if s.sel < 0:
 			s.sel = 0
 
-	def generate_rects(s):
-		s.rects = dict()
-		for i in s.items_on_screen:
-			rl = i._render_lines[s]
-
-			startline = rl["startline"] - s.scroll_lines if "startline" in rl else 0
-			endline = rl["endline"]  - s.scroll_lines if "endline" in rl else s.rows
-
-			if endline < 0 or startline > s.rows:
-				continue
-			if startline < 0:
-				startline = 0
-			if endline > s.rows - 1:
-				endline = s.rows - 1
-
-			startchar = 0
-			#print startline, endline+1
-			endchar = max([len(l) for l in s.lines[startline:endline+1]])
-			r = (startchar * font_width,
-			     startline * font_height,
-			     (endchar  - startchar) * font_width,
-			     (endline - startline+1) * font_height)
-			s.rects[i] = r
-
-
 	def render(s):
-
 		s.project()
 		s.clamp_sel()
-		s.generate_rects()
 
 	def tags(s):
 		s.items_on_screen = []
@@ -429,9 +383,9 @@ class Menu(Frame):
 			e.menu(atts, True)
 
 
-	def click(s,e,pos):
+	def click(s,e):
 		for i,r in iteritems(s.rects):
-			if collidepoint(r, pos):
+			if collidepoint(r, e.pos):
 				s.sel = s.items_on_screen.index(i)
 				s.accept()
 				break

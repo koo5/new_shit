@@ -40,7 +40,11 @@ things to do
 here are some (random) things that i think would help lemon further, sometimes directly, sometimes by making it more
 accesible/interesting to other people. Some understanding of lemon is usually
 necessary though. I will be more than happy to explain every detail, but be prepared that it takes some time.
+<<<<<<< HEAD
 some (messy) notes are also towards the end of stuff/the_doc.py. Also look for #todo in the source files.
+=======
+some (messy) notes are also towards the end of stuff/the_doc.py, and search for "todo" in the source files..
+>>>>>>> dev
 
 * support for more human languages.
  would make lemon interesting as a non-english programming tool
@@ -77,13 +81,17 @@ some (messy) notes are also towards the end of stuff/the_doc.py. Also look for #
 
 * give me feedback on the builtins module which should for now serve as a de-facto reference to the language
 
+* migrate the google doc to something saner, like github wiki? or to the_doc.py
 
+* add command line arguments or some other system to select/filter log messages by topic
+
+* revive the_doc.py, the settings module, add support for images or live graphic canvas..
 
 
 files:
-===
-* main.py: the frontend, handles a window, events, drawing. run this one.
-* lemon.py: frontend agnostic stuff
+* main_sdl.py: the frontend, handles a window, events, drawing. run this one.
+* main_curses.py: proof-of-concept console frontend
+* lemon.py: frontend-agnostic middlestuff with debug replay functionality
 * nodes.py: AST classes - "nodes"
 * widgets.py textbox, number box, button..
 * element.py - both widgets and nodes descend from Element
@@ -91,6 +99,7 @@ files:
 * tags.py: the results of calling element.render(), analogous to html tags
 * frames.py: the panels: Root, Menu, Info
 * lemon_colors.py: color settings
+* lemon_args.py: command line arguments
 * there are other files around, mostly mess and notes. 
 * stuff/the_doc.py: an attempt to migrate all documentation into lemon
 

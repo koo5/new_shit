@@ -17,7 +17,8 @@ nodecls have a set of functions for instantiating the values, and those need som
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
-from lemon_six import iteritems, iterkeys, itervalues, str_and_uni
+#from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame
+from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
 
 import sys
 sys.path.insert(0, 'fuzzywuzzy')
@@ -42,9 +43,10 @@ import lemon_colors as colors
 from keys import *
 from utils import flatten
 
-# ass is for asserts
-import tags as asstags
-asstags.asselement = element
+if __debug__:
+	# asses are stuff for assertions
+	import tags as asstags
+	asstags.asselement = element
 
 #for staging the builtins module and referencing builtin nodes from python code
 b = OrderedDict()
@@ -59,16 +61,16 @@ def buildin(node, name=None):
 		b[key] = node
 
 
+
+#crap logic, crap names, crap everything..the language is the most proof-of-conceptish i-have-no-idea-what-im-doing.
+def is_decl(node):
+	return isinstance(node, (NodeclBase, ParametricTypeBase))
+def is_type(node):
+	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, SyntacticCategory, EnumType))
+
 def make_list(btype = 'anything'):
 	"make instance of List of given type"
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
-
-
-#crap
-def is_type(node):
-	return isinstance(node, (NodeclBase, ParametricType, Ref, Exp, Definition, SyntacticCategory, EnumType))
-def is_decl(node):
-	return isinstance(node, (NodeclBase, ParametricTypeBase))
 
 
 
@@ -81,6 +83,7 @@ class Node(element.Element):
 	def __init__(self):
 		"""overrides in subclasses may require children as arguments"""
 		super(Node, self).__init__()
+
 		#self.color = (0,255,0,255) #i hate hardcoded colors
 		self.brackets_color = "node brackets rainbow"
 		self.runtime = dotdict() #various runtime data herded into one place
@@ -289,8 +292,7 @@ class Deconstructed(Node):
 		if isinstance(data, dict):
 			s.data = data
 		elif isinstance(data, Node):
-			s.data = data.unresolvize()
-#		elif
+			s.data = data.deconstruct()
 	def serialize(s):
 		r = {}
 		log("serializing Unresolved with data:", s.data)
@@ -716,7 +718,7 @@ class List(Collapsible):
 	@property
 	def item_type(self):
 		assert hasattr(self, "decl"), "parent="+str(self.parent)+" contents="+str(self.items)
-		assert isinstance(self.decl, ParametricType)
+		assert isinstance(self.decl, ParametricType), self
 		return self.decl.ch.itemtype
 
 	def above(self, item):
@@ -1143,7 +1145,7 @@ class NodeclBase(Node):
 		return self.instance_class.fresh()
 
 	def palette(self, scope, text, node):
-			return [CompilerMenuItem(self.instance_class.fresh())]
+			return [ParserMenuItem(self.instance_class.fresh())]
 
 	def works_as(self, type):
 		if isinstance(type, Ref):
@@ -1166,7 +1168,7 @@ class TypeNodecl(NodeclBase):
 
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [CompilerMenuItem(Ref(x)) for x in nodecls]
+		return [ParserMenuItem(Ref(x)) for x in nodecls]
 
 	def make_example(s):
 		return Ref(b['number'])
@@ -1195,7 +1197,7 @@ class VarRefNodecl(NodeclBase):
 		r = []
 		for x in node.vardecls_in_scope:
 			assert isinstance(x, (UntypedVar, TypedArgument))
-			r += [CompilerMenuItem(VarRef(x))]
+			r += [ParserMenuItem(VarRef(x))]
 		return r
 """
 	def palette(self, scope, text):
@@ -1207,7 +1209,7 @@ class VarRefNodecl(NodeclBase):
 				#log("vardecl compiles to: "+str(yc))
 				if isinstance(yc, (UntypedVar, TypedArgument)):
 					#log("vardecl:"+str(yc))
-					r += [CompilerMenuItem(VarRef(yc))]
+					r += [ParserMenuItem(VarRef(yc))]
 		#log (str(scope)+"varrefs:"+str(r))
 		return r
 """
@@ -1218,7 +1220,7 @@ class ExpNodecl(NodeclBase):
 		Exp.decl = self
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [CompilerMenuItem(Exp(x)) for x in nodecls]
+		return [ParserMenuItem(Exp(x)) for x in nodecls]
 
 class Nodecl(NodeclBase):
 	"""for simple nodes (Number, Text, Bool)"""
@@ -1240,7 +1242,7 @@ class Nodecl(NodeclBase):
 		else:
 			value = i()
 			score = 0
-		return CompilerMenuItem(value, score)
+		return ParserMenuItem(value, score)
 
 
 
@@ -1337,7 +1339,7 @@ class ParametricNodecl(NodeclBase):
 		return ParametricType(kids, self)
 
 	def palette(self, scope, text, node):
-		return [CompilerMenuItem(ParametricType.fresh(self))]
+		return [ParserMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
 	#if there is only one possible node type to instantiate..
 
@@ -1386,7 +1388,7 @@ class EnumType(ParametricTypeBase):
 		self.instance_class = EnumVal
 		super(EnumType, self).__init__(kids)
 	def palette(self, scope, text, node):
-		r = [CompilerMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
+		r = [ParserMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
 		#print ">",r
 		return r
 	def works_as(self, type):
@@ -1477,11 +1479,11 @@ WorksAs.b("dict", "expression")
 class ListOfAnything(ParametricType):
 	@topic ("ListOfAnything palette")
 	def palette(self, scope, text, node):
-		log(self.ch._dict)
+		#log(self.ch._dict)
 		i = self.inst_fresh()
 		i.view_mode = 1
 		i.newline()
-		return [CompilerMenuItem(i)]
+		return [ParserMenuItem(i)]
 	def works_as(self, type):
 		return True
 
@@ -1627,55 +1629,14 @@ leftmost child of the second node..or maybe not..dunno
 """
 
 
-class Parser(Node):
-	"""the awkward input node AKA the Beast
-
-	im thinking about rewriting the items into nodes again.
-	 this time with smarter cursor movement.
-
-	"""
-	def __init__(self, type):
-		super(Parser, self).__init__()
-		assert is_type(type), str(type)
-		self.type = type
+class ParserBase(Node):
+	def __init__(self):
+		super(ParserBase, self).__init__()
 		self.items = []
 		self.decl = None
 		self.register_event_types('on_edit')
 		self.brackets_color = "compiler brackets"
 		self.brackets = ('{', '}')
-
-	@property
-	def compiled(self):
-		#default result:		#raise an exception?
-		r = Bananas(self.items)
-
-		if len(self.items) == 1:
-			i0 = self.items[0]
-			if isinstance(i0, Node):
-				r = i0
-			else: #string
-				#demodemodemo
-				type = self.type
-				if isinstance(self.type, Exp):
-					type = self.type.type
-				if isinstance(type, Ref):
-					type = type.target
-
-#				if type == b['number']:
-				if Number.match(i0):
-					r = Number(i0)
-						#log("parsed it to Number")
-
-				if type == b['text']:
-					r = Text(i0)
-
-
-		r.parent = self
-		#log(self.items, "=>", r)
-		return r
-
-	def _eval(self):
-		return self.compiled.eval()
 
 	def __getitem__(self, i):
 		return self.items[i]
@@ -1685,7 +1646,7 @@ class Parser(Node):
 		return [i for i in s.items if isinstance(i, Node) ]
 
 	def fix_parents(self):
-		super(Parser, self).fix_parents()
+		super(ParserBase, self).fix_parents()
 		self._fix_parents(self.nodes)
 
 	def _flatten(self):
@@ -1695,25 +1656,6 @@ class Parser(Node):
 		self.items.append(item)
 		assert(isinstance(item, Node))
 		item.parent = self
-
-	"""
-	def replace_child(self, child, new):
-		assert(child in self.items)
-		self.items[self.items.index(child)] = new
-		new.parent = self
-		#add a blank at the end
-		p = SomethingNew()
-		p.parent = self
-		self.items.append(p)
-	"""
-	"""
-	def eval(self):
-		i = self.items[0]
-		i.eval()
-		self.runtime = i.runtime
-		return self.runtime.value.val
-	"""
-
 
 	def edit_text(s, ii, pos, e):
 		#item index, cursor position in item, event
@@ -1748,7 +1690,7 @@ class Parser(Node):
 
 	def render(self):
 		if len(self.items) == 0: #hint at the type expected
-			return [ColorTag("compiler hint"), TextTag('('+self.type.name+')'), EndTag()]
+			return self.empty_render()
 
 		r = [AttTag("compiler body", self)]
 		for i, item in enumerate(self.items):
@@ -1827,13 +1769,13 @@ class Parser(Node):
 				s.type_tree(s.type, s.scope())
 				return True
 			else:
-				return super(Parser, s).on_keypress(e)
+				return super(ParserBase, s).on_keypress(e)
 
 		if e.key == K_ESCAPE:
 			return False
 		if e.key == K_RETURN:
 			return False
-		if (not e.uni) and not e.key in [K_BACKSPACE]:
+		if (not e.uni) and not e.key in [K_BACKSPACE]: #backspace and something else comes with some unicode
 			return False
 
 		assert s.root.post_render_move_caret == 0
@@ -1897,28 +1839,18 @@ class Parser(Node):
 	"""
 
 	def menu_item_selected(s, item, atts=None):
+		char_index = 0
 		if atts == None:
 			i = 0
 		else:
 			i = s.mine(atts)
-		return s.menu_item_selected_for_child(item, i)
+			if isinstance(i, str_and_uni):
+				if "compiler item char" in atts:
+					char_index = atts["compiler item char"]
+				else:
+					char_index = len(i)
 
-	#todo: make previous item the first child of the inserted item if applicable
-	def menu_item_selected_for_child(self, item, child_index):
-		assert isinstance(item, (CompilerMenuItem, DefaultCompilerMenuItem))
-		if isinstance(item, CompilerMenuItem):
-			node = item.value
-			if child_index != None:
-				self.items[child_index] = node
-			else:#?
-				self.items.append(node)
-			node.parent = self
-			self.post_insert_move_cursor(node)
-			return True
-		elif isinstance(item, DefaultCompilerMenuItem):
-			return False
-		else:
-			raise Exception("whats that shit, cowboy?")
+		return s.menu_item_selected_for_child(item, i, char_index)
 
 	@staticmethod
 	def first_child(node):
@@ -1950,6 +1882,95 @@ class Parser(Node):
 
 	def menu(self, atts, debug = False):
 		return self.menu_for_item(self.mine(atts), debug)
+
+	def delete_child(s, child):
+		log("del")
+		del s.items[s.items.index(child)]
+
+
+
+class Parser(ParserBase):
+	"""the awkward input node AKA the Beast.
+	im thinking about rewriting the items into nodes again.
+	 this time with smarter cursor movement.
+	"""
+	def __init__(self, type):
+		super(Parser, self).__init__()
+		assert is_type(type), str(type)
+		self.type = type
+
+	def empty_render(s):
+		return [ColorTag("compiler hint"), TextTag('('+s.type.name+')'), EndTag()]
+
+	@property
+	def compiled(self):
+		#default result:		#raise an exception?
+		r = Bananas(self.items)
+
+		if len(self.items) == 1:
+			i0 = self.items[0]
+			if isinstance(i0, Node):
+				r = i0
+			else: #string
+				#demodemodemo
+				type = self.type
+				if isinstance(self.type, Exp):
+					type = self.type.type
+				if isinstance(type, Ref):
+					type = type.target
+
+#				if type == b['number']:
+				if Number.match(i0):
+					r = Number(i0)
+						#log("parsed it to Number")
+
+				if type == b['text']:
+					r = Text(i0)
+
+
+		r.parent = self
+		#log(self.items, "=>", r)
+		return r
+
+	def _eval(self):
+		return self.compiled.eval()
+
+	"""
+	def replace_child(self, child, new):
+		assert(child in self.items)
+		self.items[self.items.index(child)] = new
+		new.parent = self
+		#add a blank at the end
+		p = SomethingNew()
+		p.parent = self
+		self.items.append(p)
+	"""
+	"""
+	def eval(self):
+		i = self.items[0]
+		i.eval()
+		self.runtime = i.runtime
+		return self.runtime.value.val
+	"""
+
+	#todo: make previous item the first child of the inserted item if applicable
+	def menu_item_selected_for_child(self, item, child_index, atts):
+		if isinstance(item, (LeshMenuItem)):
+			return False#hack
+		assert isinstance(item, (ParserMenuItem, DefaultParserMenuItem))
+		if isinstance(item, ParserMenuItem):
+			node = item.value
+			if child_index != None:
+				self.items[child_index] = node
+			else:#?
+				self.items.append(node)
+			node.parent = self
+			self.post_insert_move_cursor(node)
+			return True
+		elif isinstance(item, DefaultParserMenuItem):
+			return False
+		else:
+			raise Exception("whats that shit, cowboy?")
 
 	@topic("menu")
 	def menu_for_item(self, i=0, debug = False):
@@ -2018,22 +2039,88 @@ class Parser(Node):
 			print ('MENU FOR:',text,"type:",self.type)
 			[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
 
-		menu.append(DefaultCompilerMenuItem(text))
+		menu.append(DefaultParserMenuItem(text))
 		menu.reverse()#umm...
 
 		return menu
-
-	def delete_child(s, child):
-		log("del")
-		del s.items[s.items.index(child)]
 
 	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
 
-class CompilerMenuItem(MenuItem):
+class LeshCommandLine(ParserBase):
+	def __init__(self):
+		super(LeshCommandLine, self).__init__()
+
+	def empty_render(s):
+		return []
+
+	def menu_item_selected_for_child(self, item, child_index, char_index, alt=False):
+		assert isinstance(item, (LeshMenuItem, DefaultParserMenuItem))
+		if isinstance(item, LeshMenuItem):
+
+			dec = item.value
+
+			if alt:
+				snippet = LeshSnippet(dec)
+			else:
+				snippet = dec.command
+
+			if child_index != None:
+				#if isinstance(self.items[child_index], str_or_uni):
+				#todo:split at pipes:
+
+
+
+				self.items[child_index] = snippet
+			else:
+				self.items.append(snippet)
+
+			if alt:
+				snippet.parent = self
+			#self.post_insert_move_cursor(node)
+			return True
+
+		elif isinstance(item, DefaultParserMenuItem):
+			return False
+		else:
+			raise Exception("whats that shit, cowboy?")
+
+	@topic("lesh menu")
+	def menu_for_item(self, i=0, debug = False):
+
+		if i == None:
+			if len(self.items) == 0:
+				text = ""
+			else:
+				return []
+		else:
+			if isinstance(self.items[i], Node):
+				text = ""
+			else:
+				text = self.items[i]
+
+		scope = b
+		menu = flatten([x.palette(scope, text, self) for x in scope if isinstance(x, LeshSnippetDeclaration)])
+
+		matchf = fuzz.token_set_ratio#partial_ratio
+
+		for item in menu:
+			v = item.value
+			item.scores.human = matchf(v.human, text), v.human #0-100
+			item.scores.command = matchf(v.command, text), v.command#0-100
+
+		menu.sort(key=lambda i: i.score)
+
+		menu.append(DefaultParserMenuItem(text))
+		menu.reverse()
+
+		return menu
+
+
+class ParserMenuItem(MenuItem):
 	def __init__(self, value, score = 0):
-		super(CompilerMenuItem, self).__init__()
+		super(ParserMenuItem, self).__init__()
 		self.value = value
 		value.parent = self
 		self.scores = dotdict()
@@ -2050,10 +2137,25 @@ class CompilerMenuItem(MenuItem):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
 
+class LeshMenuItem(MenuItem):
+	#hack
+	def __init__(self, snippet, score = 0):
+		super(LeshMenuItem, self).__init__()
+		self.value = snippet
+		self.scores = dotdict()
+		self.brackets_color = (0,255,255)
 
-class DefaultCompilerMenuItem(MenuItem):
+	@property #duplicate...
+	def score(s):
+		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
+
+	def tags(self):
+		return [self.value.human, ":\n", self.value.command]
+
+
+class DefaultParserMenuItem(MenuItem):
 	def __init__(self, text):
-		super(DefaultCompilerMenuItem, self).__init__()
+		super(DefaultParserMenuItem, self).__init__()
 		self.text = text
 		self.brackets_color = (0,0,255)
 
@@ -2179,6 +2281,21 @@ class FunctionDefinitionBase(Syntaxed):
 		"""this is when the declaration is evaluated, not when we are called"""
 		return Text("OK")
 
+	def unresolvize():
+		#return dict(super(FunctionDefinitionBase, self).un,
+		return {'resolve': True,
+		        'function':True,
+		        'sig':self.sig.deconstruct()}#but sig returns a list atm
+
+
+"""for function overloading, we could have a node that would be a "Variant" of
+	an original function, with different arguments.
+
+	the rationale is that the information that a call targets a particular function
+	is kept...
+	the fact that it might not be obvious that a variant is called should be offsettable with the ide
+	"""
+
 
 class FunctionDefinition(FunctionDefinitionBase):
 
@@ -2292,8 +2409,8 @@ class FunctionCall(Node):
 		self.args = [Parser(v) for v in self.target.arg_types] #this should go to fresh()
 		self.fix_parents()
 
-	def unresolvize(s):
-		r = super(FunctionCall, s).unresolvize()
+	def deconstruct(s):
+		r = super(FunctionCall, s).deconstruct()
 		r.update({
 			'target': s.target.unresolvize()
 		})
@@ -2344,13 +2461,14 @@ class FunctionCall(Node):
 		return [self] + flatten([v.flatten() for v in self.args])
 
 class FunctionCallNodecl(NodeclBase):
+	"""offers function calls"""
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(FunctionCall)
 		buildin(self, 'call')
 		FunctionCall.decl = self
 	def palette(self, scope, text, node):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
-		return [CompilerMenuItem(FunctionCall(x)) for x in decls]
+		return [ParserMenuItem(FunctionCall(x)) for x in decls]
 
 FunctionCallNodecl()
 
@@ -2468,6 +2586,7 @@ def add_operators():
 
 
 	def pfn(function, signature, return_type = int, **kwargs):
+		"""helper function to add a builtin python function"""
 		if return_type == int:
 			return_type = Ref(b['number'])
 		elif return_type == bool:
@@ -2491,7 +2610,12 @@ def add_operators():
 
 	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
 	pfn(op.add, [num_arg(), Text("+"), num_arg()])
-	pfn(op.div, [num_arg(), Text("/"), num_arg()])
+	if PY2:
+		pfn(op.div, [num_arg(), Text("/"), num_arg()])
+	else:
+		pfn(op.floordiv, [num_arg(), Text("//"), num_arg()])
+		pfn(op.truediv,  [num_arg(), Text("/"), num_arg()])
+	
 	pfn(op.eq,  [num_arg(), Text("=="), num_arg()], bool)
 	pfn(op.ge,  [num_arg(), Text(">="), num_arg()], bool)
 	pfn(op.gt,  [num_arg(), Text(">="), num_arg()], bool)
@@ -2705,6 +2829,64 @@ def b_files_in_dir(dir):
 BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
 
 
+
+
+class Lesh(Node):
+	"""just another experiment: independent of the lemon language,
+	this is a command line that calls bash to execute commands.
+	a variation on shell snippets for fish / betty
+	lemon would probably make it more natural to have to option to insert
+	either raw text or a "human" snippet form, like <count lines>,
+	and toggle them freely
+	"""
+	#might add history later or xiki style?
+	def __init__(s):
+		super(Lesh, s).__init__()
+		s.command_line = LeshCommandLine()
+		s.command_line.parent = s
+
+
+	def render(self):
+		return [TextTag("just a little experiment, a frontend for bash/fish/zsh that lets you insert snippets and stuff:\n"),
+		                WidgetTag('command_line')]
+
+class LeshSnippetDeclaration(Syntaxed):
+	"""a declaration of a snippet"""
+	def __init__(self, kids):
+		super(LeshSnippetDeclaration, self).__init__(kids)
+	@property
+	def human(s):
+		return s.ch.human.pyval
+	@property
+	def command(s):
+		return s.ch.command.pyval
+
+	def palette(self, scope, text, node):
+		return [LeshMenuItem(self)]
+
+SyntaxedNodecl(LeshSnippetDeclaration,
+				[[ChildTag("human"), ChildTag("command")]],
+				{'human': b['text'], #add more wordings later
+				'command': b['text']})
+
+for h,c in [
+	("count words", "wc"),
+	("mount all", "mount -a")
+
+	]:
+		buildin(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}))#for now
+
+class LeshSnippet(Node):
+	"""for the case you want to insert the snippet in the human readable form"""
+	def __init__(self, declaration):
+		super(LeshSnippet, self).__init__()
+		self.declaration = declaration
+
+#todo: alt insert mode
+#todo: split on pipes
+
+
+
 #Const({'name': Text("meaning of life"), 'value': Number(42)})
 """the end"""
 
@@ -2712,8 +2894,9 @@ def make_root():
 	global building_in
 	r = Root()
 	r.add(("welcome", Text("Welcome to lemon! Press F1 to cycle the sidebar!")))
-	r.add(("program", b['module'].inst_fresh()))
-	r["program"].ch.statements.newline()
+	r.add(("lesh", Lesh()))
+	r.add(("some program", b['module'].inst_fresh()))
+	r["some program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
 	r["builtins"].ch.statements.items = list(itervalues(b))#hm
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
@@ -2776,3 +2959,7 @@ dbpedia node
 curses, js(brython seems nice) frontends
 
 """
+
+#maybe todo: make the calls to builtin explicit, not hidden in constructors
+"""todo: decide if declarative nodes like SyntacticCategory and Definition should have
+the name as a child node...it doesnt seem to make for a clear reading"""
