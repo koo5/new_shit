@@ -1839,11 +1839,18 @@ class ParserBase(Node):
 	"""
 
 	def menu_item_selected(s, item, atts=None):
+		char_index = 0
 		if atts == None:
 			i = 0
 		else:
 			i = s.mine(atts)
-		return s.menu_item_selected_for_child(item, i)
+			if isinstance(i, str_and_uni):
+				if "compiler item char" in atts:
+					char_index = atts["compiler item char"]
+				else:
+					char_index = len(i)
+
+		return s.menu_item_selected_for_child(item, i, char_index)
 
 	@staticmethod
 	def first_child(node):
@@ -1947,7 +1954,7 @@ class Parser(ParserBase):
 	"""
 
 	#todo: make previous item the first child of the inserted item if applicable
-	def menu_item_selected_for_child(self, item, child_index):
+	def menu_item_selected_for_child(self, item, child_index, atts):
 		assert isinstance(item, (ParserMenuItem, DefaultParserMenuItem))
 		if isinstance(item, ParserMenuItem):
 			node = item.value
@@ -2046,7 +2053,7 @@ class LeshCommandLine(ParserBase):
 	def empty_render(s):
 		return []
 
-	def menu_item_selected_for_child(self, item, child_index, alt=False):
+	def menu_item_selected_for_child(self, item, child_index, char_index, alt=False):
 		assert isinstance(item, (LeshMenuItem, DefaultParserMenuItem))
 		if isinstance(item, LeshMenuItem):
 
@@ -2059,7 +2066,9 @@ class LeshCommandLine(ParserBase):
 
 			if child_index != None:
 				#if isinstance(self.items[child_index], str_or_uni):
-					#todo:split at pipes
+				#todo:split at pipes:
+
+
 
 				self.items[child_index] = snippet
 			else:
