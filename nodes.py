@@ -2067,12 +2067,10 @@ class LeshCommandLine(ParserBase):
 				snippet = dec.command
 
 			if child_index != None:
-				#if isinstance(self.items[child_index], str_or_uni):
-				#todo:split at pipes:
-
-
-
-				self.items[child_index] = snippet
+				orig = self.items[child_index]
+				if isinstance(orig, str_and_uni):
+					self.items = s.insert_between_pipes(snippet, char_index, child_index, self.items)
+				#self.items[child_index] = snippet
 			else:
 				self.items.append(snippet)
 
@@ -2085,6 +2083,32 @@ class LeshCommandLine(ParserBase):
 			return False
 		else:
 			raise Exception("whats that shit, cowboy?")
+
+	def insert_between_pipes(s, snippet, char_index, child_index, items):
+		r = items[:]
+		orig = items[child_index]
+		left,right = orig[:char_index], orig[char_index:]
+		left,right = left.rsplit('|', 1), right.split('|', 1)
+		beginning, end = left[0], right[-1]
+		del r[child_index]
+		r.insert(child_index, beginning)
+		r.insert(child_index+1, snippet)
+		r.insert(child_index+2, end)
+		return r
+
+	testres = insert_between_pipes(666, 'fart', 0, 7,
+									[0,1,2,3,4,5,6,"cat x | count words | sum",8,9])
+	testexp =                       [0,1,2,3,4,5,6,"fart", "| count words | sum",8,9]
+	assert testres == testexp, testres
+	testres = insert_between_pipes(666, 'fart', 6, 7,
+									["cat x | count words | sum"])
+	testexp =                       ["fart", "| count words | sum"]
+	assert testres == testexp, testres
+	testres = insert_between_pipes(666, 'fart', 7, 7,
+									["cat x | count words | sum"])
+	testexp =                       ["cat x |", "fart", " | sum"]
+	assert testres == testexp, testres
+
 
 	@topic("lesh menu")
 	def menu_for_item(self, i=0, debug = False):
@@ -2844,6 +2868,12 @@ class Lesh(Node):
 		super(Lesh, s).__init__()
 		s.command_line = LeshCommandLine()
 		s.command_line.parent = s
+
+	def on_keypress(self, e):
+		if e.key == K_RETURN:
+			import os
+			os.system(''.join(s.command_line.items))
+			return True
 
 
 	def render(self):

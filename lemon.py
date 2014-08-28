@@ -186,7 +186,7 @@ def start():
 
 	root.render()
 	try:
-		if args.lesh:
+		if True:#args.lesh:
 			something = root.root['lesh'].command_line
 		else:
 			something = root.root['some program'].ch.statements.items[0]
