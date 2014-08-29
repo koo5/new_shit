@@ -131,7 +131,7 @@ class Node(element.Element):
 
 	@property
 	def compiled(self):
-		"all nodes except Parser return themselves"
+		"all nodes except Parser and List(Statements) return themselves"#..hm
 		return self
 
 	def scope(self):
@@ -820,6 +820,14 @@ class Statements(List):
 		[i.eval() for i in self.items]
 		return Text("it ran.")
 
+	@property
+	def compiled(self):#i wonder if this is wise
+		r = Statements()
+		r.items = [i.compiled for i in self.items]
+		r.fix_parents()
+		return r
+
+
 
 class NoValue(Node):
 	def __init__(self):
@@ -978,10 +986,10 @@ class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
-		self.post_render_move_caret = 0 #the frontend checks this.
+		self.post_render_move_caret = 0 #the frontend moves the cursor by this many chars after a render()
 		## The reason is for example a textbox recieves a keyboard event,
 		## appends a character to its contents, and wants to move the cursor,
-		## but before re-rendering, it might move it beyond end of file
+		## but before re-rendering, it might move it beyond end of line
 		self.indent_length = 4 #not really used but would be nice to have it variable
 		self.dirty = False
 
@@ -1013,7 +1021,7 @@ class Module(Syntaxed):
 	def scope(self):
 		#crude, but for now..
 		#if self != self.root["builtins"]:
-		return self.root["builtins"].ch.statements.items
+		return self.root["builtins"].ch.statements.compiled
 		#else:
 		#	return [] #nothing above but Root
 
@@ -2073,7 +2081,7 @@ class LeshCommandLine(ParserBase):
 			else:
 				text = self.items[i]
 
-		scope = b
+		scope = self.root["builtins"].ch.statements.compiled
 		menu = flatten([x.palette(scope, text, self) for x in scope if isinstance(x, LeshSnippetDeclaration)])
 
 		matchf = fuzz.token_set_ratio#partial_ratio
@@ -2936,7 +2944,8 @@ class Lesh(Node):
 	def on_keypress(self, e):
 		if e.key == K_RETURN:
 			import os
-			os.system(''.join(s.command_line.items))
+			cmd = ''.join(s.command_line.items)
+			log("running "+cmd+":", os.system(cmd))
 			return True
 
 

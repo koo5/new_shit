@@ -190,13 +190,13 @@ class Root(Frame):
 		log("hmpf")
 
 	def run(s):
-		s.root['program'].run()
+		s.root['some program'].run()
 
 	def run_line(s):
-		s.root['program'].run_line(s.under_cursor)
+		s.root['some program'].run_line(s.under_cursor)
 
 	def clear(s):
-		s.root['program'].clear()
+		s.root['some program'].clear()
 
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible
@@ -373,13 +373,12 @@ class Menu(Frame):
 			elif e.key == K_m:
 				self.menu_dump()
 				return True
-		else:#ok we should check the frontend here but later..
-			log("in menu:", e.key)
-			if e.key == K_F5:
+		else:#todo we should check the frontend is curses here but later..
+			#log("in menu:", e.key)
+			if e.key == K_INSERT:
 				self.move(-1)
 				return True
-			elif e.key == K_F6:
-				log("im moving!")
+			elif e.key == K_DELETE:
 				self.move(1)
 				return True
 			

@@ -118,6 +118,7 @@ def keypress(e):
 			log("handled by menu")
 	else:
 		root.on_keypress(e)
+	render()
 
 	"""
 	try:
@@ -195,7 +196,7 @@ def start():
 	except Exception as e:
 		print (e.__repr__(), ", cant set initial cursor position")
 	if args.replay:
-		do_replay(True)
+		do_replay(False)#True)
 	#render()
 
 

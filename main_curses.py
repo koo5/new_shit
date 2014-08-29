@@ -46,8 +46,8 @@ def resize_frames():
 	lemon.root.rect.width = screen_width // 3 * 2
 	lemon.root.rect.height = screen_height - log_height
 
-	sidebar_rect = Rect((root.rect.w, 0),(0,0))
-	sidebar_rect.width = screen_width - lemon. root.rect.width
+	sidebar_rect = Rect((root.rect.w+1, 0),(0,0))
+	sidebar_rect.width = screen_width - root . rect . width -1
 	sidebar_rect.height = root.rect.height
 	for frame in lemon.sidebars:
 		frame.rect = sidebar_rect
@@ -132,8 +132,20 @@ c.KEY_NPAGE: keys.K_PAGEDOWN,
 10: keys.K_RETURN,
 c.KEY_BACKSPACE: keys.K_BACKSPACE,
 c.KEY_END: keys.K_END,
+c.KEY_IC: keys.K_INSERT,
+c.KEY_DC: keys.K_DELETE,
+c.KEY_F1: keys.K_F1,
+c.KEY_F2: keys.K_F2,
+c.KEY_F3: keys.K_F3,
+c.KEY_F4: keys.K_F4,
 c.KEY_F5: keys.K_F5,
-c.KEY_F6: keys.K_F6}
+c.KEY_F6: keys.K_F6,
+c.KEY_F7: keys.K_F7,
+c.KEY_F8: keys.K_F8,
+c.KEY_F9: keys.K_F9,
+c.KEY_F10: keys.K_F10,
+c.KEY_F11: keys.K_F11,
+c.KEY_F12: keys.K_F12}
 #c.KEY_: keys.K_,
 #oh...unfinished..
 def loop():
