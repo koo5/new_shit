@@ -5,6 +5,9 @@ from inspect import *
 
 #stickittothemain: todo: lets do the verbosity level thing or rather topics? and argument --log-events?
 
+#https://code.google.com/p/kosciak-misc/source/browse/python/examples/curses/CursesHandler.py?spec=svn145&r=34
+
+
 gui = None
 
 topics = ["?"]
