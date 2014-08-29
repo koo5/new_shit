@@ -17,7 +17,7 @@ nodecls have a set of functions for instantiating the values, and those need som
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
-#from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame
+#from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame?
 from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
 
 import sys
@@ -281,31 +281,22 @@ class Node(element.Element):
 			pass
 		return r
 
-	def deconstruct(s):
+	def _serialize(s):
+		return {}
+
+	def serialize(s):
 		return {
-			'decl': s.decl
+			'decl': s.decl.name,
+		    'data': s._serialize()
+		}
+	def unresolvize(s):
+		return {
+			'resolve': True,
+			'data': s._unresolvize()
 		}
 
-
-class Deconstructed(Node):
-	def __init__(s, data, root = None):
-		if isinstance(data, dict):
-			s.data = data
-		elif isinstance(data, Node):
-			s.data = data.deconstruct()
-	def serialize(s):
-		r = {}
-		log("serializing Unresolved with data:", s.data)
-		for k,v in iteritems(s.data):
-			if isinstance(v, str_and_uni):
-				r[k] = v
-			elif k == "decl":
-				r[k] = v.name
-				log(v.name)
-			else:
-				r[k] = str(v)
-		return r
-
+"""
+a failed
 class Unresolved(Node):
 	def __init__(s, data, root = None):
 		if isinstance(data, dict):
@@ -329,20 +320,6 @@ class Unresolved(Node):
 
 def serialized2unresolved(d, r):
 	new = Unresolved({})
-	scope = r["builtins"].scope()
-	#print scope
-
-	#if 'decl' in d:
-	#	print "looking for decl", d['decl']
-
-	decls = [x for x in scope if is_decl(x)]
-
-	if 'decl' in d:
-		for i in decls:
-			#print "this is", i.name
-			if d['decl'] == i.name:
-				new.data['decl'] = i
-				break
 	if 'text' in d:
 		new.data['text'] = d['text']
 	if 'target' in d:
@@ -369,24 +346,10 @@ def test_serialization(r):
 	ser = out.serialize()
 	assert ser == i, (ser, i)
 
-	#---
-	log("2:")
-	#create the range call
-	c = r['program'].ch.statements[0]
-	c.items.append("range")
-	c.menu_item_selected([i for i in c.menu_for_item()[1:] if isinstance(i.value, FunctionCall)][0])
-	log(c.compiled)
-
-	log(c.compiled.unresolvize())
-	o = Unresolved(c.compiled.unresolvize()).serialize()
-	log(o)
-	log(serialized2unresolved(o, r))
-
+#NodeFinder?
 """
-NodeFinder?
 
 
-"""
 
 class Children(dotdict):
 	pass
@@ -417,7 +380,7 @@ class Syntaxed(Node):
 
 	def serialize_children(s):
 		r = {}
-		for k, v in s.ch:
+		for k, v in iteritems(s.ch._dict):
 			r[k] = v.serialize()
 		return r
 
@@ -2175,7 +2138,7 @@ def insert_between_pipes(snippet, char_index,item_index, items):
 	delim = "|"
 	orig = items[item_index]
 	left,right = orig[:char_index], orig[char_index:]
-	print (left,right)
+	#print (left,right)
 	left,right = rcut_off_until(left,delim),cut_off_until(right,delim)
 	r = items[:item_index]
 	if left != "":
@@ -2377,11 +2340,13 @@ class FunctionDefinitionBase(Syntaxed):
 		"""this is when the declaration is evaluated, not when we are called"""
 		return Text("OK")
 
-	def unresolvize():
+	def _unresolvize(s):
 		#return dict(super(FunctionDefinitionBase, self).un,
-		return {'resolve': True,
+		return {
 		        'function':True,
-		        'sig':self.sig.deconstruct()}#but sig returns a list atm
+		        'sig':[i.serialize() for i in s.sig],
+       			'ret': s.ret,
+		}
 
 
 """for function overloading, we could have a node that would be a "Variant" of
@@ -2470,6 +2435,14 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def palette(self, scope, text, node):
 		return []
 
+	def _unresolvize(s):
+		return dict(super(BuiltinFunctionDecl, s)._unresolvize(),
+		    note = s.note,
+		    name = s.name,
+		    fun = s.fun,
+		)
+
+
 #user cant instantiate it, but we make a decl anyway,
 #because we need to display it, its in builtins,
 #its just like a normal function, FunctionCall can
@@ -2505,12 +2478,10 @@ class FunctionCall(Node):
 		self.args = [Parser(v) for v in self.target.arg_types] #this should go to fresh()
 		self.fix_parents()
 
-	def deconstruct(s):
-		r = super(FunctionCall, s).deconstruct()
-		r.update({
-			'target': s.target.unresolvize()
-		})
-		return r
+	def _serialize(s):
+		return dict(super(FunctionCall, s)._serialize(),
+			target = s.target.unresolvize()
+		)
 
 	def fix_parents(s):
 		s._fix_parents(s.args)
@@ -2601,18 +2572,6 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		self.ret= 777
 		self.note = 777
 		super(BuiltinPythonFunctionDecl, self).__init__(kids)
-
-	def unresolvize(s):
-		r = super(BuiltinPythonFunctionDecl, s).unresolvize()
-		r.update({
-			'ret': s.ret,
-		    'note': s.note,
-		    'name': s.name,
-		    'fun': s.fun,
-		    'sig': s.sig,
-
-		})
-		return r
 
 	@staticmethod
 	#todo:refactor to BuiltinFunctionDecl.create
@@ -3003,10 +2962,48 @@ def make_root():
 	r["builtins"].ch.statements.items = list(itervalues(b))#hm
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
-
 	#r.add(("toolbar", toolbar.build()))
-	#test_serialization(r)
+	r.fix_parents()
+	test_serialization(r)
 	return r
+
+def test_serialization(r):
+	#create the range call
+	c = r['some program'].ch.statements[0]
+	c.items.append("range")
+	c.menu_item_selected([i for i in c.menu_for_item()[1:] if isinstance(i.value, FunctionCall)][0])
+	c = c.compiled
+	#print(c)
+	s = c.serialize()
+	print(s)
+	d = deserialize(r, s)
+	#print (d)
+
+def deserialize(r, d):
+	scope = r["builtins"].scope()
+	#print scope
+
+	#if 'decl' in d:
+	#	print "looking for decl", d['decl']
+
+	decls = [x for x in scope if is_decl(x)]
+
+	if 'decl' in d:
+		for i in decls:
+			#print "this is", i.name
+			if d['decl'] == i.name:
+				print(new_from_decl(i, d['data']))
+				break
+		print (d['decl'], "not found in", decls)
+	else:
+		print("decl not in d")
+
+def new_from_decl(decl, data):
+	#node = decl.inst_fresh()
+	print decl
+
+
+
 
 #todo: items of the builtins module seem to have parent Null, why? fix_parents is called from lemon.py
 

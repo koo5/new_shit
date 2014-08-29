@@ -184,8 +184,8 @@ def start():
 		root.arrows_visible = False
 	
 	colors.cache(args)
-
 	root.render()
+
 	try:
 		if True:#args.lesh:
 			something = root.root['lesh'].command_line
@@ -195,6 +195,7 @@ def start():
 		#root.cursor_c += 1
 	except Exception as e:
 		print (e.__repr__(), ", cant set initial cursor position")
+
 	if args.replay:
 		do_replay(False)#True)
 	#render()

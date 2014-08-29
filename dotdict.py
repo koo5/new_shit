@@ -1,7 +1,7 @@
 
 from __future__ import print_function
-
-#optimalization: what if we replaced it with an empty object?
+#subclassing a dict inherits many atributtes, do not want
+#what if we used an empty object?
 class dotdict(object):
 	"""
 	a simple object that wraps a dict and allows access by attributes
