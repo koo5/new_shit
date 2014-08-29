@@ -471,20 +471,22 @@ class NodeInfo(InfoFrame):
 		super(NodeInfo, s).update()
 		uc = s.root.under_cursor
 		while uc != None:
-			s.items.append(InfoItem([
-				str(s.root.cursor_c) + ":"+
-				str(s.root.cursor_r)+ ":" + uc.long__repr__()]))
-
-
 			if isinstance(uc, nodes.FunctionCall):
 				s.items.append(InfoItem(["target=", ElementTag(uc.target)]))
-
 
 			if uc.keys_help_items == None:
 				uc.generate_keys_help_items()
 			s.items += uc.keys_help_items
 
 			uc = uc.parent
+
+		uc = s.root.under_cursor
+		while uc != None:
+			s.items.append(InfoItem([
+				str(s.root.cursor_c) + ":"+ str(s.root.cursor_r)+ ":" + 
+				uc.long__repr__()]))
+			uc = uc.parent
+
 
 class Intro(InfoFrame):
 	info = ["welcome to lemon!",

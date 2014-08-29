@@ -2991,10 +2991,9 @@ class LeshSnippet(Node):
 
 
 #Const({'name': Text("meaning of life"), 'value': Number(42)})
-"""the end"""
+building_in = False
 
 def make_root():
-	global building_in
 	r = Root()
 	r.add(("welcome", Text("Welcome to lemon! Press F1 to cycle the sidebar!")))
 	r.add(("lesh", Lesh()))
@@ -3004,12 +3003,12 @@ def make_root():
 	r["builtins"].ch.statements.items = list(itervalues(b))#hm
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
-	building_in = False
 
 	#r.add(("toolbar", toolbar.build()))
 	#test_serialization(r)
 	return r
 
+#todo: items of the builtins module seem to have parent Null, why? fix_parents is called from lemon.py
 
 
 def to_lemon(x):
