@@ -15,6 +15,7 @@ from lemon_six import iteritems
 import lemon_args
 from rect import Rect
 import keys
+import nodes
 
 args = lemon.args = lemon_args.parse_args()
 
@@ -94,6 +95,14 @@ def draw_lines(self, win, highlight=None):
 		for row, line in enumerate(self.lines):
 			for col, char in enumerate(line):
 				#log(row,col,":",ord(char[0]))
+				#if isinstance(self, frames.Menu):
+				#	if 'node' in char[1]:
+				#		log(char[1]['node'], '==', highlight)
+				#blehhack
+				#if (isinstance(highlight, (nodes.ParserMenuItem,
+				#	nodes.LeshMenuItem)) and
+				#'node' in char[1] and char[1]['node'] == highlight.value):
+				
 				if 'node' in char[1] and char[1]['node'] == highlight:
 					mode = c.A_BOLD + c.A_REVERSE
 				else:
@@ -122,9 +131,11 @@ c.KEY_PPAGE: keys.K_PAGEUP,
 c.KEY_NPAGE: keys.K_PAGEDOWN,
 10: keys.K_RETURN,
 c.KEY_BACKSPACE: keys.K_BACKSPACE,
-c.KEY_END: keys.K_END}
+c.KEY_END: keys.K_END,
+c.KEY_F5: keys.K_F5,
+c.KEY_F6: keys.K_F6}
 #c.KEY_: keys.K_,
-
+#oh...unfinished..
 def loop():
 	render()
 	draw()

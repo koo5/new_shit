@@ -9,7 +9,7 @@ import project
 import nodes
 from element import Element
 from menu_items import InfoItem
-from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag
+from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag, AttTag
 import widgets
 from logger import log, topic
 from keys import *
@@ -351,7 +351,7 @@ class Menu(Frame):
 		yield ColorTag("fg")
 		for i in s.generate_palette():
 			s.items_on_screen.append(i)
-			yield [ElementTag(i), "\n"]
+			yield [AttTag("node", i), ElementTag(i), EndTag(), "\n"]
 		yield EndTag()
 
 	def generate_palette(s):
@@ -373,7 +373,18 @@ class Menu(Frame):
 			elif e.key == K_m:
 				self.menu_dump()
 				return True
-		if e.key == K_SPACE:
+		else:#ok we should check the frontend here but later..
+			log("in menu:", e.key)
+			if e.key == K_F5:
+				self.move(-1)
+				return True
+			elif e.key == K_F6:
+				log("im moving!")
+				self.move(1)
+				return True
+			
+		#if e.key == K_SPACE:
+		if e.uni == ' ':
 			return self.accept()
 
 	def menu_dump(s):
