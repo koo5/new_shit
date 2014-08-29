@@ -87,6 +87,7 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 
 * revive the_doc.py, the settings module, add support for images or live graphic canvas..
 
+* integrate some test framework
 
 files:
 * main_sdl.py: the frontend, handles a window, events, drawing. run this one.

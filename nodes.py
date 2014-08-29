@@ -1837,6 +1837,10 @@ class ParserBase(Node):
 			return len(self.items) - 1
 		#else None
 	"""
+	
+	"""todo:write tests and debug this monstrosity. i know it wont be quite what we
+	want anyway, but its a start and can be played around with.
+	then think about text with metadata or something."""
 
 	def menu_item_selected(s, item, atts=None):
 		char_index = 0
@@ -2055,61 +2059,6 @@ class LeshCommandLine(ParserBase):
 	def empty_render(s):
 		return []
 
-	def menu_item_selected_for_child(self, item, child_index, char_index, alt=False):
-		assert isinstance(item, (LeshMenuItem, DefaultParserMenuItem))
-		if isinstance(item, LeshMenuItem):
-
-			dec = item.value
-
-			if alt:
-				snippet = LeshSnippet(dec)
-			else:
-				snippet = dec.command
-
-			if child_index != None:
-				orig = self.items[child_index]
-				if isinstance(orig, str_and_uni):
-					self.items = s.insert_between_pipes(snippet, char_index, child_index, self.items)
-				#self.items[child_index] = snippet
-			else:
-				self.items.append(snippet)
-
-			if alt:
-				snippet.parent = self
-			#self.post_insert_move_cursor(node)
-			return True
-
-		elif isinstance(item, DefaultParserMenuItem):
-			return False
-		else:
-			raise Exception("whats that shit, cowboy?")
-
-	def insert_between_pipes(s, snippet, char_index, child_index, items):
-		r = items[:]
-		orig = items[child_index]
-		left,right = orig[:char_index], orig[char_index:]
-		left,right = left.rsplit('|', 1), right.split('|', 1)
-		beginning, end = left[0], right[-1]
-		del r[child_index]
-		r.insert(child_index, beginning)
-		r.insert(child_index+1, snippet)
-		r.insert(child_index+2, end)
-		return r
-
-	testres = insert_between_pipes(666, 'fart', 0, 7,
-									[0,1,2,3,4,5,6,"cat x | count words | sum",8,9])
-	testexp =                       [0,1,2,3,4,5,6,"fart", "| count words | sum",8,9]
-	assert testres == testexp, testres
-	testres = insert_between_pipes(666, 'fart', 6, 7,
-									["cat x | count words | sum"])
-	testexp =                       ["fart", "| count words | sum"]
-	assert testres == testexp, testres
-	testres = insert_between_pipes(666, 'fart', 7, 7,
-									["cat x | count words | sum"])
-	testexp =                       ["cat x |", "fart", " | sum"]
-	assert testres == testexp, testres
-
-
 	@topic("lesh menu")
 	def menu_for_item(self, i=0, debug = False):
 
@@ -2140,6 +2089,121 @@ class LeshCommandLine(ParserBase):
 		menu.reverse()
 
 		return menu
+
+
+	def menu_item_selected_for_child(self, item, child_index, char_index, alt=False):
+		assert isinstance(item, (LeshMenuItem, DefaultParserMenuItem))
+		if isinstance(item, LeshMenuItem):
+
+			dec = item.value
+
+			if alt:
+				snippet = LeshSnippet(dec)
+			else:
+				snippet = dec.command
+
+			if child_index != None:
+				orig = self.items[child_index]
+				if isinstance(orig, str_and_uni):
+					self.items = insert_between_pipes(snippet, char_index, child_index, self.items)
+				#self.items[child_index] = snippet
+			else:
+				self.items.append(snippet)
+
+			if alt:
+				snippet.parent = self
+			#self.post_insert_move_cursor(node)
+			return True
+
+		elif isinstance(item, DefaultParserMenuItem):
+			return False
+		else:
+			raise Exception("whats that shit, cowboy?")
+
+def cut_off_until(s, at):
+	for i,c in enumerate(s):
+		if c == at:
+			return s[i:]
+	return ""
+
+def rcut_off_until(s, at):
+	for i,c in reversed(list(enumerate(s))):
+		if c == at:
+			return s[:i+1]
+	return ""
+
+testres = cut_off_until("cat x | y | z", "|")
+testexp = "| y | z"
+assert testres == testexp, (testres, testexp)
+
+testres = cut_off_until("cat x  y  z", "|")
+testexp = ""
+assert testres == testexp, (testres, testexp)
+
+testres = cut_off_until("", "|")
+testexp = ""
+assert testres == testexp, (testres, testexp)
+
+testres = rcut_off_until("", "|")
+testexp = ""
+assert testres == testexp, (testres, testexp)
+
+testres = rcut_off_until("cat x | y | z", "|")
+testexp = "cat x | y |"
+assert testres == testexp, (testres, testexp)
+
+testres = rcut_off_until("cat x  y  z", "|")
+testexp = ""
+assert testres == testexp, (testres, testexp)
+
+def insert_between_pipes(snippet, char_index,item_index, items):
+	"""if there are |'s in the replaced item, we want to split it in two or three parts,
+	and put the replacement in the middle
+	thats what you would want when editing a bit of bash...hmm
+	the lesh command line is technically text, id just rather work on something
+	that benefits both lemon and lesh, because this is ultimately about the sweet spot
+	between structured and textual editing. yeah
+	"""
+	delim = "|"
+	orig = items[item_index]
+	left,right = orig[:char_index], orig[char_index:]
+	print (left,right)
+	left,right = rcut_off_until(left,delim),cut_off_until(right,delim)
+	r = items[:item_index]
+	if left != "":
+		r.append(left)
+	r.append(snippet)
+	if right != "":
+		r.append(right) #im back, sorry, chromium had a memory leak and i had to reboot.hey
+	r += items[item_index+1:]
+	return r
+#hmm
+"""maybe i should explain what it even does? that would be lovely
+so, the Parser works with a list of items, they can be strings or Nodes
+how or why is for a longer debate...but...
+"""
+
+def test_insert_between_pipes():
+	testres = insert_between_pipes(
+		'fart', #replacement item selected from menu
+		0, #this should be the index of the char of the item
+		7, #this is the index of the item on which the cursor is, we are replacing this item
+		[0,1,2,3,4,5,6,"cat x | count words | sum",8,9]) #this is the current items
+	#"cat x | count words | sum" is what you have on the command line,
+	#you typed "count words" between two pipes, and selected wc #mm
+	#what complicates this as compared to normal lemon Parser is umm...this!
+	testexp = [0,1,2,3,4,5,6,"fart", "| count words | sum",8,9]
+	assert testres == testexp, (testres, testexp)
+	
+	testres = insert_between_pipes('fart', 6, 0, ["cat x | count words | sum"]) #you know, the gnu code standard says to put parentheses around stuff that doesnt really need it so emacs will indent it properly hmm no? just saying ok
+	testexp = ["fart", "| count words | sum"]
+	assert testres == testexp, (testres, testexp)
+
+	testres = insert_between_pipes('fart', 7, 0, ["cat x | count words | sum"])
+	testexp = ["cat x |", "fart", "| sum"]
+	assert testres == testexp, (testres, testexp)
+
+test_insert_between_pipes()#fixed it
 
 
 class ParserMenuItem(MenuItem):
