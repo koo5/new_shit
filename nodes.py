@@ -678,6 +678,12 @@ class List(Collapsible):
 		p.parent = self
 		self.items.append(p)
 
+	def newline_with(self, node):
+		p = Parser(self.item_type)
+		p.parent = self
+		p.add(node)
+		self.items.append(p)
+
 	@property
 	def item_type(self):
 		assert hasattr(self, "decl"), "parent="+str(self.parent)+" contents="+str(self.items)
@@ -2903,7 +2909,7 @@ class Lesh(Node):
 	def on_keypress(self, e):
 		if e.key == K_RETURN:
 			import os
-			cmd = ''.join(s.command_line.items)
+			cmd = ''.join(self.command_line.items)
 			log("running "+cmd+":", os.system(cmd))
 			return True
 
@@ -2959,6 +2965,8 @@ def make_root():
 	r.add(("some program", b['module'].inst_fresh()))
 	r["some program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
+	#todo:xiki style terminal, standard terminal. Both favoring UserCommands
+	#first user command: commit all and push
 	r["builtins"].ch.statements.items = list(itervalues(b))#hm
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
@@ -2975,8 +2983,10 @@ def test_serialization(r):
 	c = c.compiled
 	#print(c)
 	s = c.serialize()
-	print(s)
+	print("serialized:",s)
 	d = deserialize(r, s)
+	print("deserialized:",d)
+	r['some program'].ch.statements.newline_with(d)
 	#print (d)
 
 def deserialize(r, d):
@@ -2989,18 +2999,43 @@ def deserialize(r, d):
 	decls = [x for x in scope if is_decl(x)]
 
 	if 'decl' in d:
-		for i in decls:
-			#print "this is", i.name
-			if d['decl'] == i.name:
-				print(new_from_decl(i, d['data']))
-				break
-		print (d['decl'], "not found in", decls)
+		decl = find_decl(d['decl'], decls)
+		if decl:
+			return new_from_decl(decl, d['data'], scope)
 	else:
-		print("decl not in d")
+		print("decl key not in d")
 
-def new_from_decl(decl, data):
+def find_decl(name, decls):
+	for i in decls:
+		#print "this is", i.name
+		if name == i.name:
+			return i
+	print (name, "not found in", decls)
+
+def new_from_decl(decl, data, scope):
 	#node = decl.inst_fresh()
-	print decl
+	print "making new from decl",decl
+	if decl == b['call']:
+		r = decl.instance_class(resolve(data['target'], scope))
+
+		return r
+
+def resolve(data, scope):
+	assert(data['resolve'])
+	data = data['data']
+	print "resolving", data
+
+	funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
+	#resolving {'function': True, 'note': 'inclusive',
+	# 'sig': [{'decl': 'text', 'data': {}}, {'decl': 'typedargument', 'data': {'children': {'type': {'decl': 'ref', 'data': {}}, 'name': {'decl': 'text', 'data': {}}}}}, {'decl': 'text', 'data': {}}, {'decl': 'typedargument', 'data': {'children': {'type': {'decl': 'ref', 'data': {}}, 'name': {'decl': 'text', 'data': {}}}}}],
+	# 'name': 'range',
+	# 'fun': <function b_range at 0x7fce03cbd9b0>,
+	# 'ret': <nodes.ParametricType object at 0x7fce0408a690>(parametric type (probably list))}
+	for i in funcs:
+		if i.name == data['name']:
+			print "found"
+			return i
+
 
 
 
@@ -3062,3 +3097,5 @@ curses, js(brython seems nice) frontends
 #maybe todo: make the calls to builtin explicit, not hidden in constructors
 """todo: decide if declarative nodes like SyntacticCategory and Definition should have
 the name as a child node...it doesnt seem to make for a clear reading"""
+
+#the philosophy of this codebase is "constant surprise". it keeps you alert.
