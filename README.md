@@ -40,18 +40,14 @@ things to do
 here are some (random) things that i think would help lemon further, sometimes directly, sometimes by making it more
 accesible/interesting to other people. Some understanding of lemon is usually
 necessary though. I will be more than happy to explain every detail, but be prepared that it takes some time.
-<<<<<<< HEAD
-some (messy) notes are also towards the end of stuff/the_doc.py. Also look for #todo in the source files.
-=======
 some (messy) notes are also towards the end of stuff/the_doc.py, and search for "todo" in the source files..
->>>>>>> dev
 
 * support for more human languages.
  would make lemon interesting as a non-english programming tool
  i think this is an easy task
- 
 * help me learn unipycation, yield python or other logic programming functionality.
- will be needed for a lot of features of lemon
+<http://yieldprolog.sourceforge.net/>
+ it will be needed for a lot of features of lemon.
  you dont actually need to know lemon to help me with this
 
 * try adding dbpedia, shell autocompletion or other nodes that have more dynamic menu.
@@ -77,6 +73,8 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 
 * improve the curses frontend.
 
+* figure out if projectured <https://github.com/projectured/projectured> could be used
+
 * figure out how to have a better font in pygame
 
 * give me feedback on the builtins module which should for now serve as a de-facto reference to the language
@@ -90,7 +88,7 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 * integrate some test framework
 
 files:
-* main_sdl.py: the frontend, handles a window, events, drawing. run this one.
+* main_sdl.py: the fronten d, handles a window, events, drawing. run this one.
 * main_curses.py: proof-of-concept console frontend
 * lemon.py: frontend-agnostic middlestuff with debug replay functionality
 * nodes.py: AST classes - "nodes"
@@ -107,6 +105,8 @@ files:
 
 
 license
+===
 not decided yet, some standard license or this experiment: <https://github.com/koo5/Free-Man-License> 
 For now: By contributing to lemon, you agree to granting me nonexclusive rights to use your contribution (with attribution) within lemon, in any way, including relicensing and reselling. Also, the patent claim protection clauses like in http://www.gnu.org/licenses/agpl-3.0.html apply.
+
 

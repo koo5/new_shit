@@ -586,7 +586,43 @@ ncurses interface
 #⇾node⇽...would be nice...how to ensure having a good unicode font available? bundle?
 http://stackoverflow.com/questions/586503/complete-monospaced-unicode-font
 gpl: we could offer to wget it - ..
+or just have a script in the project dir for now
+wonder why the default doesnt support much unicode? dunno
+http://www.pygame.org/docs/ref/font.html#pygame.font.SysFont
+yeah i saw that
+sorry but i should go back to studying today ok
+sorry to interrupt, but have you heard of restructuredtext?yes
+its the same shit as markdown, tried it ok
+github offers several more formats for wikis, but they all seemed to suck
+i'll make my own i was thinking about it too
+all i want is headings and clickable links
+easy to generate a markdown from it then
+markdown and html? maybe..markdown and rst and maybe others is what github
+then renders
+sorry, im not making much sense today thats fine
+another option would be to use markdown mode in emacs, i tried some 
+web markdown editor yesterday, it was like, semi wysiwyg, its enough
+if the emacs mode is like that, that would be cool
+except the learning emacs part
 
+==section== hows that?fine
+im thinking tho, the === sections as markdown does this are fine,
+it hardly ever conflicts with anything..except the forgotten merge conflicts
+
+(http://example.tld/x/y/z): click me!
+hows that?hmm, as long as it makes sure its a link inside the parentheses
+but then you dont need the parentheses
+parens make it easier to parseok
+
+hmm
+trying to work out newlines in the simplest way
+cant s/\n/\n\n/
+so, what are you doing, generating markdown?
+yes. it expects two spaces at the end of line. i would just add two spaces everywhere
+really  that  sounds  like  it  would  work  fine.i mean at line ends ok
+would be damn nice to actually detect those merge conflict lines..and just throw a warning
+or something, just dont let markdown make them into those huge headinh
+what are the conflicts?
 
 
 
@@ -652,3 +688,22 @@ hack(subclass?) snippet menu item to insert plain text
 
 menu movement with pgup pgdown, i dunno how to best handle the curses sequences yet
 
+
+
+dialogs from development
+==
+pygame font
+===
+pygame loads/uses some default font that doesnt support some unicode glyphs
+what font would you like? maybe ubuntu? i have no idea hmm
+..apparently ubuntu has a lot of unicode glyphs . i just know that we cant bundle a cool free unicode font because of the license
+but lemon could try to download it, in the installer? in the installer it doesnt have
+where does ubuntu keep it's fonts? i think i know where osx does
+dunon, theres gonna be some environment var and stuff
+deja vu sans? it's on by default on the linux distros ive seen, windows, and osx, and has really good unicode support
+i dunno. i guess this task is bogus. It might be more important if we wanted to render math symbols for example
+i just thought it would be nice to have some unicode glyphs for buttons but the font loaded by pygame by default didnt have them
+if you can figure out how to make pygame look harder or something..i dunno
+well, you cant make pygame look harder, 
+cant you just get the os, check in it's 'fonts' folder, check for the font, if not found then use the default without cool unicodes?
+yeah, something like that. Maybe just try loading some better one and pygame will fall back to default if not found
