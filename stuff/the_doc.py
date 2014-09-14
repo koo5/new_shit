@@ -522,23 +522,6 @@ understand yield python or try pyDatalog again or .. /me cries
 that damned license
 
 
-fun stuff to get done:
-stuff/operators.py:
-use or adapt BuiltinFunctionDefinition to make available all useful python operators 
-(from python module "operator")
-something like [operator.mul, [ch("left"), "*", ch("right")], {"left": b["number"] etc
-or try going a step higher in abstraction and make a node that allows the user to 
-1) either access and add lemon syntax
-2) or access crudely by python name,
-python functions.
-reward: 1000 lemons
-
-
-control structures:
-If
-a builtin function or a class.
-
-
 
 
 
@@ -707,3 +690,11 @@ if you can figure out how to make pygame look harder or something..i dunno
 well, you cant make pygame look harder, 
 cant you just get the os, check in it's 'fonts' folder, check for the font, if not found then use the default without cool unicodes?
 yeah, something like that. Maybe just try loading some better one and pygame will fall back to default if not found
+=======
+
+
+the curse of automatization
+
+
+http://stromberg.dnsalias.org/~strombrg/pybrowser/python-browser.html
+

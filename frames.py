@@ -363,7 +363,7 @@ class Menu(Frame):
 					yield i
 
 	def on_keypress(self, e):
-		if e.mod & KMOD_CTRL:
+		if frontend == 'sdl' and e.mod & KMOD_CTRL:
 			if e.key == K_UP:
 				self.move(-1)
 				return True
@@ -373,8 +373,7 @@ class Menu(Frame):
 			elif e.key == K_m:
 				self.menu_dump()
 				return True
-		else:#todo we should check the frontend is curses here but later..
-			#log("in menu:", e.key)
+		elif frontend == 'curses':
 			if e.key == K_INSERT:
 				self.move(-1)
 				return True

@@ -87,6 +87,10 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 
 * integrate some test framework
 
+* add more operators, for strings and lists maybe
+
+* refactor the startup sequence, logging depending on frames being initialized isnt good
+
 files:
 * main_sdl.py: the fronten d, handles a window, events, drawing. run this one.
 * main_curses.py: proof-of-concept console frontend

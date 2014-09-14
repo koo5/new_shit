@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
+
 this file defines the AST classes of the language and everything around it.
 we also build up the builtins module along the way
 
+#the philosophy of this codebase is "constant surprise". it keeps you alert.
 
 notes on the current state of this constantly changing code:
-i use kids and children interchangeably.
+i use "kids" and "children" interchangeably.
 sometimes i use s, sometimes self.
 
 creation of new nodes. 
@@ -17,11 +19,13 @@ nodecls have a set of functions for instantiating the values, and those need som
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
+#http://python-future.org/
 #from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame?
+
 from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
 
 import sys
-sys.path.insert(0, 'fuzzywuzzy')
+sys.path.insert(0, 'fuzzy wuzzy') #newer version is needed for python3
 from fuzzywuzzy import fuzz
 
 try:
@@ -51,7 +55,7 @@ if __debug__:
 #for staging the builtins module and referencing builtin nodes from python code
 b = OrderedDict()
 building_in = True
-def buildin(node, name=None):
+def build_in(node, name=None):
 	if building_in:
 		if name == None:
 			key = node
@@ -62,7 +66,7 @@ def buildin(node, name=None):
 
 
 
-#crap logic, crap names, crap everything..the language is the most proof-of-conceptish i-have-no-idea-what-im-doing.
+#crap logic, crap names, crap everything..the language is the most proof-of-conceptish i-have-no-idea-what-im-doing something.
 def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase))
 def is_type(node):
@@ -72,6 +76,9 @@ def make_list(btype = 'anything'):
 	"make instance of List of given type"
 	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
 
+def list_of(type_name):
+	"""helper to create a type"""
+	return b["list"].make_type({'itemtype': Ref(b[type_name])})
 
 
 class Node(element.Element):
@@ -84,7 +91,6 @@ class Node(element.Element):
 		"""overrides in subclasses may require children as arguments"""
 		super(Node, self).__init__()
 
-		#self.color = (0,255,0,255) #i hate hardcoded colors
 		self.brackets_color = "node brackets rainbow"
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
@@ -289,6 +295,8 @@ class Node(element.Element):
 			'decl': s.decl.name,
 		    'data': s._serialize()
 		}
+
+
 	def unresolvize(s):
 		return {
 			'resolve': True,
@@ -348,7 +356,6 @@ def test_serialization(r):
 
 #NodeFinder?
 """
-
 
 
 class Children(dotdict):
@@ -506,8 +513,17 @@ class Syntaxed(Node):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
+	def _serialize(s):
+		ch = {}
+		for k,v in iteritems(s.ch._dict):
+			ch[k] = v.serialize()
 
+		return dict(super(Syntaxed, s)._serialize(),
+			children = ch
+		)
 
+#todo: node syntax is a list of ..
+#node children types is a list of ..
 
 class Collapsible(Node):
 	"""Collapsible - List or Dict -
@@ -579,8 +595,8 @@ class Dict(Collapsible):
 		val.parent = self
 
 
-#todo: view ordering
 class List(Collapsible):
+	#todo: view ordering
 	def __init__(self):
 		super(List, self).__init__()
 		self.items = []
@@ -738,7 +754,7 @@ class List(Collapsible):
 		self.items.append(x)
 		x.parent = self
 		return x
-"""
+	"""
 	def set(self, x):
 		#constants should call this..but if they are in a compiler, isconst wont propagate yet
 		assert(isinstance(x, Node))
@@ -747,11 +763,7 @@ class List(Collapsible):
 		else:
 			super(val, self).append(x)
 		return x
-"""
-
-def list_of(type_name):
-	"""helper to create a type"""
-	return b["list"].make_type({'itemtype': Ref(b[type_name])})
+	"""
 
 
 class Statements(List):
@@ -915,7 +927,7 @@ class Text(WidgetedValue):
 		return 100
 
 
-
+# region unknown
 """
 class Unknown(WidgetedValue):
 	will probably serve as the text bits within a Parser.
@@ -947,9 +959,7 @@ class Unknown(WidgetedValue):
 	def match(text):
 		return 0
 """
-
-
-
+# endregion
 
 class Root(Dict):
 	def __init__(self):
@@ -1039,7 +1049,6 @@ class Ref(Node):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.target)+"')"
 
-
 class VarRef(Node):
 	def __init__(self, target):
 		super(VarRef, self).__init__()
@@ -1069,6 +1078,7 @@ class Exp(Node):
 	def name(self):
 		return self.type.name + " expr"
 
+# region nodecls
 
 class NodeclBase(Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
@@ -1140,7 +1150,7 @@ class TypeNodecl(NodeclBase):
 	help = ["points to another node, like using a previously declared identifier. Used to point to types."]
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
-		buildin(self, 'type')
+		build_in(self, 'type')
 		Ref.decl = self
 
 	def palette(self, scope, text, node):
@@ -1167,7 +1177,7 @@ class VarRefNodecl(NodeclBase):
 
 	def __init__(self):
 		super(VarRefNodecl, self).__init__(VarRef)
-		buildin(self, 'varref')
+		build_in(self, 'varref')
 		VarRef.decl = self
 	@topic("varrefs")
 	def palette(self, scope, text, node):
@@ -1193,7 +1203,7 @@ class VarRefNodecl(NodeclBase):
 class ExpNodecl(NodeclBase):
 	def __init__(self):
 		super(ExpNodecl, self).__init__(Exp)
-		buildin(self, 'exp')
+		build_in(self, 'exp')
 		Exp.decl = self
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
@@ -1204,7 +1214,7 @@ class Nodecl(NodeclBase):
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = self
-		buildin(self, self.name)
+		build_in(self, self.name)
 		instance_class.name = self.name
 
 	def make_example(s):
@@ -1237,7 +1247,7 @@ class SyntaxedNodecl(NodeclBase):
 			self.instance_syntaxes = instance_syntaxes
 		else:
 			self.instance_syntaxes = [instance_syntaxes]
-		buildin(self, self.instance_class.__name__.lower())
+		build_in(self, self.instance_class.__name__.lower())
 		self.example = None
 
 	def make_example(s):
@@ -1375,6 +1385,9 @@ class EnumType(ParametricTypeBase):
 	def inst_fresh(s):
 		return EnumVal(s, 0)
 
+# endregion
+
+# region builtins
 """here we start putting stuff into b, which is then made into the builtins module"""
 b[0] = Text(
 """We start by declaring the existence of some types.
@@ -1394,14 +1407,14 @@ class SyntacticCategory(Syntaxed):
 
 	def __init__(self, kids):
 		super(SyntacticCategory, self).__init__(kids)
-		buildin(self, self.ch.name.pyval)
+		build_in(self, self.ch.name.pyval)
 
 
 class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
 	def __init__(self, kids):
 		super(WorksAs, self).__init__(kids)
-		buildin(self)
+		build_in(self)
 	@classmethod
 	def b(cls, sub, sup):
 		cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
@@ -1411,7 +1424,7 @@ class Definition(Syntaxed):
 	help=['used just for types, currently.']
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
-		buildin(self, self.ch.name.pyval)
+		build_in(self, self.ch.name.pyval)
 
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
@@ -1443,10 +1456,10 @@ WorksAs.b("expression", "statement")
 WorksAs.b("number", "expression")
 WorksAs.b("text", "expression")
 
-buildin(ParametricNodecl(List,
+build_in(ParametricNodecl(List,
 				 [TextTag("list of"), ChildTag("itemtype")],
 				 {'itemtype': b['type']}), 'list')
-buildin(ParametricNodecl(Dict,
+build_in(ParametricNodecl(Dict,
 				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
 				 {'keytype': b['type'], 'valtype': Exp(b['type'])}), 'dict')
 
@@ -1464,7 +1477,7 @@ class ListOfAnything(ParametricType):
 	def works_as(self, type):
 		return True
 
-buildin(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
+build_in(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
 
 SyntaxedNodecl(EnumType,
 			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
@@ -1474,11 +1487,11 @@ SyntaxedNodecl(EnumType,
 #Definition({'name': Text("bool"), 'type': EnumType({
 #	'name': Text("bool"),
 #	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
-buildin(EnumType({'name': Text("bool"),
+build_in(EnumType({'name': Text("bool"),
 	'options':b['enumtype'].instance_slots["options"].inst_fresh()}), 'bool')
 
 b['bool'].ch.options.items = [Text('false'), Text('true')]
-buildin(Text("for use from within python:"))
+build_in(Text("for use from within python:"))
 b['false'] = EnumVal(b['bool'], 0)
 b['true'] = EnumVal(b['bool'], 1)
 
@@ -1583,7 +1596,7 @@ SyntaxedNodecl(If,
 			{'condition': Exp(b['bool']),
 			'statements': b['statements']})
 
-"""...notes: formatting: we can speculate that we will get to having a multiline compiler,
+"""...notes: formatting: we can speculate that we will get to having a multiline parser,
 and that will allow for a more freestyle formatting...
 """
 
@@ -1594,19 +1607,17 @@ class Filter(Syntaxed):
 	def __init__(self, kids):
 		super(Filter, self).__init__(kids)
 """
-
-
-
-
-"""
-Parser node
-
-todo:hack it so that the first node, when a second node is added, is set as the
-leftmost child of the second node..or maybe not..dunno
-"""
-
+# endregion
 
 class ParserBase(Node):
+
+	"""
+	Parser node
+
+	todo:hack it so that the first node, when a second node is added, is set as the
+	leftmost child of the second node..or maybe not..dunno
+	"""
+
 	def __init__(self):
 		super(ParserBase, self).__init__()
 		self.items = []
@@ -1631,8 +1642,9 @@ class ParserBase(Node):
 
 	def add(self, item):
 		self.items.append(item)
-		assert(isinstance(item, Node))
-		item.parent = self
+		assert(isinstance(item, str_and_uni +(Node,) ))
+		if isinstance(item, Node):
+			item.parent = self
 
 	def edit_text(s, ii, pos, e):
 		#item index, cursor position in item, event
@@ -1868,8 +1880,6 @@ class ParserBase(Node):
 		log("del")
 		del s.items[s.items.index(child)]
 
-
-
 class Parser(ParserBase):
 	"""the awkward input node AKA the Beast.
 	im thinking about rewriting the items into nodes again.
@@ -2028,6 +2038,7 @@ class Parser(ParserBase):
 	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
+# region lesh command line
 
 class LeshCommandLine(ParserBase):
 	def __init__(self):
@@ -2180,8 +2191,9 @@ def test_insert_between_pipes():
 	testexp = ["cat x |", "fart", "| sum"]
 	assert testres == testexp, (testres, testexp)
 
-test_insert_between_pipes()#fixed it
+test_insert_between_pipes()
 
+# endregion
 
 class ParserMenuItem(MenuItem):
 	def __init__(self, value, score = 0):
@@ -2217,7 +2229,6 @@ class LeshMenuItem(MenuItem):
 	def tags(self):
 		return [self.value.human, ":\n", self.value.command]
 
-
 class DefaultParserMenuItem(MenuItem):
 	def __init__(self, text):
 		super(DefaultParserMenuItem, self).__init__()
@@ -2227,15 +2238,8 @@ class DefaultParserMenuItem(MenuItem):
 	def tags(self):
 		return [TextTag(self.text)]
 
+# region functions
 
-
-
-
-"""
-
-functions
-
-"""
 
 #todo function arguments:#mode = eval/pass, untyped argument,
 #todo optional function return type
@@ -2420,7 +2424,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def create(name, fun, sig):
 		x = BuiltinFunctionDecl.fresh()
 		x._name = name
-		buildin(x, name)
+		build_in(x, name)
 		x.ch.name.widget.value = name
 		x.fun = fun
 		x.ch.sig = b['function signature list'].inst_fresh()
@@ -2537,33 +2541,13 @@ class FunctionCallNodecl(NodeclBase):
 	"""offers function calls"""
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(FunctionCall)
-		buildin(self, 'call')
+		build_in(self, 'call')
 		FunctionCall.decl = self
 	def palette(self, scope, text, node):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
 		return [ParserMenuItem(FunctionCall(x)) for x in decls]
 
 FunctionCallNodecl()
-
-
-class Clock(Node):
-	def __init__(self):
-		super(Clock,self).__init__()
-		self.datetime = __import__("datetime")
-	def render(self):
-		return [TextTag(str(self.datetime.datetime.now()))]
-	def _eval(self):
-		return Text(str(self.datetime.datetime.now()))
-
-
-
-class PythonEval(Syntaxed):
-	def __init__(self, children):
-		super(PythonEval, self).__init__(children)
-
-SyntaxedNodecl(PythonEval,
-			   [TextTag("python eval"), ChildTag("text")],
-			   {'text': Exp(b['text'])})
 
 
 class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
@@ -2585,7 +2569,7 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	def create(fun, sig, ret, name, note):
 		x = BuiltinPythonFunctionDecl.fresh()
 		x._name = name
-		buildin(x)
+		build_in(x)
 		x.ch.name.widget.value = fun.__name__
 		x.fun = fun
 		x.ch.sig = b['function signature list'].inst_fresh()
@@ -2640,34 +2624,38 @@ def num_list_arg():
 	return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})
 
 
+
+def pfn(function, signature, return_type = int, **kwargs):
+	"""helper function to add a builtin python function"""
+	if return_type == int:
+		return_type = Ref(b['number'])
+	elif return_type == bool:
+		return_type = Ref(b['bool'])
+	elif return_type == None:
+		return_type = Ref(b['void'])
+
+	if 'note' in kwargs:
+		note = kwargs['note']
+	else:
+		note = ""
+
+	if 'name' in kwargs:
+		name = kwargs['name']
+	else:
+		name = function.__name__
+
+	BuiltinPythonFunctionDecl.create(
+		function,
+		signature,
+		return_type,
+		name,
+		note)
+# endregion
+
 def add_operators():
 	#we'll place this somewhere else, but later i guess, splitting this
 	#file into some reasonable modules would still create complications
 	import operator as op
-
-
-	def pfn(function, signature, return_type = int, **kwargs):
-		"""helper function to add a builtin python function"""
-		if return_type == int:
-			return_type = Ref(b['number'])
-		elif return_type == bool:
-			return_type = Ref(b['bool'])
-		#else: assert
-		if 'note' in kwargs:
-			note = kwargs['note']
-		else:
-			note = ""
-		if 'name' in kwargs:
-			name = kwargs['name']
-		else:
-			name = function.__name__
-
-		BuiltinPythonFunctionDecl.create(
-			function,
-			signature,
-			return_type,
-			name,
-			note)
 
 	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
 	pfn(op.add, [num_arg(), Text("+"), num_arg()])
@@ -2677,11 +2665,11 @@ def add_operators():
 		pfn(op.floordiv, [num_arg(), Text("//"), num_arg()])
 		pfn(op.truediv,  [num_arg(), Text("/"), num_arg()])
 	
-	pfn(op.eq,  [num_arg(), Text("=="), num_arg()], bool)
-	pfn(op.ge,  [num_arg(), Text(">="), num_arg()], bool)
-	pfn(op.gt,  [num_arg(), Text(">="), num_arg()], bool)
-	pfn(op.le,  [num_arg(), Text("<="), num_arg()], bool)
-	pfn(op.lt,  [num_arg(), Text("<="), num_arg()], bool)
+	pfn(op.eq,  [num_arg(), Text("=="),num_arg()], bool)
+	pfn(op.ge,  [num_arg(), Text(">="),num_arg()], bool)
+	pfn(op.gt,  [num_arg(), Text(">"), num_arg()], bool)
+	pfn(op.le,  [num_arg(), Text("<="),num_arg()], bool)
+	pfn(op.lt,  [num_arg(), Text("<"), num_arg()], bool)
 	pfn(op.mod, [num_arg(), Text("%"), num_arg()])
 	pfn(op.mul, [num_arg(), Text("*"), num_arg()])
 	pfn(op.neg, [Text("-"), num_arg()])
@@ -2704,10 +2692,9 @@ def add_operators():
 	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
 		num_list(), name = "range", note="inclusive")
 
-
 add_operators()
 
-
+# region regexes
 """
 we got drunk and wanted to implement regex input. i will hide this in its own module asap.
 """
@@ -2822,8 +2809,9 @@ Tah-dah!#you really like typing.
 #but lets do it here
 #but it's probably a valid lemon program
 
+# endregion
 
-
+# region misc nodes
 class Note(Syntaxed):
 	def __init__(self, kids):
 		self.text = widgets.Text(self, "")
@@ -2842,6 +2830,27 @@ class Annotation(Node):
 
 	def render(s):
 		return [ArrowTag(s.target), TextTag(s.text)]
+
+
+
+class Clock(Node):
+	def __init__(self):
+		super(Clock,self).__init__()
+		self.datetime = __import__("datetime")
+	def render(self):
+		return [TextTag(str(self.datetime.datetime.now()))]
+	def _eval(self):
+		return Text(str(self.datetime.datetime.now()))
+
+
+
+class PythonEval(Syntaxed):
+	def __init__(self, children):
+		super(PythonEval, self).__init__(children)
+
+SyntaxedNodecl(PythonEval,
+			   [TextTag("python eval"), ChildTag("text")],
+			   {'text': Exp(b['text'])})
 
 
 
@@ -2889,9 +2898,9 @@ def b_files_in_dir(dir):
 
 BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
 
+# endregion
 
-
-
+# region lesh
 class Lesh(Node):
 	"""just another experiment: independent of the lemon language,
 	this is a command line that calls bash to execute commands.
@@ -2942,7 +2951,7 @@ for h,c in [
 	("mount all", "mount -a")
 
 	]:
-		buildin(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}))#for now
+		build_in(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}))#for now
 
 class LeshSnippet(Node):
 	"""for the case you want to insert the snippet in the human readable form"""
@@ -2952,10 +2961,9 @@ class LeshSnippet(Node):
 
 #todo: alt insert mode
 #todo: split on pipes
+# endregion
 
 
-
-#Const({'name': Text("meaning of life"), 'value': Number(42)})
 building_in = False
 
 def make_root():
@@ -2984,24 +2992,33 @@ def test_serialization(r):
 	#print(c)
 	s = c.serialize()
 	print("serialized:",s)
-	d = deserialize(r, s)
-	print("deserialized:",d)
-	r['some program'].ch.statements.newline_with(d)
+	#d = deserialize(r, s)
+	#print("deserialized:",d)
+	#r['some program'].ch.statements.newline_with(d)
 	#print (d)
+	return
 
-def deserialize(r, d):
-	scope = r["builtins"].scope()
-	#print scope
+def editor_load_file(name):
+	path = name.eval().text
+	log("loading", path)
+	try:
+		data = json.load(open(path, "r"))
+		root = name.root #hack
+		r.add(("loaded program", deserialize0(root, data)))
+	except Exception as e:
+		log(e)
 
-	#if 'decl' in d:
-	#	print "looking for decl", d['decl']
-
+def deserialize0(root, data):
+	scope = root["builtins"].scope()
 	decls = [x for x in scope if is_decl(x)]
+	return deserialize(decls, data)
 
+
+def deserialize(decls, d):
 	if 'decl' in d:
 		decl = find_decl(d['decl'], decls)
 		if decl:
-			return new_from_decl(decl, d['data'], scope)
+			return new_from_decl(decl, d['data'], decls)
 	else:
 		print("decl key not in d")
 
@@ -3012,13 +3029,15 @@ def find_decl(name, decls):
 			return i
 	print (name, "not found in", decls)
 
-def new_from_decl(decl, data, scope):
-	#node = decl.inst_fresh()
+def new_from_decl(decl, data, decls):
 	print "making new from decl",decl
 	if decl == b['call']:
-		r = decl.instance_class(resolve(data['target'], scope))
-
+		r = decl.instance_class(resolve(data['target'], r))
+#		r.args =
 		return r
+
+
+	#node = decl.inst_fresh()
 
 def resolve(data, scope):
 	assert(data['resolve'])
@@ -3044,7 +3063,7 @@ def resolve(data, scope):
 
 
 def to_lemon(x):
-	print ("to-lemon", x)
+	log ("to-lemon", x)
 	if isinstance(x, str_and_uni):
 		return Text(x)
 	elif isinstance(x, (int, float)):
@@ -3098,4 +3117,10 @@ curses, js(brython seems nice) frontends
 """todo: decide if declarative nodes like SyntacticCategory and Definition should have
 the name as a child node...it doesnt seem to make for a clear reading"""
 
-#the philosophy of this codebase is "constant surprise". it keeps you alert.
+
+
+"""another todo list:
+serialization
+save/load functions
+lemon console node to run them from
+"""

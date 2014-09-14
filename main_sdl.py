@@ -12,6 +12,7 @@ from pygame import draw, Rect
 import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import frames
+frames.frontend = 'sdl'
 import logger
 from logger import log
 from lemon_colors import colors, color

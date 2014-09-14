@@ -8,6 +8,7 @@ import sys
 import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import frames
+frames.frontend = 'curses'
 import logger
 from logger import log
 from lemon_colors import colors, color
