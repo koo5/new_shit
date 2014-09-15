@@ -26,7 +26,7 @@ for f in allframes:
 
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
-
+#todo: logging isnt available when starting up, refactor
 def debug_out(text):
 	print(text)
 	logframe.add(text)
@@ -210,6 +210,8 @@ def draw_lines(self, surf, highlight=None, transparent=False, justbg=False):
 				surf.blit(sur,(x,y))
 
 def draw_arrows(s, surface):
+	#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen
+	#pointing to that same target, to avoid making it unreadable
 	for ((c,r),(c2,r2)) in s.arrows:
 		x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
 		pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))

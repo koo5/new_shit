@@ -1,3 +1,4 @@
+from __future__ import print_function
 import traceback, logging
 from inspect import *
 
@@ -7,8 +8,9 @@ from inspect import *
 
 #https://code.google.com/p/kosciak-misc/source/browse/python/examples/curses/CursesHandler.py?spec=svn145&r=34
 
+debug = print
 
-gui = None
+#gui = None
 
 topics = ["?"]
 

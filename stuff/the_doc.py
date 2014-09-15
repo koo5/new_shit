@@ -698,3 +698,39 @@ the curse of automatization
 
 http://stromberg.dnsalias.org/~strombrg/pybrowser/python-browser.html
 
+
+
+
+# region Unknown
+"""
+class Unknown(WidgetedValue):
+	will probably serve as the text bits within a Parser.
+	fow now tho, it should at least be the result of explosion,
+
+	explosion should replace a node with an Unknown for each TextTag and with its
+	child nodes. its a way to try to add more text-like freedom to the structured editor.
+
+	currently a copypasta of Text.
+	def __init__(self, value=""):
+		super(Unknown, self).__init__()
+		self.widget = widgets.Text(self, value)
+		self.brackets_color = "text brackets"
+		self.brackets = ('?','?')
+
+	def render(self):
+		return self.widget.render()
+
+	def on_keypress(self, e):
+		return self.widget.on_keypress(e)
+
+	def _eval(self):
+		return Text(self.pyval)
+
+	def long__repr__(s):
+		return object.__repr__(s) + "('"+s.pyval+"')"
+
+	@staticmethod
+	def match(text):
+		return 0
+"""
+# endregion

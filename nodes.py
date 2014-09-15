@@ -19,6 +19,8 @@ nodecls have a set of functions for instantiating the values, and those need som
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
+# region imports
+
 #http://python-future.org/
 #from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame?
 
@@ -52,6 +54,8 @@ if __debug__:
 	import tags as asstags
 	asstags.asselement = element
 
+# endregion
+
 #for staging the builtins module and referencing builtin nodes from python code
 b = OrderedDict()
 building_in = True
@@ -65,8 +69,6 @@ def build_in(node, name=None):
 		b[key] = node
 
 
-
-#crap logic, crap names, crap everything..the language is the most proof-of-conceptish i-have-no-idea-what-im-doing something.
 def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase))
 def is_type(node):
@@ -136,7 +138,7 @@ class Node(element.Element):
 	parent=property(element.Element.get_parent, set_parent)
 
 	@property
-	def compiled(self):
+	def parsed(self):
 		"all nodes except Parser and List(Statements) return themselves"#..hm
 		return self
 
@@ -145,8 +147,9 @@ class Node(element.Element):
 		r = []
 
 		if isinstance(self.parent, List):
-			r += [x.compiled for x in self.parent.above(self)]
+			r += [x.parsed for x in self.parent.above(self)]
 
+		assert self.parent, self.long__repr__()
 		r += [self.parent]
 		r += self.parent.scope()
 
@@ -271,9 +274,11 @@ class Node(element.Element):
 		#return r
 		return flatten(r)
 
+	@topic ("flatten")
 	def _flatten(self):
-		if not isinstance(self, (WidgetedValue, EnumVal, Ref)):
-			log("warning: "+str(self)+ "flattens to self")
+		if not isinstance(self, (WidgetedValue, EnumVal, Ref, SyntaxedNodecl, FunctionCallNodecl,
+			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, Lesh)): #all childless nodes
+			log("warning: "+str(self)+ " flattens to self")
 		return [self]
 
 	def palette(self, scope, text, node):
@@ -302,6 +307,11 @@ class Node(element.Element):
 			'resolve': True,
 			'data': s._unresolvize()
 		}
+
+	def _unresolvize(s):
+		return dict()
+
+
 
 """
 a failed
@@ -522,9 +532,6 @@ class Syntaxed(Node):
 			children = ch
 		)
 
-#todo: node syntax is a list of ..
-#node children types is a list of ..
-
 class Collapsible(Node):
 	"""Collapsible - List or Dict -
 	they dont have a title, just a collapse button, right of which first item is rendered
@@ -593,7 +600,6 @@ class Dict(Collapsible):
 		assert(isinstance(key, str))
 		assert(isinstance(val, element.Element))
 		val.parent = self
-
 
 class List(Collapsible):
 	#todo: view ordering
@@ -765,7 +771,6 @@ class List(Collapsible):
 		return x
 	"""
 
-
 class Statements(List):
 	def __init__(s):
 		super(Statements, s).__init__()
@@ -802,13 +807,11 @@ class Statements(List):
 		return Text("it ran.")
 
 	@property
-	def compiled(self):#i wonder if this is wise
+	def parsed(self):#i wonder if this is wise
 		r = Statements()
-		r.items = [i.compiled for i in self.items]
+		r.items = [i.parsed for i in self.items]
 		r.fix_parents()
 		return r
-
-
 
 class NoValue(Node):
 	def __init__(self):
@@ -848,7 +851,6 @@ class Bananas(Node):
 	@staticmethod
 	def match(v):
 		return False
-
 
 class WidgetedValue(Node):
 	"""basic one-widget values"""
@@ -926,41 +928,6 @@ class Text(WidgetedValue):
 	def match(text):
 		return 100
 
-
-# region unknown
-"""
-class Unknown(WidgetedValue):
-	will probably serve as the text bits within a Parser.
-	fow now tho, it should at least be the result of explosion,
-
-	explosion should replace a node with an Unknown for each TextTag and with its
-	child nodes. its a way to try to add more text-like freedom to the structured editor.
-
-	currently a copypasta of Text.
-	def __init__(self, value=""):
-		super(Unknown, self).__init__()
-		self.widget = widgets.Text(self, value)
-		self.brackets_color = "text brackets"
-		self.brackets = ('?','?')
-
-	def render(self):
-		return self.widget.render()
-
-	def on_keypress(self, e):
-		return self.widget.on_keypress(e)
-
-	def _eval(self):
-		return Text(self.pyval)
-
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+s.pyval+"')"
-
-	@staticmethod
-	def match(text):
-		return 0
-"""
-# endregion
-
 class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
@@ -1000,7 +967,7 @@ class Module(Syntaxed):
 	def scope(self):
 		#crude, but for now..
 		#if self != self.root["builtins"]:
-		return self.root["builtins"].ch.statements.compiled
+		return self.root["builtins"].ch.statements.parsed
 		#else:
 		#	return [] #nothing above but Root
 
@@ -1020,9 +987,6 @@ class Module(Syntaxed):
 			node = node.parent
 		if node:
 			return node.eval()
-
-
-
 
 
 
@@ -1168,7 +1132,7 @@ class VarRefNodecl(NodeclBase):
 		items.items = [Text(x) for x in ['a','b','c']]
 		items.view_mode = 1
 		p = FunctionCall(b['print'])
-		p.args[0] = VarRef(item)
+		p.args['expression'] = VarRef(item)
 		body = b['statements'].inst_fresh()
 		body.items = [p]#, Annotation(p, "this")]
 		return For({'item': item,
@@ -1231,11 +1195,9 @@ class Nodecl(NodeclBase):
 			score = 0
 		return ParserMenuItem(value, score)
 
-
-
 class SyntaxedNodecl(NodeclBase):
 	"""
-	child types of Syntaxed are like b["text"], they are "values",
+	instance_slots are child types, they are like b["text"], they are "values",
 	 children themselves are either Refs (pointing to other nodes),
 	 or owned nodes (their .parent points to us)
 	"""
@@ -1253,6 +1215,12 @@ class SyntaxedNodecl(NodeclBase):
 	def make_example(s):
 			return s.inst_fresh()
 
+	@classmethod
+	def deserialize(cls, data, placeholder):
+		r = cls.inst_fresh()
+		for k,v in iteritems(data['children']):
+			r.ch[k] = deserialize(v, r.ch[k])
+		return r
 
 
 	"""
@@ -1311,8 +1279,6 @@ class ParametricType(ParametricTypeBase):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
-
-
 class ParametricNodecl(NodeclBase):
 	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
 	only non Syntaxed types are parametric now(list and dict),
@@ -1329,10 +1295,6 @@ class ParametricNodecl(NodeclBase):
 		return [ParserMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
 	#if there is only one possible node type to instantiate..
-
-
-
-
 
 class EnumVal(Node):
 	def __init__(self, decl, value):
@@ -1352,7 +1314,7 @@ class EnumVal(Node):
 		return [TextTag(self.to_python_str())]
 
 	def to_python_str(self):
-		text = self.decl.ch.options[self.value].compiled
+		text = self.decl.ch.options[self.value].parsed
 		assert isinstance(text, Text), text
 		return text.pyval
 
@@ -1367,7 +1329,6 @@ class EnumVal(Node):
 	#	"return score"
 	#	if text.isdigit():
 	#		return 300
-
 
 class EnumType(ParametricTypeBase):
 	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
@@ -1528,7 +1489,7 @@ class For(Syntaxed):
 		return [s.ch.item]
 
 	def _eval(s):
-		itemvar = s.ch.item.compiled
+		itemvar = s.ch.item.parsed
 		if not isinstance(itemvar, UntypedVar):
 			return Banana('itemvar isnt UntypedVar')
 		items = s.ch.items.eval()
@@ -1858,10 +1819,12 @@ class ParserBase(Node):
 			fch = s.first_child(node)
 			if isinstance(fch, Syntaxed):
 				fch = s.first_child(fch)
+				#...
 			s.root.post_render_move_caret = fch
-		elif isinstance(node, FunctionCall):
-			if len(node.args) > 0:
-				s.root.post_render_move_caret = node.args[0]
+		#todo
+		#elif isinstance(node, FunctionCall):
+		#	if len(node.args) > 0:
+		#		s.root.post_render_move_caret = node.args[0]
 		elif isinstance(node, WidgetedValue):
 			if len(node.widget.text) > 0:
 				s.root.post_render_move_caret += 2
@@ -1894,7 +1857,7 @@ class Parser(ParserBase):
 		return [ColorTag("compiler hint"), TextTag('('+s.type.name+')'), EndTag()]
 
 	@property
-	def compiled(self):
+	def parsed(self):
 		#default result:		#raise an exception?
 		r = Bananas(self.items)
 
@@ -1924,7 +1887,7 @@ class Parser(ParserBase):
 		return r
 
 	def _eval(self):
-		return self.compiled.eval()
+		return self.parsed.eval()
 
 	"""
 	def replace_child(self, child, new):
@@ -2061,7 +2024,7 @@ class LeshCommandLine(ParserBase):
 			else:
 				text = self.items[i]
 
-		scope = self.root["builtins"].ch.statements.compiled
+		scope = self.root["builtins"].ch.statements.parsed
 		menu = flatten([x.palette(scope, text, self) for x in scope if isinstance(x, LeshSnippetDeclaration)])
 
 		matchf = fuzz.token_set_ratio#partial_ratio
@@ -2241,21 +2204,36 @@ class DefaultParserMenuItem(MenuItem):
 # region functions
 
 
-#todo function arguments:#mode = eval/pass, untyped argument,
-#todo optional function return type
-#todo: show and hide argument names. syntaxed?
+"""
+# todo function arguments:
+# untyped argument,
+# todo optional function return type
+# todo: show and hide argument names. syntaxed?
+"""
+
+
+
+
+
 
 class TypedArgument(Syntaxed):
 	def __init__(self, kids):
 		super(TypedArgument, self).__init__(kids)
+	@property
+	def type(s):
+		return s.ch.type.parsed
 
 SyntaxedNodecl(TypedArgument,
 			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
 			   {'name': 'text', 'type': 'type'})
 
 class UnevaluatedArgument(Syntaxed):
+	#subclass?
 	def __init__(self, kids):
 		super(UnevaluatedArgument, self).__init__(kids)
+	@property
+	def type(s):
+		return s.ch.argument.type
 
 SyntaxedNodecl(UnevaluatedArgument,
 			   [TextTag("unevaluated"), ChildTag("argument")],
@@ -2282,33 +2260,23 @@ class FunctionDefinitionBase(Syntaxed):
 
 	@property
 	def args(self):
-		return [i for i in self.sig if isinstance(i, (TypedArgument, UnevaluatedArgument))]
-
-	@property
-	def arg_types(self):
-		r = []
-		for i in self.args:
-			t = (i.ch.type if not isinstance(i, UnevaluatedArgument) else i.ch.argument.ch.type).compiled
-			r.append(t)
-		#log(str(r))
-		return r
+		return dict([(i.name, i) for i in self.sig if isinstance(i, (TypedArgument, UnevaluatedArgument))])
 
 	@property
 	def sig(self):
-		compiled_sig = self.ch.sig.compiled
-		if not isinstance(compiled_sig, List):
-			log("sig did not compile to list but to " +str(compiled_sig))
-			return [Text("bad sig")]#no parent..
-		r = [i.compiled for i in compiled_sig]
+		sig = self.ch.sig.parsed
+		if not isinstance(sig, List):
+			log("sig did not parse to list but to ", repr(sig))
+			return [Text("sig not a List")]
+		r = [i.parsed for i in sig]
 		for i in r:
 			if not isinstance(i, (UnevaluatedArgument, TypedArgument, Text)):
-				return [Text("bad sig")]#no parent..
+				return [Text("bad item in sig:"+repr(i))]
 		rr = []
 		for i in r:
 			if isinstance(i, (UnevaluatedArgument, TypedArgument)):
-				t = (i.ch.type if not isinstance(i, UnevaluatedArgument) else i.ch.argument.ch.type).compiled
-				if not is_type(t):
-					rr.append(Text(" ????? "))
+				if not is_type(i.type):
+					rr.append(Text(" bad type "))
 				else:
 					rr.append(i)
 			else:
@@ -2322,25 +2290,26 @@ class FunctionDefinitionBase(Syntaxed):
 		return r
 
 	def typecheck(self, args):
-		for i, arg in enumerate(args):
+		for name, arg in iteritems(args):
 			#if not arg.type.eq(self.arg_types[i]):
-			if isinstance(self.arg_types[i], Ref):
-				#we have a chance to compare those without prolog
-				if not arg.decl == self.arg_types[i].target:
+			type = self.args[name].type
+			if isinstance(type, Ref):#we have a chance to compare these without prolog
+				if not arg.decl == type.target:
 					log("well this is bad, decl %s of %s != %s" % (arg.decl, arg, self.arg_types[i].target))
 					return Banana(str(arg.decl.name) +" != "+str(self.arg_types[i].name))
 		return True
 
+	@topic ("function call")
 	def call(self, args):
 		"""common for all function definitions"""
 		evaluated_args = []
-		for i, arg in enumerate(args):
-			if not isinstance(self.sig[i], UnevaluatedArgument):
-				evaluated_args.append(arg.eval())
+		for name, arg in iteritems(args):
+			if not isinstance(arg, UnevaluatedArgument):
+				evaluated_args[name] = arg.eval()
 			else:
-				evaluated_args.append(arg.compiled)
-		#print evaluated_args ,"<<<"
-		#args = [arg.eval() for arg in args]
+				evaluated_args[name] = arg.parsed
+		log("evaluated_args:", evaluated_args)
+
 		assert(len(evaluated_args) == len(self.arg_types))
 		r = self._call(evaluated_args )
 		assert isinstance(r, Node), "_call returned "+str(r)
@@ -2348,8 +2317,8 @@ class FunctionDefinitionBase(Syntaxed):
 
 	def _eval(s):
 		"""this is when the declaration is evaluated, not when we are called"""
-		return Text("OK")
-
+		return Text("ok, function was declared.")
+	"""
 	def _unresolvize(s):
 		#return dict(super(FunctionDefinitionBase, self).un,
 		return {
@@ -2357,15 +2326,11 @@ class FunctionDefinitionBase(Syntaxed):
 		        'sig':[i.serialize() for i in s.sig],
        			'ret': s.ret,
 		}
-
+	"""
 
 """for function overloading, we could have a node that would be a "Variant" of
 	an original function, with different arguments.
-
-	the rationale is that the information that a call targets a particular function
-	is kept...
-	the fact that it might not be obvious that a variant is called should be offsettable with the ide
-	"""
+"""
 
 
 class FunctionDefinition(FunctionDefinitionBase):
@@ -2380,7 +2345,7 @@ class FunctionDefinition(FunctionDefinitionBase):
 	def copy_args(self, call_args):
 		for ca in call_args:
 			name = ca.ch.name.pyval
-			assert isinstance(name, str)#or maybe unicode
+			assert isinstance(name, str_and_uni)
 			for vd in self.vardecls:
 				if vd.ch.name.pyval == name:
 					vd.runtime.value.append(ca.copy())
@@ -2463,10 +2428,11 @@ SyntaxedNodecl(BuiltinFunctionDecl,
 				 'name': b['text']})
 
 
-#lets leave print a BuiltinFunctionDecl until we have type conversions
+#lets keep 'print' a BuiltinFunctionDecl until we have type conversions as first-class functions in lemon,
+#then it can be just a python library call printing strictly strings
 @topic("output")
 def b_print(args):
-	o = args[0].to_python_str()
+	o = args['expression'].to_python_str()
 	#print o
 	log(o)
 	return NoValue()
@@ -2483,9 +2449,11 @@ class FunctionCall(Node):
 		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
 		#print self.target.arg_types
-		for i in self.target.arg_types:
-			assert not isinstance(i, Parser), "%s to target %s is a dumbo" % (self, self.target)
-		self.args = [Parser(v) for v in self.target.arg_types] #this should go to fresh()
+		for i in itervalues(self.target.args):
+			assert not isinstance(i.type, Parser), "%s to target %s is a dumbo" % (self, self.target)
+		self.args = dict([(name, Parser(v.type)) for name, v in iteritems(self.target.args)]) #this should go to fresh(?)
+		#todo ; change args to a dict
+
 		self.fix_parents()
 
 	def _serialize(s):
@@ -2494,7 +2462,7 @@ class FunctionCall(Node):
 		)
 
 	def fix_parents(s):
-		s._fix_parents(s.args)
+		s._fix_parents(itervalues(s.args))
 
 	def delete_child(self, child):
 		for i,a in enumerate(self.args):
@@ -2513,19 +2481,17 @@ class FunctionCall(Node):
 		self.args[self.args.index(child)] = new
 		new.parent = self
 
-
 	def render(self):
-		r = []
 		sig = self.target.sig
 		assert isinstance(sig, list)
-		argument_index = 0
-		assert len(self.args) == len([a for a in sig if isinstance(a, TypedArgument)])
+		assert len(self.args) == len(self.target.args),\
+			(len(self.args),len(self.target.args),self.args, self.target.args,self, self.target)
+		r = []
 		for v in sig:
 			if isinstance(v, Text):
 				r += [TextTag(v.pyval)]
 			elif isinstance(v, TypedArgument):
-				r += [ElementTag(self.args[argument_index])]
-				argument_index+=1
+				r += [ElementTag(self.args[v.name])]
 			else:
 				raise Exception("item in function signature is"+str(v))
 		return r
@@ -2541,13 +2507,20 @@ class FunctionCallNodecl(NodeclBase):
 	"""offers function calls"""
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(FunctionCall)
-		build_in(self, 'call')
 		FunctionCall.decl = self
 	def palette(self, scope, text, node):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
 		return [ParserMenuItem(FunctionCall(x)) for x in decls]
 
-FunctionCallNodecl()
+	@classmethod
+	def deserialize(cls, data, placeholder):
+		r = cls.instance_class(resolve(data['target']))
+		for k,v in iteritems(data['args']):
+			r.ch[k] = deserialize(v, r.ch[k])
+		return r
+
+
+build_in(FunctionCallNodecl(), 'call')
 
 
 class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
@@ -2963,7 +2936,6 @@ class LeshSnippet(Node):
 #todo: split on pipes
 # endregion
 
-
 building_in = False
 
 def make_root():
@@ -2980,6 +2952,10 @@ def make_root():
 	r["builtins"].ch.statements.view_mode = 2
 	#r.add(("toolbar", toolbar.build()))
 	r.fix_parents()
+	for i in r.flatten():
+		if not isinstance(i, Root):
+			assert i.parent, i
+
 	test_serialization(r)
 	return r
 
@@ -2988,7 +2964,7 @@ def test_serialization(r):
 	c = r['some program'].ch.statements[0]
 	c.items.append("range")
 	c.menu_item_selected([i for i in c.menu_for_item()[1:] if isinstance(i.value, FunctionCall)][0])
-	c = c.compiled
+	c = c.parsed
 	#print(c)
 	s = c.serialize()
 	print("serialized:",s)
@@ -3014,30 +2990,20 @@ def deserialize0(root, data):
 	return deserialize(decls, data)
 
 
-def deserialize(decls, d):
-	if 'decl' in d:
-		decl = find_decl(d['decl'], decls)
+def deserialize(data, placeholder):
+	if 'decl' in data:
+		decl = find_decl(data['decl'], placeholder.nodecls)
 		if decl:
-			return new_from_decl(decl, d['data'], decls)
+			return decl.deserialize(d['data'], placeholder)
 	else:
 		print("decl key not in d")
 
 def find_decl(name, decls):
 	for i in decls:
-		#print "this is", i.name
 		if name == i.name:
 			return i
 	print (name, "not found in", decls)
 
-def new_from_decl(decl, data, decls):
-	print "making new from decl",decl
-	if decl == b['call']:
-		r = decl.instance_class(resolve(data['target'], r))
-#		r.args =
-		return r
-
-
-	#node = decl.inst_fresh()
 
 def resolve(data, scope):
 	assert(data['resolve'])
@@ -3124,3 +3090,8 @@ serialization
 save/load functions
 lemon console node to run them from
 """
+
+
+#todo: node syntax is a list of ..
+#node children types is a list of ..
+
