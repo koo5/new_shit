@@ -36,10 +36,10 @@ class WidgetTag(Tag):
 		self.name = name
 
 class ElementTag(Tag):
-	def __init__(self, el):
-		self.element = el
-		assert(isinstance(el, asselement.Element))
-
+	def __init__(self, element):
+		if __debug__: # https://github.com/brython-dev/brython/issues/5
+			assert(isinstance(element, asselement.Element)) #this is weird, __debug__ is true here and false there
+		self.element = element
 
 """
 class BackTabTag(Tag):

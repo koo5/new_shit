@@ -50,10 +50,10 @@ import lemon_colors as colors
 from keys import *
 from utils import flatten
 
-if __debug__:
-	# asses are stuff for assertions
-	import tags as asstags
-	asstags.asselement = element
+if platform.frontend == platform.brython:
+	assert(__debug__) # https://github.com/brython-dev/brython/issues/5
+
+tags.asselement = element
 
 # endregion
 
