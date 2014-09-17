@@ -4,6 +4,7 @@
 
 import graph
 
+import lemon_platform as platform
 from lemon_colors import color, colors
 import project
 import nodes
@@ -50,9 +51,9 @@ class Frame(object):
 		if e.button == 1:
 			s.click(e)
 		elif e.button == 4:
-			s.scroll(-1)
+			s.scroll(-5)
 		elif e.button == 5:
-			s.scroll(1)
+			s.scroll(5)
 
 	def scroll(s,l):
 		s.scroll_lines += l
@@ -363,7 +364,7 @@ class Menu(Frame):
 					yield i
 
 	def on_keypress(self, e):
-		if frontend == 'sdl' and e.mod & KMOD_CTRL:
+		if platform.frontend == platform.sdl and e.mod & KMOD_CTRL:
 			if e.key == K_UP:
 				self.move(-1)
 				return True
@@ -373,7 +374,7 @@ class Menu(Frame):
 			elif e.key == K_m:
 				self.menu_dump()
 				return True
-		elif frontend == 'curses':
+		elif platform.frontend == platform.curses:
 			if e.key == K_INSERT:
 				self.move(-1)
 				return True

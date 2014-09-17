@@ -25,6 +25,7 @@ and the whole language is very..umm..not well-founded...for now. improvements we
 #from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame?
 
 from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
+import lemon_platform as platform
 
 import sys
 sys.path.insert(0, 'fuzzy wuzzy') #newer version is needed for python3
@@ -105,7 +106,8 @@ class Node(element.Element):
 				c = colors.color("node brackets")
 				hsv = tuple(colors.rgb(*c).hsv)
 				hsv2 = colors.hsv((hsv[0] + 0.3*s.number_of_ancestors)%1, hsv[1], hsv[2])
-				return tuple(hsv2.rgb)
+				r = hsv2.rgb
+				return (int(r.red), int(r.green), int(r.blue))
 			except:
 				return colors.color("fg")
 		return s._brackets_color
@@ -130,11 +132,12 @@ class Node(element.Element):
 		s.runtime._dict.clear()
 
 	def set_parent(s, v):
+		assert v or isinstance(s, Root), s
 		super(Node, s).set_parent(v)
 		if "value" in s.runtime._dict: #messy
 			s.runtime.value.parent = s.parent
 
-	#we are overriding the parent property of Element
+	#overriding properties has to be done like this
 	parent=property(element.Element.get_parent, set_parent)
 
 	@property
@@ -149,7 +152,7 @@ class Node(element.Element):
 		if isinstance(self.parent, List):
 			r += [x.parsed for x in self.parent.above(self)]
 
-		assert self.parent, self.long__repr__()
+		assert self.parent != None, self.long__repr__()
 		r += [self.parent]
 		r += self.parent.scope()
 
@@ -484,8 +487,8 @@ class Syntaxed(Node):
 		kids = {}
 		for k, v in iteritems(slots):
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
-			easily_instantiable = [b[x] for x in [y for y in ['text', 'number',
-			    'statements', 'list', 'function signature list', 'untypedvar' ] if y in b]]
+			easily_instantiable  = ['text', 'number', 'statements', 'list', 'function signature list', 'untypedvar' ]
+			easily_instantiable = [b[x] for x in [y for y in easily_instantiable if y in b]]
 			#if cls == For:
 			#	plog((v, easily_instantiable))
 			if v in easily_instantiable:
@@ -775,6 +778,7 @@ class Statements(List):
 	def __init__(s):
 		super(Statements, s).__init__()
 		s.view_mode = Collapsible.vm_multiline
+
 	@classmethod
 	def fresh(cls):
 		r = cls()
@@ -806,12 +810,14 @@ class Statements(List):
 		[i.eval() for i in self.items]
 		return Text("it ran.")
 
-	@property
-	def parsed(self):#i wonder if this is wise
-		r = Statements()
-		r.items = [i.parsed for i in self.items]
-		r.fix_parents()
-		return r
+	#@property
+	#def parsed(self):#i wonder if this is wise #nope, it wasnt
+	#	r = Statements()
+	#	r.parent = self###
+	#	r.items = [i.parsed for i in self.items]
+	#	#r.fix_parents()#fuck fuck fuck
+	#	return r
+	#war
 
 class NoValue(Node):
 	def __init__(self):
@@ -948,6 +954,9 @@ class Root(Dict):
 
 	def delete_self(self):
 		log("I'm sorry Dave, I'm afraid I can't do that ")
+
+	#def okay(s):
+	#	recursively check parents?
 
 
 class Module(Syntaxed):
@@ -1086,7 +1095,12 @@ class NodeclBase(Node):
 
 	@property
 	def name(self):
-		return self.instance_class.__name__.lower() #i dunno why tolower..deal with it..or change it..
+		r = self.instance_class.__name__.lower() #i dunno why tolower..
+		if platform.frontend == platform.brython and r == '$$number':
+			return "number" # bug
+		else:
+			return r
+
 
 	def instantiate(self, kids):
 		return self.instance_class(kids)
@@ -1178,6 +1192,7 @@ class Nodecl(NodeclBase):
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = self
+		print("building in",self.name)
 		build_in(self, self.name)
 		instance_class.name = self.name
 
@@ -1414,6 +1429,7 @@ SyntacticCategory({'name': Text("statement")})
 SyntacticCategory({'name': Text("expression")})
 WorksAs.b("statement", "anything")
 WorksAs.b("expression", "statement")
+print (b)
 WorksAs.b("number", "expression")
 WorksAs.b("text", "expression")
 
@@ -1788,7 +1804,9 @@ class ParserBase(Node):
 		#else None
 	"""
 	
-	"""todo:write tests and debug this monstrosity. i know it wont be quite what we
+	"""todo:write tests and debug this monstrosity.
+	#especially typing at the end of Parser, after a node, puts text in wrong place
+	i know it wont be quite what we
 	want anyway, but its a start and can be played around with.
 	then think about text with metadata or something."""
 
@@ -2128,11 +2146,10 @@ def insert_between_pipes(snippet, char_index,item_index, items):
 		r.append(right) #im back, sorry, chromium had a memory leak and i had to reboot.hey
 	r += items[item_index+1:]
 	return r
-#hmm
-"""maybe i should explain what it even does? that would be lovely
-so, the Parser works with a list of items, they can be strings or Nodes
-how or why is for a longer debate...but...
-"""
+
+#the Parser works with a list of items, they can be strings or Nodes
+#how or why is for a longer debate...
+
 
 def test_insert_between_pipes():
 	testres = insert_between_pipes(
@@ -2501,7 +2518,7 @@ class FunctionCall(Node):
 		return s.target.name
 
 	def _flatten(self):
-		return [self] + flatten([v.flatten() for v in self.args])
+		return [self] + flatten([v.flatten() for v in itervalues(self.args)])
 
 class FunctionCallNodecl(NodeclBase):
 	"""offers function calls"""
@@ -2938,6 +2955,7 @@ class LeshSnippet(Node):
 
 building_in = False
 
+@topic ("make root")
 def make_root():
 	r = Root()
 	r.add(("welcome", Text("Welcome to lemon! Press F1 to cycle the sidebar!")))
@@ -2952,22 +2970,37 @@ def make_root():
 	r["builtins"].ch.statements.view_mode = 2
 	#r.add(("toolbar", toolbar.build()))
 	r.fix_parents()
+	#log(len(r.flatten()))
+	#for i in r.flatten():
+	#		assert isinstance(i, Root) or i.parent, i.long__repr__()
+	#		if not i.parent:
+	#			log(i.long__repr__())
+	#log("--------------")
+	#log(r["builtins"].ch.statements.items)
+	#test_serialization(r)
+	#log(len(r.flatten()))
+	#log(r["builtins"].ch.statements.items)
+	#import gc
+	#log(gc.garbage)
+	#gc.collect()
 	for i in r.flatten():
 		if not isinstance(i, Root):
-			assert i.parent, i
-
-	test_serialization(r)
+			assert i.parent, i.long__repr__()
+	#	log(i.long__repr__())
+	#	if not i.parent: log(i.parent)
+	#print (b['for'].long__repr__(), b['for'].parent)
 	return r
 
 def test_serialization(r):
 	#create the range call
+
 	c = r['some program'].ch.statements[0]
 	c.items.append("range")
 	c.menu_item_selected([i for i in c.menu_for_item()[1:] if isinstance(i.value, FunctionCall)][0])
-	c = c.parsed
-	#print(c)
-	s = c.serialize()
-	print("serialized:",s)
+	#c = c.parsed
+	#s = c.serialize()
+	#print("serialized:",s)
+
 	#d = deserialize(r, s)
 	#print("deserialized:",d)
 	#r['some program'].ch.statements.newline_with(d)
@@ -3002,13 +3035,13 @@ def find_decl(name, decls):
 	for i in decls:
 		if name == i.name:
 			return i
-	print (name, "not found in", decls)
+	log (name, "not found in", decls)
 
 
 def resolve(data, scope):
 	assert(data['resolve'])
 	data = data['data']
-	print "resolving", data
+	log("resolving", data)
 
 	funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
 	#resolving {'function': True, 'note': 'inclusive',
@@ -3018,14 +3051,11 @@ def resolve(data, scope):
 	# 'ret': <nodes.ParametricType object at 0x7fce0408a690>(parametric type (probably list))}
 	for i in funcs:
 		if i.name == data['name']:
-			print "found"
+			log("found")
 			return i
 
 
 
-
-
-#todo: items of the builtins module seem to have parent Null, why? fix_parents is called from lemon.py
 
 
 def to_lemon(x):

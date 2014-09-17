@@ -5,10 +5,11 @@ from __future__ import division
 import curses as c
 import sys
 
+import platform
+platform.frontend = platform.curses
 import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import frames
-frames.frontend = 'curses'
 import logger
 from logger import log
 from lemon_colors import colors, color

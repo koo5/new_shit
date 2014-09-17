@@ -1,22 +1,31 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os
+import os, sys
 from math import *
 
+from lemon_six import iteritems, PY3
+
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
+
+if PY3 or hasattr(sys, 'pypy_version_info'):
+	print ("trying to load pygame_cffi")
+	sys.path.append("pygame_cffi")
+	#todo: print more info
 import pygame
+if hasattr(pygame, 'cffi'):
+	print("yep, loaded pygame_cffi")
 from pygame import display, image
 from pygame import draw, Rect
 
+import lemon_platform as platform
+platform.frontend = platform.sdl
 import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import frames
-frames.frontend = 'sdl'
 import logger
 from logger import log
 from lemon_colors import colors, color
-from lemon_six import iteritems
 import lemon_args
 
 args = lemon.args = lemon_args.parse_args()
@@ -80,6 +89,7 @@ def resize_frames():
 	for f in allframes:
 		f.cols = f.rect.width / font_width
 		f.rows = f.rect.height / font_height
+	log("resized frames")
 
 
 def keypressevent__repr__(self):
@@ -99,8 +109,8 @@ def mousedown(e):
 	if e.button in [4,5] and (
 		pygame.key.get_pressed()[pygame.K_LCTRL] or
 		pygame.key.get_pressed()[pygame.K_RCTRL]):
-			if e.button == 4: change_font_size(1)
-			if e.button == 5: change_font_size(-1)
+			if e.button == 4: user_change_font_size(1)
+			if e.button == 5: user_change_font_size(-1)
 	else:
 		lemon.handle(lemon.MousedownEvent(e))
 	render()
@@ -150,12 +160,13 @@ def process_event(event):
 		if event.gain:
 			reset_cursor_blink_timer()
 		else:
-			pygame.time.set_timer(pygame.USEREVENT + 1, 0)#disable
+			pygame.time.set_timer(pygame.USEREVENT + 1, 0)#disable the timer
 			root.cursor_blink_phase = False
 		draw()
 
 	elif event.type == pygame.QUIT:
-		bye()
+		pygame.display.iconify()
+		lemon.bye()
 
 
 
@@ -287,11 +298,6 @@ def menu_generate_rects(s):
 		     (endline - startline+1) * font_height)
 		s.rects[i] = r
 
-
-def bye():
-	log("deading")
-	pygame.display.iconify()
-	sys.exit()
 
 def loop():
 	process_event(pygame.event.wait())

@@ -2,6 +2,7 @@
 
 from weakref import ref as weakref
 
+import lemon_platform as platform
 import event #event module from pyglet, used to pass events from widgets to parent nodes
 import input #lemon's input event decorator
 from logger import log, ping
@@ -15,7 +16,8 @@ class Element(event.EventDispatcher):
 	keys = []
 	keys_help_items = None
 	def __init__(self):
-		super(Element, self).__init__()
+		if platform.frontend != platform.brython: # https://github.com/PierreQuentel/brython/issues/15
+			super(Element, self).__init__()
 		self._parent = 666
 		self.brackets_color = (200,0,0)
 		self.brackets = ('<','>')
@@ -28,10 +30,14 @@ class Element(event.EventDispatcher):
 
 	#parent property wraps the weakrefing of parents
 	def get_parent(s):
+		#sys.getrefcount
 		if type(s._parent) == weakref:
-			return s._parent()
+			r = s._parent()
+			if not r: log("parent vanished", s)
+			return r
 		else:
 			return s._parent
+
 
 	def set_parent(s, v):
 		try:

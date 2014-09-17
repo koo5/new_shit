@@ -9,10 +9,13 @@
 from browser import document as doc
 
 def o(x):
-  doc["out"] <= x + ".. "
-  print ("loading "+x+"..")
+  doc["out"] <= x + "..."
+  print (x+"...")
 
 o("start")
+o ("lemon_platform")
+import lemon_platform as platform
+platform.frontend = platform.brython
 o ("lemon_six")
 import lemon_six
 o ("logger")
@@ -30,11 +33,13 @@ import nodes
 o ("project")
 import project
 o ("lemon")
+import frames
+o ("done.")
 import lemon
 o ("done.")
 
 </script>
-<p><div id="out">yo !</div>
+<p><div id="out">brython test:</div>
 </body>
 
 </html>
