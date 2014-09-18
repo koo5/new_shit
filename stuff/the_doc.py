@@ -12,10 +12,7 @@ def the_doc():
 			Chapter("todo",	
 				Todo("List should have its own menu"),
 				Todo("strip leading tabs from text of Notes"),
-				Todo("scrolling"),
-				Todo("""bool, syntaxed, how? enum,
-				True and False separate atoms with syntaxes?
-				"""),
+
 				Todo("nodeize the doc"),
 				Todo("revive old code nodes"),
 				Todo("curb hardcoded colors"),
@@ -734,3 +731,11 @@ class Unknown(WidgetedValue):
 		return 0
 """
 # endregion
+
+
+
+
+http://forum.lazarus.freepascal.org/index.php?topic=20193.0
+
+
+

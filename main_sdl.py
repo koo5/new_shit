@@ -348,6 +348,8 @@ def main():
 	change_font_size()
 	resize_frames()
 	lemon.change_font_size = user_change_font_size
+	lemon.draw = draw
+	lemon.render = render
 	lemon.start()
 	render()
 

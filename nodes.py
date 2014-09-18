@@ -8,7 +8,8 @@ we also build up the builtins module along the way
 
 notes on the current state of this constantly changing code:
 i use "kids" and "children" interchangeably.
-sometimes i use s, sometimes self.
+sometimes i use "s", sometimes "self".
+"ch" is children of syntaxed
 
 creation of new nodes. 
 __init__ usually takes children or value as arguments.
@@ -142,7 +143,7 @@ class Node(element.Element):
 
 	@property
 	def parsed(self):
-		"all nodes except Parser and List(Statements) return themselves"#..hm
+		"all nodes except Parser return themselves"#..hm
 		return self
 
 	def scope(self):
@@ -2312,14 +2313,14 @@ class FunctionDefinitionBase(Syntaxed):
 			type = self.args[name].type
 			if isinstance(type, Ref):#we have a chance to compare these without prolog
 				if not arg.decl == type.target:
-					log("well this is bad, decl %s of %s != %s" % (arg.decl, arg, self.arg_types[i].target))
-					return Banana(str(arg.decl.name) +" != "+str(self.arg_types[i].name))
+					log("well this is bad, decl %s of %s != %s" % (arg.decl, arg, self.args[i].type.target))
+					return Banana(str(arg.decl.name) +" != "+str(self.args[i].type.name))
 		return True
 
 	@topic ("function call")
 	def call(self, args):
 		"""common for all function definitions"""
-		evaluated_args = []
+		evaluated_args = {}
 		for name, arg in iteritems(args):
 			if not isinstance(arg, UnevaluatedArgument):
 				evaluated_args[name] = arg.eval()
@@ -2327,7 +2328,7 @@ class FunctionDefinitionBase(Syntaxed):
 				evaluated_args[name] = arg.parsed
 		log("evaluated_args:", evaluated_args)
 
-		assert(len(evaluated_args) == len(self.arg_types))
+		assert(len(evaluated_args) == len(self.args))
 		r = self._call(evaluated_args )
 		assert isinstance(r, Node), "_call returned "+str(r)
 		return r
@@ -2577,8 +2578,11 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		checker_result = self.typecheck(args)
 		if checker_result != True:
 			return checker_result
-		args = [arg.pyval for arg in args] #todo implement pyval getter of list
-		python_result = self.fun(*args)
+		pyargs = []
+		for i in self.sig:
+			if not isinstance(i, Text): #typed or untyped argument..
+				pyargs.append(args[i.name].pyval)
+		python_result = self.fun(*pyargs)
 		lemon_result = self.ret.inst_fresh()
 		lemon_result.pyval = python_result #todo implement pyval assignments
 		return lemon_result

@@ -24,7 +24,7 @@ from keys import *
 
 fast_forward = False # quickly replaying input events without drawing
 sidebar = None # active sidebar
-is_first_event = True # to know when to clear replay
+is_first_event = True # debug replay is cleared if first event isnt an F2 keypress
 
 
 def cycle_sidebar():
@@ -95,8 +95,11 @@ def do_replay(ff):
 					log(str(e))
 					if e.type == KEYDOWN:
 						keypress(e)
+						draw()
 					elif e.type == MOUSEBUTTONDOWN:
 						mousedown(e)
+						render()
+						draw()
 					else:
 						raise Exception("unexpected event type:", e)
 
@@ -171,10 +174,6 @@ def pickle_event(e):
 		except pickle.PicklingError as error:
 			print (error, ", are you profiling?")
 
-def render():
-	root.render()
-	sidebar.render()
-	logframe.render()
 
 def start():
 #	global root, sidebars, logframe, allframes
