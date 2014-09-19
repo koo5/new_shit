@@ -195,6 +195,9 @@ def start():
 	except Exception as e:
 		print (e.__repr__(), ", cant set initial cursor position")
 
+	import parser_test
+	parser_test.test(root.root['some program'].ch.statements.items[0])
+
 	if args.replay:
 		do_replay(False)#True)
 	#render()

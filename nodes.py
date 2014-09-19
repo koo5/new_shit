@@ -1673,6 +1673,7 @@ class ParserBase(Node):
 
 	keys = ["text editing",
 			"ctrl del: delete item"]
+
 	"""
 	def on_keypress(s, e):
 
@@ -1729,6 +1730,7 @@ class ParserBase(Node):
 
 				s.type_tree(i, scope, indent + 1)
 	"""
+	@topic ("parser on_keypress")
 	def on_keypress(s, e):
 
 		if e.mod & KMOD_CTRL:
@@ -1750,6 +1752,7 @@ class ParserBase(Node):
 		items = s.items
 		atts = e.atts
 		i = s.mine(atts)
+		log("mine:",i)
 
 		if i == None:
 			items.append("")
@@ -1767,30 +1770,33 @@ class ParserBase(Node):
 			assert isinstance(items[i], str_and_uni), (items, i)
 			return s.edit_text(i, 0, e)
 
+	@topic ("parser mine")
 	def mine(s, atts):
 		"""
 		atts are the attributs of the char under cursor,
 		passed to us with an event. figure out if and which of our items
-		is there
-		this is an abstraction of the logic above i guess...
+		is under cursor
 		"""
 
-		if len(s.items) != 0:
-			if not "compiler body" in atts or s != atts["compiler body"]:
-				#we should only get an event if cursor is on us, so this
-				#only can be our closing bracket
-				return len(s.items)-1 #first from end
-			else:
-				ci = atts["compiler item"]
-				if "opening bracket" in atts:
-					if ci == 0:
-						return 0
-					else:
-						return ci - 1
+		if len(s.items) == 0:
+			return None # no items in me
+
+		if "compiler body" in atts and atts["compiler body"] == s:
+			ci = atts["compiler item"]
+			log("compiler item", ci)
+			if "opening bracket" in atts:
+				if ci == 0:
+					return 0
 				else:
-					return ci
-		else: # no items in me
-			return None
+					return ci - 1
+			else:
+				return ci
+		else:
+			#we should only get an event if cursor is on us, so this
+			#only can be our closing bracket
+			return len(s.items)-1 #first from end
+			#mm ok so this returns the first item from end,
+			#and if thats a node, we start a new string before it..hmm
 
 
 	"""
