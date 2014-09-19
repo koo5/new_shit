@@ -28,7 +28,6 @@ from logger import log
 from lemon_colors import colors, color
 import lemon_args
 
-args = lemon.args = lemon_args.parse_args()
 
 for f in allframes:
 	f.rect = pygame.Rect((6,6),(6,6))
@@ -95,7 +94,7 @@ def resize_frames():
 def keypressevent__repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod)))
-lemon.KeypressEvent.__repr__ = keypressevent__repr__
+lemon.KeypressEvent.__repr__ = keypressevent__repr__ #a better repr that translates keys to key names
 
 def keypress(e):
 	reset_cursor_blink_timer()
@@ -323,6 +322,8 @@ def fuck_sdl():
 
 
 def main():
+	global args
+	args = lemon.args = lemon_args.parse_args()
 
 	pygame.display.init()
 	pygame.font.init()

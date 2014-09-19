@@ -5,7 +5,7 @@ from __future__ import division
 import curses as c
 import sys
 
-import platform
+import lemon_platform as platform
 platform.frontend = platform.curses
 import lemon
 from lemon import logframe, root, sidebars, allframes
@@ -19,9 +19,6 @@ from rect import Rect
 import keys
 import nodes
 
-args = lemon.args = lemon_args.parse_args()
-
-logfile = open("curses_log", "w")
 
 def debug_out(text):
 	logframe.add(text)
@@ -162,12 +159,16 @@ def loop():
 	log(inp)
 
 def main_func(stdscr):
-	global scr, mainw, logw, sidebarw
+	global scr, mainw, logw, sidebarw, args, logfile
 	scr = stdscr
 	scr.keypad(1)
 	mainw = c.newwin(0,0,6,6)
 	logw = c.newwin(0,0,6,6)
 	sidebarw = c.newwin(0,0,6,6)
+
+	args = lemon.args = lemon_args.parse_args()
+
+	logfile = open("curses_log", "w")
 
 	resize_frames()
 
