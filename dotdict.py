@@ -1,10 +1,11 @@
 
 from __future__ import print_function
-#subclassing a dict inherits many atributtes, do not want
-#what if we used an empty object?
 class dotdict(object):
 	"""
-	a simple object that wraps a dict and allows access by attributes
+	a simple object that wraps a dict and allows access by attributes.
+	for example: ch = dotdict(); ch._dict = {a:1}; ch.b = ch.a + 1
+	#subclassing a dict inherits many atributtes, do not want.
+	#what if we used an empty object?.
 	"""
 	def __init__(s):#todo:, seq=None, **kwargs):
 		object.__setattr__(s, "_dict", dict())
@@ -13,7 +14,7 @@ class dotdict(object):
 		object.__setattr__(s, "_locked", True)
 	def __setattr__ (s, k, v):
 		if k == "_dict":
-			print("hmm", v)
+			print("hmm, todo?", v)
 			object.__setattr__(s, "_dict", dict())#weird, shouldnt it set the value, not an empty dict?
 		else:
 			if object.__getattribute__(s, "_locked"):

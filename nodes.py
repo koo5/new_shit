@@ -29,7 +29,7 @@ from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
 import lemon_platform as platform
 
 import sys
-sys.path.insert(0, 'fuzzy wuzzy') #newer version is needed for python3
+sys.path.insert(0, 'fuzzywuzzy') #newer version is needed for python3
 from fuzzywuzzy import fuzz
 
 try:
@@ -1770,7 +1770,7 @@ class ParserBase(Node):
 			assert isinstance(items[i], str_and_uni), (items, i)
 			return s.edit_text(i, 0, e)
 
-	@topic ("parser mine")
+	@topic ("Parser.mine")
 	def mine(s, atts):
 		"""
 		atts are the attributs of the char under cursor,
@@ -1792,11 +1792,13 @@ class ParserBase(Node):
 			else:
 				return ci
 		else:
-			#we should only get an event if cursor is on us, so this
-			#only can be our closing bracket
+			#we should only get an event if cursor is on us, so this can only
+			#be our closing bracket, all the rest is covered by "compiler body".
 			return len(s.items)-1 #first from end
-			#mm ok so this returns the first item from end,
+			#mm ok so this returns the first item from end, and that seems right
 			#and if thats a node, we start a new string before it..hmm
+			#i think we should return a tuple when the cursor is between two
+			#items and deal with that in on_keypress
 
 
 	"""
@@ -2987,7 +2989,7 @@ def make_root():
 	#			log(i.long__repr__())
 	#log("--------------")
 	#log(r["builtins"].ch.statements.items)
-	#test_serialization(r)
+	test_serialization(r)
 	#log(len(r.flatten()))
 	#log(r["builtins"].ch.statements.items)
 	#import gc
@@ -3006,10 +3008,12 @@ def test_serialization(r):
 
 	c = r['some program'].ch.statements[0]
 	c.items.append("range")
-	c.menu_item_selected([i for i in c.menu_for_item()[1:] if isinstance(i.value, FunctionCall)][0])
-	#c = c.parsed
-	#s = c.serialize()
-	#print("serialized:",s)
+	menu = c.menu_for_item()[1:]
+	calls = [i for i in menu if isinstance(i.value, FunctionCall)]
+	c.menu_item_selected(calls[0])
+	c = c.parsed
+	s = c.serialize()
+	print("serialized:",s)
 
 	#d = deserialize(r, s)
 	#print("deserialized:",d)

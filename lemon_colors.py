@@ -46,6 +46,7 @@ def modify(c, max=255):
 	return c
 
 def color(c):
+	"""return an rgb tuple by name, modified by display filters(mono,invert) and ready for use"""
 	if isinstance(c, str):
 		try:
 			return colors[c]

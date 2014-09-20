@@ -1,5 +1,7 @@
+from weakref import ref as weakref
+a = weakref(object)
+print (a)
+b = a.obj.obj
+print (b)
+assert b == object
 
-import brythontest2
-brythontest2.xxx = 123
-print(brythontest2.xxx)
-print(brythontest2.yyy())

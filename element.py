@@ -32,8 +32,11 @@ class Element(event.EventDispatcher):
 	def get_parent(s):
 		#sys.getrefcount
 		if type(s._parent) == weakref:
-			r = s._parent()
-			if not r: log("parent vanished", s)
+			if platform.frontend == platform.brython:
+				r = s._parent.obj.obj
+			else:
+				r = s._parent()
+			if not r: log("parent is None", s)
 			return r
 		else:
 			return s._parent
