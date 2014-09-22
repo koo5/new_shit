@@ -32,7 +32,7 @@ class Text(Widget):
 
 	keys = ["text editing"]
 	def _keypress(self, e, pos):
-		#first things that a text field should pass up
+		#first, things that a we should pass up
 		if e.mod & KMOD_CTRL:
 			return False
 		elif e.key == K_ESCAPE:

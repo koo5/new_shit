@@ -309,6 +309,7 @@ class Node(element.Element):
 	def unresolvize(s):
 		return {
 			'resolve': True,
+   			'decl': s.decl.name,
 			'data': s._unresolvize()
 		}
 
@@ -398,6 +399,11 @@ class Syntaxed(Node):
 
 	def _serialize(s):
 		return {'children': s.serialize_children()}
+
+	def _unresolvize(s):
+		return dict(super(Syntaxed, s)._unresolvize(),
+		    children = s.serialize_children()
+		)
 
 	def serialize_children(s):
 		r = {}
@@ -766,7 +772,7 @@ class List(Collapsible):
 		return x
 	"""
 	def set(self, x):
-		#constants should call this..but if they are in a compiler, isconst wont propagate yet
+		#constants should call this..but if they are in a Parser, isconst wont propagate yet
 		assert(isinstance(x, Node))
 		if len(self) > 0:
 			self[0] = x
@@ -774,6 +780,17 @@ class List(Collapsible):
 			super(val, self).append(x)
 		return x
 	"""
+	def _serialize(s):
+		r = []
+		for i in s.items:
+			log("serializing " + str(i))
+			r.append(i.serialize())
+
+		return dict(super(List, s)._serialize(),
+			items = r
+		)
+
+
 
 class Statements(List):
 	def __init__(s):
@@ -819,6 +836,26 @@ class Statements(List):
 	#	#r.fix_parents()#fuck fuck fuck
 	#	return r
 	#war
+
+	def on_keypress(self, e):
+		if e.key == K_RETURN and e.mod & KMOD_CTRL:
+			index = self.index_of_item_under_cursor(e)
+			result = self.items[index].eval()
+			result.parent = self
+			self.items.insert(index + 1, result)
+			return True
+		else:
+			return super(Statements, self).on_keypress(e)
+
+	def index_of_item_under_cursor(self, event):
+		(char, line) = event.cursor
+		for i, item in enumerate(self.items):
+			if 'frame' in item._render_lines:
+				x = item._render_lines[event.frame]
+				if "endline" in x and x['endline'] >= line and x["startchar"] >= char:
+					return i
+		return 0 #i give up
+
 
 class NoValue(Node):
 	def __init__(self):
@@ -891,6 +928,10 @@ class WidgetedValue(Node):
 
 	def copy(s):
 		return s.eval()
+
+	def _serialize(s):
+		return {'value': s.widget.text}
+
 
 class Number(WidgetedValue):
 	def __init__(self, value="0"):
@@ -997,6 +1038,14 @@ class Module(Syntaxed):
 			node = node.parent
 		if node:
 			return node.eval()
+
+	def on_keypress(self, e):
+		if e.key == K_s and e.mod & KMOD_CTRL:
+			import json
+			s = json.dumps(self.serialize(), indent = 4)
+			open('test_save.lemon', "w").write(s)
+			log(s)
+			return True
 
 
 
@@ -1870,6 +1919,8 @@ class ParserBase(Node):
 		log("del")
 		del s.items[s.items.index(child)]
 
+
+
 class Parser(ParserBase):
 	"""the awkward input node AKA the Beast.
 	im thinking about rewriting the items into nodes again.
@@ -1879,6 +1930,26 @@ class Parser(ParserBase):
 		super(Parser, self).__init__()
 		assert is_type(type), str(type)
 		self.type = type
+
+
+	def serialize(s):
+		return {
+			'decl': 'Parser', #this...is special..hmm
+		    'data': s._serialize()
+		}
+
+	def _serialize(s):
+		r = []
+		for i in s.items:
+			log("serializing " + str(i))
+			if isinstance(i, str_and_uni):
+				r.append(i)
+			else:
+				r.append(i.serialize())
+
+		return dict(super(Parser, s)._serialize(),
+			items = r, type = s.type.unresolvize()
+		)
 
 	def empty_render(s):
 		return [ColorTag("compiler hint"), TextTag('('+s.type.name+')'), EndTag()]
@@ -2321,8 +2392,8 @@ class FunctionDefinitionBase(Syntaxed):
 			type = self.args[name].type
 			if isinstance(type, Ref):#we have a chance to compare these without prolog
 				if not arg.decl == type.target:
-					log("well this is bad, decl %s of %s != %s" % (arg.decl, arg, self.args[i].type.target))
-					return Banana(str(arg.decl.name) +" != "+str(self.args[i].type.name))
+					log("well this is bad, decl %s of %s != %s" % (arg.decl, arg, self.args[name].type.target))
+					return Banana(str(arg.decl.name) +" != "+str(self.args[name].type.name))
 		return True
 
 	@topic ("function call")
@@ -2360,7 +2431,7 @@ class FunctionDefinitionBase(Syntaxed):
 
 
 class FunctionDefinition(FunctionDefinitionBase):
-
+	"""function definition in the lemon language"""
 	def __init__(self, kids):
 		super(FunctionDefinition, self).__init__(kids)
 
@@ -2404,7 +2475,7 @@ class PassedFunctionCall(Syntaxed):
 
 
 class BuiltinFunctionDecl(FunctionDefinitionBase):
-	"""lemon internal builtin function,
+	"""dumb and most powerful builtin function kind,
 	leaves type-checking to the function"""
 	def __init__(self, kids):
 		self._name = 777
@@ -2553,13 +2624,15 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	"""checks args, 
 	converts to python values, 
 	calls python function, 
-	converts to lemon value
-	
+	converts to lemon value.
+	This can call any lemon-unaware python function,
+	but has to be set up from within python code.
 	this is just a step from user-addable python function
 	"""
 	def __init__(self, kids):
 		self.ret= 777
 		self.note = 777
+		self.pass_root = False # pass root as first argument to the called python function? For internal lemon functions, obviously
 		super(BuiltinPythonFunctionDecl, self).__init__(kids)
 
 	@staticmethod
@@ -2580,6 +2653,7 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		x.note = note
 		x.ret = ret
 		x.fix_parents()
+		return x
 
 	def _call(self, args):
 		#translate args to python values, call python function
@@ -2587,6 +2661,8 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		if checker_result != True:
 			return checker_result
 		pyargs = []
+		if self.pass_root:
+			pyargs.append(self.root)
 		for i in self.sig:
 			if not isinstance(i, Text): #typed or untyped argument..
 				pyargs.append(args[i.name].pyval)
@@ -2900,6 +2976,19 @@ def b_files_in_dir(dir):
 
 BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
 
+def b_lemon_load_file(root, name):
+	try:
+		import json
+		input = json.load(open(name, "r"))
+		root["loaded program"] = deserialize(input)
+	except Exception as e:
+		return str(e)
+	return name + "loaded ok"
+
+
+BuiltinPythonFunctionDecl.create(
+	b_lemon_load_file, [Text("load"), text_arg()], b['text'], "load file", "open").pass_root = True
+
 # endregion
 
 # region lesh
@@ -2973,6 +3062,7 @@ def make_root():
 	r.add(("welcome", Text("Welcome to lemon! Press F1 to cycle the sidebar!")))
 	r.add(("lesh", Lesh()))
 	r.add(("some program", b['module'].inst_fresh()))
+	r.add(("lemon console", b['module'].inst_fresh()))
 	r["some program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
 	#todo:xiki style terminal, standard terminal. Both favoring UserCommands
@@ -3023,7 +3113,7 @@ def test_serialization(r):
 
 def editor_load_file(name):
 	path = name.eval().text
-	log("loading", path)
+ 	log("loading", path)
 	try:
 		data = json.load(open(path, "r"))
 		root = name.root #hack
