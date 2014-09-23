@@ -351,6 +351,9 @@ def main():
 	lemon.change_font_size = user_change_font_size
 	lemon.draw = draw
 	lemon.render = render
+	if args.noalpha:
+		lemon.root.arrows_visible = False
+
 	lemon.start()
 	render()
 

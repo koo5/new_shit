@@ -202,7 +202,7 @@ class Root(Frame):
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible
 
-	def text_dump(s):
+	def	dump_to_file(s):
 		f = open("dump.txt", "w")
 		for l in s.lines:
 			for ch in l:
@@ -234,7 +234,7 @@ class Root(Frame):
 			elif k == K_END:
 				s.cursor_bottom()
 			elif k == K_d:
-				s.text_dump()
+				s.dump_to_file()
 			elif k == K_p:
 				s.dump_parents()
 			elif k == K_g:
@@ -288,7 +288,7 @@ class Root(Frame):
 		event.cursor = (self.cursor_c, self.cursor_r)
 		event.atts = self.atts
 		if self.top_keypress(event):
-			if log_events:
+			if args.log_events:
 				log("handled by root frame")
 			return True
 		element = self.under_cursor
@@ -307,7 +307,7 @@ class Root(Frame):
 
 		#some element handled it
 		if element != None:
-			if log_events:
+			if args.log_events:
 				log("handled by "+str(element))
 			return True
 

@@ -27,6 +27,7 @@ and the whole language is very..umm..not well-founded...for now. improvements we
 
 from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
 import lemon_platform as platform
+BRY = platform.frontend == platform.brython
 
 import sys
 sys.path.insert(0, 'fuzzywuzzy') #newer version is needed for python3
@@ -160,6 +161,10 @@ class Node(element.Element):
 		assert(r != None)
 		assert(flatten(r) == r)
 		return r
+
+	@property
+	def nodecls(s):
+		return [i for i in s.scope() if isinstance(i, NodeclBase)] # danger:just NodeclBase? what about EnumType?
 
 	@property
 	def vardecls_in_scope(self):
@@ -317,62 +322,6 @@ class Node(element.Element):
 		return dict()
 
 
-
-"""
-a failed
-class Unresolved(Node):
-	def __init__(s, data, root = None):
-		if isinstance(data, dict):
-			s.data = data
-		elif isinstance(data, Node):
-			s.data = data.unresolvize()
-#		elif
-	def serialize(s):
-		r = {}
-		log("serializing Unresolved with data:", s.data)
-		for k,v in iteritems(s.data):
-			if isinstance(v, str_and_uni):
-				r[k] = v
-			elif k == "decl":
-				r[k] = v.name
-				log(v.name)
-			else:
-				r[k] = str(v)
-		return r
-
-
-def serialized2unresolved(d, r):
-	new = Unresolved({})
-	if 'text' in d:
-		new.data['text'] = d['text']
-	if 'target' in d:
-		new.data['target'] = serialized2unresolved(d['target'], r)
-
-	#if 'children' in d:
-	#	new.data['children'] = {[(k, deserialize(v)) for k, v in d['children']]}
-
-
-	return new
-
-
-@topic ("serialization")
-def test_serialization(r):
-
-	#---from serialized to unresolved and back
-	log("1:")
-	ser = {
-	'decl' : 'number',
-	'text' : '4'
-	}
-	unr = Unresolved(i, r)
-	log(out)
-	ser = out.serialize()
-	assert ser == i, (ser, i)
-
-#NodeFinder?
-"""
-
-
 class Children(dotdict):
 	pass
 
@@ -515,6 +464,7 @@ class Syntaxed(Node):
 	@classmethod
 	def fresh(cls):
 		r = cls(cls.create_kids(cls.decl.instance_slots))
+		r.fix_parents()
 		return r
 
 	@property
@@ -541,6 +491,20 @@ class Syntaxed(Node):
 		return dict(super(Syntaxed, s)._serialize(),
 			children = ch
 		)
+
+	@classmethod
+	def deserialize(cls, data, placeholder):
+		r = cls.fresh()
+		r.parent = placeholder.parent # danger
+		r.fix_parents()
+		for k,v in iteritems(data['children']):
+			#log(r.ch[k], r.ch[k].parent)
+			r.ch[k] = deserialize(v, r.ch[k])
+		r.fix_parents()
+		return r
+
+
+
 
 class Collapsible(Node):
 	"""Collapsible - List or Dict -
@@ -836,6 +800,7 @@ class Statements(List):
 	#	#r.fix_parents()#fuck fuck fuck
 	#	return r
 	#war
+	keys = ["ctrl return: execute current item"]
 
 	def on_keypress(self, e):
 		if e.key == K_RETURN and e.mod & KMOD_CTRL:
@@ -1000,6 +965,13 @@ class Root(Dict):
 	#def okay(s):
 	#	recursively check parents?
 
+	def scope(self):
+		#crude, but for now..
+		#if self != self.root["builtins"]:
+		return self.root["builtins"].ch.statements.parsed
+		#else:
+		#	return [] #nothing above but Root
+
 
 class Module(Syntaxed):
 	"""module or program, really"""
@@ -1014,13 +986,6 @@ class Module(Syntaxed):
 
 	def __setitem__(self, i, v):
 		self.ch.statements[i] = v
-
-	def scope(self):
-		#crude, but for now..
-		#if self != self.root["builtins"]:
-		return self.root["builtins"].ch.statements.parsed
-		#else:
-		#	return [] #nothing above but Root
 
 	def clear(self):
 		st = self.ch.statements
@@ -1039,12 +1004,16 @@ class Module(Syntaxed):
 		if node:
 			return node.eval()
 
+	keys = ["ctrl - s: save"]
 	def on_keypress(self, e):
 		if e.key == K_s and e.mod & KMOD_CTRL:
 			import json
 			s = json.dumps(self.serialize(), indent = 4)
 			open('test_save.lemon', "w").write(s)
 			log(s)
+			return True
+		if e.key == K_r and e.mod & KMOD_CTRL:
+			log(b_lemon_load_file(self.root, 'test_save.lemon'))
 			return True
 
 
@@ -1171,6 +1140,7 @@ class NodeclBase(Node):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
 
+
 class TypeNodecl(NodeclBase):
 	""" "pass me a type" kind of value
 	instantiates Refs ..maybe should be TypeRefs
@@ -1279,13 +1249,6 @@ class SyntaxedNodecl(NodeclBase):
 
 	def make_example(s):
 			return s.inst_fresh()
-
-	@classmethod
-	def deserialize(cls, data, placeholder):
-		r = cls.inst_fresh()
-		for k,v in iteritems(data['children']):
-			r.ch[k] = deserialize(v, r.ch[k])
-		return r
 
 
 	"""
@@ -2039,8 +2002,11 @@ class Parser(ParserBase):
 				text = self.items[i]
 
 		scope = self.scope()
+		if BRY:
+			log(scope)
 		menu = flatten([x.palette(scope, text, self) for x in scope])
-
+		if BRY:
+			log(menu)
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
 		#first lets search for things in scope that are already of that type
 		#for i in menu:
@@ -2600,6 +2566,13 @@ class FunctionCall(Node):
 	def _flatten(self):
 		return [self] + flatten([v.flatten() for v in itervalues(self.args)])
 
+	@classmethod
+	def deserialize(cls, data, placeholder):
+		r = cls(resolve(data['target']). placeholder)
+		for k,v in iteritems(data['args']):
+			r.ch[k] = deserialize(v, r.ch[k])
+		return r
+
 class FunctionCallNodecl(NodeclBase):
 	"""offers function calls"""
 	def __init__(self):
@@ -2608,14 +2581,6 @@ class FunctionCallNodecl(NodeclBase):
 	def palette(self, scope, text, node):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
 		return [ParserMenuItem(FunctionCall(x)) for x in decls]
-
-	@classmethod
-	def deserialize(cls, data, placeholder):
-		r = cls.instance_class(resolve(data['target']))
-		for k,v in iteritems(data['args']):
-			r.ch[k] = deserialize(v, r.ch[k])
-		return r
-
 
 build_in(FunctionCallNodecl(), 'call')
 
@@ -2978,16 +2943,32 @@ BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()],
 
 def b_lemon_load_file(root, name):
 	try:
+		log("loading "+name)
 		import json
 		input = json.load(open(name, "r"))
-		root["loaded program"] = deserialize(input)
+		root["loaded program"] = Text("placeholder")
+		root["loaded program"].parent = root
+		root["loaded program"] = deserialize(input, root["loaded program"])
+		root.fix_parents()
 	except Exception as e:
+		raise
 		return str(e)
 	return name + "loaded ok"
 
-
 BuiltinPythonFunctionDecl.create(
 	b_lemon_load_file, [Text("load"), text_arg()], b['text'], "load file", "open").pass_root = True
+
+"""
+def editor_load_file(name):
+	path = name.eval().text
+ 	log("loading", path)
+	try:
+		data = json.load(open(path, "r"))
+		root = name.root #hack
+		r.add(("loaded program", deserialize0(root, data)))
+	except Exception as e:
+		log(e)
+"""
 
 # endregion
 
@@ -3068,8 +3049,12 @@ def make_root():
 	#todo:xiki style terminal, standard terminal. Both favoring UserCommands
 	#first user command: commit all and push
 	r["builtins"].ch.statements.items = list(itervalues(b))#hm
+	assert len(r["builtins"].ch.statements.items) == len(b)
+	assert len(b) > 0
+	log("built in ",len(r["builtins"].ch.statements.items)," items")
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
+	log("--",b['statement'].decl)
 	#r.add(("toolbar", toolbar.build()))
 	r.fix_parents()
 	#log(len(r.flatten()))
@@ -3093,45 +3078,33 @@ def make_root():
 	#print (b['for'].long__repr__(), b['for'].parent)
 	return r
 
+@topic ("test_serialization")
 def test_serialization(r):
 	#create the range call
-
 	c = r['some program'].ch.statements[0]
 	c.items.append("range")
 	menu = c.menu_for_item()[1:]
+	log("menu:",menu)
 	calls = [i for i in menu if isinstance(i.value, FunctionCall)]
 	c.menu_item_selected(calls[0])
 	c = c.parsed
 	s = c.serialize()
 	print("serialized:",s)
 
-	#d = deserialize(r, s)
-	#print("deserialized:",d)
-	#r['some program'].ch.statements.newline_with(d)
-	#print (d)
-	return
-
-def editor_load_file(name):
-	path = name.eval().text
- 	log("loading", path)
-	try:
-		data = json.load(open(path, "r"))
-		root = name.root #hack
-		r.add(("loaded program", deserialize0(root, data)))
-	except Exception as e:
-		log(e)
-
-def deserialize0(root, data):
-	scope = root["builtins"].scope()
-	decls = [x for x in scope if is_decl(x)]
-	return deserialize(decls, data)
-
 
 def deserialize(data, placeholder):
+	"""
+	data is a json.load'ed .lemon file
+	placeholder is a node used for resolving scope (so, its something placed where you want to place the loaded nodes)
+	"""
 	if 'decl' in data:
 		decl = find_decl(data['decl'], placeholder.nodecls)
 		if decl:
-			return decl.deserialize(d['data'], placeholder)
+			return decl.instance_class.deserialize(data['data'], placeholder)
+		else:
+			if data['decl'] == 'parser':
+				return Parser.deserialize(data['data'], placeholder)
+
 	else:
 		print("decl key not in d")
 
@@ -3142,10 +3115,13 @@ def find_decl(name, decls):
 	log (name, "not found in", decls)
 
 
-def resolve(data, scope):
+def resolve(data, placeholder):
+
 	assert(data['resolve'])
 	data = data['data']
 	log("resolving", data)
+
+	scope = placeholder.scope
 
 	funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
 	#resolving {'function': True, 'note': 'inclusive',

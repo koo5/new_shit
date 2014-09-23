@@ -734,8 +734,65 @@ class Unknown(WidgetedValue):
 
 
 
-
+fonts:
 http://forum.lazarus.freepascal.org/index.php?topic=20193.0
 
 
+
+
+
+"""
+here i was messing with an intermediate step between serialized data and nodes
+that would allow interactive resolving
+class Unresolved(Node):
+	def __init__(s, data, root = None):
+		if isinstance(data, dict):
+			s.data = data
+		elif isinstance(data, Node):
+			s.data = data.unresolvize()
+#		elif
+	def serialize(s):
+		r = {}
+		log("serializing Unresolved with data:", s.data)
+		for k,v in iteritems(s.data):
+			if isinstance(v, str_and_uni):
+				r[k] = v
+			elif k == "decl":
+				r[k] = v.name
+				log(v.name)
+			else:
+				r[k] = str(v)
+		return r
+
+
+def serialized2unresolved(d, r):
+	new = Unresolved({})
+	if 'text' in d:
+		new.data['text'] = d['text']
+	if 'target' in d:
+		new.data['target'] = serialized2unresolved(d['target'], r)
+
+	#if 'children' in d:
+	#	new.data['children'] = {[(k, deserialize(v)) for k, v in d['children']]}
+
+
+	return new
+
+
+@topic ("serialization")
+def test_serialization(r):
+
+	#---from serialized to unresolved and back
+	log("1:")
+	ser = {
+	'decl' : 'number',
+	'text' : '4'
+	}
+	unr = Unresolved(i, r)
+	log(out)
+	ser = out.serialize()
+	assert ser == i, (ser, i)
+
+#NodeFinder?
+"""
 

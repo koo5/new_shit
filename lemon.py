@@ -178,10 +178,7 @@ def pickle_event(e):
 def start():
 #	global root, sidebars, logframe, allframes
 	frames.args = args
-	frames.log_events = args.log_events
-	if args.noalpha:
-		root.arrows_visible = False
-	
+
 	colors.cache(args)
 	root.render()
 

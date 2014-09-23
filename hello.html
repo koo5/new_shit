@@ -9,13 +9,16 @@
 from browser import document as doc
 
 def o(x):
-  doc["out"] <= x + "..."
-  print (x+"...")
+  doc["out"] <= x + "... "
+  print (x+"... ")
 
 o("start")
 o ("lemon_platform")
 import lemon_platform as platform
 platform.frontend = platform.brython
+
+o ("dotdict")
+import dotdict
 o ("lemon_six")
 import lemon_six
 o ("logger")
@@ -24,7 +27,7 @@ o ("lemon_colors")
 import lemon_colors
 o ("utils")
 import utils
-o ("element")
+o ("element<br>")
 import element
 o ("widgets")
 import widgets
@@ -36,7 +39,23 @@ o ("lemon")
 import frames
 o ("done.")
 import lemon
-o ("done.")
+o ("done.<br>")
+
+args = dotdict.dotdict()
+args.invert = False
+args.mono = False
+args.replay = False
+args.log_events = True
+
+for f in lemon.allframes:
+	f.cols = f.rows = 80 #whatever
+
+lemon.render()
+
+for l in lemon.root.lines:
+	for ch in l:
+		doc["out"] <= ch[0]
+	doc["out"] <= "<br>"
 
 </script>
 <p><div id="out">brython test:</div>
