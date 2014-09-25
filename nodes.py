@@ -4,7 +4,7 @@
 this file defines the AST classes of the language and everything around it.
 we also build up the builtins module along the way
 
-#the philosophy of this codebase is "constant surprise". it keeps you alert.
+the philosophy of this codebase is "constant surprise". it keeps you alert.
 
 notes on the current state of this constantly changing code:
 i use "kids" and "children" interchangeably.
@@ -59,7 +59,7 @@ tags.asselement = element
 
 # endregion
 
-#for staging the builtins module and referencing builtin nodes from python code
+#b is for staging the builtins module and referencing builtin nodes from python code
 b = OrderedDict()
 building_in = True
 def build_in(node, name=None):
@@ -368,7 +368,6 @@ class Syntaxed(Node):
 		assert(isinstance(item, Node))
 		item.parent = self
 		self.ch[name] = item
-		#todo:log if not Parser and not correct type
 
 	def replace_child(self, child, new):
 		"""child name or child value? thats a good question...its child the value!"""
@@ -491,18 +490,6 @@ class Syntaxed(Node):
 		return dict(super(Syntaxed, s)._serialize(),
 			children = ch
 		)
-
-	@classmethod
-	def deserialize(cls, data, placeholder):
-		r = cls.fresh()
-		r.parent = placeholder.parent # danger
-		r.fix_parents()
-		for k,v in iteritems(data['children']):
-			#log(r.ch[k], r.ch[k].parent)
-			r.ch[k] = deserialize(v, r.ch[k])
-		r.fix_parents()
-		return r
-
 
 
 
@@ -687,7 +674,7 @@ class List(Collapsible):
 		return self.decl.ch.itemtype
 
 	def above(self, item):
-		assert(item in self.items)
+		assert item in self.items, (item, item.parent)
 		r = []
 		for i in self.items:
 			if i == item:
@@ -895,8 +882,15 @@ class WidgetedValue(Node):
 		return s.eval()
 
 	def _serialize(s):
-		return {'value': s.widget.text}
+		return {'text': s.widget.text}
 
+	@classmethod
+	def deserialize(cls, data, parent):
+		r = cls()
+		log(data)
+		r.text = data['text']
+		r.parent = parent
+		return r
 
 class Number(WidgetedValue):
 	def __init__(self, value="0"):
@@ -2566,12 +2560,6 @@ class FunctionCall(Node):
 	def _flatten(self):
 		return [self] + flatten([v.flatten() for v in itervalues(self.args)])
 
-	@classmethod
-	def deserialize(cls, data, placeholder):
-		r = cls(resolve(data['target']). placeholder)
-		for k,v in iteritems(data['args']):
-			r.ch[k] = deserialize(v, r.ch[k])
-		return r
 
 class FunctionCallNodecl(NodeclBase):
 	"""offers function calls"""
@@ -3065,6 +3053,7 @@ def make_root():
 	#log("--------------")
 	#log(r["builtins"].ch.statements.items)
 	test_serialization(r)
+	#log(b_lemon_load_file(r, 'test_save.lemon'))
 	#log(len(r.flatten()))
 	#log(r["builtins"].ch.statements.items)
 	#import gc
@@ -3092,21 +3081,20 @@ def test_serialization(r):
 	print("serialized:",s)
 
 
-def deserialize(data, placeholder):
+def deserialize(data, parent):
 	"""
 	data is a json.load'ed .lemon file
-	placeholder is a node used for resolving scope (so, its something placed where you want to place the loaded nodes)
 	"""
 	if 'decl' in data:
-		decl = find_decl(data['decl'], placeholder.nodecls)
+		decl = find_decl(data['decl'], parent.nodecls)
 		if decl:
-			return decl.instance_class.deserialize(data['data'], placeholder)
+			return decl.instance_class.deserialize(data['data'], parent)
 		else:
-			if data['decl'] == 'parser':
-				return Parser.deserialize(data['data'], placeholder)
+			if data['decl'] == 'Parser':
+				return Parser.deserialize(data['data'], parent)
 
 	else:
-		print("decl key not in d")
+		return Text("decl key not in d")
 
 def find_decl(name, decls):
 	for i in decls:
@@ -3134,8 +3122,55 @@ def resolve(data, placeholder):
 			log("found")
 			return i
 
+#poor mans AOP.
+#im sick of jumping up and down this huge file, i cant find any plugin that would ease this..so..
+#(in a structural editor, you'll be able to group stuff by objects or by aspects). See maybe codebubbles.
+#python tops it off here by disallowing multiline lambdas..sigh..
 
+def f(cls, data, parent):
+	placeholder = Text("placeholder")
+	placeholder.parent = parent
+	r = cls(deserialize(data['type'], placeholder))
+	r.parent = parent
 
+	r = cls(resolve(data['target']). placeholder)
+	for k,v in iteritems(data['args']):
+		r.ch[k] = deserialize(v, r.ch[k])
+	return r
+FunctionCall.deserialize = classmethod(f)
+
+def f(cls, data, parent):
+	r = cls.fresh()
+	r.parent = parent
+	for k,v in iteritems(data['children']):
+		r.set_child(k, deserialize(v, r))
+	return r
+Syntaxed.deserialize = classmethod(f)
+
+def f(cls, data, parent):
+	r = cls()
+	r.parent = parent
+	assert(r.items == [])
+	for i, item_data in enumerate(data['items']):
+		r.add(Text("placeholder"))
+		r.items[i] = deserialize(item_data, r.items[i])
+	return r
+List.deserialize = classmethod(f)
+
+def f(cls, data, parent):
+	placeholder = Text("placeholder")
+	placeholder.parent = parent
+	r = cls(deserialize(data['type'], placeholder))
+	r.parent = parent
+
+	for i in data['items']:
+		if isinstance(i, str_and_uni):
+			r.add(i)
+		else:
+			r.add(deserialize(i, r))
+	r.fix_parents()
+	return r
+Parser.deserialize = classmethod(f)
 
 
 def to_lemon(x):
