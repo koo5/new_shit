@@ -364,8 +364,8 @@ class Syntaxed(Node):
 		self._fix_parents(list(self.ch._dict.values()))
 
 	def set_child(self, name, item):
-		assert(isinstance(name, str))
-		assert(isinstance(item, Node))
+		assert isinstance(name, str), repr(name)
+		assert isinstance(item, Node)
 		item.parent = self
 		self.ch[name] = item
 
@@ -378,8 +378,7 @@ class Syntaxed(Node):
 				self.ch[k] = new
 				new.parent = self
 				return
-
-		raise Exception("We should never get here")
+		raise Exception("i dont have that child: "+child)
 		#todo:refactor into find_child or something
 
 	def delete_child(self, child):
@@ -1001,8 +1000,8 @@ class Module(Syntaxed):
 	keys = ["ctrl - s: save"]
 	def on_keypress(self, e):
 		if e.key == K_s and e.mod & KMOD_CTRL:
-			import json
-			s = json.dumps(self.serialize(), indent = 4)
+			import yaml
+			s = yaml.dump(self.serialize(), indent = 4)
 			open('test_save.lemon', "w").write(s)
 			log(s)
 			return True
@@ -1626,7 +1625,7 @@ class ParserBase(Node):
 
 	def add(self, item):
 		self.items.append(item)
-		assert(isinstance(item, str_and_uni +(Node,) ))
+		assert isinstance(item, str_and_uni +(Node,) ), repr(item)
 		if isinstance(item, Node):
 			item.parent = self
 
@@ -2932,16 +2931,18 @@ BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()],
 def b_lemon_load_file(root, name):
 	try:
 		log("loading "+name)
-		import json
-		input = json.load(open(name, "r"))
-		root["loaded program"] = Text("placeholder")
-		root["loaded program"].parent = root
+		try:
+			import yaml
+			input = yaml.load(open(name, "r").read())
+		except Exception as e:
+			return str(e)
+
 		root["loaded program"] = deserialize(input, root["loaded program"])
 		root.fix_parents()
 	except Exception as e:
 		raise
-		return str(e)
-	return name + "loaded ok"
+
+	return name + " loaded ok"
 
 BuiltinPythonFunctionDecl.create(
 	b_lemon_load_file, [Text("load"), text_arg()], b['text'], "load file", "open").pass_root = True
@@ -3032,6 +3033,7 @@ def make_root():
 	r.add(("lesh", Lesh()))
 	r.add(("some program", b['module'].inst_fresh()))
 	r.add(("lemon console", b['module'].inst_fresh()))
+	r.add(("loaded program", Text("placeholder")))
 	r["some program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
 	#todo:xiki style terminal, standard terminal. Both favoring UserCommands
@@ -3053,7 +3055,7 @@ def make_root():
 	#log("--------------")
 	#log(r["builtins"].ch.statements.items)
 	test_serialization(r)
-	#log(b_lemon_load_file(r, 'test_save.lemon'))
+	log(b_lemon_load_file(r, 'test_save.lemon'))
 	#log(len(r.flatten()))
 	#log(r["builtins"].ch.statements.items)
 	#import gc
@@ -3092,6 +3094,8 @@ def deserialize(data, parent):
 		else:
 			if data['decl'] == 'Parser':
 				return Parser.deserialize(data['data'], parent)
+			else:
+				raise Exception ("cto takoj " + data['decl'])
 
 	else:
 		return Text("decl key not in d")
