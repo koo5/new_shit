@@ -796,3 +796,9 @@ def test_serialization(r):
 #NodeFinder?
 """
 
+
+
+
+
+http://pygame.org/wiki/CompileUbuntu?parent=Compilation
+
