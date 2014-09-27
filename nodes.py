@@ -30,7 +30,7 @@ import lemon_platform as platform
 BRY = platform.frontend == platform.brython
 
 import sys
-sys.path.insert(0, 'fuzzywuzzy') #newer version is needed for python3
+sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3
 from fuzzywuzzy import fuzz
 
 try:
@@ -52,7 +52,7 @@ import lemon_colors as colors
 from keys import *
 from utils import flatten
 
-if platform.frontend == platform.brython:
+if BRY:
 	assert(__debug__) # https://github.com/brython-dev/brython/issues/5
 
 tags.asselement = element
@@ -78,11 +78,11 @@ def is_type(node):
 	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, SyntacticCategory, EnumType))
 
 def make_list(btype = 'anything'):
-	"make instance of List of given type"
-	return  b["list"].make_type({'itemtype': Ref(b[btype])}).inst_fresh()
+	"instantiate a List of given type"
+	return list_of(btype).inst_fresh()
 
 def list_of(type_name):
-	"""helper to create a type"""
+	"""a helper for creating a type"""
 	return b["list"].make_type({'itemtype': Ref(b[type_name])})
 
 
@@ -92,10 +92,10 @@ class Node(element.Element):
 	every node class has a corresponding decl object
 	"""
 	help = None
+
 	def __init__(self):
 		"""overrides in subclasses may require children as arguments"""
 		super(Node, self).__init__()
-
 		self.brackets_color = "node brackets rainbow"
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
@@ -143,9 +143,9 @@ class Node(element.Element):
 	parent=property(element.Element.get_parent, set_parent)
 
 	@property
-	def parsed(self):
+	def parsed(s):
 		"all nodes except Parser return themselves"#..hm
-		return self
+		return s
 
 	def scope(self):
 		"""what does this node see?..poc"""
@@ -305,18 +305,13 @@ class Node(element.Element):
 		return {}
 
 	def serialize(s):
-		return {
-			'decl': s.decl.name,
-		    'data': s._serialize()
-		}
-
+		return dict(s._serialize(),
+		            decl = s.decl.name)
 
 	def unresolvize(s):
-		return {
-			'resolve': True,
-   			'decl': s.decl.name,
-			'data': s._unresolvize()
-		}
+		return dict(s._unresolvize(),
+		            resolve = True,
+   			        decl = s.decl.name)
 
 	def _unresolvize(s):
 		return dict()
@@ -345,20 +340,6 @@ class Syntaxed(Node):
 
 		self.ch._lock()
 		self.lock()
-
-	def _serialize(s):
-		return {'children': s.serialize_children()}
-
-	def _unresolvize(s):
-		return dict(super(Syntaxed, s)._unresolvize(),
-		    children = s.serialize_children()
-		)
-
-	def serialize_children(s):
-		r = {}
-		for k, v in iteritems(s.ch._dict):
-			r[k] = v.serialize()
-		return r
 
 	def fix_parents(self):
 		self._fix_parents(list(self.ch._dict.values()))
@@ -402,7 +383,6 @@ class Syntaxed(Node):
 			for name, slot in iteritems(slots):
 				assert(isinstance(name, str_and_uni))
 				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
-
 
 	@property
 	def syntax(self):
@@ -482,13 +462,20 @@ class Syntaxed(Node):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 	def _serialize(s):
-		ch = {}
-		for k,v in iteritems(s.ch._dict):
-			ch[k] = v.serialize()
-
 		return dict(super(Syntaxed, s)._serialize(),
-			children = ch
+			children = s.serialize_children()
 		)
+
+	def _unresolvize(s):
+		return dict(super(Syntaxed, s)._unresolvize(),
+		    children = s.serialize_children()
+		)
+
+	def serialize_children(s):
+		r = {}
+		for k, v in iteritems(s.ch._dict):
+			r[k] = v.serialize()
+		return r
 
 
 
@@ -579,7 +566,6 @@ class List(Collapsible):
 			#defined declaratively so Parser can deal with it
 		yield TextTag(']')
 
-
 	def __getitem__(self, i):
 		return self.items[i]
 
@@ -593,6 +579,7 @@ class List(Collapsible):
 
 	keys = ["ctrl del: delete item",
 			"return: add item"]
+
 	def on_keypress(self, e):
 
 		if e.key == K_DELETE and e.mod & KMOD_CTRL:
@@ -733,7 +720,7 @@ class List(Collapsible):
 	def _serialize(s):
 		r = []
 		for i in s.items:
-			log("serializing " + str(i))
+			#log("serializing " + str(i))
 			r.append(i.serialize())
 
 		return dict(super(List, s)._serialize(),
@@ -1003,7 +990,14 @@ class Module(Syntaxed):
 			import yaml
 			s = yaml.dump(self.serialize(), indent = 4)
 			open('test_save.lemon', "w").write(s)
-			log(s)
+			try:
+				import json
+				s = json.dumps(self.serialize(), indent = 4)
+				open('test_save.lemon.json', "w").write(s)
+				log(s)
+			except Exception as e:
+				log(e)
+			#	raise
 			return True
 		if e.key == K_r and e.mod & KMOD_CTRL:
 			log(b_lemon_load_file(self.root, 'test_save.lemon'))
@@ -1887,17 +1881,14 @@ class Parser(ParserBase):
 		assert is_type(type), str(type)
 		self.type = type
 
-
 	def serialize(s):
-		return {
-			'decl': 'Parser', #this...is special..hmm
-		    'data': s._serialize()
-		}
+		return dict(s._serialize(),
+		            decl = 'Parser') #Parser is special coz it doesnt have a decl..hmm
 
 	def _serialize(s):
 		r = []
 		for i in s.items:
-			log("serializing " + str(i))
+			#log("serializing " + str(i))
 			if isinstance(i, str_and_uni):
 				r.append(i)
 			else:
@@ -2470,7 +2461,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		return dict(super(BuiltinFunctionDecl, s)._unresolvize(),
 		    note = s.note,
 		    name = s.name,
-		    fun = s.fun,
+		    #fun = s.fun,
 		)
 
 
@@ -3087,6 +3078,7 @@ def deserialize(data, parent):
 	"""
 	data is a json.load'ed .lemon file
 	"""
+	#if 'resolve' in data:
 	if 'decl' in data:
 		decl = find_decl(data['decl'], parent.nodecls)
 		if decl:
@@ -3095,7 +3087,7 @@ def deserialize(data, parent):
 			if data['decl'] == 'Parser':
 				return Parser.deserialize(data['data'], parent)
 			else:
-				raise Exception ("cto takoj " + data['decl'])
+				raise Exception ("cto takoj " + repr(data['decl']))
 
 	else:
 		return Text("decl key not in d")
@@ -3107,24 +3099,23 @@ def find_decl(name, decls):
 	log (name, "not found in", decls)
 
 
-def resolve(data, placeholder):
+def resolve(data, parent):
 
 	assert(data['resolve'])
-	data = data['data']
 	log("resolving", data)
 
-	scope = placeholder.scope
+	scope = parent.scope
 
-	funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
+	#funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
 	#resolving {'function': True, 'note': 'inclusive',
 	# 'sig': [{'decl': 'text', 'data': {}}, {'decl': 'typedargument', 'data': {'children': {'type': {'decl': 'ref', 'data': {}}, 'name': {'decl': 'text', 'data': {}}}}}, {'decl': 'text', 'data': {}}, {'decl': 'typedargument', 'data': {'children': {'type': {'decl': 'ref', 'data': {}}, 'name': {'decl': 'text', 'data': {}}}}}],
 	# 'name': 'range',
 	# 'fun': <function b_range at 0x7fce03cbd9b0>,
 	# 'ret': <nodes.ParametricType object at 0x7fce0408a690>(parametric type (probably list))}
-	for i in funcs:
-		if i.name == data['name']:
-			log("found")
-			return i
+	#for i in scope:
+	#	if i.name == data['name']:
+	#		log("found")
+	#		return i
 
 #poor mans AOP.
 #im sick of jumping up and down this huge file, i cant find any plugin that would ease this..so..
@@ -3134,10 +3125,8 @@ def resolve(data, placeholder):
 def f(cls, data, parent):
 	placeholder = Text("placeholder")
 	placeholder.parent = parent
-	r = cls(deserialize(data['type'], placeholder))
+	r = cls(deserialize(data['target'], placeholder))
 	r.parent = parent
-
-	r = cls(resolve(data['target']). placeholder)
 	for k,v in iteritems(data['args']):
 		r.ch[k] = deserialize(v, r.ch[k])
 	return r
