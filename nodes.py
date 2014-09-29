@@ -74,14 +74,25 @@ def build_in(node, name=None):
 			key = node.name
 		else:
 			key = name
-		assert key
+		assert node
+		assert key,  key
 		assert key not in b,  repr(key) + " already in builtins:" + repr(node)
 		b[key] = node
 
 def is_decl(node):
-	return isinstance(node, (NodeclBase, ParametricTypeBase))
+	return isinstance(node, (NodeclBase, ParametricTypeBase, ParametricNodecl))
 def is_type(node):
 	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, SyntacticCategory, EnumType))
+
+def deref_decl(d):
+	if isinstance(d, Ref):
+		return deref_decl(d.target)
+	elif isinstance(d, Definition):
+		return deref_decl(d.type)
+	elif is_dect(d):
+		return d
+	else:
+		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
 
 def make_list(btype = 'anything'):
 	"instantiate a List of given type"
@@ -494,6 +505,10 @@ class Node(element.Element, NodePersistenceStuff):
 			pass
 		return r
 
+	@property
+	def ddecl(s):
+		return deref_decl(s.decl)#i have no idea what im doing
+
 
 class Syntaxed(Node, SyntaxedPersistenceStuff):
 	"""
@@ -668,11 +683,13 @@ class Collapsible(Node):
 		yield [DedentTag()]
 
 	@classmethod
-	#watch out: List has its own
+	@topic ("Collapsible.fresh")
 	def fresh(cls, decl):
+		log("decl="+repr(decl))
 		r = cls()
 		r.decl = decl
 		return r
+
 
 class Dict(Collapsible):
 	def __init__(self):
@@ -815,11 +832,14 @@ class List(Collapsible, ListPersistenceStuff):
 		self.items.append(p)
 
 	@property
+	@topic
 	def item_type(self):
 		assert hasattr(self, "decl"),  "parent="+str(self.parent)+" contents="+str(self.items)
-		assert isinstance(self.decl, ParametricType), self
-		return self.decl.ch.itemtype
-	_decl?
+		ddecl = self.ddecl
+		assert isinstance(ddecl, ParametricType), self
+		r = self.ddecl.ch.itemtype
+		log(r)
+		return r
 
 	def above(self, item):
 		assert item in self.items, (item, item.parent)
@@ -832,18 +852,6 @@ class List(Collapsible, ListPersistenceStuff):
 
 	def to_python_str(self):
 		return "[" + ", ".join([i.to_python_str() for i in self.items]) + "]"
-
-	@classmethod
-	def fresh(cls, decl):
-		r = cls()
-		r.decl = decl
-		"""
-		try:
-			r.newline()
-		except NameError as e:
-			pass#hack to allow calling fresh before Parser was defined
-		"""
-		return r
 
 	def delete_child(s, ch):
 		if ch in s.items:
@@ -1509,17 +1517,15 @@ class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
 	def __init__(self, kids):
 		super(WorksAs, self).__init__(kids)
-		build_in(self)
 	@classmethod
 	def b(cls, sub, sup):
-		cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
+		return cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
 
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
 	help=['used just for types, currently.']
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
-		build_in(self, self.ch.name.pyval)
 
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh()
@@ -1568,10 +1574,10 @@ SyntacticCategory({'name': Text("statement")}),
 SyntacticCategory({'name': Text("expression")})
 ])
 
-build_in(WorksAs.b("statement", "anything"))
-build_in(WorksAs.b("expression", "statement"))
-build_in(WorksAs.b("number", "expression"))
-build_in(WorksAs.b("text", "expression"))
+build_in(WorksAs.b("statement", "anything"), False)
+build_in(WorksAs.b("expression", "statement"), False)
+build_in(WorksAs.b("number", "expression"), False)
+build_in(WorksAs.b("text", "expression"), False)
 
 build_in([
 
@@ -1582,8 +1588,8 @@ ParametricNodecl(Dict,
 				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
 				 {'keytype': b['type'], 'valtype': Exp(b['type'])})])# 'dict'),
 
-build_in(WorksAs.b("list", "expression"))
-build_in(WorksAs.b("dict", "expression"))
+build_in(WorksAs.b("list", "expression"), False)
+build_in(WorksAs.b("dict", "expression"), False)
 
 
 class ListOfAnything(ParametricType):
@@ -2415,6 +2421,7 @@ build_in(SyntaxedNodecl(UnevaluatedArgument,
 
 
 
+log(b['union'])
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
 tmp.ch["items"].add(Ref(b['typedargument']))
@@ -3114,7 +3121,7 @@ for h,c in [
 	("mount all", "mount -a")
 
 	]:
-		build_in(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}))#for now
+		build_in(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}), False)
 
 class LeshSnippet(Node):
 	"""for the case you want to insert the snippet in the human readable form"""

@@ -14,14 +14,18 @@ debug = print
 
 topics = ["?"]
 
-def topic(text):
+def topic(text=None):
 	"""decorator to put before your function with a logging topic"""
+	if text == None:
+		text = function_with_decorator.__name__ #todo: add class
+
 	def decorator_inner_crap(function_with_decorator):
 		def wrapped_function(*vargs, **kwargs):
 			topics.append(text)
 			result = function_with_decorator(*vargs, **kwargs)
 			topics.pop()
 			return result
+		#copy useful attributes of the wrapped function to the wrapper
 		if hasattr(function_with_decorator, "levent_constraints"):
 			wrapped_function.levent_constraints = function_with_decorator.levent_constraints
 		return wrapped_function
