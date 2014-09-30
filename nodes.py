@@ -89,7 +89,7 @@ def deref_decl(d):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
-	elif is_dect(d):
+	elif is_decl(d):
 		return d
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
@@ -201,7 +201,7 @@ class SyntaxedPersistenceStuff(object):
 
 class ListPersistenceStuff(object):
 	def _serialize(s):
-		return dict(super(List, s)._serialize(),
+		return odict(
 			items = [i.serialize() for i in s.items]
 		)
 
@@ -217,8 +217,10 @@ class ListPersistenceStuff(object):
 		return r
 
 class RefPersistenceStuff(object):
-	def _serialize(s):
-		return odict(target = s.target.unresolvize())
+	def serialize(s):
+		return odict(
+			decl = 'ref',
+			target = s.target.unresolvize())
 
 class ParserPersistenceStuff(object):
 	def serialize(s):
@@ -258,9 +260,18 @@ class ParserPersistenceStuff(object):
 
 class FunctionCallPersistenceStuff(object):
 	def _serialize(s):
-		return dict(super(FunctionCall, s)._serialize(),
+		return odict(
 			target = s.target.unresolvize()
 		)
+
+	def serialize_items(s):
+		r = []
+		for i in s.items:
+			#log("serializing " + str(i))
+			if isinstance(i, str_and_uni):
+				r.append(i)
+			else:
+				r.append(i.serialize())
 
 	@classmethod
 	def deserialize(cls, data, parent):
@@ -276,7 +287,7 @@ class FunctionCallPersistenceStuff(object):
 class WidgetedValuePersistenceStuff(object):
 
 	def _serialize(s):
-		return {'text': s.widget.text}
+		return odict(text = s.widget.text)
 
 	@classmethod
 	def deserialize(cls, data, parent):
@@ -290,7 +301,7 @@ class WidgetedValuePersistenceStuff(object):
 
 # region basic node classes
 
-class Node(element.Element, NodePersistenceStuff):
+class Node(NodePersistenceStuff, element.Element):
 	"""a node is more than an element, its a standalone unit.
 	nodes can added, cut'n'pasted around, evaluated etc.
 	every node class has a corresponding decl object
@@ -510,7 +521,7 @@ class Node(element.Element, NodePersistenceStuff):
 		return deref_decl(s.decl)#i have no idea what im doing
 
 
-class Syntaxed(Node, SyntaxedPersistenceStuff):
+class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
 	Syntaxed has some named children, kept in ch.
 	their types are in slots.
@@ -633,7 +644,7 @@ class Syntaxed(Node, SyntaxedPersistenceStuff):
 
 	@classmethod
 	def fresh(cls):
-		r = cls(cls.create_kids(cls.decl.instance_slots))
+		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
 		r.fix_parents()
 		return r
 
@@ -644,11 +655,11 @@ class Syntaxed(Node, SyntaxedPersistenceStuff):
 
 	@property
 	def syntaxes(self):
-		return self.decl.instance_syntaxes
+		return self.ddecl.instance_syntaxes
 
 	@property
 	def slots(self):
-		return self.decl.target.instance_slots
+		return self.ddecl.instance_slots
 
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
@@ -726,7 +737,7 @@ class Dict(Collapsible):
 		assert(isinstance(val, element.Element))
 		val.parent = self
 
-class List(Collapsible, ListPersistenceStuff):
+class List(ListPersistenceStuff, Collapsible):
 	#todo: view sorting
 	def __init__(self):
 		super(List, self).__init__()
@@ -831,14 +842,14 @@ class List(Collapsible, ListPersistenceStuff):
 		p.add(node)
 		self.items.append(p)
 
+	#@topic
 	@property
-	@topic
 	def item_type(self):
 		assert hasattr(self, "decl"),  "parent="+str(self.parent)+" contents="+str(self.items)
 		ddecl = self.ddecl
 		assert isinstance(ddecl, ParametricType), self
 		r = self.ddecl.ch.itemtype
-		log(r)
+		log('item_type',r)
 		return r
 
 	def above(self, item):
@@ -994,7 +1005,7 @@ class Bananas(Node):
 	def match(v):
 		return False
 
-class WidgetedValue(Node, WidgetedValuePersistenceStuff):
+class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 	"""basic one-widget values"""
 	is_const = True#this doesnt propagate to Parser yet
 	def __init__(self):
@@ -1158,7 +1169,7 @@ class Module(Syntaxed):
 # region nodecls and stuff
 
 
-class Ref(Node, RefPersistenceStuff):
+class Ref(RefPersistenceStuff, Node):
 	"""points to another node.
 	if a node already has a parent, you just want to point to it, not own it"""
 	#todo: separate typeref and ref?..varref..?
@@ -1283,7 +1294,6 @@ class TypeNodecl(NodeclBase):
 	help = ["points to another node, like using an identifier. Used to point to types."]
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
-		Ref.decl = self
 
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
@@ -1309,7 +1319,6 @@ class VarRefNodecl(NodeclBase):
 
 	def __init__(self):
 		super(VarRefNodecl, self).__init__(VarRef)
-		VarRef.decl = self
 
 	@topic("varrefs")
 	def palette(self, scope, text, node):
@@ -1335,8 +1344,7 @@ class VarRefNodecl(NodeclBase):
 class ExpNodecl(NodeclBase):
 	def __init__(self):
 		super(ExpNodecl, self).__init__(Exp)
-		build_in(self, 'exp')
-		Exp.decl = self
+
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [ParserMenuItem(Exp(x)) for x in nodecls]
@@ -1552,7 +1560,7 @@ name of the python class that implements it."""))
 build_in(TypeNodecl(), 'type')  #..so you can say that your function returns a type, or something
 build_in(VarRefNodecl(), 'varref')
 
-print Nodecl(Number).name
+log(Nodecl(Number).name)
 assert Nodecl(Number).name
 
 build_in([Nodecl(x) for x in [Number, Text, Statements, Banana, Bananas]])
@@ -2018,7 +2026,7 @@ class ParserBase(Node):
 
 
 
-class Parser(ParserBase, ParserPersistenceStuff):
+class Parser(ParserPersistenceStuff, ParserBase):
 	"""the awkward input node AKA the Beast.
 	im thinking about rewriting the items into nodes again.
 	 this time with smarter cursor movement.
@@ -2624,7 +2632,7 @@ BuiltinFunctionDecl.create(
 	[ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
 
 
-class FunctionCall(Node, FunctionCallPersistenceStuff):
+class FunctionCall(FunctionCallPersistenceStuff, Node):
 	def __init__(self, target):
 		super(FunctionCall, self).__init__()
 		assert isinstance(target, FunctionDefinitionBase)
@@ -2682,7 +2690,6 @@ class FunctionCallNodecl(NodeclBase):
 	"""offers function calls"""
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(FunctionCall)
-		FunctionCall.decl = self
 	def palette(self, scope, text, node):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
 		return [ParserMenuItem(FunctionCall(x)) for x in decls]
@@ -2831,7 +2838,7 @@ def add_operators():
 
 	def b_list_squared(arg):
 		return [b_squared(i) for i in arg]
-	pfn(b_list_squared, [num_list_arg(), Text(", squared")], num_list(), name = "squared")
+	pfn(b_list_squared, [num_list_arg(), Text(", squared")], num_list(), name = "list squared")
 
 	pfn(sum, [Text("the sum of"), num_list_arg()], name = "summed")
 
@@ -3254,3 +3261,5 @@ lemon console node to run them from
 #todo: node syntax is a list of ..
 #node children types is a list of ..
 
+
+#danger: decls arent included in flatten
