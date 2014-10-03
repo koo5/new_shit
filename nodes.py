@@ -33,13 +33,6 @@ import sys
 sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3
 from fuzzywuzzy import fuzz
 
-try:
-	from collections import OrderedDict as odict
-except:#be compatible with older python (2.4?)
-	from odict import OrderedDict as odict
-
-#import uni
-
 from dotdict import dotdict
 from logger import log, topic
 import element
@@ -50,10 +43,7 @@ from tags import ChildTag, ElementTag, WidgetTag, AttTag, TextTag, ColorTag, End
 #from input import levent
 import lemon_colors as colors
 from keys import *
-from utils import flatten
-
-if BRY:
-	assert(__debug__) # https://github.com/brython-dev/brython/issues/5
+from utils import flatten, odict
 
 tags.asselement = element
 
@@ -167,7 +157,7 @@ class NodePersistenceStuff(object):
 	def serialize(s):
 		assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
 		return odict(
-			decl = s.decl.serialize()).update(s._serialize())
+			decl = s.decl.serialize()).updated(s._serialize())
 
 	def unresolvize(s):
 		return odict(
@@ -224,7 +214,7 @@ class RefPersistenceStuff(object):
 
 class ParserPersistenceStuff(object):
 	def serialize(s):
-		return odict(decl = 'Parser').update(s._serialize())
+		return odict(decl = 'Parser').updated(s._serialize())
 		#Parser is special coz it doesnt have a decl..hmm
 
 	def _serialize(s):
@@ -696,7 +686,7 @@ class Collapsible(Node):
 	@classmethod
 	@topic ("Collapsible.fresh")
 	def fresh(cls, decl):
-		log("decl="+repr(decl))
+		#log("decl="+repr(decl))
 		r = cls()
 		r.decl = decl
 		return r
@@ -1145,23 +1135,28 @@ class Module(Syntaxed):
 			return node.eval()
 
 	keys = ["ctrl - s: save"]
-	def on_keypress(self, e):
+	def on_keypress(s, e):
 		if e.key == K_s and e.mod & KMOD_CTRL:
-			import yaml
-			s = yaml.dump(self.serialize(), indent = 4)
-			open('test_save.lemon', "w").write(s)
-			try:
-				import json
-				s = json.dumps(self.serialize(), indent = 4)
-				open('test_save.lemon.json', "w").write(s)
-				log(s)
-			except Exception as e:
-				log(e)
-			#	raise
+			s.save_me()
 			return True
 		if e.key == K_r and e.mod & KMOD_CTRL:
-			log(b_lemon_load_file(self.root, 'test_save.lemon'))
+			log(b_lemon_load_file(s.root, 'test_save.lemon'))
 			return True
+
+	@topic ("save")
+	def save_me(self):
+		import yaml
+		s = yaml.dump(self.serialize(), indent = 4)
+		open('test_save.lemon', "w").write(s)
+		log(s)
+		try:
+			import json
+			s = json.dumps(self.serialize(), indent = 4)
+			open('test_save.lemon.json', "w").write(s)
+			#log(s)
+		except Exception as e:
+			log(e)
+		#	raise
 
 
 # endregion
@@ -1611,7 +1606,7 @@ class ListOfAnything(ParametricType):
 	def works_as(self, type):
 		return True
 
-build_in(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
+#build_in(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
 
 build_in(SyntaxedNodecl(EnumType,
 			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
@@ -3058,7 +3053,7 @@ def b_lemon_load_file(root, name):
 	return name + " loaded ok"
 
 BuiltinPythonFunctionDecl.create(
-	b_lemon_load_file, [Text("load"), text_arg()], b['text'], "load file", "open").pass_root = True
+	b_lemon_load_file, [Text("load"), text_arg()], Ref(b['text']), "load file", "open").pass_root = True
 
 """
 def editor_load_file(name):
@@ -3211,6 +3206,10 @@ def is_flat(l):
 	return flatten(l) == l
 
 """
+
+#import uni
+
+
 def ph_to_lemon(x):
 	return iter([to_lemon(x)])
 
@@ -3235,31 +3234,23 @@ do(1, A) :-
 #todo: totally custom node:
 we have unevaluated arguments, so a function body can be thought of as a rule for
 evaluating the node. there could be other rules: display, debugging..?..
-"""
 
-
-"""todo:
 modules: how to declare imports, how to denote in menu items that a function is
 from some module..
 ipython parallel/pyrex/something distributedness
 dbpedia node
 curses, js(brython seems nice) frontends
 
-"""
+decide if declarative nodes like SyntacticCategory and Definition should have
+the name as a child node...it doesnt seem to make for a clear reading
 
-"""todo: decide if declarative nodes like SyntacticCategory and Definition should have
-the name as a child node...it doesnt seem to make for a clear reading"""
-
-
-"""another todo list:
-serialization
+serialization...in progress
 save/load functions
 lemon console node to run them from
-"""
 
 
 #todo: node syntax is a list of ..
 #node children types is a list of ..
 
-
 #danger: decls arent included in flatten
+"""

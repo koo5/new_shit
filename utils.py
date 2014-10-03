@@ -1,4 +1,19 @@
-#import collections
+try:
+	from collections import OrderedDict as odict
+except:#be compatible with older python (2.4?)
+	from odict import OrderedDict as odict
+
+def updated(d, d2):
+	d.update(d2)
+	return d
+
+odict.updated = updated
+
+
+
+
+
+
 from lemon_six import str_and_uni
 
 def flatten_gen(x):
@@ -21,5 +36,4 @@ def test_flatten():
 	assert o == [3,4,5,6,7,8], o
 
 test_flatten()
-
 
