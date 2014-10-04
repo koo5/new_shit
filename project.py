@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 
 """
 take a list of tags (see tags.py) or an element and render everything into
@@ -7,7 +9,7 @@ lines of tuples containing characters to be displayed on screen and their
 attributes (most importantly the element the char belongs to and color)
 line is a list of tuples: (character, attributes)
 """
-from lemon_six import six_u, str_and_uni
+from lemon_six import str_and_uni
 from tags import *
 from logger import ping, log
 from nodes import Node, Parser
@@ -133,7 +135,7 @@ def _project_tags(p, elem, tags):
 		if isinstance(tag, str_and_uni):
 			for char in tag:
 				attadd(p.atts, "char_index", p.char_index)
-				if char == "\n" or char == six_u("\n"):
+				if char == "\n":
 					if newline(p, elem) == DONE:
 						return DONE
 				else:

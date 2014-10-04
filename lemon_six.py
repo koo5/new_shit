@@ -113,8 +113,6 @@ _add_doc(iterlists,
 
 
 if PY3:
-    def six_u(s):
-        return s
     unichr = chr
     if sys.version_info[1] <= 1:
         def int2byte(i):
@@ -129,9 +127,6 @@ if PY3:
     StringIO = io.StringIO
     BytesIO = io.BytesIO
 else:
-    # with a workaround for standalone backslash
-    def six_u(s):
-        return unicode(s.replace(r'\\', r'\\\\'), "unicode_escape")
     unichr = unichr
     int2byte = chr
     def byte2int(bs):

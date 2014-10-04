@@ -4,6 +4,7 @@
 #frontend-agnostic middle, complicated by debug replay functionality
 
 from __future__ import print_function
+from __future__ import unicode_literals
 
 version=0.21
 

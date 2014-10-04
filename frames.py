@@ -1,6 +1,6 @@
-
 """root, menu, log, info, help.."""
-#todo:rename root to code
+#todo:rename root to code or main or document or..
+from __future__ import unicode_literals
 
 import graph
 
@@ -14,7 +14,7 @@ from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag, AttTag
 import widgets
 from logger import log, topic
 from keys import *
-from lemon_six import six_u, iteritems, str_and_uni
+from lemon_six import iteritems, str_and_uni
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
 class Frame(object):
@@ -87,7 +87,7 @@ class Root(Frame):
 	def first_nonblank(self):
 		r = 0
 		for ch, a in self.lines[self.cursor_r]:
-			if ch in [" ", six_u(" ")]:
+			if ch == " ":
 				r += 1
 			else:
 				return r

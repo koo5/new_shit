@@ -2,6 +2,8 @@
 
 """textbox, button, toggle.."""
 
+from __future__ import unicode_literals
+
 import element
 from logger import log, ping
 from tags import TextTag, ColorTag, EndTag, WidgetTag

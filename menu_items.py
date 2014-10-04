@@ -1,4 +1,6 @@
-from lemon_colors import colors
+
+from __future__ import unicode_literals
+
 from element import Element
 import widgets
 from tags import TextTag, WidgetTag

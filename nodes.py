@@ -25,6 +25,8 @@ and the whole language is very..umm..not well-founded...for now. improvements we
 #http://python-future.org/
 #from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame?
 
+from __future__ import unicode_literals
+
 from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
 import lemon_platform as platform
 BRY = platform.frontend == platform.brython
@@ -160,9 +162,14 @@ class NodePersistenceStuff(object):
 			decl = s.decl.serialize()).updated(s._serialize())
 
 	def unresolvize(s):
-		return odict(
+		r = odict(
 			resolve = True,
 			name = s.name)
+		try:
+			pass
+			#r['decl'] = s.decl.unresolvize()
+		except AttributeError as e:
+			r['decl'] = s.__class__.__name__.lower()
 
 	def _serialize(s):
 		return {}
@@ -390,7 +397,7 @@ class Node(NodePersistenceStuff, element.Element):
 	def eval(self):
 		"call _eval, save result to s.runtime"
 		r = self._eval()
-		assert isinstance(r, Node), str(self) + "._eval() is borked"
+		assert isinstance(r, Node),  str(self) + "._eval() is borked"
 
 		#if self.isconst:
 		#	self.runtime.value.set(r)
@@ -451,13 +458,11 @@ class Node(NodePersistenceStuff, element.Element):
 
 	def to_python_str(self):
 		return str(self)
+		#danger: uni
 
 	@property
 	def vardecls(s):
 		return []
-
-	def to_python_str(s):
-		return str(s)
 
 	def tags(self):
 		elem = self
@@ -538,7 +543,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		self._fix_parents(list(self.ch._dict.values()))
 
 	def set_child(self, name, item):
-		assert isinstance(name, str), repr(name)
+		assert isinstance(name, str_and_uni), repr(name)
 		assert isinstance(item, Node)
 		item.parent = self
 		self.ch[name] = item
@@ -723,7 +728,7 @@ class Dict(Collapsible):
 		key, val = kv
 		assert(key not in self.items)
 		self.items[key] = val
-		assert(isinstance(key, str))
+		assert(isinstance(key, str_and_uni))
 		assert(isinstance(val, element.Element))
 		val.parent = self
 
@@ -1376,7 +1381,7 @@ class SyntaxedNodecl(NodeclBase):
 	"""
 	def __init__(self, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
-		self.instance_slots = dict([(k, b[i] if isinstance(i, str) else i) for k,i in iteritems(instance_slots)])
+		self.instance_slots = dict([(k, b[i] if isinstance(i, str_and_uni) else i) for k,i in iteritems(instance_slots)])
 		if isinstance(instance_syntaxes[0], list):
 			self.instance_syntaxes = instance_syntaxes
 		else:
@@ -2443,7 +2448,7 @@ class FunctionDefinitionBase(Syntaxed):
 		super(FunctionDefinitionBase, self).__init__(kids)
 
 	@property
-	def args(self):
+	def params(self):
 		return dict([(i.name, i) for i in self.sig if isinstance(i, (TypedArgument, UnevaluatedArgument))])
 
 	@property
@@ -2469,18 +2474,18 @@ class FunctionDefinitionBase(Syntaxed):
 
 	@property
 	def vardecls(s):
-		r = [i if isinstance(i, TypedArgument) else i.ch.argument for i in s.args]
+		r = [i if isinstance(i, TypedArgument) else i.ch.argument for i in s.params]
 		#print ">>>>>>>>>>>", r
 		return r
 
 	def typecheck(self, args):
 		for name, arg in iteritems(args):
-			#if not arg.type.eq(self.arg_types[i]):
-			type = self.args[name].type
-			if isinstance(type, Ref):#we have a chance to compare these without prolog
-				if not arg.decl == type.target:
-					log("well this is bad, decl %s of %s != %s" % (arg.decl, arg, self.args[name].type.target))
-					return Banana(str(arg.decl.name) +" != "+str(self.args[name].type.name))
+			#if not arg.type.eq(self.arg_types[i])...
+			expected_type = self.params[name].type
+			if isinstance(expected_type, Ref) and isinstance(arg.decl, Ref):
+				if not arg.decl.target == expected_type.target:
+					log("well this is maybe bad, decl %s of %s != %s" % (arg.decl, arg, expected_type))
+					return Banana(str(arg.decl.name) +" != "+str(expected_type.name))
 		return True
 
 	@topic ("function call")
@@ -2494,7 +2499,7 @@ class FunctionDefinitionBase(Syntaxed):
 				evaluated_args[name] = arg.parsed
 		log("evaluated_args:", evaluated_args)
 
-		assert(len(evaluated_args) == len(self.args))
+		assert(len(evaluated_args) == len(self.params))
 		r = self._call(evaluated_args )
 		assert isinstance(r, Node), "_call returned "+str(r)
 		return r
@@ -2633,9 +2638,9 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
 		#print self.target.arg_types
-		for i in itervalues(self.target.args):
+		for i in itervalues(self.target.params):
 			assert not isinstance(i.type, Parser), "%s to target %s is a dumbo" % (self, self.target)
-		self.args = dict([(name, Parser(v.type)) for name, v in iteritems(self.target.args)]) #this should go to fresh(?)
+		self.args = dict([(name, Parser(v.type)) for name, v in iteritems(self.target.params)]) #this should go to fresh(?)
 		self.fix_parents()
 
 	def fix_parents(s):
@@ -2644,7 +2649,7 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 	def delete_child(self, child):
 		for i,a in enumerate(self.args):
 			if a == child:
-				self.args[i] = Parser(self.target.arg_types[i])
+				self.args[i] = Parser(self.target.params[i].type)
 				self.args[i].parent = self
 				return
 
@@ -2661,8 +2666,8 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 	def render(self):
 		sig = self.target.sig
 		assert isinstance(sig, list)
-		assert len(self.args) == len(self.target.args),\
-			(len(self.args),len(self.target.args),self.args, self.target.args,self, self.target)
+		assert len(self.args) == len(self.target.params),\
+			(len(self.args),len(self.target.params),self.args, self.target.params,self, self.target)
 		r = []
 		for v in sig:
 			if isinstance(v, Text):

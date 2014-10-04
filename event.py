@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 # ----------------------------------------------------------------------------
 # pyglet
 # Copyright (c) 2006-2008 Alex Holkner

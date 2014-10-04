@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 """
 this decorator can be used with a function that handles keypress events,
 would declare the accepted keys, they could be automatically displayed

@@ -1,4 +1,6 @@
-from lemon_six import iteritems
+from __future__ import unicode_literals
+
+from lemon_six import iteritems, str_and_uni
 from logger import log
 from dotdict import dotdict
 try:
@@ -47,7 +49,7 @@ def modify(c, max=255):
 
 def color(c):
 	"""return an rgb tuple by name, modified by display filters(mono,invert) and ready for use"""
-	if isinstance(c, str):
+	if isinstance(c, str_and_uni):
 		try:
 			return colors[c]
 		except KeyError:

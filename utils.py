@@ -1,3 +1,8 @@
+
+from __future__ import unicode_literals
+
+from lemon_six import str_and_uni
+
 try:
 	from collections import OrderedDict as odict
 except:#be compatible with older python (2.4?)
@@ -8,13 +13,6 @@ def updated(d, d2):
 	return d
 
 odict.updated = updated
-
-
-
-
-
-
-from lemon_six import str_and_uni
 
 def flatten_gen(x):
 	for y in x:

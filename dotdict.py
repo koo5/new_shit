@@ -1,5 +1,6 @@
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
+
 class dotdict(object):
 	"""
 	a simple object that wraps a dict and allows access by attributes.
