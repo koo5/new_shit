@@ -802,3 +802,18 @@ def test_serialization(r):
 
 http://pygame.org/wiki/CompileUbuntu?parent=Compilation
 
+
+
+
+
+
+
+intro
+	why lemon
+		textual projection:
+			cool natlanging, editing
+				alternatives;
+					citrus
+					cedalion
+					mps
+			

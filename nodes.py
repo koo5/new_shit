@@ -166,10 +166,11 @@ class NodePersistenceStuff(object):
 			resolve = True,
 			name = s.name)
 		try:
-			pass
-			#r['decl'] = s.decl.unresolvize()
+			#pass
+			r['decl'] = s.decl.unresolvize()
 		except AttributeError as e:
 			r['decl'] = s.__class__.__name__.lower()
+		return r
 
 	def _serialize(s):
 		return {}
@@ -1142,14 +1143,14 @@ class Module(Syntaxed):
 	keys = ["ctrl - s: save"]
 	def on_keypress(s, e):
 		if e.key == K_s and e.mod & KMOD_CTRL:
-			s.save_me()
+			s.save()
 			return True
 		if e.key == K_r and e.mod & KMOD_CTRL:
 			log(b_lemon_load_file(s.root, 'test_save.lemon'))
 			return True
 
 	@topic ("save")
-	def save_me(self):
+	def save(self):
 		import yaml
 		s = yaml.dump(self.serialize(), indent = 4)
 		open('test_save.lemon', "w").write(s)
@@ -3168,13 +3169,15 @@ def make_root():
 	#			log(i.long__repr__())
 	#log("--------------")
 	#log(r["builtins"].ch.statements.items)
-	test_serialization(r)
-	log(b_lemon_load_file(r, 'test_save.lemon'))
+	#test_serialization(r)
+	#log(b_lemon_load_file(r, 'test_save.lemon'))
 	#log(len(r.flatten()))
 	#log(r["builtins"].ch.statements.items)
 	#import gc
 	#log(gc.garbage)
 	#gc.collect()
+	r["some program"].save()
+	#log("ok")
 	for i in r.flatten():
 		if not isinstance(i, Root):
 			assert i.parent, i.long__repr__()
