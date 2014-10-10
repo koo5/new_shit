@@ -328,7 +328,7 @@ def main():
 
 	pygame.display.init()
 	pygame.font.init()
-	display.set_caption('lemon operating language v'+str(lemon.version))
+	display.set_caption(str('lemon operating language v')+str(lemon.version))
 	icon = image.load('icon32x32.png')
 	display.set_icon(icon)
 

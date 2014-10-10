@@ -437,7 +437,7 @@ class Node(NodePersistenceStuff, element.Element):
 		"make a new instance"
 		return cls()
 
-	keys = ["f7: evaluate",
+	keys = ["f7: evaluate node",
 		"ctrl del: delete"]
 	
 	def on_keypress(self, e):
@@ -731,6 +731,7 @@ class Dict(Collapsible):
 		assert(isinstance(key, str_and_uni))
 		assert(isinstance(val, element.Element))
 		val.parent = self
+		return val
 
 class List(ListPersistenceStuff, Collapsible):
 	#todo: view sorting
@@ -3140,10 +3141,28 @@ class LeshSnippet(Node):
 #todo: split on pipes
 # endregion
 
+def new_module():
+	return b['module'].inst_fresh()
+
 @topic ("make root")
 def make_root():
 	r = Root()
-	r.add(("welcome", Text("Welcome to lemon! Press F1 to cycle the sidebar!")))
+	intro = r.add(("intro", new_module()))
+	intro.ch.statements.items = [Text("""
+
+Welcome to lemon! Press F1 to cycle the sidebar!
+the interface of lemon is currently implemented like this:
+root is a dictionary with keys like "intro", "some program" etc.
+it's values are mostly modules. modules can be collapsed and expanded and they
+hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
+
+Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
+ctrl-d will delete something. Inserting of nodes happens in the Parser node. it looks like this:"""),
+Parser(b['number']),
+Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
+Text("todo: smarter menu, better parser, save/load, a real language, fancy projections...;)")]
+
+
 	r.add(("lesh", Lesh()))
 	r.add(("some program", b['module'].inst_fresh()))
 	r.add(("lemon console", b['module'].inst_fresh()))
