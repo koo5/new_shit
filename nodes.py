@@ -32,7 +32,7 @@ import lemon_platform as platform
 BRY = platform.frontend == platform.brython
 
 import sys
-sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3
+sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
 from fuzzywuzzy import fuzz
 
 from dotdict import dotdict
@@ -107,19 +107,17 @@ def deserialize(data, parent):
 	"""
 	data is a json.load'ed .lemon file
 	"""
-	#if 'resolve' in data:
-	if 'decl' in data:
-		decl = find_decl(data['decl'], parent.nodecls)
+	if not 'decl' in data:
+		return Text("decl key not in d")
+	decl = data['decl']
+	if decl == 'Parser':
+		return Paser.deserialize(data, parent)
+	else:
+		decl = find_decl(decl, parent.nodecls)
 		if decl:
 			return decl.instance_class.deserialize(data['data'], parent)
 		else:
-			if data['decl'] == 'Parser':
-				return Parser.deserialize(data['data'], parent)
-			else:
-				raise Exception ("cto takoj " + repr(data['decl']))
-
-	else:
-		return Text("decl key not in d")
+			raise Exception ("cto takoj " + repr(decl))
 
 def find_decl(name, decls):
 	for i in decls:
