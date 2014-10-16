@@ -817,3 +817,7 @@ intro
 					cedalion
 					mps
 			
+
+
+lang/verbosity/syntax
+cycle with Fs

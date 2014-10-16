@@ -131,23 +131,17 @@ def resolve(data, parent):
 	assert(data['resolve'])
 	log("resolving", data)
 
+	decl = data['decl']
 	scope = parent.scope
 
-	#funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
-	#resolving {'function': True, 'note': 'inclusive',
-	# 'sig': [{'decl': 'text', 'data': {}}, {'decl': 'typedargument', 'data': {'children': {'type': {'decl': 'ref', 'data': {}}, 'name': {'decl': 'text', 'data': {}}}}}, {'decl': 'text', 'data': {}}, {'decl': 'typedargument', 'data': {'children': {'type': {'decl': 'ref', 'data': {}}, 'name': {'decl': 'text', 'data': {}}}}}],
-	# 'name': 'range',
-	# 'fun': <function b_range at 0x7fce03cbd9b0>,
-	# 'ret': <nodes.ParametricType object at 0x7fce0408a690>(parametric type (probably list))}
-	#for i in scope:
-	#	if i.name == data['name']:
-	#		log("found")
-	#		return i
+	if decl == "defun":
+		funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
+		for i in funcs:
+			if i.name == data['name']:
+				log("found")
+				return i
 
-#poor mans AOP.
-#im sick of jumping up and down this huge file, i cant find any plugin that would ease this..so..
-#(in a structural editor, you'll be able to group stuff by objects or by aspects). See maybe codebubbles.
-#python tops it off here by disallowing multiline lambdas..sigh..
+
 #these PersistenceStuff classes are just bunches of functions
 #that could as well be in the node classes themselves,
 #the separation doesnt have any function besides having them all
@@ -278,6 +272,11 @@ class FunctionCallPersistenceStuff(object):
 		for k,v in iteritems(data['args']):
 			r.ch[k] = deserialize(v, r.ch[k])
 		return r
+
+class FunctionDefinitionBasePersistenceStuff(object):
+	def serialize(s):
+		return odict(decl = 'defun', name=s.name)
+
 
 
 class WidgetedValuePersistenceStuff(object):
@@ -2442,7 +2441,7 @@ build_in(Definition({'name': Text('function signature list'), 'type':tmp}))
 
 
 
-class FunctionDefinitionBase(Syntaxed):
+class FunctionDefinitionBase(FunctionDefinitionBasePersistenceStuff, Syntaxed):
 
 	def __init__(self, kids):
 		super(FunctionDefinitionBase, self).__init__(kids)
@@ -3278,4 +3277,6 @@ lemon console node to run them from
 #node children types is a list of ..
 
 #danger: decls arent included in flatten
+
+todo:pip search hjson
 """
