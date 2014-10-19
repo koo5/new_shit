@@ -13,7 +13,7 @@ debug = print
 
 #gui = None
 
-topics = ["?"]
+topics = []
 
 def topic(text=None):
 	"""decorator to put before your function with a logging topic"""
@@ -49,7 +49,8 @@ def ping(level = 1):
 def log(*vargs):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
 	x = ', '.join([str(x) for x in vargs])
-	text = topics[-1]+(": ")+str(x) # if len(topics)>1 else ""
+	text = ":".join(topics)
+	text+=(": ")+str(x) # if len(topics)>1 else ""
 	debug(text)
 
 def plog(*args):

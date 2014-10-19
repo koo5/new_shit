@@ -24,6 +24,8 @@ def parse_args():
 				   default=False)
 	parser.add_argument('--font-size', type=int,
 				   default=22)
+	parser.add_argument('--load', type=unicode,
+				   default=False)
 	parser.add_argument('--log-height', default=4, type=int)
 	return parser.parse_args()
 #args = parse_args()

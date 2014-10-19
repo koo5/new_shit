@@ -107,41 +107,81 @@ def deserialize(data, parent):
 	"""
 	data is a json.load'ed .lemon file
 	"""
+	
+	if 'resolve' in data:
+		return resolve(data, parent)
 	if not 'decl' in data:
-		return Text("decl key not in d")
+		raise Exception("decl key not in d")
 	decl = data['decl']
+	log("deserializing node with decl %s"%decl)
 	if decl == 'Parser':
-		return Paser.deserialize(data, parent)
-	else:
+		return Parser.deserialize(data, parent)
+	#elif decl == 'ref':
+	#	return Ref.deserialize(data, parent)
+	elif isinstance(decl, str_and_uni):
 		decl = find_decl(decl, parent.nodecls)
 		if decl:
-			return decl.instance_class.deserialize(data['data'], parent)
+			log("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
+			return decl.instance_class.deserialize(data, parent)
 		else:
 			raise Exception ("cto takoj " + repr(decl))
+	elif isinstance(decl, dict):
+		decl = deserialize(decl, parent)
+		log("->%s"%decl)
+		return deref_decl(decl).instance_class.deserialize(data, parent)
+	else:
+		raise Exception ("cto takoj " + repr(decl))
+
 
 def find_decl(name, decls):
+	assert isinstance(name, str_and_uni)
 	for i in decls:
 		if name == i.name:
+			log("found",name)
 			return i
-	log (name, "not found in", decls)
+	raise Exception ("%s not found in %s", (repr(name), repr(decls)))
 
 
 def resolve(data, parent):
 
 	assert(data['resolve'])
 	log("resolving", data)
+	scope = parent.scope()
+	name = data['name']
 
-	decl = data['decl']
-	scope = parent.scope
-
-	if decl == "defun":
-		funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
-		for i in funcs:
-			if i.name == data['name']:
-				log("found")
+	if 'decl' in data:
+		decl = data['decl']
+		if decl == "defun":
+			#lets make functions hacky so that its not specified in the save file if
+			#its a built in or a defined one etc.
+			funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
+			for i in funcs:
+				if i.name == name:
+					log("found")
+					return i
+			raise Exception("function %s not found" % name)
+		
+		elif isinstance(decl, dict):
+			placeholder = Text("placeholder")
+			placeholder.parent = parent
+			decl = deserialize(decl, placeholder)
+			for i in scope:
+				if i.decl.eq(decl) and i.name == name:
+					return i
+			raise Exception("node with name %s and decl %s not found"%(name,decl))
+	
+	elif 'class' in data:
+		c = data['class']
+		for i in scope:
+			#log(i.__class__.__name__.lower(), c)
+			if i.__class__.__name__.lower()  == c and i.name == name:
 				return i
-
-
+		raise Exception("node with name %s and class %s not found"%(name,c))
+	
+	else:
+		raise Exception("dunno how to resolve %s" % data)
+	
+			
 #these PersistenceStuff classes are just bunches of functions
 #that could as well be in the node classes themselves,
 #the separation doesnt have any function besides having them all
@@ -158,10 +198,10 @@ class NodePersistenceStuff(object):
 			resolve = True,
 			name = s.name)
 		try:
-			#pass
+			log("unresolvizing %s with decl %s"%(s, s.decl))
 			r['decl'] = s.decl.unresolvize()
 		except AttributeError as e:
-			r['decl'] = s.__class__.__name__.lower()
+			r['class'] = s.__class__.__name__.lower()
 		return r
 
 	def _serialize(s):
@@ -212,6 +252,18 @@ class RefPersistenceStuff(object):
 			decl = 'ref',
 			target = s.target.unresolvize())
 
+	def unresolvize(s):
+		return s.serialize()
+
+	@classmethod
+	def deserialize(cls, data, parent):
+		placeholder = Text("placeholder")
+		placeholder.parent = parent
+		target = deserialize(data['target'], placeholder)
+		r = cls(target)
+		r.parent = parent
+		return r
+
 class ParserPersistenceStuff(object):
 	def serialize(s):
 		return odict(decl = 'Parser').updated(s._serialize())
@@ -220,7 +272,7 @@ class ParserPersistenceStuff(object):
 	def _serialize(s):
 		return odict(
 			type = s.type.serialize(),
-		    items = s.serialize_items()
+			items = s.serialize_items()
 		)
 
 	def serialize_items(s):
@@ -231,6 +283,7 @@ class ParserPersistenceStuff(object):
 				r.append(i)
 			else:
 				r.append(i.serialize())
+		return r
 
 	@classmethod
 	def deserialize(cls, data, parent):
@@ -238,7 +291,7 @@ class ParserPersistenceStuff(object):
 		placeholder.parent = parent
 		r = cls(deserialize(data['type'], placeholder))
 		r.parent = parent
-
+		log("deserializing Parser"+str(data))
 		for i in data['items']:
 			if isinstance(i, str_and_uni):
 				r.add(i)
@@ -1152,15 +1205,15 @@ class Module(Syntaxed):
 		import yaml
 		s = yaml.dump(self.serialize(), indent = 4)
 		open('test_save.lemon', "w").write(s)
-		log(s)
+		#log(s)
 		try:
 			import json
 			s = json.dumps(self.serialize(), indent = 4)
 			open('test_save.lemon.json', "w").write(s)
-			#log(s)
+			log(s)
 		except Exception as e:
 			log(e)
-		#	raise
+			raise e
 
 
 # endregion
@@ -1189,6 +1242,9 @@ class Ref(RefPersistenceStuff, Node):
 		return self.target.inst_fresh()
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.target)+"')"
+	def eq(a, b):
+		if isinstance(b, Ref):
+			return a.target == b.target
 
 class VarRef(Node):
 	def __init__(self, target):
@@ -3160,8 +3216,9 @@ Parser(b['number']),
 Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
 Text("todo: smarter menu, better parser, save/load, a real language, fancy projections...;)")]
 
-
-	r.add(("lesh", Lesh()))
+	
+	intro.ch.statements.view_mode=0
+	#r.add(("lesh", Lesh()))
 	r.add(("some program", b['module'].inst_fresh()))
 	r.add(("lemon console", b['module'].inst_fresh()))
 	r.add(("loaded program", Text("placeholder")))
@@ -3186,13 +3243,13 @@ Text("todo: smarter menu, better parser, save/load, a real language, fancy proje
 	#log("--------------")
 	#log(r["builtins"].ch.statements.items)
 	#test_serialization(r)
-	#log(b_lemon_load_file(r, 'test_save.lemon'))
+	#log(b_lemon_load_file(r, 'test_save.lemon.json'))
 	#log(len(r.flatten()))
 	#log(r["builtins"].ch.statements.items)
 	#import gc
 	#log(gc.garbage)
 	#gc.collect()
-	r["some program"].save()
+	#r["some program"].save()
 	#log("ok")
 	for i in r.flatten():
 		if not isinstance(i, Root):
