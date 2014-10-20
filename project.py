@@ -126,7 +126,7 @@ def _project_tags(p, elem, tags):
 			assert(isinstance(elem, assnodes.Node))
 			assert(isinstance(elem.ch[tag.name], asselement.Element))
 			tag = ElementTag(elem.ch[tag.name]) #get child of Syntaxed
-		elif isinstance(tag, WidgetTag):
+		elif isinstance(tag, MemberTag):
 			#get the element as an attribute
 			#i think this should be getattr
 			tag = ElementTag(elem.__dict__[tag.name])

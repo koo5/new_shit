@@ -3,7 +3,7 @@
 import project
 import widgets
 from nodes import Text, List, Syntaxed, Node, Todo, Note, Collapsible
-from tags import ElementTag, NewlineTag as nl, WidgetTag as w, TextTag as t, ChildTag as ch
+from tags import ElementTag, NewlineTag as nl, MemberTag as w, TextTag as t, ChildTag as ch
 from logger import ping
 
 def the_doc():

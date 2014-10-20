@@ -41,7 +41,7 @@ import element
 from menu_items import MenuItem
 import widgets
 import tags
-from tags import ChildTag, ElementTag, WidgetTag, AttTag, TextTag, ColorTag, EndTag, IndentTag, DedentTag, NewlineTag, ArrowTag   #, MenuTag
+from tags import ChildTag, ElementTag, MemberTag, AttTag, TextTag, ColorTag, EndTag, IndentTag, DedentTag, NewlineTag, ArrowTag   #, MenuTag
 #from input import levent
 import lemon_colors as colors
 from keys import *
@@ -116,6 +116,8 @@ def deserialize(data, parent):
 	log("deserializing node with decl %s"%decl)
 	if decl == 'Parser':
 		return Parser.deserialize(data, parent)
+	if decl == 'defun':
+		return FunctionDefinitionBase.deserialize(data, parent)
 	#elif decl == 'ref':
 	#	return Ref.deserialize(data, parent)
 	elif isinstance(decl, str_and_uni):
@@ -139,7 +141,7 @@ def find_decl(name, decls):
 		if name == i.name:
 			log("found",name)
 			return i
-	raise Exception ("%s not found in %s", (repr(name), repr(decls)))
+	raise Exception ("%s not found in %s"% (repr(name), repr(decls)))
 
 
 def resolve(data, parent):
@@ -166,7 +168,7 @@ def resolve(data, parent):
 			placeholder.parent = parent
 			decl = deserialize(decl, placeholder)
 			for i in scope:
-				if i.decl.eq(decl) and i.name == name:
+				if decl.eq(i.decl) and i.name == name:
 					return i
 			raise Exception("node with name %s and decl %s not found"%(name,decl))
 	
@@ -189,20 +191,21 @@ def resolve(data, parent):
 
 class NodePersistenceStuff(object):
 	def serialize(s):
-		assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
+		#assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
 		return odict(
-			decl = s.decl.serialize()).updated(s._serialize())
+			s.serialize_decl()).updated(s._serialize())
+
+	def serialize_decl(s):
+		if s.decl:
+			log("unresolvizing decl %s of %s"%(s.decl, s))
+			return {'decl': s.decl.unresolvize()}
+		else:
+			return {'class': s.__class__.__name__.lower()}
 
 	def unresolvize(s):
-		r = odict(
+		return odict(
 			resolve = True,
-			name = s.name)
-		try:
-			log("unresolvizing %s with decl %s"%(s, s.decl))
-			r['decl'] = s.decl.unresolvize()
-		except AttributeError as e:
-			r['class'] = s.__class__.__name__.lower()
-		return r
+			name = s.name).updated(s.serialize_decl())
 
 	def _serialize(s):
 		return {}
@@ -304,17 +307,13 @@ class ParserPersistenceStuff(object):
 class FunctionCallPersistenceStuff(object):
 	def _serialize(s):
 		return odict(
-			target = s.target.unresolvize()
+			target = s.target.unresolvize(),
+		    args = s.serialize_args()
+
 		)
 
-	def serialize_items(s):
-		r = []
-		for i in s.items:
-			#log("serializing " + str(i))
-			if isinstance(i, str_and_uni):
-				r.append(i)
-			else:
-				r.append(i.serialize())
+	def serialize_args(s):
+		return dict([(k, i.serialize()) for k,i in iteritems(s.args)])
 
 	@classmethod
 	def deserialize(cls, data, parent):
@@ -323,7 +322,7 @@ class FunctionCallPersistenceStuff(object):
 		r = cls(deserialize(data['target'], placeholder))
 		r.parent = parent
 		for k,v in iteritems(data['args']):
-			r.ch[k] = deserialize(v, r.ch[k])
+			r.args[k] = deserialize(v, r.args[k])
 		return r
 
 class FunctionDefinitionBasePersistenceStuff(object):
@@ -731,7 +730,7 @@ class Collapsible(Node):
 		s.view_mode_widget.value = m
 
 	def render(self):
-		yield [WidgetTag('view_mode_widget')] + [IndentTag()]
+		yield [MemberTag('view_mode_widget')] + [IndentTag()]
 		if self.view_mode > 0:
 			if self.view_mode == 2:
 				yield TextTag("\n")
@@ -1077,7 +1076,7 @@ class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 		s.widget.text = v
 
 	def render(self):
-		return [WidgetTag('widget')]
+		return [MemberTag('widget')]
 
 	def to_python_str(self):
 		return str(self.pyval)
@@ -1244,7 +1243,12 @@ class Ref(RefPersistenceStuff, Node):
 		return object.__repr__(s) + "('"+str(s.target)+"')"
 	def eq(a, b):
 		if isinstance(b, Ref):
-			return a.target == b.target
+			if a.target == b.target:
+				log("saying %s equals %s"%(a,b))
+				return True
+		log("saying %s does  not equal %s"%(a,b))
+
+
 
 class VarRef(Node):
 	def __init__(self, target):
@@ -1264,14 +1268,14 @@ class VarRef(Node):
 		return s.target.runtime.value.val
 
 class Exp(Node):
-	"""used to specify that an expression of some type, as opposed to
-	a node of some type, is expected"""
+	"""used to specify that an expression (something that evaluates to, at runtime) of
+	some type, as opposed to a node of that type, is expected"""
 	def __init__(self, type):
 		super(Exp, self).__init__()
 		self.type = type
 
 	def render(self):
-		return [WidgetTag("type"), TextTag('expr')]
+		return [MemberTag("type"), TextTag('expr')]
 
 	@property
 	def name(self):
@@ -1399,6 +1403,7 @@ class VarRefNodecl(NodeclBase):
 class ExpNodecl(NodeclBase):
 	def __init__(self):
 		super(ExpNodecl, self).__init__(Exp)
+		3
 
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
@@ -2415,7 +2420,7 @@ class ParserMenuItem(MenuItem):
 		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
 
 	def tags(self):
-		return [WidgetTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
+		return [MemberTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
 
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
@@ -3016,7 +3021,7 @@ class Note(Syntaxed):
 		super(Note,self).__init__(kids)
 
 build_in(SyntaxedNodecl(Note,
-			   [["note: ", WidgetTag("text")]],
+			   [["note: ", MemberTag("text")]],
 			   {'text': Exp(b['text'])}))
 
 
@@ -3085,7 +3090,7 @@ class FilesystemPath(Syntaxed):
 
 build_in(SyntaxedNodecl(FilesystemPath,
 			   [[ChildTag("path")],
-			    [ChildTag("path"), WidgetTag("status")]],
+			    [ChildTag("path"), MemberTag("status")]],
 			   {'path': Exp(b['text'])}))
 
 def b_files_in_dir(dir):
@@ -3157,7 +3162,7 @@ class Lesh(Node):
 
 	def render(self):
 		return [TextTag("just a little experiment, a frontend for bash/fish/zsh that lets you insert snippets and stuff:\n"),
-		                WidgetTag('command_line')]
+		                MemberTag('command_line')]
 
 class LeshSnippetDeclaration(Syntaxed):
 	"""a declaration of a snippet"""

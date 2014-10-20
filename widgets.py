@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 import element
 from logger import log, ping
-from tags import TextTag, ColorTag, EndTag, WidgetTag
+from tags import TextTag, ColorTag, EndTag, MemberTag
 from keys import *
 
 
@@ -120,7 +120,7 @@ class Number(Text):
 		self.register_event_types('on_change')
 
 	def render(self):
-		return [WidgetTag('minus_button'), TextTag(self.text), WidgetTag('plus_button')]
+		return [MemberTag('minus_button'), TextTag(self.text), MemberTag('plus_button')]
 	@property
 	def value(self):
 		try:

@@ -33,14 +33,13 @@ class ChildTag(Tag):
 	def __init__(self, name):
 		self.name = name
 
-class WidgetTag(Tag):
+class MemberTag(Tag):
 	def __init__(self, name):
 		self.name = name
 
 class ElementTag(Tag):
 	def __init__(self, element):
-		if __debug__: # https://github.com/brython-dev/brython/issues/5
-			assert(isinstance(element, asselement.Element)) #this is weird, __debug__ is true here and false there
+		assert(isinstance(element, asselement.Element))
 		self.element = element
 
 """

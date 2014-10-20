@@ -10,7 +10,7 @@ import project
 import nodes
 from element import Element
 from menu_items import InfoItem
-from tags import TextTag, ElementTag, WidgetTag, ColorTag, EndTag, AttTag
+from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
 from logger import log, topic
 from keys import *

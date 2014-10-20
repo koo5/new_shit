@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from element import Element
 import widgets
-from tags import TextTag, WidgetTag
+from tags import TextTag, MemberTag
 
 class MenuItem(Element):
 	def __init__(self):
@@ -24,5 +24,5 @@ class InfoItem(MenuItem):
 		self.visibility_toggle.color = self.visibility_toggle.brackets_color = "info item visibility toggle"
 
 	def render(self):
-		return self.contents + [TextTag("  "), WidgetTag("visibility_toggle")]
+		return self.contents + [TextTag("  "), MemberTag("visibility_toggle")]
 
