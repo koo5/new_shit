@@ -524,7 +524,7 @@ class Node(NodePersistenceStuff, element.Element):
 		#results of eval
 		if "value" in elem.runtime._dict \
 				and "evaluated" in elem.runtime._dict \
-				and not isinstance(elem.parent, Parser): #dont show results of compiler's direct children
+				and not isinstance(elem.parent, Parser): #dont show evaluation results of compiler's direct children
 			yield [ColorTag('eval results'), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
@@ -3183,12 +3183,14 @@ build_in(SyntaxedNodecl(LeshSnippetDeclaration,
 				{'human': b['text'], #add more wordings later
 				'command': b['text']}))
 
-for h,c in [
-	("count words", "wc"),
-	("mount all", "mount -a")
+if False:#args.lesh:
 
-	]:
-		build_in(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}), False)
+	for h,c in [
+		("count words", "wc"),
+		("mount all", "mount -a")
+
+		]:
+			build_in(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}), False)
 
 class LeshSnippet(Node):
 	"""for the case you want to insert the snippet in the human readable form"""

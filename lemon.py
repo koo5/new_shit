@@ -179,6 +179,7 @@ def pickle_event(e):
 def start():
 #	global root, sidebars, logframe, allframes
 	frames.args = args
+	#nodes.args = args
 
 	colors.cache(args)
 	root.render()
