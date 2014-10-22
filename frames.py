@@ -498,8 +498,8 @@ class Intro(InfoFrame):
 			"nodes:",
 			"red <>'s enclose nodes or other widgets",
 			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
-			["{Parser} looks like this: ", ElementTag(nodes.Parser(nodes.b['type']))],
-			"(in gray) is the expected type",
+			#["{Parser} looks like this: ", ElementTag(nodes.Parser(nodes.b['type']))],
+			#"(in gray) is the expected type",
 		    "see intro.txt for hopefully more info"]
 
 

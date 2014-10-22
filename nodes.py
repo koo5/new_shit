@@ -269,12 +269,9 @@ class RefPersistenceStuff(object):
 
 class ParserPersistenceStuff(object):
 	def serialize(s):
-		return odict(decl = 'Parser').updated(s._serialize())
-		#Parser is special coz it doesnt have a decl..hmm
-
-	def _serialize(s):
 		return odict(
-			type = s.type.serialize(),
+			decl = 'Parser',
+		    slot = s.slot,
 			items = s.serialize_items()
 		)
 
@@ -290,9 +287,7 @@ class ParserPersistenceStuff(object):
 
 	@classmethod
 	def deserialize(cls, data, parent):
-		placeholder = Text("placeholder")
-		placeholder.parent = parent
-		r = cls(deserialize(data['type'], placeholder))
+		r = cls(data['slot'])
 		r.parent = parent
 		log("deserializing Parser"+str(data))
 		for i in data['items']:
@@ -670,7 +665,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		for k, v in iteritems(slots):
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
 			easily_instantiable  = ['text', 'number', 'statements', 'list', 'function signature list', 'untypedvar' ]
-			easily_instantiable = [b[x] for x in [y for y in easily_instantiable if y in b]]
+			easily_instantiable = [b[y] for y in easily_instantiable if y in b]
 			#if cls == For:
 			#	plog((v, easily_instantiable))
 			if v in easily_instantiable:
@@ -682,7 +677,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			elif isinstance(v, ParametricType):
 				a = v.inst_fresh()
 			else:
-				a = Parser(v)
+				a = Parser(k)
 			assert(isinstance(a, Node))
 			kids[k] = a
 		return kids
@@ -790,6 +785,8 @@ class List(ListPersistenceStuff, Collapsible):
 		self.items = []
 
 	def render_items(self):
+		#we will have to work towards having this kind of syntax
+		#defined declaratively so Parser can deal with it
 		yield TextTag('[')
 		for item in self.items:
 			yield ElementTag(item)
@@ -797,8 +794,6 @@ class List(ListPersistenceStuff, Collapsible):
 				yield NewlineTag()
 			else:
 				yield TextTag(', ')
-			#we will have to work towards having this kind of syntax
-			#defined declaratively so Parser can deal with it
 		yield TextTag(']')
 
 	def __getitem__(self, i):
@@ -811,6 +806,10 @@ class List(ListPersistenceStuff, Collapsible):
 	def fix_parents(self):
 		super(List, self).fix_parents()
 		self._fix_parents(self.items)
+
+	@property
+	def slots(s):
+		return [s.item_type]
 
 	keys = ["ctrl del: delete item",
 			"return: add item"]
@@ -825,9 +824,7 @@ class List(ListPersistenceStuff, Collapsible):
 		#???
 		if e.key == K_RETURN:
 			pos = self.insertion_pos(e.frame, e.cursor)
-			p = Parser(self.item_type)
-			p.parent = self
-			self.items.insert(pos, p)
+			s.newline(pos)
 			return True
 
 	def insertion_pos(self, frame, cl):
@@ -877,16 +874,14 @@ class List(ListPersistenceStuff, Collapsible):
 		assert(isinstance(item, Node))
 		item.parent = self
 
-	def newline(self):
-		p = Parser(self.item_type)
+	def newline(self, pos=-1):
+		p = Parser(0)
 		p.parent = self
-		self.items.append(p)
+		self.items.insert(pos, p)
+		return p
 
 	def newline_with(self, node):
-		p = Parser(self.item_type)
-		p.parent = self
-		p.add(node)
-		self.items.append(p)
+		s.newline.add(node)
 
 	#@topic
 	@property
@@ -1052,12 +1047,12 @@ class Bananas(Node):
 		return False
 
 class WidgetedValue(WidgetedValuePersistenceStuff, Node):
-	"""basic one-widget values"""
-	is_const = True#this doesnt propagate to Parser yet
+	"""basic one-widget value"""
+	is_const = True#this doesnt propagate to Parser yet, but anyway, this node always evaluates to the same value
+	#during a program run. guess its waiting for type inference or something
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
 
-		#i guess its waiting for type inference
 
 	@property
 	def pyval(self):
@@ -2091,10 +2086,13 @@ class Parser(ParserPersistenceStuff, ParserBase):
 	im thinking about rewriting the items into nodes again.
 	 this time with smarter cursor movement.
 	"""
-	def __init__(self, type):
+	def __init__(self, slot):
 		super(Parser, self).__init__()
-		assert is_type(type), str(type)
-		self.type = type
+		self.slot = slot
+
+	@property
+	def type(s):
+		return s.parent.slots[s.slot]
 
 	def empty_render(s):
 		return [ColorTag("compiler hint"), TextTag('('+s.type.name+')'), EndTag()]
@@ -2697,26 +2695,25 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		super(FunctionCall, self).__init__()
 		assert isinstance(target, FunctionDefinitionBase)
 		self.target = target
-		#print self.target.arg_types
 		for i in itervalues(self.target.params):
 			assert not isinstance(i.type, Parser), "%s to target %s is a dumbo" % (self, self.target)
-		self.args = dict([(name, Parser(v.type)) for name, v in iteritems(self.target.params)]) #this should go to fresh(?)
+		self.args = dict([(name, Parser(name)) for name, v in iteritems(self.target.params)]) #this should go to fresh(?)
 		self.fix_parents()
+
+	@property
+	def slots(s):
+		return s.target.params
 
 	def fix_parents(s):
 		s._fix_parents(itervalues(s.args))
-
-	def delete_child(self, child):
-		for i,a in enumerate(self.args):
-			if a == child:
-				self.args[i] = Parser(self.target.params[i].type)
-				self.args[i].parent = self
-				return
 
 	def _eval(s):
 		args = s.args#[i.compiled for i in s.args]
 		#log("function call args:"+str(args))
 		return s.target.call(args)
+
+	def delete_child(s, child):
+		s.replace_child(child, Parser(i))
 
 	def replace_child(self, child, new):
 		assert(child in self.args)
@@ -2747,7 +2744,8 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 
 
 class FunctionCallNodecl(NodeclBase):
-	"""offers function calls"""
+	"""a type of FunctionCall nodes,
+	offers function calls thru palette()"""
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(FunctionCall)
 	def palette(self, scope, text, node):
@@ -3218,8 +3216,9 @@ it's values are mostly modules. modules can be collapsed and expanded and they
 hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
 
 Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
-ctrl-d will delete something. Inserting of nodes happens in the Parser node. it looks like this:"""),
-Parser(b['number']),
+ctrl-d will delete something. Inserting of nodes happens in the Parser node."""),
+#it looks like this:"""),
+#Parser(b['number']), todo:ParserWithType
 Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
 Text("todo: smarter menu, better parser, save/load, a real language, fancy projections...;)")]
 
