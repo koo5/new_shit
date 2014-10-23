@@ -81,7 +81,7 @@ def deref_decl(d):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
-	elif is_decl(d):
+	elif is_decl(d) or d == None:
 		return d
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
@@ -106,6 +106,7 @@ class Children(dotdict):
 def deserialize(data, parent):
 	"""
 	data is a json.load'ed .lemon file
+	parent is a dummy node placed at the point where the deserialized node should go, this makes things like List.above() work while getting scope
 	"""
 	
 	if 'resolve' in data:
@@ -149,30 +150,28 @@ def resolve(data, parent):
 	assert(data['resolve'])
 	log("resolving", data)
 	scope = parent.scope()
-	name = data['name']
 
 	if 'decl' in data:
 		decl = data['decl']
 		if decl == "defun":
 			#lets make functions hacky so that its not specified in the save file if
 			#its a built in or a defined one etc.
-			funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
-			for i in funcs:
-				if i.name == name:
-					log("found")
-					return i
-			raise Exception("function %s not found" % name)
-		
+			return resolve_function(data, parent)
+
 		elif isinstance(decl, dict):
 			placeholder = Text("placeholder")
 			placeholder.parent = parent
 			decl = deserialize(decl, placeholder)
+
+			name = data['name']
 			for i in scope:
-				if decl.eq(i.decl) and i.name == name:
+				#if decl.eq(i.decl) and i.name == name:
+				if deref_decl(decl) == deref_decl(i.decl) and i.name == name:
 					return i
-			raise Exception("node with name %s and decl %s not found"%(name,decl))
+			raise Exception("node not found: %s ,decl: %s"%(data,decl))
 	
 	elif 'class' in data:
+		name = data['name']
 		c = data['class']
 		for i in scope:
 			#log(i.__class__.__name__.lower(), c)
@@ -197,8 +196,8 @@ class NodePersistenceStuff(object):
 
 	def serialize_decl(s):
 		if s.decl:
-			log("unresolvizing decl %s of %s"%(s.decl, s))
-			return {'decl': s.decl.unresolvize()}
+			log("serializing decl %s of %s"%(s.decl, s))
+			return {'decl': s.decl.serialize()}
 		else:
 			return {'class': s.__class__.__name__.lower()}
 
@@ -289,7 +288,7 @@ class ParserPersistenceStuff(object):
 	def deserialize(cls, data, parent):
 		r = cls(data['slot'])
 		r.parent = parent
-		log("deserializing Parser"+str(data))
+		log("deserializing Parser "+str(data))
 		for i in data['items']:
 			if isinstance(i, str_and_uni):
 				r.add(i)
@@ -320,11 +319,23 @@ class FunctionCallPersistenceStuff(object):
 			r.args[k] = deserialize(v, r.args[k])
 		return r
 
-class FunctionDefinitionBasePersistenceStuff(object):
+def resolve_function(data, parent):
+	scope = parent.scope()
+	funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
+	for i in funcs:
+		if 'name' in data and i.name == data['name']:
+			log("found")
+			return i
+		elif 'sig' in data:
+			log("todo")
+	raise Exception("function %s not found" % name)
+
+class BuiltinFunctionDeclPersistenceStuff(object):
 	def serialize(s):
 		return odict(decl = 'defun', name=s.name)
 
-
+	def unresolvize(s):
+		return s.serialize()
 
 class WidgetedValuePersistenceStuff(object):
 
@@ -824,7 +835,7 @@ class List(ListPersistenceStuff, Collapsible):
 		#???
 		if e.key == K_RETURN:
 			pos = self.insertion_pos(e.frame, e.cursor)
-			s.newline(pos)
+			self.newline(pos)
 			return True
 
 	def insertion_pos(self, frame, cl):
@@ -1191,23 +1202,23 @@ class Module(Syntaxed):
 			s.save()
 			return True
 		if e.key == K_r and e.mod & KMOD_CTRL:
-			log(b_lemon_load_file(s.root, 'test_save.lemon'))
+			log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
 			return True
 
 	@topic ("save")
 	def save(self):
-		import yaml
-		s = yaml.dump(self.serialize(), indent = 4)
-		open('test_save.lemon', "w").write(s)
+		#import yaml
+		#s = yaml.dump(self.serialize(), indent = 4)
+		#open('test_save.lemon', "w").write(s)
 		#log(s)
-		try:
-			import json
-			s = json.dumps(self.serialize(), indent = 4)
-			open('test_save.lemon.json', "w").write(s)
-			log(s)
-		except Exception as e:
-			log(e)
-			raise e
+		#todo easy: find a json module that would preserve odict ordering (or hjson)
+		import json
+		s = json.dumps(self.serialize(), indent = 4)
+		open('test_save.lemon.json', "w").write(s)
+		log(s)
+		#except Exception as e:
+		#	log(e)
+		#	raise e
 
 
 # endregion
@@ -1465,7 +1476,7 @@ class ParametricTypeBase(Syntaxed):
 
 class ParametricType(ParametricTypeBase):
 	"""like..list of <type>, the <type> will be a child of this node.
-	 ParametricType is instantiated by ParametricNodecl"""
+	 ParametricType is instantiated by ParametricNodecl """
 	def __init__(self, kids, decl):
 		self.decl = decl
 		super(ParametricType, self).__init__(kids)
@@ -2500,7 +2511,7 @@ build_in(Definition({'name': Text('function signature list'), 'type':tmp}))
 
 
 
-class FunctionDefinitionBase(FunctionDefinitionBasePersistenceStuff, Syntaxed):
+class FunctionDefinitionBase(Syntaxed):
 
 	def __init__(self, kids):
 		super(FunctionDefinitionBase, self).__init__(kids)
@@ -2675,6 +2686,73 @@ build_in(SyntaxedNodecl(BuiltinFunctionDecl,
 				 'name': b['text']}))
 
 
+class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
+	"""checks args,
+	converts to python values,
+	calls python function,
+	converts to lemon value.
+	This can call any lemon-unaware python function,
+	but has to be set up from within python code.
+	this is just a step from user-addable python function
+	"""
+	def __init__(self, kids):
+		self.ret= 777
+		self.note = 777
+		self.pass_root = False # pass root as first argument to the called python function? For internal lemon functions, obviously
+		super(BuiltinPythonFunctionDecl, self).__init__(kids)
+
+	@staticmethod
+	#todo:refactor to BuiltinFunctionDecl.create
+	#why do we have 2 kinds of names here?
+	def create(fun, sig, ret, name, note):
+		x = BuiltinPythonFunctionDecl.fresh()
+		x._name = name
+		build_in(x)
+		x.ch.name.widget.value = fun.__name__
+		x.fun = fun
+		x.ch.sig = b['function signature list'].inst_fresh()
+		x.ch.sig.items = sig
+		x.ch.sig.fix_parents()
+		for i in sig:
+			assert(isinstance(i, (Text, TypedArgument)))
+		x.ch.ret = ret
+		x.note = note
+		x.ret = ret
+		x.fix_parents()
+		return x
+
+	def _call(self, args):
+		#translate args to python values, call python function
+		checker_result = self.typecheck(args)
+		if checker_result != True:
+			return checker_result
+		pyargs = []
+		if self.pass_root:
+			pyargs.append(self.root)
+		for i in self.sig:
+			if not isinstance(i, Text): #typed or untyped argument..
+				pyargs.append(args[i.name].pyval)
+		python_result = self.fun(*pyargs)
+		lemon_result = self.ret.inst_fresh()
+		lemon_result.pyval = python_result #todo implement pyval assignments
+		return lemon_result
+
+	def palette(self, scope, text, node):
+		return []
+
+
+build_in(SyntaxedNodecl(BuiltinPythonFunctionDecl,
+		[
+		TextTag("builtin python function"), ChildTag("name"),
+		TextTag("with signature"), ChildTag("sig"),
+		TextTag("return type"), ChildTag("ret")
+		],
+		{
+		'sig': b['function signature list'],
+		"ret": b['type'],
+		'name': b['text']
+		}))
+
 #lets keep 'print' a BuiltinFunctionDecl until we have type conversions as first-class functions in lemon,
 #then it can be just a python library call printing strictly strings and we can dump the to_python_str (?)
 @topic("output")
@@ -2755,72 +2833,6 @@ class FunctionCallNodecl(NodeclBase):
 build_in(FunctionCallNodecl(), 'call')
 
 
-class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
-	"""checks args, 
-	converts to python values, 
-	calls python function, 
-	converts to lemon value.
-	This can call any lemon-unaware python function,
-	but has to be set up from within python code.
-	this is just a step from user-addable python function
-	"""
-	def __init__(self, kids):
-		self.ret= 777
-		self.note = 777
-		self.pass_root = False # pass root as first argument to the called python function? For internal lemon functions, obviously
-		super(BuiltinPythonFunctionDecl, self).__init__(kids)
-
-	@staticmethod
-	#todo:refactor to BuiltinFunctionDecl.create
-	#why do we have 2 kinds of names here?
-	def create(fun, sig, ret, name, note):
-		x = BuiltinPythonFunctionDecl.fresh()
-		x._name = name
-		build_in(x)
-		x.ch.name.widget.value = fun.__name__
-		x.fun = fun
-		x.ch.sig = b['function signature list'].inst_fresh()
-		x.ch.sig.items = sig
-		x.ch.sig.fix_parents()
-		for i in sig:
-			assert(isinstance(i, (Text, TypedArgument)))
-		x.ch.ret = ret
-		x.note = note
-		x.ret = ret
-		x.fix_parents()
-		return x
-
-	def _call(self, args):
-		#translate args to python values, call python function
-		checker_result = self.typecheck(args)
-		if checker_result != True:
-			return checker_result
-		pyargs = []
-		if self.pass_root:
-			pyargs.append(self.root)
-		for i in self.sig:
-			if not isinstance(i, Text): #typed or untyped argument..
-				pyargs.append(args[i.name].pyval)
-		python_result = self.fun(*pyargs)
-		lemon_result = self.ret.inst_fresh()
-		lemon_result.pyval = python_result #todo implement pyval assignments
-		return lemon_result
-
-	def palette(self, scope, text, node):
-		return []
-
-
-build_in(SyntaxedNodecl(BuiltinPythonFunctionDecl,
-		[
-		TextTag("builtin python function"), ChildTag("name"), 
-		TextTag("with signature"), ChildTag("sig"),
-		TextTag("return type"), ChildTag("ret")
-		],
-		{
-		'sig': b['function signature list'],
-		"ret": b['type'],
-		'name': b['text']
-		}))
 
 
 
@@ -3103,8 +3115,10 @@ def b_lemon_load_file(root, name):
 	try:
 		log("loading "+name)
 		try:
-			import yaml
-			input = yaml.load(open(name, "r").read())
+			#import yaml
+			#input = yaml.load(open(name, "r").read())
+			import json
+			input = json.load(open(name, "r"))
 		except Exception as e:
 			return str(e)
 

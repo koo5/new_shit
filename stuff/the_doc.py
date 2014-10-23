@@ -821,3 +821,8 @@ intro
 
 lang/verbosity/syntax
 cycle with Fs
+
+
+generate an uml graph:
+apt-get install pylint graphviz
+pyreverse -ASmy -k -o png  nodes.py -p nodes
