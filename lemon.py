@@ -129,7 +129,7 @@ def keypress(e):
 	else:
 		if args.log_events:
 			log("unhandled")
-	#render()
+	render()#?
 
 	"""
 	try:

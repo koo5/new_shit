@@ -347,7 +347,7 @@ class BuiltinFunctionDeclPersistenceStuff(object):
 
 class FunctionDefinitionPersistenceStuff(object):
 	def unresolvize(s):
-		return odict(decl = 'defun', sig=s.sig)
+		return odict(resolve = True, decl = 'defun', sig=[i.serialize() for i in s.sig])
 
 
 class WidgetedValuePersistenceStuff(object):
