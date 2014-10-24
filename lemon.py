@@ -114,15 +114,22 @@ def do_replay(ff):
 
 
 def keypress(e):
+	if args.log_events:
+		log(e)
+
 	if top_keypress(e):
 		if args.log_events:
 			log("handled by main top")
 	elif sidebar.on_keypress(e):
 		if args.log_events:
 			log("handled by menu")
+	elif root.on_keypress(e):
+		if args.log_events:
+			log("handled by root")
 	else:
-		root.on_keypress(e)
-	render()
+		if args.log_events:
+			log("unhandled")
+	#render()
 
 	"""
 	try:

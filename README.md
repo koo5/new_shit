@@ -8,8 +8,8 @@ a protoprototype of a structural editor and a programming / shell language / use
 running it
 ===
 requires pygame and fuzzywuzzy (colors optional)  
-pyyaml (python-yaml) for loading saving.
-there is a proof-of-concept ncurses frontend  
+
+there is a proof-of-concept ncurses frontend, just need to come up with good key combinations to control it and some way to translate the curses sequences into something more meaningful
 
 * apt-get install python-pygame python-pip
 * pip install --user fuzzywuzzy colors

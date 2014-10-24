@@ -155,6 +155,7 @@ def process_event(event):
 		resize(event.size)
 		resize_frames()
 		render()
+		draw()
 
 	elif event.type == pygame.ACTIVEEVENT:
 		if event.gain:

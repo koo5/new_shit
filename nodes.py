@@ -333,8 +333,9 @@ def resolve_function(data, parent):
 		if 'name' in data and i.name == data['name']:
 			log("found")
 			return i
-		elif 'sig' in data:
-			log("todo")
+		elif 'sig' in data and i.sig == data['sig']:
+			log("found")
+			return i
 	raise Exception("function %s not found" % name)
 
 class BuiltinFunctionDeclPersistenceStuff(object):
@@ -343,6 +344,11 @@ class BuiltinFunctionDeclPersistenceStuff(object):
 
 	def unresolvize(s):
 		return s.serialize()
+
+class FunctionDefinitionPersistenceStuff(object):
+	def unresolvize(s):
+		return odict(decl = 'defun', sig=s.sig)
+
 
 class WidgetedValuePersistenceStuff(object):
 
@@ -1213,6 +1219,9 @@ class Module(Syntaxed):
 			return True
 		if e.key == K_r and e.mod & KMOD_CTRL:
 			log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
+			return True
+		if e.key == K_BACKSLASH and e.mod & KMOD_CTRL:
+			log(s.run())
 			return True
 
 	@topic ("save")
@@ -2559,8 +2568,10 @@ class FunctionDefinitionBase(Syntaxed):
 		return rr
 
 	@property
+	@topic ("vardecls")
 	def vardecls(s):
-		r = [i if isinstance(i, TypedArgument) else i.ch.argument for i in s.params]
+		log(s.params)
+		r = [i if isinstance(i, TypedArgument) else i.ch.argument for i in itervalues(s.params)]
 		#print ">>>>>>>>>>>", r
 		return r
 
@@ -2608,7 +2619,7 @@ class FunctionDefinitionBase(Syntaxed):
 """
 
 
-class FunctionDefinition(FunctionDefinitionBase):
+class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionBase):
 	"""function definition in the lemon language"""
 	def __init__(self, kids):
 		super(FunctionDefinition, self).__init__(kids)

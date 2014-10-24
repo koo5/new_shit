@@ -33,7 +33,10 @@ for f in allframes:
 	f.rect = Rect(6,6,6,6)
 
 def render():
-	lemon.render()
+	root.render()
+	lemon.sidebar.render()
+	logframe.render()
+lemon.render = render # for replays and stuff
 
 def resize_frames():
 	screen_height, screen_width = scr.getmaxyx()
