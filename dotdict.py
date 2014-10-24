@@ -14,14 +14,15 @@ class dotdict(object):
 	def _lock(s):
 		object.__setattr__(s, "_locked", True)
 	def __setattr__ (s, k, v):
-		if k == "_dict":
-			print("hmm, todo?", v)
-			object.__setattr__(s, "_dict", dict())#weird, shouldnt it set the value, not an empty dict?
-		else:
-			if object.__getattribute__(s, "_locked"):
-				if not k in s._dict:
-					raise Exception("setting an unknown item of a locked-down dotdict")
+		if object.__getattribute__(s, "_locked"):
+			if not k in s._dict:
+				raise Exception("setting an unknown item of a locked-down dotdict")
+
+		if k != "_dict":
 			s._dict[k] = v
+		else:
+			object.__setattr__(s, "_dict", v)
+
 	def __getattr__ (s, k):
 		return s._dict[k]
 	def __setitem__(s, k, v):

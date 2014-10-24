@@ -164,7 +164,9 @@ def resolve(data, parent):
 			decl = deserialize(decl, placeholder)
 
 			name = data['name']
+
 			for i in scope:
+				log("in scope:",i)
 				#if decl.eq(i.decl) and i.name == name:
 				if deref_decl(decl) == deref_decl(i.decl) and i.name == name:
 					return i
@@ -241,8 +243,13 @@ class ListPersistenceStuff(object):
 	@classmethod
 	def deserialize(cls, data, parent):
 		r = cls()
-		r.parent = parent
 		assert(r.items == [])
+		r.parent = parent
+
+		placeholder = Text("placeholder")
+		placeholder.parent = parent
+		r.decl = deserialize(data['decl'], placeholder)
+
 		for i, item_data in enumerate(data['items']):
 			r.add(Text("placeholder"))
 			r.items[i] = deserialize(item_data, r.items[i])
@@ -489,9 +496,12 @@ class Node(NodePersistenceStuff, element.Element):
 	"""
 
 	@classmethod
-	def fresh(cls):
+	def fresh(cls, decl=None):
 		"make a new instance"
-		return cls()
+		r = cls()
+		if decl:
+			r.decl = decl
+		return r
 
 	keys = ["f7: evaluate node",
 		"ctrl del: delete"]
@@ -680,13 +690,9 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			#if cls == For:
 			#	plog((v, easily_instantiable))
 			if v in easily_instantiable:
-				#log("easily instantiable:"+str(v))
 				a = v.inst_fresh()
-				#if v == b['statements']:
-					#a.newline()#so, statements should be its own class and be defined as list of statment at the same time,
-					#so the class could implement extra behavior like this?
-			elif isinstance(v, ParametricType):
-				a = v.inst_fresh()
+#			elif isinstance(v, ParametricType):
+#				a = v.inst_fresh()
 			else:
 				a = Parser(k)
 			assert(isinstance(a, Node))
@@ -694,8 +700,10 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		return kids
 
 	@classmethod
-	def fresh(cls):
+	def fresh(cls, decl=None):
 		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
+		if decl:
+			r.decl = decl
 		r.fix_parents()
 		return r
 
@@ -750,6 +758,7 @@ class Collapsible(Node):
 		#log("decl="+repr(decl))
 		r = cls()
 		r.decl = decl
+		assert(decl)
 		return r
 
 
@@ -901,7 +910,7 @@ class List(ListPersistenceStuff, Collapsible):
 		ddecl = self.ddecl
 		assert isinstance(ddecl, ParametricType), self
 		r = self.ddecl.ch.itemtype
-		log('item_type',r)
+		#log('item_type',r)
 		return r
 
 	def above(self, item):
@@ -958,7 +967,7 @@ class Statements(List):
 		s.view_mode = Collapsible.vm_multiline
 
 	@classmethod
-	def fresh(cls):
+	def fresh(cls, decl=None):
 		r = cls()
 		r.newline()
 		return r
@@ -1137,6 +1146,7 @@ class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
+		self.decl = None
 		self.post_render_move_caret = 0 #the frontend moves the cursor by this many chars after a render()
 		## The reason is for example a textbox recieves a keyboard event,
 		## appends a character to its contents, and wants to move the cursor,
@@ -1335,9 +1345,9 @@ class NodeclBase(Node):
 	def instantiate(self, kids):
 		return self.instance_class(kids)
 
-	def inst_fresh(self):
+	def inst_fresh(self, decl=None):
 		""" fresh creates default children"""
-		return self.instance_class.fresh()
+		return self.instance_class.fresh(decl)
 
 	def palette(self, scope, text, node):
 			return [ParserMenuItem(self.instance_class.fresh())]
@@ -1409,7 +1419,6 @@ class VarRefNodecl(NodeclBase):
 class ExpNodecl(NodeclBase):
 	def __init__(self):
 		super(ExpNodecl, self).__init__(Exp)
-		3
 
 	def palette(self, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
@@ -1479,8 +1488,9 @@ class ParametricType(ParametricTypeBase):
 	 ParametricType is instantiated by ParametricNodecl """
 	def __init__(self, kids, decl):
 		self.decl = decl
+		self.instance_class = self.decl.value_class
 		super(ParametricType, self).__init__(kids)
-		#self.lock()
+
 
 	@property
 	def slots(self):
@@ -1490,9 +1500,11 @@ class ParametricType(ParametricTypeBase):
 	def syntaxes(self):
 		return [self.decl.type_syntax]
 
-	def inst_fresh(self):
+	def inst_fresh(self, decl=None):
 		"""create new List or Dict"""
-		return self.decl.instance_class.fresh(self)
+		if not decl:
+			decl = self
+		return self.decl.value_class.fresh(Ref(decl))
 
 	@classmethod
 	def fresh(cls, decl):
@@ -1501,7 +1513,7 @@ class ParametricType(ParametricTypeBase):
 
 	@property
 	def name(self):
-		return "parametric type (probably list)"
+		return "parametric type (probably a <list of something> type)"
 		#todo: refsyntax?
 	#@property
 	#def refsyntax(s):
@@ -1518,10 +1530,11 @@ class ParametricNodecl(NodeclBase):
 	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
 	only non Syntaxed types are parametric now(list and dict),
 	so this contains the type instance's syntax and slots (a bit confusing)"""
-	def __init__(self, instance_class, type_syntax, type_slots):
-		super(ParametricNodecl, self).__init__(instance_class)
+	def __init__(self, value_class, type_syntax, type_slots):
+		super(ParametricNodecl, self).__init__(ParametricType)
 		self.type_slots = type_slots
 		self.type_syntax = type_syntax
+		self.value_class = value_class
 
 	def make_type(self, kids):
 		return ParametricType(kids, self)
@@ -1602,10 +1615,14 @@ class Definition(Syntaxed):
 		super(Definition, self).__init__(kids)
 
 	def inst_fresh(self):
-		return self.ch.type.inst_fresh()
+		return self.ch.type.inst_fresh(self)
 
 	def palette(self, scope, text, node):
 		return self.ch.type.palette(scope, text, None)
+
+	@property
+	def type(s):
+		return s.ch.type.parsed
 
 class Union(Syntaxed):
 	help=['an union of types means that any type will satisfy']
@@ -1653,14 +1670,14 @@ build_in(WorksAs.b("expression", "statement"), False)
 build_in(WorksAs.b("number", "expression"), False)
 build_in(WorksAs.b("text", "expression"), False)
 
-build_in([
-
+build_in(
 ParametricNodecl(List,
 				 [TextTag("list of"), ChildTag("itemtype")],
-				 {'itemtype': b['type']}),# 'list'),
+				 {'itemtype': b['type']}),'list')
+build_in(
 ParametricNodecl(Dict,
 				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
-				 {'keytype': b['type'], 'valtype': Exp(b['type'])})])# 'dict'),
+				 {'keytype': b['type'], 'valtype': Exp(b['type'])}), 'dict')
 
 build_in(WorksAs.b("list", "expression"), False)
 build_in(WorksAs.b("dict", "expression"), False)
@@ -3122,6 +3139,8 @@ def b_lemon_load_file(root, name):
 		except Exception as e:
 			return str(e)
 
+		#root["loaded program"] = b['module'].inst_fresh() # this is needed so that the module correctly limits scope resolving during deserialization
+		#root["loaded program"].parent = root
 		root["loaded program"] = deserialize(input, root["loaded program"])
 		root.fix_parents()
 	except Exception as e:
@@ -3241,7 +3260,7 @@ Text("todo: smarter menu, better parser, save/load, a real language, fancy proje
 	#r.add(("lesh", Lesh()))
 	r.add(("some program", b['module'].inst_fresh()))
 	r.add(("lemon console", b['module'].inst_fresh()))
-	r.add(("loaded program", Text("placeholder")))
+	r.add(("loaded program", Text("placeholder 01")))
 	r["some program"].ch.statements.newline()
 	r.add(("builtins", b['module'].inst_fresh()))
 	#todo:xiki style terminal, standard terminal. Both favoring UserCommands
