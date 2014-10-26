@@ -38,7 +38,8 @@ class Element(event.EventDispatcher):
 				r = s._parent.obj.obj # https://github.com/brython-dev/brython/blob/master/src/Lib/_weakref.py (?)
 			else:
 				r = s._parent()
-			if not r: log("parent is None", s)
+			if not r:
+				log("parent is None", s)
 			return r
 		else:
 			return s._parent

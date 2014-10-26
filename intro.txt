@@ -83,8 +83,8 @@ root contains modules, currently one "program" and "builtins"
 a module contains Statements, which is a list of Statement
 Almost everything works as a statement, including expressions
 some statements: For, If, VarlessFor, FunctionCall, FunctionDefinition
-FunctionDefinition needs a signature. Thats a list that contains either Text or TypedArgument
-TypedArgument contains a name (Text) and a type (Ref)
+FunctionDefinition needs a signature. Thats a list that contains either Text or TypedParameter
+TypedParameter contains a name (Text) and a type (Ref)
 a For contains an item name (Text) and an expression evaluating to a List
 ...
 

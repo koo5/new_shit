@@ -70,6 +70,7 @@ def build_in(node, name=None):
 		assert key,  key
 		assert key not in b,  repr(key) + " already in builtins:" + repr(node)
 		b[key] = node
+	return node
 
 def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase, ParametricNodecl))
@@ -112,16 +113,16 @@ def deserialize(data, parent):
 	if 'resolve' in data:
 		return resolve(data, parent)
 	if not 'decl' in data:
-		raise Exception("decl key not in d")
+		raise Exception("decl key not in found in %s"%data)
 	decl = data['decl']
 	log("deserializing node with decl %s"%decl)
 	if decl == 'Parser':
 		return Parser.deserialize(data, parent)
 	if decl == 'defun':
 		return FunctionDefinitionBase.deserialize(data, parent)
-	#elif decl == 'ref':
-	#	return Ref.deserialize(data, parent)
-	elif isinstance(decl, str_and_uni):
+	#if decl == 'varref':
+	#	return VarRef.deserialize(data, parent)
+	if isinstance(decl, str_and_uni):
 		decl = find_decl(decl, parent.nodecls)
 		if decl:
 			log("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
@@ -166,10 +167,12 @@ def resolve(data, parent):
 			name = data['name']
 
 			for i in scope:
-				log("in scope:",i)
 				#if decl.eq(i.decl) and i.name == name:
-				if deref_decl(decl) == deref_decl(i.decl) and i.name == name:
-					return i
+				log(deref_decl(decl) ,deref_decl(i.decl))
+				if deref_decl(decl) == deref_decl(i.decl):
+					log("in scope:",i)
+					if i.name == name:
+						return i
 			raise Exception("node not found: %s ,decl: %s"%(data,decl))
 	
 	elif 'class' in data:
@@ -255,7 +258,10 @@ class ListPersistenceStuff(object):
 			r.items[i] = deserialize(item_data, r.items[i])
 		return r
 
-class RefPersistenceStuff(object):
+class BaseRefPersistenceStuff(object):
+	pass
+
+class RefPersistenceStuff(BaseRefPersistenceStuff):
 	def serialize(s):
 		return odict(
 			decl = 'ref',
@@ -272,6 +278,28 @@ class RefPersistenceStuff(object):
 		r = cls(target)
 		r.parent = parent
 		return r
+
+
+class VarRefPersistenceStuff(BaseRefPersistenceStuff):
+	def _serialize(s):
+		return odict(
+			target = s.target.unresolvize())
+
+	@classmethod
+	@topic ("varref deser")
+	def deserialize(cls, data, parent):
+		placeholder = Text("placeholder")
+		placeholder.parent = parent
+		decl = deserialize(data['target']['decl'], placeholder)
+		for i in parent.vardecls_in_scope:
+			log(i)
+			if decl.eq_by_value_and_python_class(i.decl):
+				if i.name == data['target']['name']:
+					r = cls(i)
+					r.parent = parent
+					return r
+		raise Exception ("vardecl not found:%s"%data)
+
 
 class ParserPersistenceStuff(object):
 	def serialize(s):
@@ -329,14 +357,23 @@ class FunctionCallPersistenceStuff(object):
 def resolve_function(data, parent):
 	scope = parent.scope()
 	funcs = [i for i in scope if isinstance(i, FunctionDefinitionBase)]
-	for i in funcs:
-		if 'name' in data and i.name == data['name']:
-			log("found")
-			return i
-		elif 'sig' in data and i.sig == data['sig']:
-			log("found")
-			return i
-	raise Exception("function %s not found" % name)
+	if 'name' in data:
+		for i in funcs:
+			if i.name == data['name']:
+				#log("found")
+				return i
+		raise Exception("function %s not found by name" % data)
+	elif 'sig' in data:
+		sig = deserialize(data['sig'], parent)
+		assert isinstance(sig, List)
+		for i in funcs:
+			if i.sig.eq_by_value_and_python_class(sig):
+				#log("found")
+				return i
+		raise Exception("function %s not found by sig" % data)
+
+	else:
+		raise Exception("function call without neither sig nor name:%s" % data)
 
 class BuiltinFunctionDeclPersistenceStuff(object):
 	def serialize(s):
@@ -347,7 +384,7 @@ class BuiltinFunctionDeclPersistenceStuff(object):
 
 class FunctionDefinitionPersistenceStuff(object):
 	def unresolvize(s):
-		return odict(resolve = True, decl = 'defun', sig=[i.serialize() for i in s.sig])
+		return odict(resolve = True, decl = 'defun', sig=s.ch.sig.serialize())
 
 
 class WidgetedValuePersistenceStuff(object):
@@ -587,6 +624,12 @@ class Node(NodePersistenceStuff, element.Element):
 	def ddecl(s):
 		return deref_decl(s.decl)#i have no idea what im doing
 
+	def eq_by_value_and_python_class(a, b):
+		a,b = a.parsed, b.parsed
+		if a.__class__ != b.__class__:
+			return False
+		return a.eq_by_value(b)
+
 
 class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
@@ -729,6 +772,23 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
+	def eq_by_value(a, b):
+		assert len(a.ch._dict.values) == len(b.ch._dict.values) #are you looking for eq_by_value_and_decl?
+		for k,v in iteritems(a.ch._dict):
+			if not b.ch[k].eq_by_value_and_python_class(v):
+				return False
+		return True
+
+	def copy(s):
+		if isinstance(s.decl, Ref):
+			decl = s.decl.copy()
+		else:
+			decl = s.decl
+		r = s.__class__.fresh(decl)
+		for k,v in iteritems(s.ch._dict):
+			r.ch[k] = v.copy()
+		r.fix_parents()
+		return r
 
 
 class Collapsible(Node):
@@ -920,13 +980,17 @@ class List(ListPersistenceStuff, Collapsible):
 		return r
 
 	def above(self, item):
-		assert item in self.items, (item, item.parent)
+		assert item in self.items,  (item, item.parent)
 		r = []
 		for i in self.items:
 			if i == item:
 				return r
 			else:
 				r.append(i)
+
+	def below(self, item):
+		assert item in self.items,  (item, item.parent)
+		return self.items[self.items.index(item):]
 
 	def to_python_str(self):
 		return "[" + ", ".join([i.to_python_str() for i in self.items]) + "]"
@@ -941,11 +1005,11 @@ class List(ListPersistenceStuff, Collapsible):
 	@property
 	def val(self):
 		"""
-		for "historic" reasons, when acting as a list of eval results.
+		for "historic" reasons. when acting as a list of eval results.
 		during execution, results of evaluation of every node is appended,
 		so there is a history available.
 		current value is the last one.
-		we might split this into something like EvalResultsList
+		we might split this out into something like EvalResultsList
 		"""
 		return self[-1]
 
@@ -965,6 +1029,16 @@ class List(ListPersistenceStuff, Collapsible):
 			super(val, self).append(x)
 		return x
 	"""
+
+	def eq_by_value(a, b):
+		if len(a.items) != len(b.items):
+			return False
+		#otherwise..
+		for i,v in enumerate(a.items):
+			if not v.eq_by_value_and_python_class(b.items[i]):
+				return False
+		return True
+
 
 
 class Statements(List):
@@ -1003,6 +1077,13 @@ class Statements(List):
 		[i.eval() for i in self.items]
 		return Text("it ran.")
 
+	def _eval(self):
+		results = [i.eval() for i in self.items]
+		if len(results) == 0:
+			return NoValue()
+		else:
+			return results[-1]
+
 	#@property
 	#def parsed(self):#i wonder if this is wise #nope, it wasnt
 	#	r = Statements()
@@ -1040,6 +1121,8 @@ class NoValue(Node):
 		return [TextTag('void')]
 	def to_python_str(self):
 		return "no value"
+	def eq_by_value(a, b):
+		return True
 
 class Banana(Node):
 	help=["runtime error. try not to throw these."]
@@ -1103,7 +1186,11 @@ class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 		return str(self.pyval)
 
 	def copy(s):
-		return s.eval()
+		return s.__class__(s.pyval)
+
+	def eq_by_value(a,b):
+		return a.pyval == b.pyval
+
 
 class Number(WidgetedValue):
 	def __init__(self, value="0"):
@@ -1147,6 +1234,7 @@ class Text(WidgetedValue):
 	@staticmethod
 	def match(text):
 		return 100
+
 
 class Root(Dict):
 	def __init__(self):
@@ -1266,20 +1354,19 @@ class Ref(RefPersistenceStuff, Node):
 		return self.target.inst_fresh()
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.target)+"')"
-	def eq(a, b):
-		if isinstance(b, Ref):
+	def eq_by_value(a, b):
 			if a.target == b.target:
 				log("saying %s equals %s"%(a,b))
 				return True
-		log("saying %s does  not equal %s"%(a,b))
+	def copy(s):
+		return Ref(s.target)
 
 
-
-class VarRef(Node):
+class VarRef(VarRefPersistenceStuff, Node):
 	def __init__(self, target):
 		super(VarRef, self).__init__()
 		self.target = target
-		assert isinstance(target, (UntypedVar, TypedArgument))
+		assert isinstance(target, (UntypedVar, TypedParameter))
 		log("varref target:"+str(target))
 
 	def render(self):
@@ -1290,6 +1377,7 @@ class VarRef(Node):
 		return self.target.name
 
 	def _eval(s):
+		#it is already has a value
 		return s.target.runtime.value.val
 
 class Exp(Node):
@@ -1408,7 +1496,7 @@ class VarRefNodecl(NodeclBase):
 	def palette(self, scope, text, node):
 		r = []
 		for x in node.vardecls_in_scope:
-			assert isinstance(x, (UntypedVar, TypedArgument))
+			assert isinstance(x, (UntypedVar, TypedParameter))
 			r += [ParserMenuItem(VarRef(x))]
 		return r
 """
@@ -1419,7 +1507,7 @@ class VarRefNodecl(NodeclBase):
 			for y in x.vardecls:
 				yc=y.compiled
 				#log("vardecl compiles to: "+str(yc))
-				if isinstance(yc, (UntypedVar, TypedArgument)):
+				if isinstance(yc, (UntypedVar, TypedParameter)):
 					#log("vardecl:"+str(yc))
 					r += [ParserMenuItem(VarRef(yc))]
 		#log (str(scope)+"varrefs:"+str(r))
@@ -1809,8 +1897,13 @@ class If(Syntaxed):
 		c = s.ch.condition.eval()
 		#lets just do it by hand here..
 		if c.decl == b['bool'] and c.pyval == 1:
-			s.ch.statements.run()
-
+			return s.ch.statements.eval()
+		else:
+			if isinstance(s.parent, Statements):
+				below = s.parent.below(s)
+				if len(below) > 0:
+					if isinstance(b[0], Else):
+						return b[0].eval()
 		return NoValue()
 
 build_in(SyntaxedNodecl(If,
@@ -1820,6 +1913,22 @@ build_in(SyntaxedNodecl(If,
 			],
 			{'condition': Exp(b['bool']),
 			'statements': b['statements']}))
+
+class Else(Syntaxed):
+	"""a dangling else"""
+	def __init__(self, children):
+		super(Else, self).__init__(children)
+
+	def _eval(s):
+		return s.ch.statements.eval()
+
+build_in(SyntaxedNodecl(Else,
+			[
+				[TextTag("else:"), ":\n", ChildTag("statements")],
+
+			],
+			{'statements': b['statements']}))
+
 
 """...notes: formatting: we can speculate that we will get to having a multiline parser,
 and that will allow for a more freestyle formatting...
@@ -2126,6 +2235,16 @@ class Parser(ParserPersistenceStuff, ParserBase):
 	def __init__(self, slot):
 		super(Parser, self).__init__()
 		self.slot = slot
+
+	def copy(s):
+		r = Parser(s.slot)
+		for i in s.items:
+			if isinstance(i, str_and_uni):
+				x = i
+			else:
+				x = i.copy()
+			r.add(x)
+		return r
 
 	@property
 	def type(s):
@@ -2497,38 +2616,40 @@ class DefaultParserMenuItem(MenuItem):
 
 
 
+class FunctionParameterBase(Syntaxed):
+	pass
 
-
-class TypedArgument(Syntaxed):
+class TypedParameter(FunctionParameterBase):
+	"""a parameter to a function, with a name and a type specified"""
 	def __init__(self, kids):
-		super(TypedArgument, self).__init__(kids)
+		super(TypedParameter, self).__init__(kids)
 	@property
 	def type(s):
 		return s.ch.type.parsed
 
-build_in(SyntaxedNodecl(TypedArgument,
+build_in(SyntaxedNodecl(TypedParameter,
 			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
 			   {'name': 'text', 'type': 'type'}))
 
-class UnevaluatedArgument(Syntaxed):
-	#subclass?
+class UnevaluatedParameter(FunctionParameterBase):
+	"""this argument will be passed to the called function as is, without evaluation"""
 	def __init__(self, kids):
-		super(UnevaluatedArgument, self).__init__(kids)
+		super(UnevaluatedParameter, self).__init__(kids)
 	@property
 	def type(s):
 		return s.ch.argument.type
 
-build_in(SyntaxedNodecl(UnevaluatedArgument,
+builtin_unevaluatedparameter = build_in(SyntaxedNodecl(UnevaluatedParameter,
 			   [TextTag("unevaluated"), ChildTag("argument")],
-			   {'argument': 'typedargument'}))
+			   {'argument': 'typedparameter'}))
 
 
 
 log(b['union'])
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
-tmp.ch["items"].add(Ref(b['typedargument']))
-tmp.ch["items"].add(Ref(b['unevaluatedargument']))
+tmp.ch["items"].add(Ref(b['typedparameter']))
+tmp.ch["items"].add(Ref(builtin_unevaluatedparameter))
 build_in(Definition({'name': Text('function signature node'), 'type': tmp}))
 
 tmp = b['list'].make_type({'itemtype': Ref(b['function signature node'])})
@@ -2544,34 +2665,51 @@ class FunctionDefinitionBase(Syntaxed):
 
 	@property
 	def params(self):
-		return dict([(i.name, i) for i in self.sig if isinstance(i, (TypedArgument, UnevaluatedArgument))])
+		return dict([(i.name, i) for i in self.sig.items if isinstance(i, (FunctionParameterBase))])
 
 	@property
 	def sig(self):
-		sig = self.ch.sig.parsed
+		sig = self.ch.sig.parsed.copy()
+
+		#check..
+		for i in sig.items:
+			assert(i.parent)
+
+		#check..
 		if not isinstance(sig, List):
 			log("sig did not parse to list but to ", repr(sig))
-			return [Text("sig not a List")]
-		r = [i.parsed for i in sig]
+			r = [Text("function's sig is not a List")]
+
+		r = [i.parsed for i in sig.items]
+
+		#some checks..
 		for i in r:
-			if not isinstance(i, (UnevaluatedArgument, TypedArgument, Text)):
-				return [Text("bad item in sig:"+repr(i))]
+			if not isinstance(i, (UnevaluatedParameter, TypedParameter, Text)):
+				r = [Text("bad item in sig:"+repr(i))]
+				break
+
+		#more checks..
 		rr = []
 		for i in r:
-			if isinstance(i, (UnevaluatedArgument, TypedArgument)):
+			if isinstance(i, (UnevaluatedParameter, TypedParameter)):
 				if not is_type(i.type):
 					rr.append(Text(" bad type "))
 				else:
 					rr.append(i)
 			else:
 				rr.append(i)
-		return rr
+
+		result = List()
+		result.items = rr
+		#result.fix_parents()
+		result.parent = self
+		return result
 
 	@property
 	@topic ("vardecls")
 	def vardecls(s):
 		log(s.params)
-		r = [i if isinstance(i, TypedArgument) else i.ch.argument for i in itervalues(s.params)]
+		r = [i if isinstance(i, TypedParameter) else i.ch.argument for i in itervalues(s.params)]
 		#print ">>>>>>>>>>>", r
 		return r
 
@@ -2590,7 +2728,7 @@ class FunctionDefinitionBase(Syntaxed):
 		"""common for all function definitions"""
 		evaluated_args = {}
 		for name, arg in iteritems(args):
-			if not isinstance(arg, UnevaluatedArgument):
+			if not isinstance(arg, UnevaluatedParameter):
 				evaluated_args[name] = arg.eval()
 			else:
 				evaluated_args[name] = arg.parsed
@@ -2681,7 +2819,7 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		x.ch.sig = b['function signature list'].inst_fresh()
 		x.ch.sig.items = sig
 		for i in sig:
-			assert(isinstance(i, (Text, TypedArgument)))
+			assert(isinstance(i, (Text, TypedParameter)))
 		x.fix_parents()
 		b[name] = x
 
@@ -2742,7 +2880,7 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		x.ch.sig.items = sig
 		x.ch.sig.fix_parents()
 		for i in sig:
-			assert(isinstance(i, (Text, TypedArgument)))
+			assert(isinstance(i, (Text, TypedParameter)))
 		x.ch.ret = ret
 		x.note = note
 		x.ret = ret
@@ -2757,7 +2895,7 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		pyargs = []
 		if self.pass_root:
 			pyargs.append(self.root)
-		for i in self.sig:
+		for i in self.sig.items:
 			if not isinstance(i, Text): #typed or untyped argument..
 				pyargs.append(args[i.name].pyval)
 		python_result = self.fun(*pyargs)
@@ -2793,7 +2931,7 @@ def b_print(args):
 BuiltinFunctionDecl.create(
 	"print",
 	b_print,
-	[ Text("print"), TypedArgument({'name': Text("expression"), 'type': Ref(b['expression'])})])
+	[ Text("print"), TypedParameter({'name': Text("expression"), 'type': Ref(b['expression'])})])
 
 
 class FunctionCall(FunctionCallPersistenceStuff, Node):
@@ -2827,7 +2965,7 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		new.parent = self
 
 	def render(self):
-		sig = self.target.sig
+		sig = self.target.sig.items
 		assert isinstance(sig, list)
 		assert len(self.args) == len(self.target.params),\
 			(len(self.args),len(self.target.params),self.args, self.target.params,self, self.target)
@@ -2835,7 +2973,7 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		for v in sig:
 			if isinstance(v, Text):
 				r += [TextTag(v.pyval)]
-			elif isinstance(v, TypedArgument):
+			elif isinstance(v, TypedParameter):
 				r += [ElementTag(self.args[v.name])]
 			else:
 				raise Exception("item in function signature is"+str(v))
@@ -2865,16 +3003,16 @@ build_in(FunctionCallNodecl(), 'call')
 
 
 def num_arg(name = "number"):
-	return TypedArgument({'name':Text(name), 'type':Ref(b['number'])})
+	return TypedParameter({'name':Text(name), 'type':Ref(b['number'])})
 
 def text_arg():
-	return TypedArgument({'name':Text("text"), 'type':Ref(b['text'])})
+	return TypedParameter({'name':Text("text"), 'type':Ref(b['text'])})
 
 def num_list():
 	return  b["list"].make_type({'itemtype': Ref(b['number'])})
 
 def num_list_arg():
-	return TypedArgument({'name':Text("list of numbers"), 'type':num_list()})
+	return TypedParameter({'name':Text("list of numbers"), 'type':num_list()})
 
 
 
@@ -2918,15 +3056,15 @@ def add_operators():
 		pfn(op.floordiv, [num_arg(), Text("//"), num_arg()])
 		pfn(op.truediv,  [num_arg(), Text("/"), num_arg()])
 	
-	pfn(op.eq,  [num_arg(), Text("=="),num_arg()], bool)
-	pfn(op.ge,  [num_arg(), Text(">="),num_arg()], bool)
-	pfn(op.gt,  [num_arg(), Text(">"), num_arg()], bool)
-	pfn(op.le,  [num_arg(), Text("<="),num_arg()], bool)
-	pfn(op.lt,  [num_arg(), Text("<"), num_arg()], bool)
-	pfn(op.mod, [num_arg(), Text("%"), num_arg()])
-	pfn(op.mul, [num_arg(), Text("*"), num_arg()])
+	pfn(op.eq,  [num_arg('A'), Text("=="),num_arg('B')], bool)
+	pfn(op.ge,  [num_arg('A'), Text(">="),num_arg('B')], bool)
+	pfn(op.gt,  [num_arg('A'), Text(">"), num_arg('B')], bool)
+	pfn(op.le,  [num_arg('A'), Text("<="),num_arg('B')], bool)
+	pfn(op.lt,  [num_arg('A'), Text("<"), num_arg('B')], bool)
+	pfn(op.mod, [num_arg('A'), Text("%"), num_arg('B')])
+	pfn(op.mul, [num_arg('A'), Text("*"), num_arg('B')])
 	pfn(op.neg, [Text("-"), num_arg()])
-	pfn(op.sub, [num_arg(), Text("-"), num_arg()])
+	pfn(op.sub, [num_arg('A'), Text("-"), num_arg('B')])
 
 	#import math
 
@@ -3018,9 +3156,9 @@ BuiltinPythonFunctionDecl.create(
 	b_match, 
 	[
 	Text('number of matches of'),
-	TypedArgument({'name': Text('regex'), 'type':Ref(b['regex'])}),
+	TypedParameter({'name': Text('regex'), 'type':Ref(b['regex'])}),
 	Text('with'), 
-	TypedArgument({'name': Text('text'), 'type':Ref(b['text'])})],
+	TypedParameter({'name': Text('text'), 'type':Ref(b['text'])})],
 	Ref(b['number']), #i should add bools and more complex types........
 	"match",
 	"regex")
@@ -3220,12 +3358,13 @@ class LeshSnippetDeclaration(Syntaxed):
 	def palette(self, scope, text, node):
 		return [LeshMenuItem(self)]
 
-build_in(SyntaxedNodecl(LeshSnippetDeclaration,
-				[[ChildTag("human"), ChildTag("command")]],
-				{'human': b['text'], #add more wordings later
-				'command': b['text']}))
 
 if False:#args.lesh:
+
+	build_in(SyntaxedNodecl(LeshSnippetDeclaration,
+					[[ChildTag("human"), ChildTag("command")]],
+					{'human': b['text'], #add more wordings later
+					'command': b['text']}))
 
 	for h,c in [
 		("count words", "wc"),
