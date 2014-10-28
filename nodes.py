@@ -386,7 +386,7 @@ def resolve_function(data, parent):
 		sig = deserialize(data['sig'], parent)
 		assert isinstance(sig, List)
 		for i in funcs:
-			if i.sig.eq_by_value_and_python_class(sig):
+			if i.ch.sig.eq_by_value_and_python_class(sig):
 				#log("found")
 				return i
 		raise DeserializationException("function %s not found by sig" % data)
@@ -624,7 +624,7 @@ class Node(NodePersistenceStuff, element.Element):
 	@topic ("flatten")
 	def _flatten(self):
 		if not isinstance(self, (WidgetedValue, EnumVal, Ref, SyntaxedNodecl, FunctionCallNodecl,
-			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, Lesh)): #all childless nodes
+			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, Lesh, VarRef)): #all childless nodes
 			log("warning: "+str(self)+ " flattens to self")
 		return [self]
 
@@ -1224,7 +1224,6 @@ class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 	def __init__(self):
 		super(WidgetedValue, self).__init__()	
 
-
 	@property
 	def pyval(self):
 		return self.widget.value
@@ -1252,6 +1251,9 @@ class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 
 	def eq_by_value(a,b):
 		return a.pyval == b.pyval
+
+	def long__repr__(s):
+		return object.__repr__(s) + "('"+str(s.pyval)+"')"
 
 
 class Number(WidgetedValue):
@@ -1290,9 +1292,6 @@ class Text(WidgetedValue):
 
 	def _eval(self):
 		return Text(self.pyval)
-
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+s.pyval+"')"
 
 	@staticmethod
 	def match(text):
@@ -1960,15 +1959,14 @@ class If(Syntaxed):
 	def _eval(s):
 		c = s.ch.condition.eval()
 		#lets just do it by hand here..
-		if c.decl == b['bool'] and c.pyval == 1:
+		if c.decl != b['bool']:
+			return Banana("%s is of type %s, i cant branch with that"%(c, c.decl))
+		if c.pyval == 1:
+			log("condition true")
 			return s.ch.statements.eval()
 		else:
-			if isinstance(s.parent, Statements):
-				below = s.parent.below(s)
-				if len(below) > 0:
-					if isinstance(b[0], Else):
-						return b[0].eval()
-		return NoValue()
+			log("condition false")
+			return NoValue()
 
 build_in(SyntaxedNodecl(If,
 			[
@@ -1984,7 +1982,29 @@ class Else(Syntaxed):
 		super(Else, self).__init__(children)
 
 	def _eval(s):
-		return s.ch.statements.eval()
+		if isinstance(s.parent, Parser):
+			parent = s.parent.parent
+			child = s.parent
+		else:
+			parent = s.parent
+			child = s
+		if not isinstance(parent, Statements):
+			return Banana("parent is not Statements")
+		above = parent.above(child)
+		if not len(above):
+			return Banana("no nodes above me, much less an If")
+		a = above[-1].parsed
+		if not isinstance(a, If):
+			return Banana("whats above me is not an If and that makes me cry")
+		c = a.ch.condition
+		if not 'value' in c.runtime._dict:
+			return Banana("the node above me wasnt evaluated, how am i to know if i should run?")
+		if c.runtime.value.val.pyval == 0:
+			return s.ch.statements.eval()
+		else:
+			#log(repr(c.runtime.value.val.pyval))
+			#return NoValue()
+			return a.runtime.value.val
 
 build_in(SyntaxedNodecl(Else,
 			[
@@ -2733,24 +2753,24 @@ class FunctionDefinitionBase(Syntaxed):
 
 	@property
 	def params(self):
-		r = dict([(i.name, i) for i in self.sig.items if isinstance(i, FunctionParameterBase)])
-		for i in itervalues(r):
-			assert(i.parent)
+		r = dict([(i.name, i) for i in self.sig if isinstance(i, FunctionParameterBase)])
+		#for i in itervalues(r):
+		#	assert(i.parent)
 		return r
 
 	@property
 	def sig(self):
-		sig = self.ch.sig.parsed.items
+		sig = self.ch.sig.parsed
 		#check..
-		for i in sig:
+		for i in sig.items:
 			assert(i.parent)
 
 		#check..
 		if not isinstance(sig, List):
 			log("sig did not parse to list but to ", repr(sig))
 			r = [Text("function's sig is not a List")]
-
-		r = [i.parsed for i in sig.items]
+		else:
+			r = [i.parsed for i in sig.items]
 
 		#some checks..
 		for i in r:
@@ -2769,12 +2789,7 @@ class FunctionDefinitionBase(Syntaxed):
 			else:
 				rr.append(i)
 
-		sig.items = rr
-		result.fix_parents()#!?
-		sig.parent = self
-		for i in sig.items:
-			assert(i.parent)
-		return sig
+		return rr
 
 	@property
 	@topic ("vardecls")
@@ -2787,8 +2802,10 @@ class FunctionDefinitionBase(Syntaxed):
 	def typecheck(self, args):
 		for name, arg in iteritems(args):
 			#if not arg.type.eq(self.arg_types[i])...
+			if not hasattr(arg, 'decl'):
+				return Banana(str(arg) +" ?! ")
 			expected_type = self.params[name].type
-			if isinstance(expected_type, Ref) and isinstance(arg.decl, Ref):
+			if isinstance(expected_type, Ref) and hasattr(arg, 'decl') and isinstance(arg.decl, Ref):
 				if not arg.decl.target == expected_type.target:
 					log("well this is maybe bad, decl %s of %s != %s" % (arg.decl, arg, expected_type))
 					return Banana(str(arg.decl.name) +" != "+str(expected_type.name))
@@ -2803,7 +2820,7 @@ class FunctionDefinitionBase(Syntaxed):
 				evaluated_args[name] = arg.eval()
 			else:
 				evaluated_args[name] = arg.parsed
-		log("evaluated_args:", evaluated_args)
+		log("evaluated_args:", [i.long__repr__() for i in itervalues(evaluated_args)])
 
 		assert(len(evaluated_args) == len(self.params))
 		r = self._call(evaluated_args )
@@ -2835,11 +2852,10 @@ class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionB
 
 	def _call(self, call_args):
 		self.copy_args(call_args)
+		#log(call_args)
 		return self.ch.body.eval()
 
 	def copy_args(self, call_args):
-
-
 		for k,v in iteritems(call_args):
 			assert isinstance(k, str_and_uni)
 			assert isinstance(v, Node)
@@ -2966,7 +2982,7 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		pyargs = []
 		if self.pass_root:
 			pyargs.append(self.root)
-		for i in self.sig.items:
+		for i in self.sig:
 			if not isinstance(i, Text): #typed or untyped argument..
 				pyargs.append(args[i.name].pyval)
 		python_result = self.fun(*pyargs)
@@ -3028,7 +3044,11 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		return s.target.call(args)
 
 	def delete_child(s, child):
-		s.replace_child(child, Parser(i))
+		assert(child in s.args)
+		for k,v in iteritems(s.args):
+			if v == child:
+				s.replace_child(child, Parser(k))
+				break
 
 	def replace_child(self, child, new):
 		assert(child in self.args)
@@ -3036,7 +3056,7 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		new.parent = self
 
 	def render(self):
-		sig = self.target.sig.items
+		sig = self.target.sig
 		assert isinstance(sig, list)
 		assert len(self.args) == len(self.target.params),\
 			(len(self.args),len(self.target.params),self.args, self.target.params,self, self.target)

@@ -205,14 +205,22 @@ def start():
 	parser_test.test(root.root['some program'].ch.statements.items[0])
 
 	if args.load:
-		assert(isinstance(args.load, unicode))
-		frames.nodes.b_lemon_load_file(root.root, args.load)
-		root.render()
-		try_move_cursor(root.root['loaded program'])
+		load(args.load)
+
+	if args.run:
+		load(args.run)
+		root.root['loaded program'].run()
 
 	if args.replay:
 		do_replay(False)#True)
 	#render()
+
+def load(name):
+	assert(isinstance(name, unicode))
+	frames.nodes.b_lemon_load_file(root.root, name)
+	root.render()
+	try_move_cursor(root.root['loaded program'])
+
 
 def try_move_cursor(n):
 	l = project.find(n, root.lines)
