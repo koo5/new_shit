@@ -95,6 +95,10 @@ def list_of(type_name):
 	"""a helper for creating a type"""
 	return b["list"].make_type({'itemtype': Ref(b[type_name])})
 
+def dict_from_to(key, val):
+	"""a helper for creating a type"""
+	return b["dict"].make_type({'keytype': Ref(b[key]), 'valtype': Ref(b[val])})
+
 class Children(dotdict):
 	"""this is the "ch" of Syntaxed nodes"""
 	pass
@@ -103,17 +107,20 @@ class Children(dotdict):
 
 # region persistence
 
+class DeserializationException(Exception):
+	pass
 
 def deserialize(data, parent):
 	"""
 	data is a json.load'ed .lemon file
-	parent is a dummy node placed at the point where the deserialized node should go, this makes things like List.above() work while getting scope
+	parent is a dummy node placed at the point where the deserialized node should go,
+	this makes things like List.above() work while getting scope
 	"""
 	
 	if 'resolve' in data:
 		return resolve(data, parent)
 	if not 'decl' in data:
-		raise Exception("decl key not in found in %s"%data)
+		raise DeserializationException("decl key not in found in %s"%data)
 	decl = data['decl']
 	log("deserializing node with decl %s"%decl)
 	if decl == 'Parser':
@@ -128,13 +135,25 @@ def deserialize(data, parent):
 			log("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
 			return decl.instance_class.deserialize(data, parent)
 		else:
-			raise Exception ("cto takoj " + repr(decl))
+			raise DeserializationException ("cto takoj " + repr(decl))
 	elif isinstance(decl, dict):
 		decl = deserialize(decl, parent)
-		log("->%s"%decl)
-		return deref_decl(decl).instance_class.deserialize(data, parent)
+		try:
+			return deref_decl(decl).instance_class.deserialize(data, parent)
+		except DeserializationException as e:
+			log(e)
+			return failed_deser(data)
 	else:
-		raise Exception ("cto takoj " + repr(decl))
+		raise DeserializationException ("cto takoj " + repr(decl))
+
+def failed_deser(data):
+	r = Serialized.fresh()
+	if 'last_rendering' in data:
+		r.ch.last_rendering.pyval = data['last_rendering']
+	r.ch.serialization = to_lemon(data)
+	r.fix_parents()
+
+	return r
 
 
 def find_decl(name, decls):
@@ -143,7 +162,7 @@ def find_decl(name, decls):
 		if name == i.name:
 			log("found",name)
 			return i
-	raise Exception ("%s not found in %s"% (repr(name), repr(decls)))
+	raise DeserializationException ("%s not found in %s"% (repr(name), repr(decls)))
 
 
 def resolve(data, parent):
@@ -173,7 +192,7 @@ def resolve(data, parent):
 					log("in scope:",i)
 					if i.name == name:
 						return i
-			raise Exception("node not found: %s ,decl: %s"%(data,decl))
+			raise DeserializationException("node not found: %s ,decl: %s"%(data,decl))
 	
 	elif 'class' in data:
 		name = data['name']
@@ -182,10 +201,10 @@ def resolve(data, parent):
 			#log(i.__class__.__name__.lower(), c)
 			if i.__class__.__name__.lower()  == c and i.name == name:
 				return i
-		raise Exception("node with name %s and class %s not found"%(name,c))
+		raise DeserializationException("node with name %s and class %s not found"%(name,c))
 	
 	else:
-		raise Exception("dunno how to resolve %s" % data)
+		raise DeserializationException("dunno how to resolve %s" % data)
 	
 			
 #these PersistenceStuff classes are just bunches of functions
@@ -298,7 +317,7 @@ class VarRefPersistenceStuff(BaseRefPersistenceStuff):
 					r = cls(i)
 					r.parent = parent
 					return r
-		raise Exception ("vardecl not found:%s"%data)
+		raise DeserializationException ("vardecl not found:%s"%data)
 
 
 class ParserPersistenceStuff(object):
@@ -362,7 +381,7 @@ def resolve_function(data, parent):
 			if i.name == data['name']:
 				#log("found")
 				return i
-		raise Exception("function %s not found by name" % data)
+		raise DeserializationException("function %s not found by name" % data)
 	elif 'sig' in data:
 		sig = deserialize(data['sig'], parent)
 		assert isinstance(sig, List)
@@ -370,10 +389,10 @@ def resolve_function(data, parent):
 			if i.sig.eq_by_value_and_python_class(sig):
 				#log("found")
 				return i
-		raise Exception("function %s not found by sig" % data)
+		raise DeserializationException("function %s not found by sig" % data)
 
 	else:
-		raise Exception("function call without neither sig nor name:%s" % data)
+		raise DeserializationException("function call without neither sig nor name:%s" % data)
 
 class BuiltinFunctionDeclPersistenceStuff(object):
 	def serialize(s):
@@ -452,7 +471,7 @@ class Node(NodePersistenceStuff, element.Element):
 		s.runtime._dict.clear()
 
 	def set_parent(s, v):
-		assert v or isinstance(s, Root), s
+		assert v or isinstance(s, Root),  s
 		super(Node, s).set_parent(v)
 		if "value" in s.runtime._dict: #messy
 			s.runtime.value.parent = s.parent
@@ -773,7 +792,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 	def eq_by_value(a, b):
-		assert len(a.ch._dict.values) == len(b.ch._dict.values) #are you looking for eq_by_value_and_decl?
+		assert len(a.ch._dict) == len(b.ch._dict) #are you looking for eq_by_value_and_decl?
 		for k,v in iteritems(a.ch._dict):
 			if not b.ch[k].eq_by_value_and_python_class(v):
 				return False
@@ -836,25 +855,67 @@ class Dict(Collapsible):
 	def render_items(self):
 		r = []
 		for key, item in iteritems(self.items):
-			r += [TextTag(key), TextTag(":"), IndentTag(), NewlineTag()]
+			r += [ElementTag(key), TextTag(":")]#, IndentTag(), NewlineTag()]
 			r += [ElementTag(item)]
-			r += [DedentTag(), NewlineTag()]
+			#r += [DedentTag(), NewlineTag()]
+			r += [NewlineTag()]
 		return r
 
-	def __getitem__(self, i):
-		return self.items[i]
+	def find(s, key):
+		for k in iterkeys(s.items):
+			if k.eq_by_value_and_python_class(key): #should be by decl
+				return k
 
-	def __setitem__(self, i, v):
-		self.items[i] = v
-		v.parent = self
+	def __getitem__(s, key):
+		#as a special hack,
+		if isinstance(key, str_and_uni):
+			key = Text(key, debug_note="created in Dict.find")
+
+		k = s.find(key)
+		if k != None:
+			return s.items[k]
+		else:
+			raise Exception("nope")
+
+	def __setitem__(s, key, val):
+		#as a special hack,
+		if isinstance(key, str_and_uni):
+			key = Text(key, debug_note="created in Dict.find")
+
+		k = s.find(key)
+		if k != None:
+			key = k
+		else:
+			key.parent = s
+		s.items[key] = val
+		val.parent = s
 
 	def fix_parents(self):
 		super(Dict, self).fix_parents()
 		self._fix_parents(list(self.items.values()))
+		self._fix_parents(list(self.items.keys())) # why so complicated?
 
 	def _flatten(self):
-		return [self] + [v.flatten() for v in itervalues(self.items) if isinstance(v, Node)]#skip Widgets, for Settings
+		return ([self] + \
+		       [k.flatten() for k in iterkeys(self.items)] +
+		       [v.flatten() for v in itervalues(self.items) if isinstance(v, Node)])#skip Widgets, for Settings
 
+	@property
+	def pyval(self):
+		r = {}
+		for k,v in iteritems(self.items):
+			r[k.pyval] = v.pyval
+		return r
+
+	@pyval.setter
+	def pyval(self, val):
+		new = odict()
+		for k, v in iteritems(val):
+			new[to_lemon(k)] = to_lemon(v)
+		self.items = new
+		self.fix_parents()
+
+	"""
 	def add(self, kv):
 		key, val = kv
 		assert(key not in self.items)
@@ -863,6 +924,7 @@ class Dict(Collapsible):
 		assert(isinstance(val, element.Element))
 		val.parent = self
 		return val
+	"""
 
 class List(ListPersistenceStuff, Collapsible):
 	#todo: view sorting
@@ -1212,11 +1274,12 @@ class Number(WidgetedValue):
 
 class Text(WidgetedValue):
 
-	def __init__(self, value=""):
+	def __init__(self, value="", debug_note=""):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
 		self.brackets_color = "text brackets"
 		self.brackets = ('[',']')
+		self.debug_note = debug_note
 
 	def render(self):
 		return self.widget.render()
@@ -1246,10 +1309,10 @@ class Root(Dict):
 		## appends a character to its contents, and wants to move the cursor,
 		## but before re-rendering, it might move it beyond end of line
 		self.indent_length = 4 #not really used but would be nice to have it variable
-		self.dirty = False
+		self.dirty = False #todo
 
 	def render(self):
-		#there has to be some default color for everything..
+		#there has to be some default color for everything, the rendering routine looks for it..
 		return [ColorTag("fg")] + self.render_items() + [EndTag()]
 
 	def delete_child(self, child):
@@ -1262,6 +1325,7 @@ class Root(Dict):
 	#	recursively check parents?
 
 	def scope(self):
+		#we_should_never_get_here()
 		#crude, but for now..
 		#if self != self.root["builtins"]:
 		return self.root["builtins"].ch.statements.parsed
@@ -1774,7 +1838,7 @@ ParametricNodecl(List,
 build_in(
 ParametricNodecl(Dict,
 				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
-				 {'keytype': b['type'], 'valtype': Exp(b['type'])}), 'dict')
+				 {'keytype': b['type'], 'valtype': b['type']}), 'dict')
 
 build_in(WorksAs.b("list", "expression"), False)
 build_in(WorksAs.b("dict", "expression"), False)
@@ -2225,6 +2289,10 @@ class ParserBase(Node):
 		log("del")
 		del s.items[s.items.index(child)]
 
+	def replace_child(s, child, new):
+		s.items[s.items.index(child)] = new
+		s.fix_parents()
+
 
 
 class Parser(ParserPersistenceStuff, ParserBase):
@@ -2665,14 +2733,16 @@ class FunctionDefinitionBase(Syntaxed):
 
 	@property
 	def params(self):
-		return dict([(i.name, i) for i in self.sig.items if isinstance(i, (FunctionParameterBase))])
+		r = dict([(i.name, i) for i in self.sig.items if isinstance(i, FunctionParameterBase)])
+		for i in itervalues(r):
+			assert(i.parent)
+		return r
 
 	@property
 	def sig(self):
-		sig = self.ch.sig.parsed.copy()
-
+		sig = self.ch.sig.parsed.items
 		#check..
-		for i in sig.items:
+		for i in sig:
 			assert(i.parent)
 
 		#check..
@@ -2699,11 +2769,12 @@ class FunctionDefinitionBase(Syntaxed):
 			else:
 				rr.append(i)
 
-		result = List()
-		result.items = rr
-		#result.fix_parents()
-		result.parent = self
-		return result
+		sig.items = rr
+		result.fix_parents()#!?
+		sig.parent = self
+		for i in sig.items:
+			assert(i.parent)
+		return sig
 
 	@property
 	@topic ("vardecls")
@@ -2763,16 +2834,16 @@ class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionB
 		super(FunctionDefinition, self).__init__(kids)
 
 	def _call(self, call_args):
-		#call copy_args?
-		return self.ch.body.run()#Void()#
+		self.copy_args(call_args)
+		return self.ch.body.eval()
 
 	def copy_args(self, call_args):
-		for ca in call_args:
-			name = ca.ch.name.pyval
-			assert isinstance(name, str_and_uni)
-			for vd in self.vardecls:
-				if vd.ch.name.pyval == name:
-					vd.runtime.value.append(ca.copy())
+
+
+		for k,v in iteritems(call_args):
+			assert isinstance(k, str_and_uni)
+			assert isinstance(v, Node)
+			self.params[k].append_value(v.copy())
 
 
 build_in(SyntaxedNodecl(FunctionDefinition,
@@ -2953,7 +3024,7 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 
 	def _eval(s):
 		args = s.args#[i.compiled for i in s.args]
-		#log("function call args:"+str(args))
+		log("function call args:"+str(args))
 		return s.target.call(args)
 
 	def delete_child(s, child):
@@ -3048,14 +3119,15 @@ def add_operators():
 	#file into some reasonable modules would still create complications
 	import operator as op
 
-	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
-	pfn(op.add, [num_arg(), Text("+"), num_arg()])
 	if PY2:
-		pfn(op.div, [num_arg(), Text("/"), num_arg()])
+		pfn(op.div, [num_arg('A'), Text("/"), num_arg('B')])
 	else:
-		pfn(op.floordiv, [num_arg(), Text("//"), num_arg()])
-		pfn(op.truediv,  [num_arg(), Text("/"), num_arg()])
+		pfn(op.floordiv, [num_arg('A'), Text("//"), num_arg('B')])
+		pfn(op.truediv,  [num_arg('A'), Text("/"), num_arg('B')])
 	
+	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
+	pfn(op.add, [num_arg('A'), Text("+"), num_arg('B')])
+
 	pfn(op.eq,  [num_arg('A'), Text("=="),num_arg('B')], bool)
 	pfn(op.ge,  [num_arg('A'), Text(">="),num_arg('B')], bool)
 	pfn(op.gt,  [num_arg('A'), Text(">"), num_arg('B')], bool)
@@ -3292,6 +3364,10 @@ def b_lemon_load_file(root, name):
 		#root["loaded program"].parent = root
 		root["loaded program"] = deserialize(input, root["loaded program"])
 		root.fix_parents()
+		for i in root["loaded program"].flatten():
+			if isinstance(i, Serialized):
+				i.unserialize()
+		root.fix_parents()
 	except Exception as e:
 		raise
 
@@ -3386,11 +3462,12 @@ class LeshSnippet(Node):
 def new_module():
 	return b['module'].inst_fresh()
 
-@topic ("make root")
+@topic ("make_root")
 def make_root():
 	r = Root()
-	intro = r.add(("intro", new_module()))
-	intro.ch.statements.items = [Text("""
+
+	r["intro"] = new_module()
+	r["intro"].ch.statements.items = [Text("""
 
 Welcome to lemon! Press F1 to cycle the sidebar!
 the interface of lemon is currently implemented like this:
@@ -3406,22 +3483,21 @@ Text("If cursor is on a parser, a menu will appear in the sidebar. you can scrol
 Text("todo: smarter menu, better parser, save/load, a real language, fancy projections...;)")]
 
 	
-	intro.ch.statements.view_mode=0
+	r["intro"].ch.statements.view_mode=0
 	#r.add(("lesh", Lesh()))
-	r.add(("some program", b['module'].inst_fresh()))
-	r.add(("lemon console", b['module'].inst_fresh()))
-	r.add(("loaded program", Text("placeholder 01")))
+	r["some program"] = b['module'].inst_fresh()
 	r["some program"].ch.statements.newline()
-	r.add(("builtins", b['module'].inst_fresh()))
-	#todo:xiki style terminal, standard terminal. Both favoring UserCommands
-	#first user command: commit all and push
-	r["builtins"].ch.statements.items = list(itervalues(b))#hm
-	assert len(r["builtins"].ch.statements.items) == len(b)
-	assert len(b) > 0
+
+	#r["lemon console"] =b['module'].inst_fresh()
+	r["loaded program"] = Text("placeholder 01")
+
+	r["builtins"] = b['module'].inst_fresh()
+	r["builtins"].ch.statements.items = list(itervalues(b))
+	assert len(r["builtins"].ch.statements.items) == len(b) and len(b) > 0
 	log("built in ",len(r["builtins"].ch.statements.items)," items")
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
-	log("--",b['statement'].decl)
+
 	#r.add(("toolbar", toolbar.build()))
 	r.fix_parents()
 	#log(len(r.flatten()))
@@ -3442,7 +3518,7 @@ Text("todo: smarter menu, better parser, save/load, a real language, fancy proje
 	#log("ok")
 	for i in r.flatten():
 		if not isinstance(i, Root):
-			assert i.parent, i.long__repr__()
+			assert i.parent,  i.long__repr__()
 	#	log(i.long__repr__())
 	#	if not i.parent: log(i.parent)
 	#print (b['for'].long__repr__(), b['for'].parent)
@@ -3462,13 +3538,30 @@ def test_serialization(r):
 	print("serialized:",s)
 
 def to_lemon(x):
-	log ("to-lemon", x)
+	r = _to_lemon(x)
+	log ("to-lemon(%s) -> %s"%(x,r))
+	return r
+
+def _to_lemon(x):
 	if isinstance(x, str_and_uni):
 		return Text(x)
+	elif isinstance(x, bool):
+		if x:
+			return EnumVal(b['bool'], 1)
+		else:
+			return EnumVal(b['bool'], 0)
 	elif isinstance(x, (int, float)):
 		return Number(x)
+	elif isinstance(x, dict):
+		r = dict_from_to('anything', 'anything').inst_fresh()
+		r.pyval = x
+		return r
+	elif isinstance(x, list):
+		r = list_of('anything').inst_fresh()
+		r.pyval = x
+		return r
 	else:
-		raise Exception("i dunno how to convert that")
+		raise Exception("i dunno how to convert %s"%repr(x))
 	#elif isinstance(x, list):
 
 
@@ -3525,4 +3618,36 @@ lemon console node to run them from
 #danger: decls arent included in flatten
 
 todo:pip search hjson
+#todo:xiki style terminal, standard terminal. Both favoring UserCommands
+#first user command: commit all and push;)
 """
+
+
+
+class Serialized(Syntaxed):
+	def __init__(self, kids):
+		#self.status = widgets.Text(self, "(status)")
+		#self.status.color = "compiler hint"
+		super(Serialized, self).__init__(kids)
+
+	def _eval(s):
+		return Banana("deserialize me first")
+
+	def on_keypress(self, e):
+		if e.key == K_d and e.mod & KMOD_CTRL:
+			self.unserialize()
+			return True
+
+	def unserialize(self):
+		data = self.ch.serialization.pyval
+		log("unserializing %s"%data)
+		new = deserialize(data, self)
+		log("voila:%s"%new)
+		self.parent.replace_child(self, new)
+
+
+
+build_in(SyntaxedNodecl(Serialized,
+			   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
+			   {'last_rendering': b['text'],
+			    'serialization':dict_from_to('text', 'anything')}))

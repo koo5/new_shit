@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import os, sys
+import subprocess
 from math import *
 
 from lemon_six import iteritems, PY3
@@ -52,7 +53,7 @@ def render():
 
 def reset_cursor_blink_timer():
 	if not args.dontblink:
-		pygame.time.set_timer(pygame.USEREVENT + 1, 800)
+		pygame.time.set_timer(pygame.USEREVENT + 1, 1600)
 	root.cursor_blink_phase = True
 
 def user_change_font_size(by = 0):
@@ -341,12 +342,13 @@ def main():
 
 	repeat_delay, repeat_rate = 300, 30
 	try:#try to set SDL keyboard settings to system settings
-		s = os.popen('xset -q  | grep "repeat delay"').read().split()
-		repeat_delay, repeat_rate = int(s[3]), int(s[6])
+		lines = subprocess.check_output(['xset', '-q']).split(b'\n')
+		line = [line.split() for line in lines if "repeat delay" in line][0]
+		#old: line = os.popen('xset -q  | grep "repeat delay"').read().split()
+		repeat_delay, repeat_rate = int(line[3]), int(line[6])
 	except Exception as e:
 		print ("cant get system keyboard repeat delay/rate:", e)
 	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
-	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 
 	change_font_size()
 	resize_frames()

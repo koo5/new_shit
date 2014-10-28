@@ -233,7 +233,7 @@ class Root(Frame):
 				s.cursor_top()
 			elif k == K_END:
 				s.cursor_bottom()
-			elif k == K_d:
+			elif k == K_f:
 				s.dump_to_file()
 			elif k == K_p:
 				s.dump_parents()

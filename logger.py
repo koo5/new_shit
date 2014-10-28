@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 import traceback, logging
 from inspect import *
+from time import time
 
 #logging is really only for debugging purposes. users will have key/action log frame.
 
@@ -23,8 +24,10 @@ def topic(text=None):
 	def decorator_inner_crap(function_with_decorator):
 		def wrapped_function(*vargs, **kwargs):
 			topics.append(text)
-			result = function_with_decorator(*vargs, **kwargs)
-			topics.pop()
+			try:
+				result = function_with_decorator(*vargs, **kwargs)
+			finally:
+				topics.pop()
 			return result
 		#copy useful attributes of the wrapped function to the wrapper
 		if hasattr(function_with_decorator, "levent_constraints"):
@@ -49,8 +52,10 @@ def ping(level = 1):
 def log(*vargs):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
 	x = ', '.join([str(x) for x in vargs])
-	text = ":".join(topics)
-	text+=(": ")+str(x) # if len(topics)>1 else ""
+	text = str(time()) + ":"
+	text += ":".join(topics)
+	text+=": "
+	text += str(x)
 	debug(text)
 
 def plog(*args):

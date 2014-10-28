@@ -207,11 +207,17 @@ def start():
 	if args.load:
 		assert(isinstance(args.load, unicode))
 		frames.nodes.b_lemon_load_file(root.root, args.load)
+		root.render()
+		try_move_cursor(root.root['loaded program'])
 
 	if args.replay:
 		do_replay(False)#True)
 	#render()
 
+def try_move_cursor(n):
+	l = project.find(n, root.lines)
+	if l:
+		root.cursor_c, root.cursor_r = l
 
 root = frames.Root()
 
