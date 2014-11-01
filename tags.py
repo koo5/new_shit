@@ -1,6 +1,7 @@
-#asselement = None
-
 from __future__ import unicode_literals
+
+asselement = 666
+
 
 class Tag(object):
 	pass
@@ -38,9 +39,9 @@ class MemberTag(Tag):
 		self.name = name
 
 class ElementTag(Tag):
-	def __init__(self, element):
-		assert(isinstance(element, asselement.Element))
-		self.element = element
+	def __init__(self, el):
+		assert(isinstance(el, asselement.Element))
+		self.element = el
 
 """
 class BackTabTag(Tag):

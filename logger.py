@@ -16,6 +16,8 @@ debug = print
 
 topics = []
 
+do_topics = False
+
 def topic(text=None):
 	"""decorator to put before your function with a logging topic"""
 	if text == None:
@@ -30,9 +32,13 @@ def topic(text=None):
 				topics.pop()
 			return result
 		#copy useful attributes of the wrapped function to the wrapper
+		#should use wraptools instead
 		if hasattr(function_with_decorator, "levent_constraints"):
 			wrapped_function.levent_constraints = function_with_decorator.levent_constraints
-		return wrapped_function
+		if do_topics:
+			return wrapped_function
+		else:
+			return function_with_decorator
 	return decorator_inner_crap
 
 def bt(x):

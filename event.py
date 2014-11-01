@@ -411,9 +411,10 @@ class EventDispatcher(object):
             if inspect.isfunction(handler) or inspect.ismethod(handler):
                 descr = '%s at %s:%d' % (
                     #handler.func_name,
-                    handler.__name__,
-                    get_function_code(handler).co_filename,
-                    get_function_code(handler).co_firstlineno)
+                    handler.__name__)#,
+                    #commenting out for cython
+                    #get_function_code(handler).co_filename,
+                    #get_function_code(handler).co_firstlineno)
             else:
                 descr = repr(handler)
             

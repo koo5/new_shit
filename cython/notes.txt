@@ -1,0 +1,3 @@
+in lemon root folder:
+for i in *py;ln -s ../$i  cython/{$i}x; end
+

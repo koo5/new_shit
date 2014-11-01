@@ -33,42 +33,38 @@ __version__ = "1.7.3"
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
-def _add_doc(func, doc):
-    """Add documentation to a function."""
-    func.__doc__ = doc
-
 
 if PY3:
-    _meth_func = "__func__"
-    _meth_self = "__self__"
+	_meth_func = "__func__"
+	_meth_self = "__self__"
 
-    _func_closure = "__closure__"
-    _func_code = "__code__"
-    _func_defaults = "__defaults__"
-    _func_globals = "__globals__"
+	_func_closure = "__closure__"
+	_func_code = "__code__"
+	_func_defaults = "__defaults__"
+	_func_globals = "__globals__"
 else:
-    _meth_func = "im_func"
-    _meth_self = "im_self"
+	_meth_func = "im_func"
+	_meth_self = "im_self"
 
-    _func_closure = "func_closure"
-    _func_code = "func_code"
-    _func_defaults = "func_defaults"
-    _func_globals = "func_globals"
+	_func_closure = "func_closure"
+	_func_code = "func_code"
+	_func_defaults = "func_defaults"
+	_func_globals = "func_globals"
 
 
 try:
-    advance_iterator = next
+	advance_iterator = next
 except NameError:
-    def advance_iterator(it):
-        return it.next()
+	def advance_iterator(it):
+		return it.next()
 next = advance_iterator
 
 
 try:
-    callable = callable
+	callable = callable
 except NameError:
-    def callable(obj):
-        return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
+	def callable(obj):
+		return any("__call__" in klass.__dict__ for klass in type(obj).__mro__)
 
 
 get_method_function = operator.attrgetter(_meth_func)
@@ -80,63 +76,64 @@ get_function_globals = operator.attrgetter(_func_globals)
 
 
 if PY3:
-    def iterkeys(d, **kw):
-        return iter(d.keys(**kw))
+	def iterkeys(d, **kw):
+		return iter(d.keys(**kw))
 
-    def itervalues(d, **kw):
-        return iter(d.values(**kw))
+	def itervalues(d, **kw):
+		return iter(d.values(**kw))
 
-    def iteritems(d, **kw):
-        return iter(d.items(**kw))
+	def iteritems(d, **kw):
+		return iter(d.items(**kw))
 
-    def iterlists(d, **kw):
-        return iter(d.lists(**kw))
+	def iterlists(d, **kw):
+		return iter(d.lists(**kw))
 else:
-    def iterkeys(d, **kw):
-        return iter(d.iterkeys(**kw))
+	def iterkeys(d, **kw):
+		return iter(d.iterkeys(**kw))
 
-    def itervalues(d, **kw):
-        return iter(d.itervalues(**kw))
+	def itervalues(d, **kw):
+		return iter(d.itervalues(**kw))
 
-    def iteritems(d, **kw):
-        return iter(d.iteritems(**kw))
+	def iteritems(d, **kw):
+		return iter(d.iteritems(**kw))
 
-    def iterlists(d, **kw):
-        return iter(d.iterlists(**kw))
+	def iterlists(d, **kw):
+		return iter(d.iterlists(**kw))
 
+"""
 _add_doc(iterkeys, "Return an iterator over the keys of a dictionary.")
 _add_doc(itervalues, "Return an iterator over the values of a dictionary.")
 _add_doc(iteritems,
-         "Return an iterator over the (key, value) pairs of a dictionary.")
+		 "Return an iterator over the (key, value) pairs of a dictionary.")
 _add_doc(iterlists,
-         "Return an iterator over the (key, [values]) pairs of a dictionary.")
-
+		 "Return an iterator over the (key, [values]) pairs of a dictionary.")
+"""
 
 if PY3:
-    unichr = chr
-    if sys.version_info[1] <= 1:
-        def int2byte(i):
-            return bytes((i,))
-    else:
-        # This is about 2x faster than the implementation above on 3.2+
-        int2byte = operator.methodcaller("to_bytes", 1, "big")
-    byte2int = operator.itemgetter(0)
-    indexbytes = operator.getitem
-    iterbytes = iter
-    import io
-    StringIO = io.StringIO
-    BytesIO = io.BytesIO
+	unichr = chr
+	if sys.version_info[1] <= 1:
+		def int2byte(i):
+			return bytes((i,))
+	else:
+		# This is about 2x faster than the implementation above on 3.2+
+		int2byte = operator.methodcaller("to_bytes", 1, "big")
+	byte2int = operator.itemgetter(0)
+	indexbytes = operator.getitem
+	iterbytes = iter
+	import io
+	StringIO = io.StringIO
+	BytesIO = io.BytesIO
 else:
-    unichr = unichr
-    int2byte = chr
-    def byte2int(bs):
-        return ord(bs[0])
-    def indexbytes(buf, i):
-        return ord(buf[i])
-    def iterbytes(buf):
-        return (ord(byte) for byte in buf)
-    import StringIO
-    StringIO = BytesIO = StringIO.StringIO
+	unichr = unichr
+	int2byte = chr
+	def byte2int(bs):
+		return ord(bs[0])
+	def indexbytes(buf, i):
+		return ord(buf[i])
+	def iterbytes(buf):
+		return (ord(byte) for byte in buf)
+	import StringIO
+	StringIO = BytesIO = StringIO.StringIO
 
 
 

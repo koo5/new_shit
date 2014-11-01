@@ -5,3 +5,4 @@
 replay.p
 .#*
 curses_log
+cython/*pyx

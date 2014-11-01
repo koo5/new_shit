@@ -9,7 +9,7 @@ running it
 ===
 requires pygame and fuzzywuzzy (colors optional)  
 
-there is a proof-of-concept ncurses frontend, just need to come up with good key combinations to control it and some way to translate the curses sequences into something more meaningful
+there is a proof-of-concept ncurses frontend, just need to come up with good key combinations and finish the translation table
 
 * apt-get install python-pygame python-pip
 * pip install --user fuzzywuzzy colors
@@ -35,7 +35,7 @@ research and discussion: http://goo.gl/1XilSW
 
 help wanted
 ===
-here are some (random) things that i think would help lemon further, sometimes directly, sometimes by making it more
+here are some (random and possibly outdated) things that i think would help lemon further, sometimes directly, sometimes by making it more
 accesible/interesting to other people. Some understanding of lemon is usually
 necessary though. I will be more than happy to explain every detail, but be prepared that it takes some time.
 some (messy) notes are also towards the end of stuff/the_doc.py, and search for "todo" in the source files..
@@ -45,7 +45,7 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
  i think this is an easy task. A syntax defined in python code is a list of tags.
  Sometimes you may see them grouped in another list, so there are several alternatives.
  I would wrap each tags list in a dict with additional metadata: "lang" and maybe "verbosity"..  
-* help me learn unipycation, yield python or other logic programming functionality.
+* help me learn unipycation, yield python, kanren or other logic programming
 <http://yieldprolog.sourceforge.net/>
  it will be needed for a lot of features of lemon.
  you dont actually need to know lemon to help me with this
@@ -54,7 +54,7 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
  lemon could find its use with semantic web stuff or attract smart semweb people.
  play with the dynamic menu aspects
  
-* help me think thru persistence. node deconstruction/construction. copying,pasting etc
+* help me think thru persistence. node deconstruction/construction. copying,pasting etc. update: persistence works
 
 * improve the user interaction with nodes or the context help "system"
 
@@ -69,13 +69,13 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 * discuss the license
 
 * help with brython, see hello.html, currently all modules load but nodes.py errors out.
- doesnt have to be very useful (lemon itself isnt yet), just an easy to show thing
+ doesnt have to be very useful (lemon itself isnt yet), just an easy to show thing. update: pypyjs
 
-* improve the curses frontend, figure out how to detect untranslated sequences or what keys to use
+* improve the curses frontend, figure out what keys to use
 
 * figure out if projectured <https://github.com/projectured/projectured> or other projects (cedalion, MPS, eastwest..) could be used
 
-* figure out how to have a better font in pygame (for mathy expressions) (see stuff/the_doc.py)
+* figure out how to have a better font in pygame (for mathy expressions) (search stuff/the_doc.py for 'font')
 
 * give me feedback on the builtins module which should for now serve as a de-facto reference to the language
 
@@ -113,3 +113,14 @@ not decided yet, some standard license or this experiment: <https://github.com/k
 For now: By contributing to lemon, you agree to granting me nonexclusive rights to use your contribution (with attribution) within lemon, in any way, including relicensing and reselling. Also, the patent claim protection clauses like in http://www.gnu.org/licenses/agpl-3.0.html apply.;)
 
 
+pondering
+===
+how to best divide the frontend and backend: make a grab_tags() function that makes a first pass and repeatedly calls tags() for all ElementTags, and produces a list of tags.
+If this is a meaningless performance hit, we can rewrite tags() to do this directly, but id rather wait and see if there isnt some value in the separation.
+the client and server can either be both the same language and we could use some way of just proxying the python objects, this has the advantage that we might be able to more easily play with rendering fun stuff in the frontend (VPython)
+or we go full separation/serialization. Shrug.
+
+* try changing the input handling to make Parser simple (and working) (left_keypress, right_keypress, middle_keypress)
+* emit python or picolisp?
+* exploding nodes
+* finish the curses interface (keyboard input handling)

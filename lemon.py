@@ -8,11 +8,12 @@ from __future__ import unicode_literals
 
 version=0.21
 
+"""
 try:
 	import objgraph, gc
 except:
 	pass
-
+"""
 import sys, os
 import pickle, copy
 

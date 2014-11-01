@@ -255,8 +255,8 @@ def draw_cursor(self, surf):
 
 def cursor_xy(c,r):
 	return (font_width * c,
-	        font_height * r,
-	        font_height * (r + 1))
+			font_height * r,
+			font_height * (r + 1))
 
 
 
@@ -295,9 +295,9 @@ def menu_generate_rects(s):
 		#print startline, endline+1
 		endchar = max([len(l) for l in s.lines[startline:endline+1]])
 		r = (startchar * font_width,
-		     startline * font_height,
-		     (endchar  - startchar) * font_width,
-		     (endline - startline+1) * font_height)
+			 startline * font_height,
+			 (endchar  - startchar) * font_width,
+			 (endline - startline+1) * font_height)
 		s.rects[i] = r
 
 
@@ -331,9 +331,11 @@ def main():
 	pygame.display.init()
 	pygame.font.init()
 	display.set_caption(str('lemon operating language v')+str(lemon.version))
-	icon = image.load('icon32x32.png')
-	display.set_icon(icon)
-
+	try:
+		icon = image.load('icon32x32.png')
+		display.set_icon(icon)
+	except:
+		pass
 	resize((666,666))
 	try:
 		resize(fuck_sdl())

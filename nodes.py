@@ -1029,7 +1029,7 @@ class List(ListPersistenceStuff, Collapsible):
 		return p
 
 	def newline_with(self, node):
-		s.newline.add(node)
+		self.newline.add(node)
 
 	#@topic
 	@property

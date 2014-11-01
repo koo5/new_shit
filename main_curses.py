@@ -153,6 +153,7 @@ c.KEY_F12: keys.K_F12}
 #c.KEY_: keys.K_,
 #oh...unfinished..
 def loop():
+
 	render()
 	draw()
 	inp = scr.getch(root.cursor_r,root.cursor_c)
@@ -161,7 +162,7 @@ def loop():
 		lemon.handle(lemon.KeypressEvent(dummy_allkeys, False, curses2sdl[inp], 0))
 	else:
 		lemon.handle(lemon.KeypressEvent(dummy_allkeys, unichr(inp), 0, 0))
-	log(inp)
+	log(inp, c.unctrl(inp))
 
 def main_func(stdscr):
 	global scr, mainw, logw, sidebarw, args, logfile
@@ -185,7 +186,7 @@ def main_func(stdscr):
 	while True:
 		loop()
 
-if __name__ == "__main__":
+def main():
 	try:
 		c.wrapper(main_func)
 	except Exception as e:
@@ -193,6 +194,20 @@ if __name__ == "__main__":
 		logfile.flush()
 		logfile.close()
 		raise
+
+if __name__ == "__main__":
+    main()
+
+# __________  Entry point  __________
+#just playing with rpython..
+def entry_point(argv):
+    main()
+    return 0
+
+# _____ Define and setup target ___
+
+def target(*args):
+    return entry_point, None
 
 
 #        stdscr.addstr(ypos[j],     xpos[j] - 1, "|.|")

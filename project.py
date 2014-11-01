@@ -19,7 +19,7 @@ if __debug__:
 	import element as asselement
 	import nodes as assnodes
 
-
+# region utils
 
 def squash(l):
 	"""squash a stack of dicts into a single dict"""
@@ -51,18 +51,18 @@ def newline(p, elem):
 		charadd(p.lines[-1], " ", p.atts)
 
 
-def charadd(line, char, atts):
+def charadd(line, ch, atts):
 	#assert(isinstance(atts, list))
 	a = squash(atts)
 	#assert(isinstance(a, dict))
-	line.append((char, a))
+	line.append((ch, a))
 
 def attadd(atts, key, val):
 	#assert(isinstance(key, str))
 	atts.append((key, val))
 
 def new_p(cols, frame, rows_limit):
-	"""build up the data structure that holds the parameters, state and results of the projection"""
+	"""build up the data structure that holds the parameters, state and results of projection"""
 	p = dotdict()
 	p.width = cols
 	p.indent_width = 4
@@ -75,7 +75,38 @@ def new_p(cols, frame, rows_limit):
 	p.rows_limit = rows_limit
 	return p
 
+
+# endregion
+# region the meat
+"""
+def collect(root):
+	"just collect tags to be sent to frontend"
+	for t in _collect_elem(root):
+		yield t
+
+def _collect_elem(e):
+	_collect_tags(e.tags(), e)
+
+
+def _collect_tags(tags, elem):
+	for tag in elem.tags():
+		if isinstance(tag, list):
+			for t in _collect_tags(tags):
+				yield t
+		elif isinstance(tag, ChildTag):
+			for t in _collect_tags(elem.ch[tag.name]):
+				yield t
+			tag = ElementTag()
+
+
+"""
+
+
+
+
+
 def project(root, cols, frame, rows_limit = False):
+	"""the main entry point to the projection functionality. This is what is used now. The collecting of tags is coupled with the rendering"""
 	p = new_p(cols, frame, rows_limit)
 	_project_elem(p, root)
 	return p
@@ -193,6 +224,7 @@ def find(node, lines):
 				return c, r
 	return None
 
+# endregion
 
 if __debug__:
 	test_squash()
