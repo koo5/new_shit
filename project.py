@@ -22,7 +22,7 @@ if __debug__:
 # region utils
 
 def squash(l):
-	"""squash a stack of dicts into a single dict"""
+	"""squash a stack of tuples into a single dict"""
 #	ping()
 #	if __debug__:
 #		assert(isinstance(l, list))
@@ -30,11 +30,12 @@ def squash(l):
 #			assert(isinstance(i, tuple))
 #			assert(len(i) == 2)
 #			assert(isinstance(i[0], str))
-	r = {}
-	for i in l:
-		r[i[0]] = i[1]
-	return r
 
+#	r = {}
+#	for i in l:
+#		r[i[0]] = i[1]
+#	return r
+	return dict(l)
 
 def test_squash():
 	assert squash([("a", 1), ("b", 2), ("a", 3)]) == {"a": 3, "b": 2}
@@ -42,14 +43,16 @@ def test_squash():
 
 DONE = 1
 def newline(p, elem):
-	p.lines.append([])
-	if p.rows_limit and len(p.lines) > p.rows_limit:
+	if p.rows_limit and len(p.lines) == p.rows_limit:
 		return DONE
-	for i in range(p.indent * p.indent_width):
+	l = []
+	p.lines.append(l)
+	a = squash(p.atts)##i basically inlined charadd into here, dunno if thats useful
+	for i in xrange(p.indent * p.indent_width):
 		#keeps the attributes of the last node,
 		#but lets see how this works in the ui..
-		charadd(p.lines[-1], " ", p.atts)
-
+		#charadd(l, " ", p.atts)
+		l.append((" ", a))
 
 def charadd(line, ch, atts):
 	#assert(isinstance(atts, list))
@@ -61,35 +64,29 @@ def attadd(atts, key, val):
 	#assert(isinstance(key, str))
 	atts.append((key, val))
 
-def new_p(cols, frame, rows_limit):
-	"""build up the data structure that holds the parameters, state and results of projection"""
-	p = dotdict()
-	p.width = cols
-	p.indent_width = 4
-	p.atts = []
-	p.lines = [[]]
-	p.arrows = []
-	p.indent = 0
-	p.frame = frame
-	p.char_index = 0
-	p.rows_limit = rows_limit
-	return p
+class projection_results(object):
+	"""parameters, state and results of projection"""
+	__slots__ = "width indent_width atts lines arrows indent frame char_index rows_limit".split()
+
+	def __init__(s, cols, frame, rows_limit):
+		s.width = cols
+		s.indent_width = 4
+		s.atts = []
+		s.lines = [[]]
+		s.arrows = []
+		s.indent = 0
+		s.frame = frame
+		s.char_index = 0
+		s.rows_limit = rows_limit
+
 
 
 # endregion
 # region the meat
+
 """
-def collect(root):
-	"just collect tags to be sent to frontend"
-	for t in _collect_elem(root):
-		yield t
-
-def _collect_elem(e):
-	_collect_tags(e.tags(), e)
-
-
-def _collect_tags(tags, elem):
-	for tag in elem.tags():
+def collect_tags(tags):
+	for tag in tags:
 		if isinstance(tag, list):
 			for t in _collect_tags(tags):
 				yield t
@@ -97,22 +94,20 @@ def _collect_tags(tags, elem):
 			for t in _collect_tags(elem.ch[tag.name]):
 				yield t
 			tag = ElementTag()
-
-
 """
-
-
+#https://docs.python.org/2/library/collections.html#collections.deque
+#(tags.color, (3,3,3))..
 
 
 
 def project(root, cols, frame, rows_limit = False):
 	"""the main entry point to the projection functionality. This is what is used now. The collecting of tags is coupled with the rendering"""
-	p = new_p(cols, frame, rows_limit)
+	p = projection_results(cols, frame, rows_limit)
 	_project_elem(p, root)
 	return p
 
 def project_tags(tags, cols, frame, rows_limit = False):
-	p = new_p(cols, frame, rows_limit)
+	p = projection_results(cols, frame, rows_limit)
 	p._render_lines = {frame:[{}]}
 	_project_tags(p, p, tags)
 	return p
@@ -130,89 +125,114 @@ def _project_elem(p, elem):
 		"startchar": len(p.lines[-1]),
 		"startline": len(p.lines)-1}
 
-	for tags in elem.tags():
-		if _project_tags(p, elem, tags) == DONE:
-			return DONE
+	if _project_tags(p, elem, elem.tags()) == DONE:
+		return DONE
 
 	elem._render_lines[p.frame]["endchar"] = len(p.lines[-1])
 	elem._render_lines[p.frame]["endline"] = len(p.lines)-1
 
 
+import collections
 
-def _project_tags(p, elem, tags):
+def _project_tags(p, elem, tag):
+	if type(tag) == unicode:
+		return _project_string(p, tag, elem)
 
-	if isinstance(tags, list):
-		for tag in tags:
-			if _project_tags(p, elem, tag) == DONE:
-				return DONE
-	else:
-		tag = tags
-	#first some simple replacements
-		if isinstance(tag, TextTag):
-			tag = tag.text
-		elif isinstance(tag, NewlineTag):
-			tag = "\n"
+	elif type(tag) == TextTag:
+		return _project_string(p, tag.text, elem)
 
-		elif isinstance(tag, ChildTag):
-			assert(isinstance(elem, assnodes.Node))
-			assert(isinstance(elem.ch[tag.name], asselement.Element))
-			tag = ElementTag(elem.ch[tag.name]) #get child of Syntaxed
-		elif isinstance(tag, MemberTag):
+	#elif isinstance(tag, collections.Iterable):
+	#	for t in tag:
+	#		if _project_tags(p, elem, t) == DONE:
+	#			return DONE
+
+	try:
+		ee = None
+		for t in tag:
+			try:
+				if _project_tags(p, elem, t) == DONE:
+					return DONE
+			except TypeError as e:
+				ee = e
+				raise e
+		return
+	except TypeError as e:
+		if e is ee:
+			raise e
+
+	if type(tag) == ChildTag:
+			#assert(isinstance(elem, assnodes.Node))
+			#assert(isinstance(elem.ch[tag.name], asselement.Element))
+		return _project_elem(p, elem.ch[tag.name])
+
+	elif type(tag) == MemberTag:
 			#get the element as an attribute
-			#i think this should be getattr
-			tag = ElementTag(elem.__dict__[tag.name])
+			#i think this should be getattr, but it seems to work
+		return _project_elem(p, elem.__dict__[tag.name])
 
-	#now real stuff
-		if isinstance(tag, str_and_uni):
-			for char in tag:
-				attadd(p.atts, "char_index", p.char_index)
-				if char == "\n":
-					if newline(p, elem) == DONE:
-						return DONE
-				else:
-					if len(p.lines[-1]) >= p.width:
-						if newline(p, elem) == DONE:
-							return DONE
-					charadd(p.lines[-1], char, p.atts)
-				p.atts.pop()
-				p.char_index += 1
+	elif type(tag) == ElementTag:
+		return _project_elem(p, tag.element)
 
-		elif isinstance(tag, AttTag):
-			attadd(p.atts, tag.key, tag.val)
-		elif isinstance(tag, EndTag):
-			p.atts.pop()
-		elif isinstance(tag, ColorTag):
-			attadd(p.atts, "color", tag.color)
+	elif type(tag) == EndTag:
+		p.atts.pop()
 
-	#recurse
-		elif isinstance(tag, ElementTag):
-			#an opening bracket belongs to the parent node. its weird.
-			#cursor always acts on the char to the right of it
-			#so when it is on an opening bracket of a child,
-			#it is still "in" the parent
-			if _project_tags(p, elem, [AttTag("opening bracket", True), ColorTag(tag.element.brackets_color), TextTag(tag.element.brackets[0]), EndTag(), EndTag()]) == DONE:
+	elif type(tag) == AttTag:
+		attadd(p.atts, tag.key, tag.val)
+
+	elif type(tag) == ColorTag:
+		attadd(p.atts, "color", tag.color)
+
+	elif type(tag) == IndentTag:
+		p.indent+=1
+
+	elif type(tag) == DedentTag:
+		p.indent-=1
+
+	elif type(tag) == ArrowTag:
+		p.arrows.append((len(p.lines[-1]), len(p.lines) - 1, tag.target))
+
+	else:
+		raise Exception("is %s a tag?" % repr(tag))
+
+
+def _project_string(p, tag, elem):
+	for char in tag:
+		attadd(p.atts, "char_index", p.char_index)
+		#p.atts.append(("char_index", p.char_index))
+		if char == "\n":
+			if newline(p, elem) == DONE:
 				return DONE
-			if _project_elem(p, tag.element) == DONE:
-				return DONE
-
-	#some more stuff
-		elif isinstance(tag, ArrowTag):
-			p.arrows.append((len(p.lines[-1]), len(p.lines) - 1, tag.target))
-
-		elif isinstance(tag, IndentTag):
-			p.indent+=1
-		elif isinstance(tag, DedentTag):
-			p.indent-=1
-		#elif isinstance(tag, BackspaceTag):
-		#	if len(lines[-1]) < tag.spaces:
-		#		log("cant backspace that much")
-		#	lines[-1] = lines[-1][:-tag.spaces]
-		#elif isinstance(tag, MenuTag):
-		#	screen['menu'] = tag
 		else:
-			raise Exception("is %s a tag?" % tag.__class__)
+			if len(p.lines[-1]) >= p.width:
+				if newline(p, elem) == DONE:
+					return DONE
+			charadd(p.lines[-1], char, p.atts)
+		p.atts.pop()
+		p.char_index += 1
 
-
+#somewhat optimized version
+def _project_string(p, tag, elem):
+	p_width = p.width
+	p_atts = p.atts
+	p_atts.append(("char_index", p.char_index))
+	line = p.lines[-1]
+	line_append = line.append
+	for char in tag:
+		if char == "\n":
+			if newline(p, elem) == DONE:
+				return DONE
+			line = p.lines[-1]
+			line_append = line.append
+		else:
+			if len(line) >= p_width:
+				if newline(p, elem) == DONE:
+					return DONE
+				line = p.lines[-1]
+				line_append = line.append
+			line_append((char, dict(p_atts)))
+		p.char_index += 1
+		p_atts[-1] = ("char_index", p.char_index)
+	p.atts.pop()
 
 
 def find(node, lines):

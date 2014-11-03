@@ -137,7 +137,7 @@ class Root(Frame):
 		self.arrows = self.complete_arrows(p.arrows)
 		self.do_post_render_move_cursor()
 
-		if __debug__:  #todo: __debug__projection__ or something, this is eating quite some cpu i think and only checks the projection code (i think)
+		if False:#__debug__:  #todo: __debug__projection__ or something, this is eating quite some cpu i think and only checks the projection code (i think)
 			assert(isinstance(self.lines, list))
 			for l in self.lines:
 				assert(isinstance(l, list))

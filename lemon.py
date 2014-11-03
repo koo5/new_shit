@@ -97,13 +97,13 @@ def do_replay(ff):
 					log(str(e))
 					if e.type == KEYDOWN:
 						keypress(e)
-						draw()
 					elif e.type == MOUSEBUTTONDOWN:
 						mousedown(e)
-						render()
-						draw()
 					else:
 						raise Exception("unexpected event type:", e)
+					render()
+					if not fast_forward:
+						draw()
 
 				except EOFError:
 					break
@@ -130,7 +130,7 @@ def keypress(e):
 	else:
 		if args.log_events:
 			log("unhandled")
-	render()#?
+	#render()#?
 
 	"""
 	try:
@@ -213,8 +213,7 @@ def start():
 		root.root['loaded program'].run()
 
 	if args.replay:
-		do_replay(False)#True)
-	#render()
+		do_replay(False)
 
 def load(name):
 	assert(isinstance(name, unicode))

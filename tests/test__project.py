@@ -1,6 +1,29 @@
-# -*- coding: utf-8 -*-
-"""
+from unittest import TestCase
 
+__author__ = 'kook'
+
+from project import *
+import project
+
+
+class Test_project_string(TestCase):
+	def test__project_string(self):
+		self.fail()
+
+
+def time__project_string():
+	p = projection_results(80, None, False)
+	#for i in xrange(5):
+	for s in f:
+		project._project_string(p, s ,None)
+
+
+# -*- coding: utf-8 -*-
+
+
+f = """
+	
+	
 this file defines the AST classes of the language and everything around it.
 we also build up the builtins module along the way
 
@@ -18,7 +41,7 @@ each class has a decl, which is an object descending from NodeclBase (nodecl for
 nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
 nodecls have a set of functions for instantiating the values, and those need some cleanup
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
-"""
+%_%
 
 # region imports
 
@@ -92,15 +115,15 @@ def make_list(btype = 'anything'):
 	return list_of(btype).inst_fresh()
 
 def list_of(type_name):
-	"""a helper for creating a type"""
+	%_%a helper for creating a type%_%
 	return b["list"].make_type({'itemtype': Ref(b[type_name])})
 
 def dict_from_to(key, val):
-	"""a helper for creating a type"""
+	%_%a helper for creating a type%_%
 	return b["dict"].make_type({'keytype': Ref(b[key]), 'valtype': Ref(b[val])})
 
 class Children(dotdict):
-	"""this is the "ch" of Syntaxed nodes"""
+	%_%this is the "ch" of Syntaxed nodes%_%
 	pass
 
 # endregion
@@ -111,11 +134,11 @@ class DeserializationException(Exception):
 	pass
 
 def deserialize(data, parent):
-	"""
+	%_%
 	data is a json.load'ed .lemon file
 	parent is a dummy node placed at the point where the deserialized node should go,
 	this makes things like List.above() work while getting scope
-	"""
+	%_%
 	
 	if 'resolve' in data:
 		return resolve(data, parent)
@@ -424,14 +447,14 @@ class WidgetedValuePersistenceStuff(object):
 # region basic node classes
 
 class Node(NodePersistenceStuff, element.Element):
-	"""a node is more than an element, its a standalone unit.
+	%_%a node is more than an element, its a standalone unit.
 	nodes can added, cut'n'pasted around, evaluated etc.
 	every node class has a corresponding decl object
-	"""
+	%_%
 	help = None
 
 	def __init__(self):
-		"""overrides in subclasses may require children as arguments"""
+		%_%overrides in subclasses may require children as arguments%_%
 		super(Node, self).__init__()
 		self.brackets_color = "node brackets rainbow"
 		self.runtime = dotdict() #various runtime data herded into one place
@@ -489,7 +512,7 @@ class Node(NodePersistenceStuff, element.Element):
 		return s
 
 	def scope(self):
-		"""what does this node see?..poc"""
+		%_%what does this node see?..poc%_%
 		r = []
 
 		if isinstance(self.parent, List):
@@ -509,7 +532,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	@property
 	def vardecls_in_scope(self):
-		"""what variable declarations does this node see?..poc"""
+		%_%what variable declarations does this node see?..poc%_%
 		r = []
 
 		#if isinstance(self.parent, List):
@@ -549,7 +572,7 @@ class Node(NodePersistenceStuff, element.Element):
 		self.runtime.unimplemented = True
 		return Text("not implemented")
 
-	"""
+	%_%
 	def program(self):
 		if isinstance(self, Program):
 			return self
@@ -559,7 +582,7 @@ class Node(NodePersistenceStuff, element.Element):
 			else:
 				print self, "has no parent"
 				return None
-	"""
+	%_%
 
 	@classmethod
 	def fresh(cls, decl=None):
@@ -581,12 +604,12 @@ class Node(NodePersistenceStuff, element.Element):
 			self.parent.delete_child(self)
 			return True
 
-	"""
+	%_%
 	@topic("delete_self")
 	@levent(mod=KMOD_CTRL, key=K_DELETE)
 	def delete_self(self):
 		self.parent.delete_child(self)
-	"""
+	%_%
 
 	def to_python_str(self):
 		return str(self)
@@ -653,11 +676,11 @@ class Node(NodePersistenceStuff, element.Element):
 
 
 class Syntaxed(SyntaxedPersistenceStuff, Node):
-	"""
+	%_%
 	Syntaxed has some named children, kept in ch.
 	their types are in slots.
 	syntax is a list of Tags, and it can contain ChildTag
-	"""
+	%_%
 	def __init__(self, kids):
 		super(Syntaxed, self).__init__()
 		self.check_slots(self.slots)
@@ -685,7 +708,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		self.ch[name] = item
 
 	def replace_child(self, child, new):
-		"""child name or child value? thats a good question...its child the value!"""
+		%_%child name or child value? thats a good question...its child the value!%_%
 		assert(child in itervalues(self.ch))
 		assert(isinstance(new, Node))
 		for k,v in iteritems(self.ch):
@@ -779,7 +802,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 	@property
 	def name(self):
-		"""override if this doesnt work for your subclass"""
+		%_%override if this doesnt work for your subclass%_%
 		return self.ch.name.pyval
 
 	@property
@@ -813,9 +836,9 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 
 class Collapsible(Node):
-	"""Collapsible - List or Dict -
+	%_%Collapsible - List or Dict -
 	they dont have a title, just a collapse button, right of which first item is rendered
-	"""
+	%_%
 	vm_collapsed = 0
 	vm_oneline = 1
 	vm_multiline = 2
@@ -917,7 +940,7 @@ class Dict(Collapsible):
 		self.items = new
 		self.fix_parents()
 
-	"""
+	%_%
 	def add(self, kv):
 		key, val = kv
 		assert(key not in self.items)
@@ -926,7 +949,7 @@ class Dict(Collapsible):
 		assert(isinstance(val, element.Element))
 		val.parent = self
 		return val
-	"""
+	%_%
 
 class List(ListPersistenceStuff, Collapsible):
 	#todo: view sorting
@@ -1068,22 +1091,22 @@ class List(ListPersistenceStuff, Collapsible):
 
 	@property
 	def val(self):
-		"""
+		%_%
 		for "historic" reasons. when acting as a list of eval results.
 		during execution, results of evaluation of every node is appended,
 		so there is a history available.
 		current value is the last one.
 		we might split this out into something like EvalResultsList
-		"""
+		%_%
 		return self[-1]
 
 	def append(self, x):
-		"""like add, but returns the item. historic reasons."""
+		%_%like add, but returns the item. historic reasons.%_%
 		assert(isinstance(x, Node))
 		self.items.append(x)
 		x.parent = self
 		return x
-	"""
+	%_%
 	def set(self, x):
 		#constants should call this..but if they are in a Parser, isconst wont propagate yet
 		assert(isinstance(x, Node))
@@ -1092,7 +1115,7 @@ class List(ListPersistenceStuff, Collapsible):
 		else:
 			super(val, self).append(x)
 		return x
-	"""
+	%_%
 
 	def eq_by_value(a, b):
 		if len(a.items) != len(b.items):
@@ -1220,7 +1243,7 @@ class Bananas(Node):
 		return False
 
 class WidgetedValue(WidgetedValuePersistenceStuff, Node):
-	"""basic one-widget value"""
+	%_%basic one-widget value%_%
 	is_const = True#this doesnt propagate to Parser yet, but anyway, this node always evaluates to the same value
 	#during a program run. guess its waiting for type inference or something
 	def __init__(self):
@@ -1335,7 +1358,7 @@ class Root(Dict):
 
 
 class Module(Syntaxed):
-	"""module or program, really"""
+	%_%module or program, really%_%
 	def __init__(self, kids):
 		super(Module, self).__init__(kids)
 
@@ -1399,8 +1422,8 @@ class Module(Syntaxed):
 
 
 class Ref(RefPersistenceStuff, Node):
-	"""points to another node.
-	if a node already has a parent, you just want to point to it, not own it"""
+	%_%points to another node.
+	if a node already has a parent, you just want to point to it, not own it%_%
 	#todo: separate typeref and ref?..varref..?
 	def __init__(self, target):
 		super(Ref, self).__init__()
@@ -1415,7 +1438,7 @@ class Ref(RefPersistenceStuff, Node):
 	def works_as(self, type):
 		return self.target.works_as(type)
 	def inst_fresh(self):
-		"""you work as a type, you have to provide this"""
+		%_%you work as a type, you have to provide this%_%
 		return self.target.inst_fresh()
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.target)+"')"
@@ -1446,8 +1469,8 @@ class VarRef(VarRefPersistenceStuff, Node):
 		return s.target.runtime.value.val
 
 class Exp(Node):
-	"""used to specify that an expression (something that evaluates to, at runtime) of
-	some type, as opposed to a node of that type, is expected"""
+	%_%used to specify that an expression (something that evaluates to, at runtime) of
+	some type, as opposed to a node of that type, is expected%_%
 	def __init__(self, type):
 		super(Exp, self).__init__()
 		self.type = type
@@ -1460,10 +1483,10 @@ class Exp(Node):
 		return self.type.name + " expr"
 
 class NodeclBase(Node):
-	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
+	%_%a base for all nodecls. Nodecls declare that some kind of nodes can be created,
 	know their python class ("instance_class"), syntax and shit.
 	usually does something like instance_class.decl = self, so we can instantiate the
-	classes in code without going thru a corresponding nodecl.inst_fresh()"""
+	classes in code without going thru a corresponding nodecl.inst_fresh()%_%
 	help = None
 	def __init__(self, instance_class):
 		super(NodeclBase, self).__init__()
@@ -1508,7 +1531,7 @@ class NodeclBase(Node):
 		return self.instance_class(kids)
 
 	def inst_fresh(self, decl=None):
-		""" fresh creates default children"""
+		%_% fresh creates default children%_%
 		return self.instance_class.fresh(decl)
 
 	def palette(self, scope, text, node):
@@ -1525,9 +1548,9 @@ class NodeclBase(Node):
 
 
 class TypeNodecl(NodeclBase):
-	""" "pass me a type" kind of value
+	%_% "pass me a type" kind of value
 	instantiates Refs ..maybe should be TypeRefs
-	"""
+	%_%
 	help = ["points to another node, like using an identifier. Used to point to types."]
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
@@ -1564,7 +1587,7 @@ class VarRefNodecl(NodeclBase):
 			assert isinstance(x, (UntypedVar, TypedParameter))
 			r += [ParserMenuItem(VarRef(x))]
 		return r
-"""
+%_%
 	def palette(self, scope, text):
 		r = []
 		for x in scope:
@@ -1577,7 +1600,7 @@ class VarRefNodecl(NodeclBase):
 					r += [ParserMenuItem(VarRef(yc))]
 		#log (str(scope)+"varrefs:"+str(r))
 		return r
-"""
+%_%
 class ExpNodecl(NodeclBase):
 	def __init__(self):
 		super(ExpNodecl, self).__init__(Exp)
@@ -1587,7 +1610,7 @@ class ExpNodecl(NodeclBase):
 		return [ParserMenuItem(Exp(x)) for x in nodecls]
 
 class Nodecl(NodeclBase):
-	"""for simple nodes (Number, Text, Bool)"""
+	%_%for simple nodes (Number, Text, Bool)%_%
 	def __init__(self, instance_class):
 		super(Nodecl, self).__init__(instance_class)
 		instance_class.decl = Ref(self)
@@ -1610,12 +1633,12 @@ class Nodecl(NodeclBase):
 		return ParserMenuItem(value, score)
 
 class SyntaxedNodecl(NodeclBase):
-	"""
+	%_%
 	A Nodecl for a class derived from Syntaxed.
 	instance_slots holds types of children, not Ref'ed.
 	 children themselves are either Refs (pointing to other nodes),
 	 or owned nodes (their .parent points to us)
-	"""
+	%_%
 	def __init__(self, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
 		self.instance_slots = dict([(k, b[i] if isinstance(i, str_and_uni) else i) for k,i in iteritems(instance_slots)])
@@ -1629,7 +1652,7 @@ class SyntaxedNodecl(NodeclBase):
 			return s.inst_fresh()
 
 
-	"""
+	%_%
 	syntaxed match(items, nodes) :-
 
 	Text match(item, nodes) :-
@@ -1640,14 +1663,14 @@ class SyntaxedNodecl(NodeclBase):
 			if isinstance(s, Text):
 				if isinstance(i, Text):
 					i.pyval
-	"""
+	%_%
 
 class ParametricTypeBase(Syntaxed):
 	pass
 
 class ParametricType(ParametricTypeBase):
-	"""like..list of <type>, the <type> will be a child of this node.
-	 ParametricType is instantiated by ParametricNodecl """
+	%_%like..list of <type>, the <type> will be a child of this node.
+	 ParametricType is instantiated by ParametricNodecl %_%
 	def __init__(self, kids, decl):
 		self.decl = decl
 		self.instance_class = self.decl.value_class
@@ -1663,14 +1686,14 @@ class ParametricType(ParametricTypeBase):
 		return [self.decl.type_syntax]
 
 	def inst_fresh(self, decl=None):
-		"""create new List or Dict"""
+		%_%create new List or Dict%_%
 		if not decl:
 			decl = self
 		return self.decl.value_class.fresh(Ref(decl))
 
 	@classmethod
 	def fresh(cls, decl):
-		"""create new parametric type"""
+		%_%create new parametric type%_%
 		return cls(cls.create_kids(decl.type_slots), decl)
 
 	@property
@@ -1689,9 +1712,9 @@ class ParametricType(ParametricTypeBase):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
 class ParametricNodecl(NodeclBase):
-	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
+	%_%says that "list of <type>" declaration could exist, instantiates it (ParametricType)
 	only non Syntaxed types are parametric now(list and dict),
-	so this contains the type instance's syntax and slots (a bit confusing)"""
+	so this contains the type instance's syntax and slots (a bit confusing)%_%
 	def __init__(self, value_class, type_syntax, type_slots):
 		super(ParametricNodecl, self).__init__(ParametricType)
 		self.type_slots = type_slots
@@ -1741,7 +1764,7 @@ class EnumVal(Node):
 	#		return 300
 
 class EnumType(ParametricTypeBase):
-	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
+	%_%works as a type but doesnt descend from Nodecl. Im just trying stuff...%_%
 	def __init__(self, kids):
 		self.instance_class = EnumVal
 		super(EnumType, self).__init__(kids)
@@ -1771,7 +1794,7 @@ class WorksAs(Syntaxed):
 		return cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
 
 class Definition(Syntaxed):
-	"""should have type functionality (work as a type)"""
+	%_%should have type functionality (work as a type)%_%
 	help=['used just for types, currently.']
 	def __init__(self, kids):
 		super(Definition, self).__init__(kids)
@@ -1796,11 +1819,11 @@ class Union(Syntaxed):
 # region builtins
 #here we start putting stuff into b, which is then made into the builtins module
 build_in(Text(
-"""We start by declaring the existence of some types (decls).
+%_%We start by declaring the existence of some types (decls).
 Once declared, we can reference them from lemon objects.
 Internally, each declaration is a Nodecl object.
 The type name is usually a lowercased
-name of the python class that implements it."""))
+name of the python class that implements it.%_%))
 
 build_in(TypeNodecl(), 'type')  #..so you can say that your function returns a type, or something
 build_in(VarRefNodecl(), 'varref')
@@ -1884,7 +1907,7 @@ Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtyp
 SyntaxedNodecl(Union,
 			   [TextTag("union of"), ChildTag("items")],
 			   {'items': b['list'].make_type({'itemtype': b['type']})})]) #todo:should use the definition above instead
-b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
+b['union'].notes=%_%should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now%_%
 
 
 
@@ -1979,7 +2002,7 @@ build_in(SyntaxedNodecl(If,
 			'statements': b['statements']}))
 
 class Else(Syntaxed):
-	"""a dangling else"""
+	%_%a dangling else%_%
 	def __init__(self, children):
 		super(Else, self).__init__(children)
 
@@ -2016,26 +2039,26 @@ build_in(SyntaxedNodecl(Else,
 			{'statements': b['statements']}))
 
 
-"""...notes: formatting: we can speculate that we will get to having a multiline parser,
+%_%...notes: formatting: we can speculate that we will get to having a multiline parser,
 and that will allow for a more freestyle formatting...
-"""
+%_%
 
 
-"""
+%_%
 class Filter(Syntaxed):
 	def __init__(self, kids):
 		super(Filter, self).__init__(kids)
-"""
+%_%
 # endregion
 
 class ParserBase(Node):
 
-	"""
+	%_%
 	Parser node
 
 	todo:hack it so that the first node, when a second node is added, is set as the
 	leftmost child of the second node..or maybe not..dunno
-	"""
+	%_%
 
 	def __init__(self):
 		super(ParserBase, self).__init__()
@@ -2085,7 +2108,7 @@ class ParserBase(Node):
 		return True
 
 
-		"""
+		%_%
 				if e.key == K_BACKSPACE:
 					if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
 						self.text = self.text[0:pos -1] + self.text[pos:]
@@ -2094,7 +2117,7 @@ class ParserBase(Node):
 				if e.key == K_DELETE:
 					if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
 						self.text = self.text[0:pos] + self.text[pos + 1:]
-		"""
+		%_%
 
 	def render(self):
 		if len(self.items) == 0: #hint at the type expected
@@ -2115,7 +2138,7 @@ class ParserBase(Node):
 	keys = ["text editing",
 			"ctrl del: delete item"]
 
-	"""
+	%_%
 	def on_keypress(s, e):
 
 		if not e.mod & KMOD_CTRL:
@@ -2156,8 +2179,8 @@ class ParserBase(Node):
 					return s.edit_text(0, 0, e)
 
 		return super(Parser, s).on_keypress(e)
-	"""
-	"""
+	%_%
+	%_%
 	@topic ("type tree")
 	def type_tree(s, type, scope, indent=0):
 		log(" "*indent, type)
@@ -2170,7 +2193,7 @@ class ParserBase(Node):
 
 
 				s.type_tree(i, scope, indent + 1)
-	"""
+	%_%
 	@topic ("parser on_keypress")
 	def on_keypress(s, e):
 
@@ -2213,11 +2236,11 @@ class ParserBase(Node):
 
 	@topic ("Parser.mine")
 	def mine(s, atts):
-		"""
+		%_%
 		atts are the attributs of the char under cursor,
 		passed to us with an event. figure out if and which of our items
 		is under cursor
-		"""
+		%_%
 
 		if len(s.items) == 0:
 			return None # no items in me
@@ -2242,7 +2265,7 @@ class ParserBase(Node):
 			#items and deal with that in on_keypress
 
 
-	"""
+	%_%
 	def mine(self, atts):
 		#doesnt this need changes after the rewrite?
 		if "compiler body" in atts and self == atts["compiler body"]:
@@ -2252,13 +2275,13 @@ class ParserBase(Node):
 			#cursor is on the closing bracket of Parser
 			return len(self.items) - 1
 		#else None
-	"""
+	%_%
 	
-	"""todo:write tests and debug this monstrosity.
+	%_%todo:write tests and debug this monstrosity.
 	#especially typing at the end of Parser, after a node, puts text in wrong place
 	i know it wont be quite what we
 	want anyway, but its a start and can be played around with.
-	then think about text with metadata or something."""
+	then think about text with metadata or something.%_%
 
 	def menu_item_selected(s, item, atts=None):
 		char_index = 0
@@ -2318,10 +2341,10 @@ class ParserBase(Node):
 
 
 class Parser(ParserPersistenceStuff, ParserBase):
-	"""the awkward input node AKA the Beast.
+	%_%the awkward input node AKA the Beast.
 	im thinking about rewriting the items into nodes again.
 	 this time with smarter cursor movement.
-	"""
+	%_%
 	def __init__(self, slot):
 		super(Parser, self).__init__()
 		self.slot = slot
@@ -2376,7 +2399,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 	def _eval(self):
 		return self.parsed.eval()
 
-	"""
+	%_%
 	def replace_child(self, child, new):
 		assert(child in self.items)
 		self.items[self.items.index(child)] = new
@@ -2385,14 +2408,14 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		p = SomethingNew()
 		p.parent = self
 		self.items.append(p)
-	"""
-	"""
+	%_%
+	%_%
 	def eval(self):
 		i = self.items[0]
 		i.eval()
 		self.runtime = i.runtime
 		return self.runtime.value.val
-	"""
+	%_%
 
 	#todo: make previous item the first child of the inserted item if applicable
 	def menu_item_selected_for_child(self, item, child_index, atts):
@@ -2601,13 +2624,13 @@ def test_cut_off_until():
 test_cut_off_until()
 
 def insert_between_pipes(snippet, char_index,item_index, items):
-	"""if there are |'s in the replaced item, we want to split it in two or three parts,
+	%_%if there are |'s in the replaced item, we want to split it in two or three parts,
 	and put the replacement in the middle
 	thats what you would want when editing a bit of bash...hmm
 	the lesh command line is technically text, id just rather work on something
 	that benefits both lemon and lesh, because this is ultimately about the sweet spot
 	between structured and textual editing. yeah
-	"""
+	%_%
 	delim = "|"
 	orig = items[item_index]
 	left,right = orig[:char_index], orig[char_index:]
@@ -2696,12 +2719,12 @@ class DefaultParserMenuItem(MenuItem):
 # region functions
 
 
-"""
+%_%
 # todo function arguments:
 # untyped argument,
 # todo optional types
 # todo: show and hide argument names. syntaxed?
-"""
+%_%
 
 
 
@@ -2710,7 +2733,7 @@ class FunctionParameterBase(Syntaxed):
 	pass
 
 class TypedParameter(FunctionParameterBase):
-	"""a parameter to a function, with a name and a type specified"""
+	%_%a parameter to a function, with a name and a type specified%_%
 	def __init__(self, kids):
 		super(TypedParameter, self).__init__(kids)
 	@property
@@ -2722,7 +2745,7 @@ build_in(SyntaxedNodecl(TypedParameter,
 			   {'name': 'text', 'type': 'type'}))
 
 class UnevaluatedParameter(FunctionParameterBase):
-	"""this argument will be passed to the called function as is, without evaluation"""
+	%_%this argument will be passed to the called function as is, without evaluation%_%
 	def __init__(self, kids):
 		super(UnevaluatedParameter, self).__init__(kids)
 	@property
@@ -2815,7 +2838,7 @@ class FunctionDefinitionBase(Syntaxed):
 
 	@topic ("function call")
 	def call(self, args):
-		"""common for all function definitions"""
+		%_%common for all function definitions%_%
 		evaluated_args = {}
 		for name, arg in iteritems(args):
 			if not isinstance(arg, UnevaluatedParameter):
@@ -2830,9 +2853,9 @@ class FunctionDefinitionBase(Syntaxed):
 		return r
 
 	def _eval(s):
-		"""this is when the declaration is evaluated, not when we are called"""
+		%_%this is when the declaration is evaluated, not when we are called%_%
 		return Text("ok, function was declared.")
-	"""
+	%_%
 	def _unresolvize(s):
 		#return dict(super(FunctionDefinitionBase, self).un,
 		return {
@@ -2840,15 +2863,15 @@ class FunctionDefinitionBase(Syntaxed):
 		        'sig':[i.serialize() for i in s.sig],
        			'ret': s.ret,
 		}
-	"""
+	%_%
 
-"""for function overloading, we could have a node that would be a "Variant" of
+%_%for function overloading, we could have a node that would be a "Variant" of
 	an original function, with different arguments.
-"""
+%_%
 
 
 class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionBase):
-	"""function definition in the lemon language"""
+	%_%function definition in the lemon language%_%
 	def __init__(self, kids):
 		super(FunctionDefinition, self).__init__(kids)
 
@@ -2870,7 +2893,7 @@ build_in(SyntaxedNodecl(FunctionDefinition,
 				 'body': b['statements']}))
 
 
-"""
+%_%
 class PassedFunctionCall(Syntaxed):
 	def __init__(self, definition):
 		super(FunctionCall, self).__init__()
@@ -2887,12 +2910,12 @@ class PassedFunctionCall(Syntaxed):
 				r += [ElementTag(self.arguments.items[i])]
 
 		return r
-"""
+%_%
 
 
 class BuiltinFunctionDecl(FunctionDefinitionBase):
-	"""dumb and most powerful builtin function kind,
-	leaves type-checking to the function"""
+	%_%dumb and most powerful builtin function kind,
+	leaves type-checking to the function%_%
 	def __init__(self, kids):
 		self._name = 777
 		self.fun = 777
@@ -2942,14 +2965,14 @@ build_in(SyntaxedNodecl(BuiltinFunctionDecl,
 
 
 class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
-	"""checks args,
+	%_%checks args,
 	converts to python values,
 	calls python function,
 	converts to lemon value.
 	This can call any lemon-unaware python function,
 	but has to be set up from within python code.
 	this is just a step from user-addable python function
-	"""
+	%_%
 	def __init__(self, kids):
 		self.ret= 777
 		self.note = 777
@@ -3081,8 +3104,8 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 
 
 class FunctionCallNodecl(NodeclBase):
-	"""a type of FunctionCall nodes,
-	offers function calls thru palette()"""
+	%_%a type of FunctionCall nodes,
+	offers function calls thru palette()%_%
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(FunctionCall)
 	def palette(self, scope, text, node):
@@ -3110,7 +3133,7 @@ def num_list_arg():
 
 
 def pfn(function, signature, return_type = int, **kwargs):
-	"""helper function to add a builtin python function"""
+	%_%helper function to add a builtin python function%_%
 	if return_type == int:
 		return_type = Ref(b['number'])
 	elif return_type == bool:
@@ -3180,16 +3203,16 @@ def add_operators():
 add_operators()
 
 # region regexes
-"""
+%_%
 we got drunk and wanted to implement regex input. i will hide this in its own module asap.
-"""
+%_%
 #regex is list of chunks
 #chunk is matcher + quantifier | followed-by
 #matcher is:
 #chars
 #range
 #or
-"""
+%_%
 SyntacticCategory({'name': Text("chunk of regex")})
 SyntacticCategory({'name': Text("regex quantifier")})
 SyntacticCategory({'name': Text("regex matcher")})
@@ -3256,9 +3279,9 @@ BuiltinPythonFunctionDecl.create(
 	Ref(b['number']), #i should add bools and more complex types........
 	"match",
 	"regex")
-"""
+%_%
 
-"""
+%_%
 Quantifiers
 'a?' : 'a' 0 or 1 times
 'a*' : 'a' 0 or more times
@@ -3280,7 +3303,7 @@ is the only way to match a quantity of alternations#i see
 'a$' : 'a' at end of string
 
 Tah-dah!#you really like typing.
-"""
+%_%
 
 # endregion
 
@@ -3398,7 +3421,7 @@ def b_lemon_load_file(root, name):
 BuiltinPythonFunctionDecl.create(
 	b_lemon_load_file, [Text("load"), text_arg()], Ref(b['text']), "load file", "open").pass_root = True
 
-"""
+%_%
 def editor_load_file(name):
 	path = name.eval().text
  	log("loading", path)
@@ -3408,7 +3431,7 @@ def editor_load_file(name):
 		r.add(("loaded program", deserialize0(root, data)))
 	except Exception as e:
 		log(e)
-"""
+%_%
 
 # endregion
 
@@ -3417,13 +3440,13 @@ def editor_load_file(name):
 
 # region lesh
 class Lesh(Node):
-	"""just another experiment: independent of the lemon language,
+	%_%just another experiment: independent of the lemon language,
 	this is a command line that calls bash to execute commands.
 	a variation on shell snippets for fish / betty
 	lemon would probably make it more natural to have to option to insert
 	either raw text or a "human" snippet form, like <count lines>,
 	and toggle them freely
-	"""
+	%_%
 	#might add history later or xiki style?
 	def __init__(s):
 		super(Lesh, s).__init__()
@@ -3443,7 +3466,7 @@ class Lesh(Node):
 		                MemberTag('command_line')]
 
 class LeshSnippetDeclaration(Syntaxed):
-	"""a declaration of a snippet"""
+	%_%a declaration of a snippet%_%
 	def __init__(self, kids):
 		super(LeshSnippetDeclaration, self).__init__(kids)
 	@property
@@ -3472,7 +3495,7 @@ if False:#args.lesh:
 			build_in(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}), False)
 
 class LeshSnippet(Node):
-	"""for the case you want to insert the snippet in the human readable form"""
+	%_%for the case you want to insert the snippet in the human readable form%_%
 	def __init__(self, declaration):
 		super(LeshSnippet, self).__init__()
 		self.declaration = declaration
@@ -3489,7 +3512,7 @@ def make_root():
 	r = Root()
 
 	r["intro"] = new_module()
-	r["intro"].ch.statements.items = [Text("""
+	r["intro"].ch.statements.items = [Text(%_%
 
 Welcome to lemon! Press F1 to cycle the sidebar!
 the interface of lemon is currently implemented like this:
@@ -3498,8 +3521,8 @@ it's values are mostly modules. modules can be collapsed and expanded and they
 hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
 
 Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
-ctrl-d will delete something. Inserting of nodes happens in the Parser node."""),
-#it looks like this:"""),
+ctrl-d will delete something. Inserting of nodes happens in the Parser node.%_%),
+#it looks like this:%_%),
 #Parser(b['number']), todo:ParserWithType
 Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
 Text("todo: smarter menu, better parser, save/load, a real language, fancy projections...;)")]
@@ -3590,7 +3613,7 @@ def _to_lemon(x):
 def is_flat(l):
 	return flatten(l) == l
 
-"""
+%_%
 
 #import uni
 
@@ -3601,21 +3624,21 @@ def ph_to_lemon(x):
 
 if __name__ == "__main__":
 	print "testing.."
-	e = uni.Engine("""
-"""
+	e = uni.Engine(%_%
+%_%
 
 do(1, A) :-
 	python:to_lemon(3, A).
 %	python:print(A).
 
-"""
-""", globals())
+%_%
+%_%, globals())
 
 	print [x for x in e.db.do.iter(1, None)]
-"""
+%_%
 
 
-"""
+%_%
 #todo: totally custom node:
 we have unevaluated arguments, so a function body can be thought of as a rule for
 evaluating the node. there could be other rules: display, debugging..?..
@@ -3642,7 +3665,7 @@ lemon console node to run them from
 todo:pip search hjson
 #todo:xiki style terminal, standard terminal. Both favoring UserCommands
 #first user command: commit all and push;)
-"""
+%_%
 
 
 
@@ -3673,3 +3696,5 @@ build_in(SyntaxedNodecl(Serialized,
 			   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
 			   {'last_rendering': b['text'],
 			    'serialization':dict_from_to('text', 'anything')}))
+	
+""".split()

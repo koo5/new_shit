@@ -71,9 +71,6 @@ def change_font_size():
 
 
 def draw():
-	if lemon.fast_forward:
-		return
-
 	#ok this is hacky
 	#log("root")
 	draw_lines(root, mainw, root.under_cursor)
@@ -91,6 +88,7 @@ def draw():
 	for w in [mainw, sidebarw, logw]:
 		w.refresh()
 	scr.refresh()
+lemon.draw = draw
 
 def draw_lines(self, win, highlight=None):
 		win.clear()
@@ -106,11 +104,14 @@ def draw_lines(self, win, highlight=None):
 				#if (isinstance(highlight, (nodes.ParserMenuItem,
 				#	nodes.LeshMenuItem)) and
 				#'node' in char[1] and char[1]['node'] == highlight.value):
-				
-				if 'node' in char[1] and char[1]['node'] == highlight:
-					mode = c.A_BOLD + c.A_REVERSE
-				else:
-					mode = 0
+
+				mode = 0
+				try:
+					if char[1]['node'] == highlight:
+						mode = c.A_BOLD + c.A_REVERSE
+				except:
+					pass
+
 				try:
 					win.addch(row,col,ord(char[0]), mode)
 				except c.error:
@@ -134,6 +135,7 @@ c.KEY_END: keys.K_END,
 c.KEY_PPAGE: keys.K_PAGEUP,
 c.KEY_NPAGE: keys.K_PAGEDOWN,
 10: keys.K_RETURN,
+27: keys.K_ESCAPE,
 c.KEY_BACKSPACE: keys.K_BACKSPACE,
 c.KEY_END: keys.K_END,
 c.KEY_IC: keys.K_INSERT,
@@ -164,7 +166,7 @@ def loop():
 		lemon.handle(lemon.KeypressEvent(dummy_allkeys, unichr(inp), 0, 0))
 	log(inp, c.unctrl(inp))
 
-def main_func(stdscr):
+def main_func(stdscr, replay):
 	global scr, mainw, logw, sidebarw, args, logfile
 	scr = stdscr
 	scr.keypad(1)
@@ -172,23 +174,27 @@ def main_func(stdscr):
 	logw = c.newwin(0,0,6,6)
 	sidebarw = c.newwin(0,0,6,6)
 
-	args = lemon.args = lemon_args.parse_args()
-
+	args = lemon_args.parse_args()
+	if replay:
+		args.replay = True
+	lemon.args = args
 	logfile = open("curses_log", "w")
 
 	resize_frames()
 
 	lemon.change_font_size = change_font_size
+	lemon.root.arrows_visible = False
 	lemon.start()
+
 	render()
 	draw()
 
 	while True:
 		loop()
 
-def main():
+def main(replay = False):
 	try:
-		c.wrapper(main_func)
+		c.wrapper(main_func, replay)
 	except Exception as e:
 		log(e)
 		logfile.flush()

@@ -174,8 +174,6 @@ def process_event(event):
 
 
 def draw():
-	if lemon.fast_forward:
-		return
 	#ok this is hacky
 	surf = new_surface(root)
 	root_draw(root, surf)

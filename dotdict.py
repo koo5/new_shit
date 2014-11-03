@@ -34,3 +34,5 @@ class dotdict(object):
 
 
 
+#https://docs.python.org/3/library/types.html#types.SimpleNamespace
+#https://docs.python.org/3/library/collections.html#collections.namedtuple

@@ -4,14 +4,17 @@ asselement = 666
 
 
 class Tag(object):
+	__slots__ = []
 	pass
 
 
 class TextTag(Tag):
+	__slots__ = ['text']
 	def __init__(self, text):
 		self.text = text
 
 class AttTag(Tag):
+	__slots__ = ['key', 'val']
 	def __init__(self, key, val):
 		self.key = key
 		self.val = val
@@ -31,16 +34,19 @@ class NewlineTag(Tag):
 
 
 class ChildTag(Tag):
+	__slots__ = ['name']
 	def __init__(self, name):
 		self.name = name
 
 class MemberTag(Tag):
+	__slots__ = ['name']
 	def __init__(self, name):
 		self.name = name
 
 class ElementTag(Tag):
+	__slots__ = ['element']
 	def __init__(self, el):
-		assert(isinstance(el, asselement.Element))
+		#assert(isinstance(el, asselement.Element))
 		self.element = el
 
 """
@@ -49,8 +55,9 @@ class BackTabTag(Tag):
 class TabTag(Tag):
 	pass
 """
-	
+
 class ColorTag(Tag):
+	__slots__ = ['color']
 	def __init__(self, color):
 		self.color = color
 
@@ -65,5 +72,6 @@ class MenuTag(Tag):
 """
 
 class ArrowTag(Tag):
+	__slots__ = ['target']
 	def __init__(self, target):
 		self.target = target
