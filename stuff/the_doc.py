@@ -99,7 +99,26 @@ def the_doc():
 			"""),
 			
 			Chapter("profiling", """
-			python -m cProfile -s cumulative  new_shit.py
+some useful commands:
+python -m cProfile -s cumulative  new_shit.py
+
+echo -e "\e\e" | pypy -c "import cProfile; import main_curses; cProfile.run('main_curses.main(True)', 'ssss1')"
+
+time pypy ./main_curses.py --replay
+
+import cProfile pstats
+p = pstats.Stats("ssss1")
+p.strip_dirs().sort_stats('cumulative')
+p.print_stats()
+p.print_callees()
+
+import project test__project
+%timeit test__project.time__project_string()
+reload(project); reload(test__project)
+
+import main_sdl
+cProfile.run('main_sdl.main()', "sss")
+
 			"""),				
 			Chapter("coupling to pygame", """
 			* using pyglets event module (standalone, copied out)

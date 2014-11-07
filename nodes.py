@@ -34,6 +34,7 @@ BRY = platform.frontend == platform.brython
 import sys
 sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
 from fuzzywuzzy import fuzz
+import json
 
 from dotdict import dotdict
 from logger import log, topic
@@ -87,9 +88,9 @@ def deref_decl(d):
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
 
-def make_list(btype = 'anything'):
-	"instantiate a List of given type"
-	return list_of(btype).inst_fresh()
+def make_list(type_name= 'anything'):
+	"instantiate a lemon List of given type"
+	return list_of(type_name).inst_fresh()
 
 def list_of(type_name):
 	"""a helper for creating a type"""
@@ -98,6 +99,12 @@ def list_of(type_name):
 def dict_from_to(key, val):
 	"""a helper for creating a type"""
 	return b["dict"].make_type({'keytype': Ref(b[key]), 'valtype': Ref(b[val])})
+
+def make_dict(key_type_name, val_type_name):
+	return dict_from_to(key_type_name, val_type_name).inst_fresh()
+
+def make_dict_from_anything_to_anything():
+	return make_dict('anything', 'anything')
 
 class Children(dotdict):
 	"""this is the "ch" of Syntaxed nodes"""
@@ -1876,8 +1883,11 @@ lemon_false, lemon_true = EnumVal(b['bool'], 0), EnumVal(b['bool'], 1)
 
 build_in([
 SyntaxedNodecl(Module,
-			   ["module:\n", ChildTag("statements"),  TextTag("end.")],
-			   {'statements': b['statements']}),
+			   ["module", ChildTag("name"), 'from', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
+			   {'statements': b['statements'],
+			    'name': b['text'],
+			    'file': b['text']
+			    }),
 
 Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})}),
 
@@ -3395,6 +3405,18 @@ def b_lemon_load_file(root, name):
 
 	return name + " loaded ok"
 
+def load_module(file, placeholder):
+	log("loading "+file)
+	input = json.load(open(file, "r"))
+	d = deserialize(input, placeholder)
+	placeholder.parent.replace_child(d)
+	d.fix_parents()
+	for i in d.flatten():
+		if isinstance(i, Serialized):
+			i.unserialize()
+		d.fix_parents()
+	log("ok")
+
 BuiltinPythonFunctionDecl.create(
 	b_lemon_load_file, [Text("load"), text_arg()], Ref(b['text']), "load file", "open").pass_root = True
 
@@ -3512,6 +3534,18 @@ Text("todo: smarter menu, better parser, save/load, a real language, fancy proje
 
 	#r["lemon console"] =b['module'].inst_fresh()
 	r["loaded program"] = Text("placeholder 01")
+
+	library = r["library"] = make_list('module')
+	import glob
+	for file in glob.glob("library/*.lemon.json"):
+		placeholder = library.add(b['module'].inst_fresh())
+		placeholder.ch.name.pyval = "placeholder for "+file
+		load_module(file, placeholder)
+
+	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
+
+
+
 
 	r["builtins"] = b['module'].inst_fresh()
 	r["builtins"].ch.statements.items = list(itervalues(b))

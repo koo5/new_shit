@@ -205,6 +205,8 @@ def start():
 	import parser_test
 	parser_test.test(root.root['some program'].ch.statements.items[0])
 
+
+
 	if args.load:
 		load(args.load)
 
