@@ -1,8 +1,9 @@
 //made from marpa.h with version 7.2.0 (Marpa--R2 2.099_000)
 
 /*
- * Copyright 2014 Jeffrey Kegler
- * This file is part of Libmarpa.  Libmarpa is free software: you can
+ * 
+ * This file is based on Libmarpa, Copyright 2014 Jeffrey Kegler.
+ * Libmarpa is free software: you can
  * redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
@@ -21,7 +22,7 @@
  * DO NOT EDIT DIRECTLY
  * This file is written by the Marpa build process
  * It is not intended to be modified directly
- */
+ *///yeah, right...
 
 #define MARPA_MAJOR_VERSION ...
 #define MARPA_MINOR_VERSION ...
