@@ -51,6 +51,10 @@ config = ffi.new("Marpa_Config*")
 lib.marpa_c_init(config)
 #Always succeeds.
 
+
+class symbol_int(int):pass
+
+
 class Grammar(object):
 	def __init__(s):
 		s.g = ffi.gc(lib.marpa_g_new(config), lib.marpa_g_unref)
@@ -74,13 +78,17 @@ class Grammar(object):
 
 	def symbol_new(s, name):
 		return Symbol(s, name)
-	
+
+	def symbol_new_int(s, name):
+		return symbol_int(s.check_int(lib.marpa_g_symbol_new(s.g)))
+
 	def rule_new(s, lhs, rhs):
 		return Rule(s, lhs, rhs)
 
-	def sequence_new(s, lhs, rhs):
-		return s.check_int(lib.marpa_g_sequence_new(g.g, lhs.s, [i.s for i in rhs], len(rhs)))
-
+	def sequence_new(s, lhs, rhs, separator=-1, min=1, proper=False):
+		return s.check_int(lib.marpa_g_sequence_new(g.g, lhs.s, [i.s for i in rhs], separator, min,
+		    MARPA_PROPER_SEPARATION if proper else 0))
+		#im watching you, sequence_new. im actually committing you right now.
 
 	def precompute(s):
 		r = s.check_int(lib.marpa_g_precompute(s.g))

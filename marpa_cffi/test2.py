@@ -1,82 +1,133 @@
+from collections import defaultdict
+from collections import namedtuple
 from marpa import *
+import sys; sys.path.append('..'); from dotdict import dotdict
+
+
+
+g = Grammar()
+any = g.symbol_new()
+known_chars = {}
+
+def rule(lhs,rhs):
+	if rhs.type != list:
+		rhs = [rhs]
+	return g.rule_new(lhs, rhs)
+
+def symbol():
+	return g.symbol_new_int()
+
+def known(char):
+	if not char in known_chars:
+		known_chars[char] = symbol()
+	return known_chars[char]
+
+def know2(char, lhs=None):
+	known(char)
+	g.rule_new(any, known(char))
+	if lhs != None:
+		g.rule_new(lhs, known(char))
+
+
+digit = symbol()
+for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
+	know2(i, digit)
+
+def sequence_new(lhs, rhs)
+
+rules.digits_is_sequence_of_digit = g.sequence_new(digits, digit, separator = -2)
+
+number = symbol()
+rules.number_is_digits = rule(number, digits)
+
+#
+#multiplication's syntax 1: ChildTag("A"), '*', ChildTag("B")
+#register_grammar:
+#	s.symbol = new_symbol()
+#	rhs = []
+#	for i in syntax:
+#		if i.type == ChildTag:
+#			rhs.append(s.ch[i.name].symbol)
+#		if i.type == str:
+#			rhs.append(known(i))
+#		...
+
+expression = symbol()
+rules.number_is_expression = rule(expression, number)
+
+multiplication = symbol()
+rules.multiplication = rule(multiplication, [expression, known('*'), expression])
+
+def known_string(s):
+	rhs = [known(i) for i in s]
+	lhs = symbol()
+	return rule(lhs, rhs)
+
+do_x_times = symbol()
+
+rules.do_x_times = rule(do_x_times, [known_string('do'), expression, known_string('times:')]
 
 
 
 
 
-def test2():
-	class SimpleNamespace:
-		def __init__(self, pairs):
-			self.__dict__.update(pairs)
-		def __repr__(self):
-			keys = sorted(self.__dict__)
-			items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
-			return "{}({})".format(type(self).__name__, ", ".join(items))
 
-	g = Grammar()
+toktup = namedtuple("token", "symid position")
 
-	digit = g.symbol_new()
-	s0_9 = {}
-	for i in range(ord('0'), ord('9')+1)
-		i = chr(i)
-		s0_9[i] = g.symbol_new()
-		g.rule_new(digit, digit_syms[i])
-	
-	g.sequence_new(digits, digit, separator = -2)
-	
 
-	sy = SimpleNamespace([(name, g.symbol_new(name)) for name in "S E op number".split()])
-	sy.S.start_symbol_set()
-	rules = SimpleNamespace([(name, g.rule_new(lhs, rhs)) for name, lhs, rhs in [
-		('start',   sy.S, [sy.E]),
-		('op'    ,  sy.E, [sy.E, sy.op, sy.E]),
-		('number' , sy.E, [sy.number]),
-		('number' , sy.number, digits),
-		
-		
-		]])
-	
-	
-	
-	g.precompute()
-	
+
+def raw2tokens(raw):
+	tokens = []
+	for i, char in enumerate(raw):
+		if char in known_chars:
+			symid=known_chars[i]
+		else:
+			symid=any
+		tokens.append(toktup(symid, position=i)))
+	return tokens
+
+
+start = symbol()
+start.start_symbol_set()
+statement = symbol()
+
+rules.start = rule(start, statement)
+rules.expression_is_statement = rule(statement, expression)
+rules.do_x_times_is_statment = rule(statement, do_x_times)
+
+
+g.precompute()
+
+
+def test2(raw):
+	tokens = raw2tokens()
+
 	r = Recce(g)
 	r.start_input()
 
 	print g
 	print r
 	
-	
-	#tokens = [(sy.number, 2),(sy.op, '-'),(sy.number, 1),(sy.op, '*'),
-	#	(sy.number, 3),(sy.op, '+'),(sy.number, 1)]
-	raw = '9-8*7+6'
-	tokens = []
-	for i,v in enumerate(raw):
-		try:
-			tokens.append((sy.number, int(raw[i])))
-		except:
-			tokens.append((sy.op, raw[i]))
 
-	print [(i[0].name, i[1]) for i in tokens]
-	
-
-	for i, (sym, val) in enumerate(tokens):
+	for i, (sym, pos) in enumerate(tokens):
 		r.alternative(sym, i+1, 1)
 		r.earleme_complete()
 	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
 	tokens.insert(0,'dummy') 
 	
 	latest_earley_set_ID = r.latest_earley_set()
-	#print latest_earley_set_ID
+	print 'latest_earley_set_ID=%'%latest_earley_set_ID
+
 	b = Bocage(r, latest_earley_set_ID)
 	o = Order(b)
 	tree = Tree(o)
-	import gc
-	for i in tree.nxt():
-		do_steps(tree, tokens, rules)
-		gc.collect
 
-from collections import defaultdict
+	import gc
+	for dummy in tree.nxt():
+		do_steps(tree, tokens, rules)
+		gc.collect #force an unref of the valuator and stuff so we can move on to the next tree
+
+
 
 def do_steps(tree, tokens, rules):
 	stack = defaultdict((lambda:666))
@@ -87,7 +138,7 @@ def do_steps(tree, tokens, rules):
 	
 	while True:
 		s = v.step()
-		print "stack:%s"%dict(stack)#avoid ordereddict's __repr__
+		print "stack:%s"%dict(stack)#convert ordereddict to dict to get neater __repr__
 		print "step:%s"%codes.steps2[s]
 		if s == lib.MARPA_STEP_INACTIVE:
 			break
@@ -96,7 +147,7 @@ def do_steps(tree, tokens, rules):
 
 			tok_idx = v.v.t_token_value
 			
-			assert type(tokens[tok_idx][0]) == Symbol
+			assert type(tokens[tok_idx][0]) == symbol_int
 			assert      tokens[tok_idx][0].s == v.v.t_token_id
 			assert v.v.t_result == v.v.t_arg_n
 			
@@ -110,10 +161,12 @@ def do_steps(tree, tokens, rules):
 			print "rule:"+[key for key,val in rules.__dict__.iteritems() if val.r == r][0]
 			arg0 = v.v.t_arg_0
 			argn = v.v.t_arg_n
-			
-			if r == rules.start.r:
-				string, val = stack[argn]
-				stack[arg0] = "%s = %s"%(string, val)
+
+			#args = stack[arg0:argn]
+			#argn = stack[argn]
+
+			if r == start_r:
+				res = stack[argn]
 			
 			elif r == rules.number.r:
 				num = stack[arg0]
@@ -140,4 +193,7 @@ def do_steps(tree, tokens, rules):
 			else:
 				print "wat, %s?"%r
 	print "tada:"+str(stack[0])
-test1()
+
+
+test2('9321-82*7+6')
+test2('do34*4times:')
