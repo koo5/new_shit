@@ -1,28 +1,50 @@
 from collections import defaultdict
 from collections import namedtuple
 from marpa import *
-import sys; sys.path.append('..'); from dotdict import dotdict
+import sys; sys.path.append('..')
+from dotdict import dotdict
+import logger
+print logger
+logger.log('s')
+from logger import topic, log
 
+def ident(x):
+	return x
+
+@topic
 def fresh():
 	global rules, syms, g, known_chars, actions
 	rules = dotdict()
 	syms = dotdict()
 	g = Grammar()
-	symbol(any)
+	symbol('any')
 	known_chars = {}
-	actions = []
+	actions = {} # per-rule valuator functions
 
 def symbol(name):
 	r = g.symbol_new_int()
-	assert name not in syms
+	assert name not in syms._dict
 	syms[name] = r
 	return r
 
 def rule(name, lhs,rhs,action=(lambda x:x)):
-	if rhs.type != list:
+	assert type(name) == str
+	assert type(lhs) == symbol_int
+	if type(rhs) != list:
+		assert type(rhs) == symbol_int
 		rhs = [rhs]
-	assert name not in rules
-	r = rules[name] = g.rule_new(lhs, rhs)
+	assert name not in rules._dict
+	r = rules[name] = g.rule_new_int(lhs, rhs)
+	actions[r] = action
+	return r
+
+
+def sequence(name, lhs, rhs, action=(lambda x:x), separator=-1, min=1, proper=False,):
+	assert type(name) == str
+	assert type(lhs) == symbol_int
+	assert type(rhs) == symbol_int
+	assert name not in rules._dict
+	r = rules[name] = g.sequence_new_int(lhs, rhs, separator, min, proper)
 	actions[r] = action
 	return r
 
@@ -33,34 +55,33 @@ def known(char):
 
 def test0():
 	symbol("banana")
-	print syms.banana
+#	print syms.banana
 	try:
 		print syms.orange
 		assert False
 	except KeyError:
 		pass
 	rule("banana_is_a_fruit", symbol('fruit'), syms.banana)
-	known2('X')
-	print syms.X
-	known2('Y', 'why')
-	print syms._dict, rules._dict
+	known('X')
+	known('Y')
+	rule( 'why',syms.X, syms.Y)
+	print "test0:", syms._dict, rules._dict
 
 fresh()
 test0()
 
-def sequence_new(lhs, rhs, separator=-1, min=1, proper=False):
-	return sequence_new_int(lhs, rhs, separator, min, proper)
-
 
 def setup():
-	digit = symbol()
+	print "SETUP"
+	symbol('digit')
+	symbol('digits')
 	for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
-		rule(digit, known(i))
+		rule(i + "_is_a_digit",syms.digit, known(i))
+	
 
-	rules.digits_is_sequence_of_digit = sequence_new(digits, digit)
-
-	number = symbol()
-	rules.number_is_digits = rule(number, digits)
+	sequence('digits_is_sequence_of_digit', syms.digits, syms.digit)
+	symbol('number')
+	rule('number_is_digits', syms.number, syms.digits)
 
 	#
 	#multiplication's syntax 1: ChildTag("A"), '*', ChildTag("B")
@@ -74,29 +95,36 @@ def setup():
 	#			rhs.append(known(i))
 	#		...
 
-	expression = symbol()
-	rules.number_is_expression = rule(expression, number)
+	symbol('expression')
+	rule('number_is_expression',syms.expression, syms.number)
 
-	multiplication = symbol()
-	rules.multiplication = rule(multiplication, [expression, known('*'), expression])
+	symbol('string_body')
+	symbol('string')
+	sequence('string_body_is_sequence_of_any', syms.string_body, syms.any)
+	rule('string', syms.string, [known("'"), syms.string_body, known("'")])
+	rule('string_is_expression', syms.expression, syms.string)
+
+
+	symbol('multiplication')
+	rule('multiplication', syms.multiplication, [syms.expression, known('*'), syms.expression])
 
 	def known_string(s):
 		rhs = [known(i) for i in s]
-		lhs = symbol()
-		return rule(lhs, rhs)
+		lhs = symbol(s)
+		return rule(s, lhs, rhs)
 
-	do_x_times = symbol()
+	symbol('do_x_times')
 
-	rules.do_x_times = rule(do_x_times, [known_string('do'), expression, known_string('times:')])
+	rule('do_x_times',syms.do_x_times, [known_string('do'), syms.expression, known_string('times:')])
 
 
-	start = symbol()
-	start.start_symbol_set()
-	statement = symbol()
+	symbol('start')
+	g.start_symbol_set(syms.start)
+	symbol('statement')
 
-	rules.start = rule(start, statement)
-	rules.expression_is_statement = rule(statement, expression)
-	rules.do_x_times_is_statment = rule(statement, do_x_times)
+	rule('start', syms.start, syms.statement)
+	rule('expression_is_statement', syms.statement, syms.expression)
+	rule('do_x_times_is_statment',syms.statement, syms.do_x_times)
 
 
 
@@ -110,26 +138,27 @@ def raw2tokens(raw):
 	tokens = []
 	for i, char in enumerate(raw):
 		if char in known_chars:
-			symid=known_chars[i]
+			symid=known_chars[char]
 		else:
-			symid=any
+			symid=syms.any
 		tokens.append(toktup(symid, pos=i))
 	return tokens
 
 
 
 def test1(raw):
-	tokens = raw2tokens()
+	tokens = raw2tokens(raw)
 
 	g.precompute()
 	r = Recce(g)
 	r.start_input()
 
+	print "TEST1"
 	print g
 	print r
 	
 	for i, (sym, pos) in enumerate(tokens):
-		r.alternative(sym, i+1, 1)
+		r.alternative_int(sym, i+1)
 		r.earleme_complete()
 	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
 	tokens.insert(0,'dummy') 
@@ -203,10 +232,11 @@ def do_steps(tree, tokens, rules):
 
 	print "tada:"+str(stack[0])
 
-
+import operator
 
 fresh()
 setup()
-print syms._dict, rules._dict
+print 'syms:%s'%sorted(syms._dict.items(),key=operator.itemgetter(1))
+print 'rules:%s'%sorted(rules._dict.items(),key=operator.itemgetter(1))
 test1('9321-82*7+6')
 test1('do34*4times:')

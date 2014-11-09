@@ -79,17 +79,21 @@ class Grammar(object):
 	def symbol_new(s, name):
 		return Symbol(s, name)
 
-	def symbol_new_int(s, name):
+	def symbol_new_int(s):
 		return symbol_int(s.check_int(lib.marpa_g_symbol_new(s.g)))
+
+	def rule_new_int(s, lhs, rhs):
+		return s.check_int(lib.marpa_g_rule_new(s.g, lhs, rhs, len(rhs)))
 
 	def rule_new(s, lhs, rhs):
 		return Rule(s, lhs, rhs)
 
 	def sequence_new_int(s, lhs, rhs, separator=-1, min=1, proper=False):
-		return s.sequence_new(lhs, rhs, separator, min, proper)
+		return s.check_int(lib.marpa_g_sequence_new(s.g, lhs, rhs, separator, min,
+		    MARPA_PROPER_SEPARATION if proper else 0))
 
 	def sequence_new(s, lhs, rhs, separator=-1, min=1, proper=False):
-		return s.check_int(lib.marpa_g_sequence_new(g.g, lhs.s, [i.s for i in rhs], separator, min,
+		return s.check_int(lib.marpa_g_sequence_new(s.g, lhs.s, [i.s for i in rhs], separator, min,
 		    MARPA_PROPER_SEPARATION if proper else 0))
 		#im watching you, sequence_new. im actually committing you right now.
 
@@ -100,7 +104,7 @@ class Grammar(object):
 
 	def events(s):
 		count = s.check_int(lib.marpa_g_event_count(s.g))
-		print '%s events'
+		print '%s events'%count
 		result = ffi.new('Marpa_Event*')
 		for i in xrange(count):
 			event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
@@ -112,13 +116,14 @@ class Grammar(object):
 	def print_events(s):
 		[None for dummy in s.events()]
 
+	def start_symbol_set(s, sym):
+		s.check_int( lib.marpa_g_start_symbol_set(s.g, sym) )
+
 class Symbol(object):#should symbols even be an object?
 	def __init__(s, g, name):
 		s.g = g
 		s.name = name
 		s.s = g.check_int(lib.marpa_g_symbol_new(g.g))
-	def start_symbol_set(s):
-		s.g.check_int( lib.marpa_g_start_symbol_set(s.g.g, s.s) )
 
 class Rule(object):
 	def __init__(s, g, lhs, rhs):
@@ -134,6 +139,13 @@ class Recce(object):
 		s.g.check_int(lib.marpa_r_start_input(s.r))
 	def alternative(s, sym, val, length):
 		r = lib.marpa_r_alternative(s.r, sym.s, val, length)
+		if r != lib.MARPA_ERR_NONE:
+			print codes.errors[r]
+	def alternative_int(s, sym, val, length=1):
+		assert type(sym) == symbol_int
+		assert type(val) == int
+		
+		r = lib.marpa_r_alternative(s.r, sym, val, length)
 		if r != lib.MARPA_ERR_NONE:
 			print codes.errors[r]
 	def earleme_complete(s):
@@ -305,4 +317,5 @@ def do_steps(tree, tokens, rules):
 			else:
 				print "wat, %s?"%r
 	print "tada:"+str(stack[0])
-test1()
+if __name__ == "__main__":
+	test1()
