@@ -3,20 +3,18 @@ from collections import namedtuple
 from marpa import *
 import sys; sys.path.append('..')
 from dotdict import dotdict
-import logger
-print logger
-logger.log('s')
-from logger import topic, log
+from lemon_logger import topic, log
 
 def ident(x):
 	return x
 
-@topic
+@topic('fresh')
 def fresh():
 	global rules, syms, g, known_chars, actions
 	rules = dotdict()
 	syms = dotdict()
 	g = Grammar()
+	symbol('start')
 	symbol('any')
 	known_chars = {}
 	actions = {} # per-rule valuator functions
@@ -39,6 +37,19 @@ def rule(name, lhs,rhs,action=(lambda x:x)):
 	return r
 
 
+def symbol2name(s):
+	for k,v in syms._dict.iteritems():
+		if v == s:
+			return k
+	assert False
+
+def rule2name(r):
+	for k,v in rules._dict.iteritems():
+		if v == r:
+			return k
+	assert False
+
+
 def sequence(name, lhs, rhs, action=(lambda x:x), separator=-1, min=1, proper=False,):
 	assert type(name) == str
 	assert type(lhs) == symbol_int
@@ -53,11 +64,12 @@ def known(char):
 		known_chars[char] = symbol(char)
 	return known_chars[char]
 
+@topic('test0')
 def test0():
 	symbol("banana")
 #	print syms.banana
 	try:
-		print syms.orange
+		xxx = syms.orange
 		assert False
 	except KeyError:
 		pass
@@ -65,14 +77,15 @@ def test0():
 	known('X')
 	known('Y')
 	rule( 'why',syms.X, syms.Y)
-	print "test0:", syms._dict, rules._dict
+	log("test0:", syms._dict, rules._dict)
 
 fresh()
 test0()
 
 
+@topic('setup')
 def setup():
-	print "SETUP"
+	log("SETUP")
 	symbol('digit')
 	symbol('digits')
 	for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
@@ -118,7 +131,6 @@ def setup():
 	rule('do_x_times',syms.do_x_times, [known_string('do'), syms.expression, known_string('times:')])
 
 
-	symbol('start')
 	g.start_symbol_set(syms.start)
 	symbol('statement')
 
@@ -130,7 +142,6 @@ def setup():
 
 
 
-toktup = namedtuple("token", "symid pos")
 
 
 
@@ -141,7 +152,7 @@ def raw2tokens(raw):
 			symid=known_chars[char]
 		else:
 			symid=syms.any
-		tokens.append(toktup(symid, pos=i))
+		tokens.append(symid)
 	return tokens
 
 
@@ -157,14 +168,18 @@ def test1(raw):
 	print g
 	print r
 	
-	for i, (sym, pos) in enumerate(tokens):
+	for i, sym in enumerate(tokens):
+		print sym, i+1, symbol2name(sym),raw[i]
+		assert type(sym) == symbol_int
 		r.alternative_int(sym, i+1)
 		r.earleme_complete()
+	
+	log('ok')
 	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
 	tokens.insert(0,'dummy') 
 	
 	latest_earley_set_ID = r.latest_earley_set()
-	print 'latest_earley_set_ID=%'%latest_earley_set_ID
+	print 'latest_earley_set_ID=%s'%latest_earley_set_ID
 
 	b = Bocage(r, latest_earley_set_ID)
 	o = Order(b)
@@ -172,24 +187,12 @@ def test1(raw):
 
 	import gc
 	for dummy in tree.nxt():
-		do_steps(tree, tokens, rules)
+		do_steps(tree, tokens, raw, rules)
 		gc.collect #force an unref of the valuator and stuff so we can move on to the next tree
 
 
-def symbol2name(s):
-	for k,v in symbols.__dict.iteritems():
-		if v == s:
-			return k
-	assert False
-
-def rule2name(r):
-	for k,v in rules.__dict.iteritems():
-		if v == r:
-			return k
-	assert False
-
-
-def do_steps(tree, tokens, rules):
+@topic('do steps')
+def do_steps(tree, tokens, raw, rules):
 	stack = defaultdict((lambda:666))
 	v = valuator(tree)
 
@@ -205,14 +208,12 @@ def do_steps(tree, tokens, rules):
 	
 		elif s == lib.MARPA_STEP_TOKEN:
 
-			sym, pos = tokens[v.v.t_token_value]
-			
-			assert type(sym) == symbol_int
-			assert sym == v.v.t_token_id
+			pos = v.v.t_token_value - 1
+			sym = symbol_int(v.v.t_token_id)
 
 			assert v.v.t_result == v.v.t_arg_n
 
-			char = raw[pos-1]
+			char = raw[pos]
 			where = v.v.t_result
 			print "token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where)
 			stack[where] = char
@@ -224,9 +225,8 @@ def do_steps(tree, tokens, rules):
 			arg0 = v.v.t_arg_0
 			argn = v.v.t_arg_n
 
-			args = stack[arg0:argn+1]
-
-			res = (rule2name(r), action[r])
+			args = [stack[i] for i in xrange(arg0, argn+1)]
+			res = (rule2name(r), actions[r](args))
 
 			stack[arg0] = res
 
@@ -238,5 +238,5 @@ fresh()
 setup()
 print 'syms:%s'%sorted(syms._dict.items(),key=operator.itemgetter(1))
 print 'rules:%s'%sorted(rules._dict.items(),key=operator.itemgetter(1))
-test1('9321-82*7+6')
+#test1('9321-82*7+6')
 test1('do34*4times:')

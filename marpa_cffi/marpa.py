@@ -52,6 +52,10 @@ lib.marpa_c_init(config)
 #Always succeeds.
 
 
+import sys; sys.path.append('..')
+
+from lemon_logger import topic, log
+
 class symbol_int(int):pass
 
 
@@ -61,7 +65,7 @@ class Grammar(object):
 		s.check_config_error()
 		assert lib.marpa_g_force_valued(s.g) >= 0
 		s.check_config_error()
-		#print s.g
+		#log(s.g)
 	
 	def check_config_error(s):
 		msg = ffi.new("char **")
@@ -70,7 +74,8 @@ class Grammar(object):
 	def check_int(s, result):
 		if result == -2:
 			e = lib.marpa_g_error(s.g, ffi.new("char**"))
-			assert e == lib.MARPA_ERR_NONE,  codes.errors[e]
+			log(codes.errors[e])
+			#assert e == lib.MARPA_ERR_NONE,  codes.errors[e]
 		return result
 		
 	def error_clear(s):
@@ -80,7 +85,10 @@ class Grammar(object):
 		return Symbol(s, name)
 
 	def symbol_new_int(s):
-		return symbol_int(s.check_int(lib.marpa_g_symbol_new(s.g)))
+		r = lib.marpa_g_symbol_new(s.g)
+		r = s.check_int(r)
+		r = symbol_int(r)
+		return r
 
 	def rule_new_int(s, lhs, rhs):
 		return s.check_int(lib.marpa_g_rule_new(s.g, lhs, rhs, len(rhs)))
@@ -104,13 +112,13 @@ class Grammar(object):
 
 	def events(s):
 		count = s.check_int(lib.marpa_g_event_count(s.g))
-		print '%s events'%count
+		log('%s events'%count)
 		result = ffi.new('Marpa_Event*')
 		for i in xrange(count):
 			event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
 			event_value = result.t_value
 			r = event_type, event_value
-			print r
+			log(i,r)
 			yield r
 
 	def print_events(s):
@@ -137,20 +145,22 @@ class Recce(object):
 		lib.marpa_r_unref(s.r)
 	def start_input(s):
 		s.g.check_int(lib.marpa_r_start_input(s.r))
+	@topic('alternative')
 	def alternative(s, sym, val, length):
 		r = lib.marpa_r_alternative(s.r, sym.s, val, length)
 		if r != lib.MARPA_ERR_NONE:
-			print codes.errors[r]
+			log(codes.errors[r])
+	@topic('alternative int')
 	def alternative_int(s, sym, val, length=1):
 		assert type(sym) == symbol_int
 		assert type(val) == int
 		
 		r = lib.marpa_r_alternative(s.r, sym, val, length)
 		if r != lib.MARPA_ERR_NONE:
-			print codes.errors[r]
+			log(codes.errors[r])
+	topic('earleme_complete')
 	def earleme_complete(s):
-		if lib.marpa_r_earleme_complete(s.r) == -2:
-			print "errrrrrrr"
+		s.g.check_int(lib.marpa_r_earleme_complete(s.r))
 	def latest_earley_set(s):
 		return lib.marpa_r_latest_earley_set(s.r)
 
@@ -158,7 +168,7 @@ class Bocage(object):
 	def __init__(s, r, earley_set_ID):
 		s.g = r.g
 		s.b = lib.marpa_b_new(r.r, earley_set_ID)
-		print s.b
+		log(s.b)
 	def __del__(s):
 		lib.marpa_b_unref(s.b)
 
@@ -166,7 +176,7 @@ class Order(object):
 	def __init__(s, bocage):
 		s.g = bocage.g
 		s.o = lib.marpa_o_new(bocage.b)
-		print s.o
+		log(s.o)
 	def __del__(s):
 		lib.marpa_o_unref(s.o)
 
@@ -174,7 +184,7 @@ class Tree(object):
 	def __init__(s, order):
 		s.g = order.g
 		s.t = lib.marpa_t_new(order.o)
-		print s.t
+		log(s.t)
 	def __del__(s):
 		lib.marpa_t_unref(s.t)
 	def nxt(s):
