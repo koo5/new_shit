@@ -11,7 +11,7 @@ line is a list of tuples: (character, attributes)
 """
 from lemon_six import str_and_uni
 from tags import *
-from logger import ping, log
+from lemon_logger import ping, log
 from nodes import Node, Parser
 from dotdict import dotdict
 

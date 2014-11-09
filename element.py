@@ -7,7 +7,7 @@ from weakref import ref as weakref
 import lemon_platform as platform
 import event #event module from pyglet, used to pass events from widgets to parent nodes
 import input #lemon's input event decorator
-from logger import log, ping
+from lemon_logger import log, ping
 import tags
 from keys import *
 from lemon_six import *

@@ -12,7 +12,7 @@ from element import Element
 from menu_items import InfoItem
 from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
-from logger import log, topic
+from lemon_logger import log, topic
 from keys import *
 from lemon_six import iteritems, str_and_uni
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something

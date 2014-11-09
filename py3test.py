@@ -9,7 +9,7 @@ import lemon_platform as platform
 o ("lemon_six")
 import lemon_six
 o ("logger")
-import logger
+import lemon_logger
 o ("lemon_colors")
 import lemon_colors
 o ("utils")
