@@ -78,6 +78,10 @@ class Grammar(object):
 	def rule_new(s, lhs, rhs):
 		return Rule(s, lhs, rhs)
 
+	def sequence_new(s, lhs, rhs):
+		return s.check_int(lib.marpa_g_sequence_new(g.g, lhs.s, [i.s for i in rhs], len(rhs)))
+
+
 	def precompute(s):
 		r = s.check_int(lib.marpa_g_precompute(s.g))
 		s.print_events()
