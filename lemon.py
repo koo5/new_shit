@@ -17,8 +17,8 @@ except:
 import sys, os
 import pickle, copy
 
-import logger
-from logger import log, topic
+import lemon_logger
+from lemon_logger import log, topic
 import frames
 import project
 import lemon_colors as colors
@@ -240,7 +240,7 @@ sidebars.append(sidebars[0])#sentinel:)
 sidebar = sidebars[2]
 
 logframe = frames.Log()
-logger.gui = logframe
+lemon_logger.gui = logframe
 
 allframes = sidebars + [logframe, root]
 

@@ -25,8 +25,8 @@ platform.frontend = platform.sdl
 import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import frames
-import logger
-from logger import log
+import lemon_logger
+from lemon_logger import log
 from lemon_colors import colors, color
 import lemon_args
 
@@ -41,7 +41,7 @@ def debug_out(text):
 	print(text)
 	logframe.add(text)
 
-logger.debug = debug_out
+lemon_logger.debug = debug_out
 
 def render():
 	root.render()

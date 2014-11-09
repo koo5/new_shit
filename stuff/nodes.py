@@ -17,7 +17,7 @@ from compiler.ast import flatten
 
 
 from dotdict import dotdict
-from logger import ping, log
+from lemon_logger import ping, log
 import element
 import widgets
 from menu import MenuItem, InfoMenuItem, HelpMenuItem

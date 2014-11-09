@@ -9,7 +9,7 @@ new style handler return value:
 None: success
 False: failure
 """
-from logger import topic, log
+from lemon_logger import topic, log
 #from pygame import constants as pcs
 #from pcs import KMOD_ALT, KMOD_CTRL
 #known_mods = pcs.KMOD_ALT | pcs.KMOD_CTRL

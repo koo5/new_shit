@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from lemon_six import iteritems, str_and_uni
-from logger import log
+from lemon_logger import log
 from dotdict import dotdict
 try:
 	#im gonna have to ditch this crappy module

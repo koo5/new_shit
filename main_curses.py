@@ -12,8 +12,8 @@ platform.frontend = platform.curses
 import lemon
 from lemon import logframe, root, sidebars, allframes
 from lemon import frames
-import logger
-from logger import log
+import lemon_logger
+from lemon_logger import log
 from lemon_colors import colors, color
 from lemon_six import iteritems
 import lemon_args
@@ -27,7 +27,7 @@ def debug_out(text):
 	#print(text)
 	logfile.write(text+"\n")
 	logfile.flush()
-logger.debug = debug_out
+lemon_logger.debug = debug_out
 
 for f in allframes:
 	f.rect = Rect(6,6,6,6)

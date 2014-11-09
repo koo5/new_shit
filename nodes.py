@@ -37,7 +37,7 @@ from fuzzywuzzy import fuzz
 import json
 
 from dotdict import dotdict
-from logger import log, topic
+from lemon_logger import log, topic
 import element
 from menu_items import MenuItem
 import widgets
