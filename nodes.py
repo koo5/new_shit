@@ -2208,7 +2208,7 @@ class ParserBase(Node):
 		if i == None:
 			items.append("")
 			#snap cursor to the beginning of Parser
-			s.root.post_render_move_caret -= atts['char_index']
+			s.root.post_render_move_caret -= atts['char_index'] -1
 			return s.edit_text(0, 0, e)
 		elif isinstance(items[i], str_and_uni):
 			if "compiler item char" in atts:
@@ -2501,6 +2501,26 @@ class Parser(ParserPersistenceStuff, ParserBase):
 	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
+
+class ParserMenuItem(MenuItem):
+	def __init__(self, value, score = 0):
+		super(ParserMenuItem, self).__init__()
+		self.value = value
+		value.parent = self
+		self.scores = dotdict()
+		self.brackets_color = (0,255,255)
+
+	@property
+	def score(s):
+		#print s.scores._dict
+		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
+
+	def tags(self):
+		return [MemberTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
+
+	def long__repr__(s):
+		return object.__repr__(s) + "('"+str(s.value)+"')"
+
 # region lesh command line
 
 class LeshCommandLine(ParserBase):
@@ -2647,7 +2667,7 @@ def test_insert_between_pipes():
 	#what complicates this as compared to normal lemon Parser is umm...this!
 	testexp = [0,1,2,3,4,5,6,"fart", "| count words | sum",8,9]
 	assert testres == testexp, (testres, testexp)
-	
+
 	testres = insert_between_pipes('fart', 6, 0, ["cat x | count words | sum"]) #you know, the gnu code standard says to put parentheses around stuff that doesnt really need it so emacs will indent it properly hmm no? just saying ok
 	testexp = ["fart", "| count words | sum"]
 	assert testres == testexp, (testres, testexp)
@@ -2657,27 +2677,6 @@ def test_insert_between_pipes():
 	assert testres == testexp, (testres, testexp)
 
 test_insert_between_pipes()
-
-# endregion
-
-class ParserMenuItem(MenuItem):
-	def __init__(self, value, score = 0):
-		super(ParserMenuItem, self).__init__()
-		self.value = value
-		value.parent = self
-		self.scores = dotdict()
-		self.brackets_color = (0,255,255)
-
-	@property
-	def score(s):
-		#print s.scores._dict
-		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
-
-	def tags(self):
-		return [MemberTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
-
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+str(s.value)+"')"
 
 class LeshMenuItem(MenuItem):
 	#hack
@@ -2693,6 +2692,8 @@ class LeshMenuItem(MenuItem):
 
 	def tags(self):
 		return [self.value.human, ":\n", self.value.command]
+
+# endregion
 
 class DefaultParserMenuItem(MenuItem):
 	def __init__(self, text):

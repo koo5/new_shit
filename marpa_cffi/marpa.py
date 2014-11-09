@@ -79,7 +79,23 @@ class Grammar(object):
 		return Rule(s, lhs, rhs)
 
 	def precompute(s):
-		s.check_int(lib.marpa_g_precompute(s.g))
+		r = s.check_int(lib.marpa_g_precompute(s.g))
+		s.print_events()
+		return r
+
+	def events(s):
+		count = s.check_int(lib.marpa_g_event_count(s.g))
+		print '%s events'
+		result = ffi.new('Marpa_Event*')
+		for i in xrange(count):
+			event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
+			event_value = result.t_value
+			r = event_type, event_value
+			print r
+			yield r
+
+	def print_events(s):
+		[None for dummy in s.events()]
 
 class Symbol(object):#should symbols even be an object?
 	def __init__(s, g, name):
