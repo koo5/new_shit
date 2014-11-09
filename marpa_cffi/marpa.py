@@ -85,6 +85,9 @@ class Grammar(object):
 	def rule_new(s, lhs, rhs):
 		return Rule(s, lhs, rhs)
 
+	def sequence_new_int(s, lhs, rhs, separator=-1, min=1, proper=False):
+		return s.sequence_new(lhs, rhs, separator, min, proper)
+
 	def sequence_new(s, lhs, rhs, separator=-1, min=1, proper=False):
 		return s.check_int(lib.marpa_g_sequence_new(g.g, lhs.s, [i.s for i in rhs], separator, min,
 		    MARPA_PROPER_SEPARATION if proper else 0))
