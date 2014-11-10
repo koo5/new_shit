@@ -55,6 +55,9 @@ class Grammar(object):
 	def error_clear(s):
 		lib.marpa_g_error_clear(s.g)
 
+	def symbol_new(s, name):
+		return Symbol(s, name)
+
 	def symbol_new_int(s):
 		r = lib.marpa_g_symbol_new(s.g)
 		r = s.check_int(r)
@@ -70,9 +73,17 @@ class Grammar(object):
 	def rule_new_int(s, lhs, rhs):
 		return s.check_int(lib.marpa_g_rule_new(s.g, lhs, rhs, len(rhs)))
 
+	def rule_new(s, lhs, rhs):
+		return Rule(s, lhs, rhs)
+
 	def sequence_new_int(s, lhs, rhs, separator=-1, min=1, proper=False):
 		return s.check_int(lib.marpa_g_sequence_new(s.g, lhs, rhs, separator, min,
 		    MARPA_PROPER_SEPARATION if proper else 0))
+
+	def sequence_new(s, lhs, rhs, separator=-1, min=1, proper=False):
+		return s.check_int(lib.marpa_g_sequence_new(s.g, lhs.s, [i.s for i in rhs], separator, min,
+		    MARPA_PROPER_SEPARATION if proper else 0))
+		#im watching you, sequence_new. im actually committing you right now.
 
 	def precompute(s):
 		r = s.check_int(lib.marpa_g_precompute(s.g))
@@ -95,6 +106,18 @@ class Grammar(object):
 
 	def start_symbol_set(s, sym):
 		s.check_int( lib.marpa_g_start_symbol_set(s.g, sym) )
+
+class Symbol(object):#should symbols even be an object?
+	def __init__(s, g, name):
+		s.g = g
+		s.name = name
+		s.s = g.check_int(lib.marpa_g_symbol_new(g.g))
+	def start_symbol_set(s):
+		s.g.check_int( lib.marpa_g_start_symbol_set(s.g.g, s.s) )
+
+class Rule(object):
+	def __init__(s, g, lhs, rhs):
+		s.r = g.check_int(lib.marpa_g_rule_new(g.g, lhs.s, [i.s for i in rhs], len(rhs)))
 
 class Recce(object):
 	def __init__(s, g):
@@ -153,7 +176,7 @@ class Tree(object):
 				break
 			yield r
 
-class Valuator(object):
+class valuator(object):
 	def __init__(s, tree):
 		s.g = tree.g
 		s.v = lib.marpa_v_new(tree.t)

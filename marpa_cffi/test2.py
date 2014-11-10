@@ -192,21 +192,22 @@ def test1(raw):
 	import gc
 	for dummy in tree.nxt():
 		do_steps(tree, tokens, raw, rules)
-		gc.collect #force an unref of the valuator and stuff so we can move on to the next tree
+		gc.collect() #force an unref of the valuator and stuff so we can move on to the next tree
 
 
 @topic('do steps')
 def do_steps(tree, tokens, raw, rules):
 	stack = defaultdict((lambda:666))
-	v = valuator(tree)
-
+	v = Valuator(tree)
+	babble = False
 	print
 	print v.v
 	
 	while True:
 		s = v.step()
-		print "stack:%s"%dict(stack)#convert ordereddict to dict to get neater __repr__
-		print "step:%s"%codes.steps2[s]
+		if babble:
+			print "stack:%s"%dict(stack)#convert ordereddict to dict to get neater __repr__
+			print "step:%s"%codes.steps2[s]
 		if s == lib.MARPA_STEP_INACTIVE:
 			break
 	
@@ -219,13 +220,15 @@ def do_steps(tree, tokens, raw, rules):
 
 			char = raw[pos]
 			where = v.v.t_result
-			print "token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where)
+			if babble:
+				print "token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where)
 			stack[where] = char
 	
 		elif s == lib.MARPA_STEP_RULE:
 			r = v.v.t_rule_id
 			#print "rule id:%s"%r
-			print "rule:"+rule2name(r)
+			if babble:
+				print "rule:"+rule2name(r)
 			arg0 = v.v.t_arg_0
 			argn = v.v.t_arg_n
 
@@ -234,7 +237,9 @@ def do_steps(tree, tokens, raw, rules):
 
 			stack[arg0] = res
 
-	print "tada:"+str(stack[0])
+	#print "tada:"+str(stack[0])
+	import json
+	print "tada:"+json.dumps(stack[0], indent=2)
 
 import operator
 
