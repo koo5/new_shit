@@ -90,6 +90,12 @@ class Grammar(object):
 		r = symbol_int(r)
 		return r
 
+	def symbol_is_accessible(s, sym):
+		assert type(sym) == symbol_int
+		r = s.check_int(lib.marpa_g_symbol_is_accessible(s.g, sym))
+		assert r != -1
+		return r
+		
 	def rule_new_int(s, lhs, rhs):
 		return s.check_int(lib.marpa_g_rule_new(s.g, lhs, rhs, len(rhs)))
 

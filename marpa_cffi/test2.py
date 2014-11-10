@@ -14,8 +14,6 @@ def fresh():
 	rules = dotdict()
 	syms = dotdict()
 	g = Grammar()
-	symbol('start')
-	symbol('any')
 	known_chars = {}
 	actions = {} # per-rule valuator functions
 
@@ -64,6 +62,13 @@ def known(char):
 		known_chars[char] = symbol(char)
 	return known_chars[char]
 
+def known_string(s):
+	rhs = [known(i) for i in s]
+	lhs = symbol(s)
+	rule(s, lhs, rhs)
+	return lhs
+
+
 @topic('test0')
 def test0():
 	symbol("banana")
@@ -86,15 +91,24 @@ test0()
 @topic('setup')
 def setup():
 	log("SETUP")
+
+	symbol('start')
+	symbol('any')
+	g.start_symbol_set(syms.start)
+	symbol('statement')
+	rule('start', syms.start, syms.statement)
+	symbol('expression')
+	rule('expression_is_statement', syms.statement, syms.expression)
+
 	symbol('digit')
 	symbol('digits')
 	for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
 		rule(i + "_is_a_digit",syms.digit, known(i))
-	
 
 	sequence('digits_is_sequence_of_digit', syms.digits, syms.digit)
 	symbol('number')
-	rule('number_is_digits', syms.number, syms.digits)
+	rule('digits_is_number', syms.number, syms.digits)
+	rule('number_is_expression',syms.expression, syms.number)
 
 	#
 	#multiplication's syntax 1: ChildTag("A"), '*', ChildTag("B")
@@ -108,35 +122,20 @@ def setup():
 	#			rhs.append(known(i))
 	#		...
 
-	symbol('expression')
-	rule('number_is_expression',syms.expression, syms.number)
-
 	symbol('string_body')
 	symbol('string')
 	sequence('string_body_is_sequence_of_any', syms.string_body, syms.any)
 	rule('string', syms.string, [known("'"), syms.string_body, known("'")])
 	rule('string_is_expression', syms.expression, syms.string)
 
-
 	symbol('multiplication')
 	rule('multiplication', syms.multiplication, [syms.expression, known('*'), syms.expression])
-
-	def known_string(s):
-		rhs = [known(i) for i in s]
-		lhs = symbol(s)
-		return rule(s, lhs, rhs)
+	rule('multiplication_is_expression',syms.expression, syms.multiplication)
 
 	symbol('do_x_times')
-
 	rule('do_x_times',syms.do_x_times, [known_string('do'), syms.expression, known_string('times:')])
-
-
-	g.start_symbol_set(syms.start)
-	symbol('statement')
-
-	rule('start', syms.start, syms.statement)
-	rule('expression_is_statement', syms.statement, syms.expression)
-	rule('do_x_times_is_statment',syms.statement, syms.do_x_times)
+	#rule('do_x_times_is_expression',syms.expression, syms.do_x_times)
+	rule('do_x_times_is_statement',syms.statement, syms.do_x_times)
 
 
 
@@ -161,6 +160,11 @@ def test1(raw):
 	tokens = raw2tokens(raw)
 
 	g.precompute()
+
+	for i in syms._dict.iteritems():
+		if not g.symbol_is_accessible(i[1]):
+			print "inaccessible: %s (%s)"%i
+
 	r = Recce(g)
 	r.start_input()
 
