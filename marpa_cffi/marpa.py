@@ -18,6 +18,9 @@
  */
 """
 
+from __future__ import unicode_literals
+from __future__ import print_function
+
 from marpa_cffi import *
 
 
@@ -86,7 +89,7 @@ class Grammar(object):
 		count = s.check_int(lib.marpa_g_event_count(s.g))
 		log('%s events'%count)
 		result = ffi.new('Marpa_Event*')
-		for i in xrange(count):
+		for i in range(count):
 			event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
 			event_value = result.t_value
 			r = event_type, event_value
@@ -194,8 +197,8 @@ def test1():
 	r = Recce(g)
 	r.start_input()
 
-	print g
-	print r
+	print (g)
+	print (r)
 	
 	
 	#tokens = [(sy.number, 2),(sy.op, '-'),(sy.number, 1),(sy.op, '*'),
@@ -208,7 +211,7 @@ def test1():
 		except:
 			tokens.append((sy.op, raw[i]))
 
-	print [(i[0], i[1]) for i in tokens]
+	print ([(i[0], i[1]) for i in tokens])
 	#print [(i[0].name, i[1]) for i in tokens]
 	
 
@@ -234,13 +237,13 @@ def do_steps(tree, tokens, rules):
 	stack = defaultdict((lambda:666))
 	v = Valuator(tree)
 
-	print
-	print v.v
+	print()
+	print (v.v)
 	
 	while True:
 		s = v.step()
-		print "stack:%s"%dict(stack)#avoid ordereddict's __repr__
-		print "step:%s"%codes.steps2[s]
+		print ("stack:%s"%dict(stack))#avoid ordereddict's __repr__
+		print ("step:%s"%codes.steps2[s])
 		if s == lib.MARPA_STEP_INACTIVE:
 			break
 	
@@ -254,13 +257,13 @@ def do_steps(tree, tokens, rules):
 			
 			where = v.v.t_result
 			#print "token %s of type %s, value %s, to stack[%s]"%(tok_idx, tokens[tok_idx][0].name, repr(tokens[tok_idx][1]), where)
-			print "token %s of type %s, value %s, to stack[%s]"%(tok_idx, tokens[tok_idx][0], repr(tokens[tok_idx][1]), where)
+			print ("token %s of type %s, value %s, to stack[%s]"%(tok_idx, tokens[tok_idx][0], repr(tokens[tok_idx][1]), where))
 			stack[where] = tokens[tok_idx][1]
 	
 		elif s == lib.MARPA_STEP_RULE:
 			r = v.v.t_rule_id
 			#print "rule id:%s"%r
-			print "rule:"+[key for key,val in rules.__dict__.iteritems() if val == r][0]
+			print ("rule:"+[key for key,val in rules.__dict__.iteritems() if val == r][0])
 			arg0 = v.v.t_arg_0
 			argn = v.v.t_arg_n
 			
@@ -276,7 +279,7 @@ def do_steps(tree, tokens, rules):
 				lstr, lval = stack[arg0]
 				op = stack[arg0 + 1]
 				rstr, rval = stack[argn]
-				print stack[arg0], op, stack[argn]
+				print (stack[arg0], op, stack[argn])
 				text = '(' + lstr + " " + op + " " + rstr + ')'
 				if op == '+':
 					res = lval + rval
@@ -287,11 +290,11 @@ def do_steps(tree, tokens, rules):
 				elif op == '/':
 					res = lval / rval
 				else:
-					print op + '???'
+					print (op + '???')
 					return
 				stack[arg0] = (text, res)
 			else:
-				print "wat, %s?"%r
-	print "tada:"+str(stack[0])
+				print ("wat, %s?"%r)
+	print ("tada:"+str(stack[0]))
 if __name__ == "__main__":
 	test1()

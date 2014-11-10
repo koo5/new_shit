@@ -1,3 +1,8 @@
+#another experiment, a bit higher level, tokenizer-less, and lemon-oriented
+
+from __future__ import unicode_literals
+from __future__ import print_function
+
 from collections import defaultdict
 from collections import namedtuple
 from marpa import *
@@ -36,13 +41,13 @@ def rule(name, lhs,rhs,action=(lambda x:x)):
 
 
 def symbol2name(s):
-	for k,v in syms._dict.iteritems():
+	for k,v in syms._dict.items():
 		if v == s:
 			return k
 	assert False
 
 def rule2name(r):
-	for k,v in rules._dict.iteritems():
+	for k,v in rules._dict.items():
 		if v == r:
 			return k
 	assert False
@@ -161,19 +166,19 @@ def test1(raw):
 
 	g.precompute()
 
-	for i in syms._dict.iteritems():
+	for i in syms._dict.items():
 		if not g.symbol_is_accessible(i[1]):
-			print "inaccessible: %s (%s)"%i
+			print ("inaccessible: %s (%s)"%i)
 
 	r = Recce(g)
 	r.start_input()
 
-	print "TEST1"
-	print g
-	print r
+	print ("TEST1")
+	print (g)
+	print (r)
 	
 	for i, sym in enumerate(tokens):
-		print sym, i+1, symbol2name(sym),raw[i]
+		print (sym, i+1, symbol2name(sym),raw[i])
 		assert type(sym) == symbol_int
 		r.alternative_int(sym, i+1)
 		r.earleme_complete()
@@ -183,7 +188,7 @@ def test1(raw):
 	tokens.insert(0,'dummy') 
 	
 	latest_earley_set_ID = r.latest_earley_set()
-	print 'latest_earley_set_ID=%s'%latest_earley_set_ID
+	print ('latest_earley_set_ID=%s'%latest_earley_set_ID)
 
 	b = Bocage(r, latest_earley_set_ID)
 	o = Order(b)
@@ -200,14 +205,14 @@ def do_steps(tree, tokens, raw, rules):
 	stack = defaultdict((lambda:666))
 	v = Valuator(tree)
 	babble = False
-	print
-	print v.v
+	print()
+	print (v.v)
 	
 	while True:
 		s = v.step()
 		if babble:
-			print "stack:%s"%dict(stack)#convert ordereddict to dict to get neater __repr__
-			print "step:%s"%codes.steps2[s]
+			print ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
+			print ("step:%s"%codes.steps2[s])
 		if s == lib.MARPA_STEP_INACTIVE:
 			break
 	
@@ -221,31 +226,31 @@ def do_steps(tree, tokens, raw, rules):
 			char = raw[pos]
 			where = v.v.t_result
 			if babble:
-				print "token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where)
+				print ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
 			stack[where] = char
 	
 		elif s == lib.MARPA_STEP_RULE:
 			r = v.v.t_rule_id
-			#print "rule id:%s"%r
+			#print ("rule id:%s"%r)
 			if babble:
-				print "rule:"+rule2name(r)
+				print ("rule:"+rule2name(r))
 			arg0 = v.v.t_arg_0
 			argn = v.v.t_arg_n
 
-			args = [stack[i] for i in xrange(arg0, argn+1)]
+			args = [stack[i] for i in range(arg0, argn+1)]
 			res = (rule2name(r), actions[r](args))
 
 			stack[arg0] = res
 
 	#print "tada:"+str(stack[0])
 	import json
-	print "tada:"+json.dumps(stack[0], indent=2)
+	print ("tada:"+json.dumps(stack[0], indent=2))
 
 import operator
 
 fresh()
 setup()
-print 'syms:%s'%sorted(syms._dict.items(),key=operator.itemgetter(1))
-print 'rules:%s'%sorted(rules._dict.items(),key=operator.itemgetter(1))
+print ('syms:%s'%sorted(syms._dict.items(),key=operator.itemgetter(1)))
+print ('rules:%s'%sorted(rules._dict.items(),key=operator.itemgetter(1)))
 #test1('9321-82*7+6')
 test1('do34*4times:')
