@@ -5,13 +5,20 @@ from __future__ import print_function
 
 from collections import defaultdict
 from collections import namedtuple
+
 from marpa import *
+
 import sys; sys.path.append('..')
 from dotdict import dotdict
 from lemon_logger import topic, log
+from lemon_six import str_and_uni
 
 def ident(x):
 	return x
+
+def join(args):
+	return ''.join(args)
+
 
 @topic('fresh')
 def fresh():
@@ -29,7 +36,7 @@ def symbol(name):
 	return r
 
 def rule(name, lhs,rhs,action=(lambda x:x)):
-	assert type(name) == str
+	assert type(name) in str_and_uni
 	assert type(lhs) == symbol_int
 	if type(rhs) != list:
 		assert type(rhs) == symbol_int
@@ -54,7 +61,7 @@ def rule2name(r):
 
 
 def sequence(name, lhs, rhs, action=(lambda x:x), separator=-1, min=1, proper=False,):
-	assert type(name) == str
+	assert type(name) in str_and_uni
 	assert type(lhs) == symbol_int
 	assert type(rhs) == symbol_int
 	assert name not in rules._dict
@@ -67,10 +74,11 @@ def known(char):
 		known_chars[char] = symbol(char)
 	return known_chars[char]
 
+
 def known_string(s):
 	rhs = [known(i) for i in s]
 	lhs = symbol(s)
-	rule(s, lhs, rhs)
+	rule(s, lhs, rhs, join)
 	return lhs
 
 
@@ -88,9 +96,6 @@ def test0():
 	known('Y')
 	rule( 'why',syms.X, syms.Y)
 	log("test0:", syms._dict, rules._dict)
-
-fresh()
-test0()
 
 
 @topic('setup')
@@ -110,9 +115,9 @@ def setup():
 	for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
 		rule(i + "_is_a_digit",syms.digit, known(i))
 
-	sequence('digits_is_sequence_of_digit', syms.digits, syms.digit)
+	sequence('digits_is_sequence_of_digit', syms.digits, syms.digit, join)
 	symbol('number')
-	rule('digits_is_number', syms.number, syms.digits)
+	rule('digits_is_number', syms.number, syms.digits, int)
 	rule('number_is_expression',syms.expression, syms.number)
 
 	#
@@ -200,9 +205,12 @@ def test1(raw):
 		gc.collect() #force an unref of the valuator and stuff so we can move on to the next tree
 
 
+
+
 @topic('do steps')
 def do_steps(tree, tokens, raw, rules):
 	stack = defaultdict((lambda:666))
+	stack2= defaultdict((lambda:666))
 	v = Valuator(tree)
 	babble = False
 	print()
@@ -227,7 +235,7 @@ def do_steps(tree, tokens, raw, rules):
 			where = v.v.t_result
 			if babble:
 				print ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
-			stack[where] = char
+			stack[where] = stack2[where] = char
 	
 		elif s == lib.MARPA_STEP_RULE:
 			r = v.v.t_rule_id
@@ -238,19 +246,28 @@ def do_steps(tree, tokens, raw, rules):
 			argn = v.v.t_arg_n
 
 			args = [stack[i] for i in range(arg0, argn+1)]
-			res = (rule2name(r), actions[r](args))
+			stack[arg0] = (rule2name(r), args)
 
-			stack[arg0] = res
+			args = [stack2[i] for i in range(arg0, argn+1)]
+			args = [i[1] if type(i) == tuple else i for i in args ]
+			if type(args) == list and len(args) == 1:
+				args = args[0]
+			stack2[arg0] = actions[r](args)
+
 
 	#print "tada:"+str(stack[0])
 	import json
 	print ("tada:"+json.dumps(stack[0], indent=2))
+	print ("tada:"+json.dumps(stack2[0], indent=2))
 
-import operator
+if __name__ == '__main__':
+	fresh()
+	test0()
 
-fresh()
-setup()
-print ('syms:%s'%sorted(syms._dict.items(),key=operator.itemgetter(1)))
-print ('rules:%s'%sorted(rules._dict.items(),key=operator.itemgetter(1)))
-#test1('9321-82*7+6')
-test1('do34*4times:')
+	fresh()
+	setup()
+	import operator
+	print ('syms:%s'%sorted(syms._dict.items(),key=operator.itemgetter(1)))
+	print ('rules:%s'%sorted(rules._dict.items(),key=operator.itemgetter(1)))
+	#test1('9321-82*7+6')
+	test1('do34*4times:')
