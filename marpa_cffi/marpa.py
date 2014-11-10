@@ -1,4 +1,4 @@
-
+#this file tries to wrap libmarpa into something pythonic, and not specific to lemon
 """
  * 
  * This file is based on Libmarpa, Copyright 2014 Jeffrey Kegler.
@@ -26,11 +26,14 @@ lib.marpa_c_init(config)
 #Always succeeds.
 
 
-import sys; sys.path.append('..')
 
+#a wee bit of dependency on something in the lemon repo, feel free to use it or
+#cut it out
+import sys; sys.path.append('..')
 from lemon_logger import topic, log
 
-class symbol_int(int):pass
+
+class symbol_int(int):pass # just for some type checking
 
 
 class Grammar(object):
@@ -55,7 +58,7 @@ class Grammar(object):
 	def error_clear(s):
 		lib.marpa_g_error_clear(s.g)
 
-	def symbol_new_int(s):
+	def symbol_new(s):
 		r = lib.marpa_g_symbol_new(s.g)
 		r = s.check_int(r)
 		r = symbol_int(r)
@@ -67,10 +70,10 @@ class Grammar(object):
 		assert r != -1
 		return r
 		
-	def rule_new_int(s, lhs, rhs):
+	def rule_new(s, lhs, rhs):
 		return s.check_int(lib.marpa_g_rule_new(s.g, lhs, rhs, len(rhs)))
 
-	def sequence_new_int(s, lhs, rhs, separator=-1, min=1, proper=False):
+	def sequence_new(s, lhs, rhs, separator=-1, min=1, proper=False):
 		return s.check_int(lib.marpa_g_sequence_new(s.g, lhs, rhs, separator, min,
 		    MARPA_PROPER_SEPARATION if proper else 0))
 
@@ -106,7 +109,7 @@ class Recce(object):
 		s.g.check_int(lib.marpa_r_start_input(s.r))
 	@topic('alternative')
 	def alternative(s, sym, val, length):
-		r = lib.marpa_r_alternative(s.r, sym.s, val, length)
+		r = lib.marpa_r_alternative(s.r, sym, val, length)
 		if r != lib.MARPA_ERR_NONE:
 			log(codes.errors[r])
 	@topic('alternative int')
@@ -164,6 +167,8 @@ class Valuator(object):
 		return s.g.check_int(lib.marpa_v_step(s.v))
 		
 
+
+#aand a little test, same as in test0.py for now
 def test1():
 	#based on the example at the end of https://metacpan.org/pod/Marpa::R2::Advanced::Thin
 	class SimpleNamespace:
@@ -177,8 +182,8 @@ def test1():
 	g = Grammar()
 
 
-	sy = SimpleNamespace([(name, g.symbol_new(name)) for name in "S E op number".split()])
-	sy.S.start_symbol_set()
+	sy = SimpleNamespace([(name, g.symbol_new()) for name in "S E op number".split()])
+	g.start_symbol_set(sy.S)
 	rules = SimpleNamespace([(name, g.rule_new(lhs, rhs)) for name, lhs, rhs in [
 		('start', sy.S, [sy.E]),
 		('op'    , sy.E, [sy.E, sy.op, sy.E]),
@@ -203,7 +208,8 @@ def test1():
 		except:
 			tokens.append((sy.op, raw[i]))
 
-	print [(i[0].name, i[1]) for i in tokens]
+	print [(i[0], i[1]) for i in tokens]
+	#print [(i[0].name, i[1]) for i in tokens]
 	
 
 	for i, (sym, val) in enumerate(tokens):
@@ -226,7 +232,7 @@ from collections import defaultdict
 
 def do_steps(tree, tokens, rules):
 	stack = defaultdict((lambda:666))
-	v = valuator(tree)
+	v = Valuator(tree)
 
 	print
 	print v.v
@@ -242,30 +248,31 @@ def do_steps(tree, tokens, rules):
 
 			tok_idx = v.v.t_token_value
 			
-			assert type(tokens[tok_idx][0]) == Symbol
-			assert      tokens[tok_idx][0].s == v.v.t_token_id
+			assert type(tokens[tok_idx][0]) == symbol_int
+			#assert      tokens[tok_idx][0].s == v.v.t_token_id
 			assert v.v.t_result == v.v.t_arg_n
 			
 			where = v.v.t_result
-			print "token %s of type %s, value %s, to stack[%s]"%(tok_idx, tokens[tok_idx][0].name, repr(tokens[tok_idx][1]), where)
+			#print "token %s of type %s, value %s, to stack[%s]"%(tok_idx, tokens[tok_idx][0].name, repr(tokens[tok_idx][1]), where)
+			print "token %s of type %s, value %s, to stack[%s]"%(tok_idx, tokens[tok_idx][0], repr(tokens[tok_idx][1]), where)
 			stack[where] = tokens[tok_idx][1]
 	
 		elif s == lib.MARPA_STEP_RULE:
 			r = v.v.t_rule_id
 			#print "rule id:%s"%r
-			print "rule:"+[key for key,val in rules.__dict__.iteritems() if val.r == r][0]
+			print "rule:"+[key for key,val in rules.__dict__.iteritems() if val == r][0]
 			arg0 = v.v.t_arg_0
 			argn = v.v.t_arg_n
 			
-			if r == rules.start.r:
+			if r == rules.start:
 				string, val = stack[argn]
 				stack[arg0] = "%s = %s"%(string, val)
 			
-			elif r == rules.number.r:
+			elif r == rules.number:
 				num = stack[arg0]
 				stack[arg0] = (str(num), num)
 			
-			elif r == rules.op.r:
+			elif r == rules.op:
 				lstr, lval = stack[arg0]
 				op = stack[arg0 + 1]
 				rstr, rval = stack[argn]

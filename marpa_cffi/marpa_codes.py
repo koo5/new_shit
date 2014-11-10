@@ -159,4 +159,5 @@ for (num, const) in _steps:
 	assert num == len(steps)
 	steps.append(const)
 
+#cut off the ""MARPA_STEP_" part
 steps2 = [' '.join(x[2:]) for x in [y.split('_') for y in steps]]

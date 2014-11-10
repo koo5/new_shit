@@ -1,3 +1,6 @@
+#this was my first experiment with marpa and cffi, 
+#based on the example at the end of https://metacpan.org/pod/Marpa::R2::Advanced::Thin
+#some nonsense here, but it produces some output which, who knows, is maybe even valid
 
 """
  * 
@@ -188,7 +191,6 @@ class valuator(object):
 		
 
 def test1():
-	#based on the example at the end of https://metacpan.org/pod/Marpa::R2::Advanced::Thin
 	class SimpleNamespace:
 		def __init__(self, pairs):
 			self.__dict__.update(pairs)

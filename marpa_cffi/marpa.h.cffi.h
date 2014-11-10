@@ -1,5 +1,7 @@
 //made from marpa.h with version 7.2.0 (Marpa--R2 2.099_000)
-
+//just a few mechanical changes were needed to make cffi happy, 
+//i did them by hand for now, but be super careful with different
+//versions of marpa
 /*
  * 
  * This file is based on Libmarpa, Copyright 2014 Jeffrey Kegler.
@@ -260,7 +262,12 @@ extern int marpa__debug_level;
 
 
 Marpa_Error_Code marpa_check_version (int required_major, int required_minor, int required_micro );
-Marpa_Error_Code marpa_version (int version[3]);//originally was int * version
+
+Marpa_Error_Code marpa_version (int version[3]);
+//this originally was int * version..
+///but this change doesnt seem to make any difference
+//in cffi's type checking anyway
+
 int marpa_c_init ( Marpa_Config* config);
 Marpa_Error_Code marpa_c_error ( Marpa_Config* config, const char** p_error_string );
 Marpa_Grammar marpa_g_new ( Marpa_Config* configuration );

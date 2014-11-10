@@ -18,7 +18,7 @@ def fresh():
 	actions = {} # per-rule valuator functions
 
 def symbol(name):
-	r = g.symbol_new_int()
+	r = g.symbol_new()
 	assert name not in syms._dict
 	syms[name] = r
 	return r
@@ -30,7 +30,7 @@ def rule(name, lhs,rhs,action=(lambda x:x)):
 		assert type(rhs) == symbol_int
 		rhs = [rhs]
 	assert name not in rules._dict
-	r = rules[name] = g.rule_new_int(lhs, rhs)
+	r = rules[name] = g.rule_new(lhs, rhs)
 	actions[r] = action
 	return r
 
@@ -53,7 +53,7 @@ def sequence(name, lhs, rhs, action=(lambda x:x), separator=-1, min=1, proper=Fa
 	assert type(lhs) == symbol_int
 	assert type(rhs) == symbol_int
 	assert name not in rules._dict
-	r = rules[name] = g.sequence_new_int(lhs, rhs, separator, min, proper)
+	r = rules[name] = g.sequence_new(lhs, rhs, separator, min, proper)
 	actions[r] = action
 	return r
 
