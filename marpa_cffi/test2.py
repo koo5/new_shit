@@ -14,7 +14,8 @@ from lemon_logger import topic, log
 from lemon_six import str_and_uni
 
 def ident(x):
-	return x
+	assert len(x) == 1
+	return x[0]
 
 def join(args):
 	return ''.join(args)
@@ -35,18 +36,6 @@ def symbol(name):
 	syms[name] = r
 	return r
 
-def rule(name, lhs,rhs,action=(lambda x:x)):
-	assert type(name) in str_and_uni
-	assert type(lhs) == symbol_int
-	if type(rhs) != list:
-		assert type(rhs) == symbol_int
-		rhs = [rhs]
-	assert name not in rules._dict
-	r = rules[name] = g.rule_new(lhs, rhs)
-	actions[r] = action
-	return r
-
-
 def symbol2name(s):
 	for k,v in syms._dict.items():
 		if v == s:
@@ -60,12 +49,31 @@ def rule2name(r):
 	assert False
 
 
-def sequence(name, lhs, rhs, action=(lambda x:x), separator=-1, min=1, proper=False,):
+def rule(name, lhs,rhs,action=ident):
 	assert type(name) in str_and_uni
-	assert type(lhs) == symbol_int
-	assert type(rhs) == symbol_int
 	assert name not in rules._dict
+	assert type(lhs) == symbol_int
+
+	if type(rhs) != list:
+		assert type(rhs) == symbol_int
+		rhs = [rhs]
+	r = rules[name] = g.rule_new(lhs, rhs)
+
+	if type(action) != tuple:
+		action = (action,)
+	actions[r] = action
+	return r
+
+def sequence(name, lhs, rhs, action=ident, separator=-1, min=1, proper=False,):
+	assert type(name) in str_and_uni
+	assert name not in rules._dict
+	assert type(lhs) == symbol_int
+
+	assert type(rhs) == symbol_int
 	r = rules[name] = g.sequence_new(lhs, rhs, separator, min, proper)
+
+	if type(action) != tuple:
+		action = (action,)
 	actions[r] = action
 	return r
 
@@ -117,7 +125,7 @@ def setup():
 
 	sequence('digits_is_sequence_of_digit', syms.digits, syms.digit, join)
 	symbol('number')
-	rule('digits_is_number', syms.number, syms.digits, int)
+	rule('digits_is_number', syms.number, syms.digits, (ident, int))
 	rule('number_is_expression',syms.expression, syms.number)
 
 	#
@@ -139,11 +147,11 @@ def setup():
 	rule('string_is_expression', syms.expression, syms.string)
 
 	symbol('multiplication')
-	rule('multiplication', syms.multiplication, [syms.expression, known('*'), syms.expression])
+	rule('multiplication', syms.multiplication, [syms.expression, known('*'), syms.expression], tuple)
 	rule('multiplication_is_expression',syms.expression, syms.multiplication)
 
 	symbol('do_x_times')
-	rule('do_x_times',syms.do_x_times, [known_string('do'), syms.expression, known_string('times:')])
+	rule('do_x_times',syms.do_x_times, [known_string('do'), syms.expression, known_string('times:')], tuple)
 	#rule('do_x_times_is_expression',syms.expression, syms.do_x_times)
 	rule('do_x_times_is_statement',syms.statement, syms.do_x_times)
 
@@ -245,19 +253,25 @@ def do_steps(tree, tokens, raw, rules):
 			arg0 = v.v.t_arg_0
 			argn = v.v.t_arg_n
 
-			args = [stack[i] for i in range(arg0, argn+1)]
-			stack[arg0] = (rule2name(r), args)
-
+			#args = [stack[i] for i in range(arg0, argn+1)]
+			#stack[arg0] = (rule2name(r), args)
+			
+			
 			args = [stack2[i] for i in range(arg0, argn+1)]
-			args = [i[1] if type(i) == tuple else i for i in args ]
-			if type(args) == list and len(args) == 1:
-				args = args[0]
-			stack2[arg0] = actions[r](args)
+
+			act = actions[r]
+			
+			sys.stdout.write(str(rule2name(r))+repr(args)+" "+str(act))
+			for i in act:
+				args = i(args)
+				sys.stdout.write( '->'+repr(args))
+			print()
+			stack2[arg0] = args
 
 
 	#print "tada:"+str(stack[0])
 	import json
-	print ("tada:"+json.dumps(stack[0], indent=2))
+#	print ("tada:"+json.dumps(stack[0], indent=2))
 	print ("tada:"+json.dumps(stack2[0], indent=2))
 
 if __name__ == '__main__':
