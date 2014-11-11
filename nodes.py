@@ -33,7 +33,12 @@ BRY = platform.frontend == platform.brython
 
 import sys
 sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
+
 from fuzzywuzzy import fuzz
+
+from marpa_cffi.marpa import *
+
+from collections import defaultdict
 import json
 
 from dotdict import dotdict
@@ -428,9 +433,295 @@ class WidgetedValuePersistenceStuff(object):
 
 # endregion
 
+# region marpa
+
+
+
+
+def ident(x):
+	assert len(x) == 1
+	return x[0]
+
+def join(args):
+	return ''.join(args)
+
+
+@topic('fresh')
+def fresh_grammar():
+	global rules, syms, g, known_chars, actions
+	rules = dotdict()
+	syms = dotdict()
+	g = Grammar()
+	known_chars = {}
+	actions = {} # per-rule valuator callbacks (functions that the parser steps loop calls to actually create basic values or Nodes from lists of values or child nodes
+
+def symbol(name):
+	r = g.symbol_new()
+	assert name not in syms._dict
+	syms[name] = r
+	return r
+
+def symbol2name(s):
+	for k,v in syms._dict.items():
+		if v == s:
+			return k
+	assert False
+
+def rule2name(r):
+	for k,v in rules._dict.items():
+		if v == r:
+			return k
+	assert False
+
+
+def rule(name, lhs,rhs,action=ident):
+	assert type(name) in str_and_uni
+	assert name not in rules._dict
+	assert type(lhs) == symbol_int
+
+	if type(rhs) != list:
+		assert type(rhs) == symbol_int
+		rhs = [rhs]
+	r = rules[name] = g.rule_new(lhs, rhs)
+
+	if type(action) != tuple:
+		action = (action,)
+	actions[r] = action
+	return r
+
+def sequence(name, lhs, rhs, action=ident, separator=-1, min=1, proper=False,):
+	assert type(name) in str_and_uni
+	assert name not in rules._dict
+	assert type(lhs) == symbol_int
+
+	assert type(rhs) == symbol_int
+	r = rules[name] = g.sequence_new(lhs, rhs, separator, min, proper)
+
+	if type(action) != tuple:
+		action = (action,)
+	actions[r] = action
+	return r
+
+def known(char):
+	if not char in known_chars:
+		known_chars[char] = symbol(char)
+	return known_chars[char]
+
+
+def known_string(s):
+	rhs = [known(i) for i in s]
+	lhs = symbol(s)
+	rule(s, lhs, rhs, join)
+	return lhs
+
+def set_start(start):
+	g.start_symbol_set(start)
+
+
+def raw2tokens(raw):
+	tokens = []
+	for i, char in enumerate(raw):
+		if char in known_chars:
+			symid=known_chars[char]
+		else:
+			symid=syms.any
+		tokens.append(symid)
+	return tokens
+
+def parse(raw):
+
+	tokens = raw2tokens(raw)
+
+	r = Recce(g)
+	r.start_input()
+
+	print ("TEST1")
+	print (g)
+	print (r)
+
+	for i, sym in enumerate(tokens):
+		print (sym, i+1, symbol2name(sym),raw[i])
+		assert type(sym) == symbol_int
+		r.alternative_int(sym, i+1)
+		r.earleme_complete()
+
+	log('ok')
+	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
+	tokens.insert(0,'dummy')
+
+	latest_earley_set_ID = r.latest_earley_set()
+	print ('latest_earley_set_ID=%s'%latest_earley_set_ID)
+
+	b = Bocage(r, latest_earley_set_ID)
+	o = Order(b)
+	tree = Tree(o)
+
+	import gc
+	for dummy in tree.nxt():
+		do_steps(tree, tokens, raw, rules)
+		gc.collect() #force an unref of the valuator and stuff so we can move on to the next tree
+
+
+
+
+@topic('do steps')
+def do_steps(tree, tokens, raw, rules):
+	stack = defaultdict((lambda:666))
+	stack2= defaultdict((lambda:666))
+	v = Valuator(tree)
+	babble = False
+	print()
+	print (v.v)
+
+	while True:
+		s = v.step()
+		if babble:
+			print ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
+			print ("step:%s"%codes.steps2[s])
+		if s == lib.MARPA_STEP_INACTIVE:
+			break
+
+		elif s == lib.MARPA_STEP_TOKEN:
+
+			pos = v.v.t_token_value - 1
+			sym = symbol_int(v.v.t_token_id)
+
+			assert v.v.t_result == v.v.t_arg_n
+
+			char = raw[pos]
+			where = v.v.t_result
+			if babble:
+				print ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
+			stack[where] = stack2[where] = char
+
+		elif s == lib.MARPA_STEP_RULE:
+			r = v.v.t_rule_id
+			#print ("rule id:%s"%r)
+			if babble:
+				print ("rule:"+rule2name(r))
+			arg0 = v.v.t_arg_0
+			argn = v.v.t_arg_n
+
+			#args = [stack[i] for i in range(arg0, argn+1)]
+			#stack[arg0] = (rule2name(r), args)
+
+
+			args = [stack2[i] for i in range(arg0, argn+1)]
+
+			act = actions[r]
+
+			sys.stdout.write(str(rule2name(r))+repr(args)+" "+str(act))
+			for i in act:
+				args = i(args)
+				sys.stdout.write( '->'+repr(args))
+			print()
+			stack2[arg0] = args
+
+
+	#print "tada:"+str(stack[0])
+	import json
+#	print ("tada:"+json.dumps(stack[0], indent=2))
+	print ("tada:"+json.dumps(stack2[0], indent=2))
+
+
+
+@topic ('setup_grammar')
+def setup_grammar(scope):
+	fresh_grammar()
+
+	log(scope)
+	for i in scope:
+		_ = i.node_symbol
+		if isinstance(i, Nodecl):
+			_ = i.decl_symbol
+
+	log(rules)
+
+	#g.precompute()
+
+	#for i in syms._dict.items():
+	#	if not g.symbol_is_accessible(i[1]):
+	#		print ("inaccessible: %s (%s)"%i)
+
+
+class NodeMarpism(object):
+	def __init__(s):
+		super(NodeMarpism, s).__init__()
+		s._node_symbol  = None
+	@property
+	def node_symbol(s):
+		if s._node_symbol == None:
+			s._node_symbol = s.register_node_grammar()
+		return s._node_symbol
+	def register_node_grammar(s):
+		pass
+	def register_decl_grammar(s):
+		pass
+
+class NodeclBaseMarpism(object):
+	def __init__(s):
+		super(NodeclBaseMarpism, s).__init__()
+		s._decl_symbol = None
+	@property
+	def decl_symbol(s):
+		if s._decl_symbol == None:
+			s._decl_symbol = s.instance_class.register_decl_grammar()
+		return s._decl_symbol
+
+class NumberMarpism(object):
+	def register_decl_grammar(s):
+		symbol('digit')
+		symbol('digits')
+		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
+			rule(i + "_is_a_digit",syms.digit, known(i))
+
+		sequence('digits_is_sequence_of_digit', syms.digits, syms.digit, join)
+		s._decl_symbol = symbol('number')
+		rule('number_is_digits', s._decl_symbol, syms.digits, (ident, int))
+
+
+class FunctionDefinitionBaseMarpism(object):
+	@topic ("FunctionDefinitionBase register_node_grammar")
+	def register_node_grammar(s):
+		rhs = []
+		for i in s.sig:
+			if type(i) == Text:
+				a = known_string(i.pyval)
+			elif isinstance(i, TypedParameter):
+				#TypedParameter means its supposed to be an expression
+				a = b['expression'].get_symbol()
+			elif isinstance(i, UnevaluatedArgument):
+				a = i.type.instance_class.get_symbol()
+			rhs.append(a)
+			log('rhs:%s'%rhs)
+			s._symbol = symbol()
+			rule(s._symbol, rhs, s.marpa_make_call)
+	def marpa_make_call(s, args):
+		'gets an array of argument nodes, presumably'
+		return FunctionCall(s)
+
+class SyntacticCategoryMarpism(object):
+	def register_node_grammar(s):
+		s._symbol = lhs = symbol(
+			s.ch.name.pyval) # for example: 'Statement'
+
+class WorksAsMarpism(object):
+	def register_node_grammar(s):
+		s._symbol = lhs = symbol(
+			s.ch.sup.name) # for example: 'Statement'
+		rhs = symbol(
+			s.ch.sub.name) # for example: 'Expression'
+		rule(lhs, rhs)
+
+def destroy_all_symbols():
+	for i in root.flatten():
+		i._symbol = None
+
+# endregion
+
 # region basic node classes
 
-class Node(NodePersistenceStuff, element.Element):
+class Node(NodePersistenceStuff, NodeMarpism, element.Element):
 	"""a node is more than an element, its a standalone unit.
 	nodes can added, cut'n'pasted around, evaluated etc.
 	every node class has a corresponding decl object
@@ -444,6 +735,7 @@ class Node(NodePersistenceStuff, element.Element):
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
+		self.fresh = "i think youre looking for inst_fresh"
 
 	def make_rainbow(s):
 		try:#hacky rainbow depending on the colors module
@@ -658,6 +950,8 @@ class Node(NodePersistenceStuff, element.Element):
 			return False
 		return a.eq_by_value(b)
 
+	def delete_child(self, child):
+		log("not implemented")
 
 class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
@@ -854,7 +1148,6 @@ class Collapsible(Node):
 		r.decl = decl
 		assert(decl)
 		return r
-
 
 class Dict(Collapsible):
 	def __init__(self):
@@ -1110,8 +1403,6 @@ class List(ListPersistenceStuff, Collapsible):
 				return False
 		return True
 
-
-
 class Statements(List):
 	def __init__(s):
 		super(Statements, s).__init__()
@@ -1265,7 +1556,7 @@ class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 		return object.__repr__(s) + "('"+str(s.pyval)+"')"
 
 
-class Number(WidgetedValue):
+class Number(NumberMarpism, WidgetedValue):
 	def __init__(self, value="0"):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
@@ -1466,7 +1757,7 @@ class Exp(Node):
 	def name(self):
 		return self.type.name + " expr"
 
-class NodeclBase(Node):
+class NodeclBase(Node, NodeclBaseMarpism):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
 	know their python class ("instance_class"), syntax and shit.
 	usually does something like instance_class.decl = self, so we can instantiate the
@@ -2188,6 +2479,10 @@ class ParserBase(Node):
 			if e.key == K_t:
 				s.type_tree(s.type, s.scope())
 				return True
+			if e.key == K_RETURN:
+				setup_grammar(s.scope())
+
+				return True
 			else:
 				return super(ParserBase, s).on_keypress(e)
 
@@ -2746,20 +3041,27 @@ builtin_unevaluatedparameter = build_in(SyntaxedNodecl(UnevaluatedParameter,
 
 
 
-log(b['union'])
+#lets define a function signature type
 tmp = b['union'].inst_fresh()
 tmp.ch["items"].add(Ref(b['text']))
 tmp.ch["items"].add(Ref(b['typedparameter']))
 tmp.ch["items"].add(Ref(builtin_unevaluatedparameter))
 build_in(Definition({'name': Text('function signature node'), 'type': tmp}))
-
 tmp = b['list'].make_type({'itemtype': Ref(b['function signature node'])})
 build_in(Definition({'name': Text('function signature list'), 'type':tmp}))
+#todo:refactor
+#and a custom node syntax type
+tmp = b['union'].inst_fresh()
+tmp.ch["items"].add(Ref(b['text']))
+tmp.ch["items"].add(Ref(b['type']))
+build_in(Definition({'name': Text('custom syntax'), 'type': tmp}))
+tmp = b['list'].make_type({'itemtype': Ref(b['custom syntax'])})
+build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
 
 
 
 
-class FunctionDefinitionBase(Syntaxed):
+class FunctionDefinitionBase(Syntaxed, FunctionDefinitionBaseMarpism):
 
 	def __init__(self, kids):
 		super(FunctionDefinitionBase, self).__init__(kids)
@@ -2853,6 +3155,10 @@ class FunctionDefinitionBase(Syntaxed):
 		}
 	"""
 
+	def palette(self, scope, text, node):
+		return [ParserMenuItem(FunctionCall(self))]
+
+
 """for function overloading, we could have a node that would be a "Variant" of
 	an original function, with different arguments.
 """
@@ -2931,8 +3237,8 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 	def name(s):
 		return s._name
 
-	def palette(self, scope, text, node):
-		return []
+	#def palette(self, scope, text, node):
+	#	return []
 
 	def _unresolvize(s):
 		return dict(super(BuiltinFunctionDecl, s)._unresolvize(),
@@ -3003,8 +3309,8 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 		lemon_result.pyval = python_result #todo implement pyval assignments
 		return lemon_result
 
-	def palette(self, scope, text, node):
-		return []
+	#def palette(self, scope, text, node):
+	#	return []
 
 
 build_in(SyntaxedNodecl(BuiltinPythonFunctionDecl,
@@ -3097,8 +3403,12 @@ class FunctionCallNodecl(NodeclBase):
 	def __init__(self):
 		super(FunctionCallNodecl, self).__init__(FunctionCall)
 	def palette(self, scope, text, node):
-		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
-		return [ParserMenuItem(FunctionCall(x)) for x in decls]
+		#override NodeclBase palette() which returns a menuitem with a fresh() instance_class,
+		#FunctionCall cant be instantiated without a target.
+		return []
+		#the stuff below is now performed in FunctionDefinitionBase
+#		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
+#		return [ParserMenuItem(FunctionCall(x)) for x in decls]
 
 build_in(FunctionCallNodecl(), 'call')
 
@@ -3708,3 +4018,16 @@ build_in(SyntaxedNodecl(Serialized,
 			   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
 			   {'last_rendering': b['text'],
 			    'serialization':dict_from_to('text', 'anything')}))
+
+
+"""todo:rename FunctionDefinition to Defun, FunctionCall to Call, maybe remove "Stuff"s """
+
+
+
+
+class CustomNodeDef(Syntaxed):
+	pass
+
+build_in(SyntaxedNodecl(CustomNodeDef,
+			   ["define node with syntax:", ChildTag("syntax")],
+			   {'syntax': b['custom syntax list']}))

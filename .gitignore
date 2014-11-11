@@ -6,3 +6,6 @@ replay.p
 .#*
 curses_log
 cython/*pyx
+doc/build/
+marpa_cffi/__pycache__/
+site-packages/fuzzywuzzy/

@@ -1,7 +1,287 @@
+#another experiment, a bit higher level, tokenizer-less, and lemon-oriented
 
-from test2 import *
+from __future__ import unicode_literals
+from __future__ import print_function
 
-#class NumberMarpaStuff(object):
-#	def register_grammar(s):
+from collections import defaultdict
+from collections import namedtuple
 
-class FunctionDefinitionMarpaStuff(object):
+from marpa import *
+
+import sys; sys.path.append('..')
+from dotdict import dotdict
+from lemon_logger import topic, log
+from lemon_six import str_and_uni
+
+def ident(x):
+	assert len(x) == 1
+	return x[0]
+
+def join(args):
+	return ''.join(args)
+
+
+@topic('fresh')
+def fresh():
+	global rules, syms, g, known_chars, actions
+	rules = dotdict()
+	syms = dotdict()
+	g = Grammar()
+	known_chars = {}
+	actions = {} # per-rule valuator functions
+
+def symbol(name):
+	r = g.symbol_new()
+	assert name not in syms._dict
+	syms[name] = r
+	return r
+
+def symbol2name(s):
+	for k,v in syms._dict.items():
+		if v == s:
+			return k
+	assert False
+
+def rule2name(r):
+	for k,v in rules._dict.items():
+		if v == r:
+			return k
+	assert False
+
+
+def rule(name, lhs,rhs,action=ident):
+	assert type(name) in str_and_uni
+	assert name not in rules._dict
+	assert type(lhs) == symbol_int
+
+	if type(rhs) != list:
+		assert type(rhs) == symbol_int
+		rhs = [rhs]
+	r = rules[name] = g.rule_new(lhs, rhs)
+
+	if type(action) != tuple:
+		action = (action,)
+	actions[r] = action
+	return r
+
+def sequence(name, lhs, rhs, action=ident, separator=-1, min=1, proper=False,):
+	assert type(name) in str_and_uni
+	assert name not in rules._dict
+	assert type(lhs) == symbol_int
+
+	assert type(rhs) == symbol_int
+	r = rules[name] = g.sequence_new(lhs, rhs, separator, min, proper)
+
+	if type(action) != tuple:
+		action = (action,)
+	actions[r] = action
+	return r
+
+def known(char):
+	if not char in known_chars:
+		known_chars[char] = symbol(char)
+	return known_chars[char]
+
+
+def known_string(s):
+	rhs = [known(i) for i in s]
+	lhs = symbol(s)
+	rule(s, lhs, rhs, join)
+	return lhs
+
+
+@topic('test0')
+def test0():
+	symbol("banana")
+#	print syms.banana
+	try:
+		xxx = syms.orange
+		assert False
+	except KeyError:
+		pass
+	rule("banana_is_a_fruit", symbol('fruit'), syms.banana)
+	known('X')
+	known('Y')
+	rule( 'why',syms.X, syms.Y)
+	log("test0:", syms._dict, rules._dict)
+
+
+@topic('setup')
+def setup():
+	log("SETUP")
+
+	symbol('start')
+	symbol('any')
+	g.start_symbol_set(syms.start)
+	symbol('statement')
+	rule('start', syms.start, syms.statement)
+	symbol('expression')
+	rule('expression_is_statement', syms.statement, syms.expression)
+
+	symbol('digit')
+	symbol('digits')
+	for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
+		rule(i + "_is_a_digit",syms.digit, known(i))
+
+	sequence('digits_is_sequence_of_digit', syms.digits, syms.digit, join)
+	symbol('number')
+	rule('digits_is_number', syms.number, syms.digits, (ident, int))
+	rule('number_is_expression',syms.expression, syms.number)
+
+	#
+	#multiplication's syntax 1: ChildTag("A"), '*', ChildTag("B")
+	#register_grammar:
+	#	s.symbol = new_symbol()
+	#	rhs = []
+	#	for i in syntax:
+	#		if i.type == ChildTag:
+	#			rhs.append(s.ch[i.name].symbol)
+	#		if i.type == str:
+	#			rhs.append(known(i))
+	#		...
+
+	symbol('string_body')
+	symbol('string')
+	sequence('string_body_is_sequence_of_any', syms.string_body, syms.any)
+	rule('string', syms.string, [known("'"), syms.string_body, known("'")])
+	rule('string_is_expression', syms.expression, syms.string)
+
+	symbol('multiplication')
+	rule('multiplication', syms.multiplication, [syms.expression, known('*'), syms.expression], tuple)
+	rule('multiplication_is_expression',syms.expression, syms.multiplication)
+
+	symbol('do_x_times')
+	rule('do_x_times',syms.do_x_times, [known_string('do'), syms.expression, known_string('times:')], tuple)
+	#rule('do_x_times_is_expression',syms.expression, syms.do_x_times)
+	rule('do_x_times_is_statement',syms.statement, syms.do_x_times)
+
+
+
+
+
+
+
+
+def raw2tokens(raw):
+	tokens = []
+	for i, char in enumerate(raw):
+		if char in known_chars:
+			symid=known_chars[char]
+		else:
+			symid=syms.any
+		tokens.append(symid)
+	return tokens
+
+
+
+def test1(raw):
+	tokens = raw2tokens(raw)
+
+	g.precompute()
+
+	for i in syms._dict.items():
+		if not g.symbol_is_accessible(i[1]):
+			print ("inaccessible: %s (%s)"%i)
+
+	r = Recce(g)
+	r.start_input()
+
+	print ("TEST1")
+	print (g)
+	print (r)
+	
+	for i, sym in enumerate(tokens):
+		print (sym, i+1, symbol2name(sym),raw[i])
+		assert type(sym) == symbol_int
+		r.alternative_int(sym, i+1)
+		r.earleme_complete()
+	
+	log('ok')
+	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
+	tokens.insert(0,'dummy') 
+	
+	latest_earley_set_ID = r.latest_earley_set()
+	print ('latest_earley_set_ID=%s'%latest_earley_set_ID)
+
+	b = Bocage(r, latest_earley_set_ID)
+	o = Order(b)
+	tree = Tree(o)
+
+	import gc
+	for dummy in tree.nxt():
+		do_steps(tree, tokens, raw, rules)
+		gc.collect() #force an unref of the valuator and stuff so we can move on to the next tree
+
+
+
+
+@topic('do steps')
+def do_steps(tree, tokens, raw, rules):
+	stack = defaultdict((lambda:666))
+	stack2= defaultdict((lambda:666))
+	v = Valuator(tree)
+	babble = False
+	print()
+	print (v.v)
+	
+	while True:
+		s = v.step()
+		if babble:
+			print ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
+			print ("step:%s"%codes.steps2[s])
+		if s == lib.MARPA_STEP_INACTIVE:
+			break
+	
+		elif s == lib.MARPA_STEP_TOKEN:
+
+			pos = v.v.t_token_value - 1
+			sym = symbol_int(v.v.t_token_id)
+
+			assert v.v.t_result == v.v.t_arg_n
+
+			char = raw[pos]
+			where = v.v.t_result
+			if babble:
+				print ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
+			stack[where] = stack2[where] = char
+	
+		elif s == lib.MARPA_STEP_RULE:
+			r = v.v.t_rule_id
+			#print ("rule id:%s"%r)
+			if babble:
+				print ("rule:"+rule2name(r))
+			arg0 = v.v.t_arg_0
+			argn = v.v.t_arg_n
+
+			#args = [stack[i] for i in range(arg0, argn+1)]
+			#stack[arg0] = (rule2name(r), args)
+			
+			
+			args = [stack2[i] for i in range(arg0, argn+1)]
+
+			act = actions[r]
+			
+			sys.stdout.write(str(rule2name(r))+repr(args)+" "+str(act))
+			for i in act:
+				args = i(args)
+				sys.stdout.write( '->'+repr(args))
+			print()
+			stack2[arg0] = args
+
+
+	#print "tada:"+str(stack[0])
+	import json
+#	print ("tada:"+json.dumps(stack[0], indent=2))
+	print ("tada:"+json.dumps(stack2[0], indent=2))
+
+if __name__ == '__main__':
+	fresh()
+	test0()
+
+	fresh()
+	setup()
+	import operator
+	print ('syms:%s'%sorted(syms._dict.items(),key=operator.itemgetter(1)))
+	print ('rules:%s'%sorted(rules._dict.items(),key=operator.itemgetter(1)))
+	#test1('9321-82*7+6')
+	test1('do34*4times:')
