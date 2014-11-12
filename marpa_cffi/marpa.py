@@ -106,23 +106,20 @@ class Recce(object):
 	def __init__(s, g):
 		s.g = g
 		s.r = lib.marpa_r_new(g.g)
+		log(s.r)
 	def __del__(s):
 		lib.marpa_r_unref(s.r)
 	def start_input(s):
 		s.g.check_int(lib.marpa_r_start_input(s.r))
 	@topic('alternative')
-	def alternative(s, sym, val, length):
-		r = lib.marpa_r_alternative(s.r, sym, val, length)
-		if r != lib.MARPA_ERR_NONE:
-			log(codes.errors[r])
-	@topic('alternative int')
-	def alternative_int(s, sym, val, length=1):
+	def alternative(s, sym, val, length=1):
 		assert type(sym) == symbol_int
 		assert type(val) == int
 		
 		r = lib.marpa_r_alternative(s.r, sym, val, length)
 		if r != lib.MARPA_ERR_NONE:
-			log(codes.errors[r])
+			log(codes.errors[r][0] + " " + repr(codes.errors[r][1]) )
+
 	topic('earleme_complete')
 	def earleme_complete(s):
 		s.g.check_int(lib.marpa_r_earleme_complete(s.r))
@@ -163,7 +160,7 @@ class Valuator(object):
 	def __init__(s, tree):
 		s.g = tree.g
 		s.v = lib.marpa_v_new(tree.t)
-		#print s.v
+		log(s.v)
 	def __del__(s):
 		lib.marpa_v_unref(s.v)
 	def step(s):

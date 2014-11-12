@@ -16,7 +16,7 @@ debug = print
 
 topics = []
 
-do_topics = False
+do_topics = 1
 
 def topic(text=None):
 	"""decorator to put before your function with a logging topic"""

@@ -79,8 +79,9 @@ class HigherMarpa(object):
 	def known_string(s, string):
 		"""create a symbol for a string"""
 		rhs = [s.known(i) for i in string]
-		lhs = s.symbol(s)
-		s.rule(string, lhs, rhs, join)
+		debug_name = 'known_string %s when len=%s'%(string,len(s.syms._dict))
+		lhs = s.symbol(debug_name)
+		s.rule(debug_name, lhs, rhs, join)
 		return lhs
 
 	def set_start_symbol(s,start):

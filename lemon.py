@@ -197,6 +197,7 @@ def start():
 			something = root.root['lesh'].command_line
 		else:
 			something = root.root['some program'].ch.statements.items[1]
+
 		root.cursor_c, root.cursor_r = project.find(something, root.lines)
 		#root.cursor_c += 1
 	except Exception as e:

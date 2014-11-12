@@ -432,45 +432,44 @@ class WidgetedValuePersistenceStuff(object):
 
 # region marpa
 
-from marpa_cffi.marpa import *
-from marpa_cffi.higher import *
+try:
 
+	from marpa_cffi.marpa import *
+	from marpa_cffi.higher import *
+	marpa = True
+except Exception as e:
+	marpa = False
+	log(e)
+	log('no marpa, no parsing!')
 
-def parse(raw):
+def parse(raw): #just text now, list_of_texts_and_nodes later
 
-	tokens = raw2tokens(raw)
+	tokens = m.raw2tokens(raw)
 
-	r = Recce(g)
+	r = Recce(m.g)
 	r.start_input()
 
-	print ("TEST1")
-	print (g)
-	print (r)
-
 	for i, sym in enumerate(tokens):
-		print (sym, i+1, symbol2name(sym),raw[i])
+		log ("input:symid:%s val:%s name:%s raw:%s"%(sym, i+1, m.symbol2name(sym),raw[i]))
 		assert type(sym) == symbol_int
-		r.alternative_int(sym, i+1)
+		r.alternative(sym, i+1)
 		r.earleme_complete()
 
-	log('ok')
 	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
 	tokens.insert(0,'dummy')
 
 	latest_earley_set_ID = r.latest_earley_set()
-	print ('latest_earley_set_ID=%s'%latest_earley_set_ID)
+	log ('latest_earley_set_ID=%s'%latest_earley_set_ID)
 
 	b = Bocage(r, latest_earley_set_ID)
 	o = Order(b)
 	tree = Tree(o)
 
 	import gc
-	for dummy in tree.nxt():
-		do_steps(tree, tokens, raw, rules)
+	for _ in tree.nxt():
+		r=do_steps(tree, tokens, raw, m.rules)
 		gc.collect() #force an unref of the valuator and stuff so we can move on to the next tree
-
-
-
+		yield r
 
 @topic('do steps')
 def do_steps(tree, tokens, raw, rules):
@@ -478,14 +477,12 @@ def do_steps(tree, tokens, raw, rules):
 	stack2= defaultdict((lambda:666))
 	v = Valuator(tree)
 	babble = False
-	print()
-	print (v.v)
 
 	while True:
 		s = v.step()
 		if babble:
-			print ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
-			print ("step:%s"%codes.steps2[s])
+			log  ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
+			log ("step:%s"%codes.steps2[s])
 		if s == lib.MARPA_STEP_INACTIVE:
 			break
 
@@ -499,14 +496,14 @@ def do_steps(tree, tokens, raw, rules):
 			char = raw[pos]
 			where = v.v.t_result
 			if babble:
-				print ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
+				log ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
 			stack[where] = stack2[where] = char
 
 		elif s == lib.MARPA_STEP_RULE:
 			r = v.v.t_rule_id
 			#print ("rule id:%s"%r)
 			if babble:
-				print ("rule:"+rule2name(r))
+				log ("rule:"+rule2name(r))
 			arg0 = v.v.t_arg_0
 			argn = v.v.t_arg_n
 
@@ -514,22 +511,30 @@ def do_steps(tree, tokens, raw, rules):
 			#stack[arg0] = (rule2name(r), args)
 
 
-			args = [stack2[i] for i in range(arg0, argn+1)]
+			actions = m.actions[r]
 
-			act = actions[r]
 
-			sys.stdout.write(str(rule2name(r))+repr(args)+" "+str(act))
-			for i in act:
-				args = i(args)
-				sys.stdout.write( '->'+repr(args))
-			print()
-			stack2[arg0] = args
+			val = [stack2[i] for i in range(arg0, argn+1)]
+
+
+			debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
+
+			try:
+				for action in actions:
+					val = action(val)
+					debug_log += '->'+repr(val)
+			finally:
+				log(debug_log)
+
+			stack2[arg0] = val
 
 
 	#print "tada:"+str(stack[0])
-	import json
 #	print ("tada:"+json.dumps(stack[0], indent=2))
-	print ("tada:"+json.dumps(stack2[0], indent=2))
+	#log ("tada:"+json.dumps(stack2[0], indent=2))
+	res = stack2[0] # in position 0 is final result
+	log ("tada:"+repr(res))
+	return res
 
 
 m=666
@@ -562,7 +567,7 @@ def setup_grammar(root,scope):
 		#the property is accessed here, forcing the registering of the nodes grammars
 		sym = i.node_symbol
 		if sym != None:
-			m.rule(m.symbol2name(sym), m.syms.start, sym)
+			m.rule('start is %s' % m.symbol2name(sym), m.syms.start, sym)
 			#maybe could use an action to differentiate an "any node is a start" from ...from what?
 		if isinstance(i, NodeclBase):
 			sym = i.decl_symbol
@@ -587,14 +592,15 @@ class NodeMarpism(object):
 		s._node_symbol  = None
 	@property
 	def node_symbol(s):
-		log("gimme node_symbol")
+		#log("gimme node_symbol")
 		if s._node_symbol == None:
 			s.register_node_grammar()
 			pass
 		return s._node_symbol
 
 	def register_node_grammar(s):
-		log("default")
+		#log("default")
+		pass
 	@classmethod
 	def register_decl_grammar(cls):
 		pass
@@ -621,7 +627,7 @@ class NumberMarpism(object):
 
 		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
 		cls._decl_symbol = m.symbol('number')
-		m.rule('number_is_digits', cls._decl_symbol, m.syms.digits, (ident, int))
+		m.rule('number_is_digits', cls._decl_symbol, m.syms.digits, (ident, cls))
 
 class FunctionDefinitionBaseMarpism(object):
 	@topic ("FunctionDefinitionBase register_node_grammar")
@@ -633,8 +639,11 @@ class FunctionDefinitionBaseMarpism(object):
 			elif isinstance(i, TypedParameter):
 				#TypedParameter means its supposed to be an expression
 				a = b['expression'].node_symbol
+				assert a,  i
 			elif isinstance(i, UnevaluatedArgument):
 				a = deref_decl(i.type).instance_class.decl_symbol
+				assert a,  i
+			assert a,  i
 			rhs.append(a)
 		log('rhs:%s'%rhs)
 		s._node_symbol = m.symbol(repr(s))
@@ -645,8 +654,9 @@ class FunctionDefinitionBaseMarpism(object):
 
 class SyntacticCategoryMarpism(object):
 	def register_node_grammar(s):
-		s._symbol = lhs = symbol(
-			s.ch.name.pyval) # for example: 'Statement'
+		log(s)
+		s._node_symbol = lhs = m.symbol(
+			repr(s)) # for example: 'Statement'
 
 class WorksAsMarpism(object):
 	def register_node_grammar(s):
@@ -1997,7 +2007,7 @@ class EnumType(ParametricTypeBase):
 	def inst_fresh(s):
 		return EnumVal(s, 0)
 
-class SyntacticCategory(Syntaxed):
+class SyntacticCategory(SyntacticCategoryMarpism,Syntaxed):
 	help=['this is a syntactical category(?) of nodes, used for "statement" and "expression"']
 
 	def __init__(self, kids):
@@ -2661,16 +2671,40 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		else:
 			raise Exception("whats that shit, cowboy?")
 
+
+	def parser_stuff(s, scope):
+		if marpa == None:
+			return []
+		if len(s.items) != 1:
+			return []
+		it = s.items[0]
+		if isinstance(it, Node):
+			return []
+
+		log("SETUP GRAMMA")
+		setup_grammar(s.root, scope)
+		raw = it
+
+		r = []
+
+		parse_result = parse(it)
+		if parse_result  == None:
+			return []
+
+		for i in parse_result:
+			r.append(ParserMenuItem(i, 333))
+
+		return r
+
+
 	@topic("menu")
 	def menu_for_item(self, i=0, debug = False):
-		log("SETUP GRAMMA")
-		setup_grammar(self.root, self.scope())
 
 		if i == None:
 			if len(self.items) == 0:
 				text = ""
 			else:
-				return []
+				return []#this shouldnt happen
 		else:
 			if isinstance(self.items[i], Node):
 				text = ""
@@ -2678,11 +2712,16 @@ class Parser(ParserPersistenceStuff, ParserBase):
 				text = self.items[i]
 
 		scope = self.scope()
-		if BRY:
-			log(scope)
-		menu = flatten([x.palette(scope, text, self) for x in scope])
-		if BRY:
-			log(menu)
+
+		menu = []
+
+		if text != "":
+			menu += self.parser_stuff(scope)
+
+		log("%s parser results:%s"%(len(menu), [i.value for i in menu]))
+
+		menu += flatten([x.palette(scope, text, self) for x in scope])
+
 		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
 		#first lets search for things in scope that are already of that type
 		#for i in menu:
@@ -2730,7 +2769,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		menu.sort(key=lambda i: i.score)
 
 		if debug:
-			print ('MENU FOR:',text,"type:",self.type)
+			log('MENU FOR:',text,"type:",self.type)
 			[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
 
 		menu.append(DefaultParserMenuItem(text))
@@ -2748,6 +2787,7 @@ class ParserMenuItem(MenuItem):
 		self.value = value
 		value.parent = self
 		self.scores = dotdict()
+		if score != 0:  self.scores._ = score
 		self.brackets_color = (0,255,255)
 
 	@property
@@ -2760,6 +2800,15 @@ class ParserMenuItem(MenuItem):
 
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
+
+class DefaultParserMenuItem(MenuItem):
+	def __init__(self, text):
+		super(DefaultParserMenuItem, self).__init__()
+		self.text = text
+		self.brackets_color = (0,0,255)
+
+	def tags(self):
+		return [TextTag(self.text)]
 
 # region lesh command line
 
@@ -2935,14 +2984,6 @@ class LeshMenuItem(MenuItem):
 
 # endregion
 
-class DefaultParserMenuItem(MenuItem):
-	def __init__(self, text):
-		super(DefaultParserMenuItem, self).__init__()
-		self.text = text
-		self.brackets_color = (0,0,255)
-
-	def tags(self):
-		return [TextTag(self.text)]
 
 # region functions
 
@@ -3787,7 +3828,7 @@ Text("todo: smarter menu, better parser, save/load, a real language, fancy proje
 	#r.add(("lesh", Lesh()))
 	r["some program"] = b['module'].inst_fresh()
 	r["some program"].ch.statements.newline()
-
+	r['some program'].ch.statements.items[1].add("12")
 	#r["lemon console"] =b['module'].inst_fresh()
 	r["loaded program"] = Text("placeholder 01")
 
