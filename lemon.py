@@ -196,14 +196,14 @@ def start():
 		if args.lesh:
 			something = root.root['lesh'].command_line
 		else:
-			something = root.root['some program'].ch.statements.items[0]
+			something = root.root['some program'].ch.statements.items[1]
 		root.cursor_c, root.cursor_r = project.find(something, root.lines)
 		#root.cursor_c += 1
 	except Exception as e:
 		print (e.__repr__(), ", cant set initial cursor position")
 
-	import parser_test
-	parser_test.test(root.root['some program'].ch.statements.items[0])
+	#import parser_test
+	#parser_test.test(root.root['some program'].ch.statements.items[0])
 
 
 

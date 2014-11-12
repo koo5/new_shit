@@ -23,17 +23,19 @@ class Frame(object):
 #	def draw(self):
 
 	def __init__(s):
-		#s.rect = Rect((6,6,6,6))
-		s.lines = []
-		s.scroll_lines = 0
-		s._render_lines = {}#hack to satisfy project_elem()
+		s.lines = [] # lines actually on screen
+		s.scroll_lines = 0 # how many lines the user has scrolled
+		s._render_lines = {}#hack to satisfy project_elem(), not used here
 
 	def on_keypress(self, event):
 		return False
 
 	def project(s):
-		s.lines = project.project(s,
-		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:]
+		s.lines = project.project(s, # calls back our tags()
+		    s.cols, s,
+		    s.scroll_lines + s.rows  # bottom cut off
+		).lines[s.scroll_lines:] # top cut off
+
 
 	def under_cr(self, cr):
 		c,r = cr
@@ -59,7 +61,6 @@ class Frame(object):
 		s.scroll_lines += l
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
-
 
 
 class Root(Frame):
@@ -560,34 +561,32 @@ class FunkyLog(Frame):
 		return self.rect.w / font_width
 """
 
+import time
 
 class Log(InfoFrame):
 	def __init__(s):
 		super(Log, s).__init__(666)
 		s.items = []
+		s.projected = []
+		s.top_bar = [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle), "\n"]
+		s.cols = 20#maybe we should just postpone the rendering until update()
 
-	def tags(s):
-		yield [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle), "\n"]
-		for i in s.items[-s.rows-1+s.scroll_lines:]:
-			#if not s.hidden_toggle.value or i.visibility_toggle.value:
-				yield [ElementTag(i), "\n"]
-		yield [EndTag()]
-
-	def project(s):
-		s.lines = project.project(s,
-		    s.cols, s).lines[-s.rows-1  -s.scroll_lines:]
+	def render(s):
+		s.lines = (project.project_tags(s.top_bar, s.cols, s).lines +
+				s.projected[-s.rows-s.scroll_lines:][:s.rows])
+		#print len(s.projected)
 		#print s.rows, s.scroll_lines, len(s.lines), len([x for x in s.tags()])
-
-	def scroll(s,l):
-		s.scroll_lines += l
-
-	def add(s, text):
-
-		import time
-		text = time.strftime("%H:%M:%S:", time.localtime()) + text
-
-		s.items.append(InfoItem(text))
-		s.items = s.items[-30:]
 
 	def update(s):
 		pass
+
+	def add(s, text):
+		text = time.strftime("%H:%M:%S:", time.localtime()) + text
+		it = InfoItem(text)
+		s.items.append(it)
+		s.projected += project.project_tags([ColorTag("fg"), ElementTag(it)], s.cols, s).lines
+
+	def scroll(s,l):
+		s.scroll_lines -= l
+		if s.scroll_lines < 0:
+			s.scroll_lines = 0

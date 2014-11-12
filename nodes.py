@@ -19,7 +19,6 @@ nodecl can be thought of as a type, and objects pointing to them with their decl
 nodecls have a set of functions for instantiating the values, and those need some cleanup
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
-
 # region imports
 
 #http://python-future.org/
@@ -35,8 +34,6 @@ import sys
 sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
 
 from fuzzywuzzy import fuzz
-
-from marpa_cffi.marpa import *
 
 from collections import defaultdict
 import json
@@ -435,98 +432,9 @@ class WidgetedValuePersistenceStuff(object):
 
 # region marpa
 
+from marpa_cffi.marpa import *
+from marpa_cffi.higher import *
 
-
-
-def ident(x):
-	assert len(x) == 1
-	return x[0]
-
-def join(args):
-	return ''.join(args)
-
-
-@topic('fresh')
-def fresh_grammar():
-	global rules, syms, g, known_chars, actions
-	rules = dotdict()
-	syms = dotdict()
-	g = Grammar()
-	known_chars = {}
-	actions = {} # per-rule valuator callbacks (functions that the parser steps loop calls to actually create basic values or Nodes from lists of values or child nodes
-
-def symbol(name):
-	r = g.symbol_new()
-	assert name not in syms._dict
-	syms[name] = r
-	return r
-
-def symbol2name(s):
-	for k,v in syms._dict.items():
-		if v == s:
-			return k
-	assert False
-
-def rule2name(r):
-	for k,v in rules._dict.items():
-		if v == r:
-			return k
-	assert False
-
-
-def rule(name, lhs,rhs,action=ident):
-	assert type(name) in str_and_uni
-	assert name not in rules._dict
-	assert type(lhs) == symbol_int
-
-	if type(rhs) != list:
-		assert type(rhs) == symbol_int
-		rhs = [rhs]
-	r = rules[name] = g.rule_new(lhs, rhs)
-
-	if type(action) != tuple:
-		action = (action,)
-	actions[r] = action
-	return r
-
-def sequence(name, lhs, rhs, action=ident, separator=-1, min=1, proper=False,):
-	assert type(name) in str_and_uni
-	assert name not in rules._dict
-	assert type(lhs) == symbol_int
-
-	assert type(rhs) == symbol_int
-	r = rules[name] = g.sequence_new(lhs, rhs, separator, min, proper)
-
-	if type(action) != tuple:
-		action = (action,)
-	actions[r] = action
-	return r
-
-def known(char):
-	if not char in known_chars:
-		known_chars[char] = symbol(char)
-	return known_chars[char]
-
-
-def known_string(s):
-	rhs = [known(i) for i in s]
-	lhs = symbol(s)
-	rule(s, lhs, rhs, join)
-	return lhs
-
-def set_start(start):
-	g.start_symbol_set(start)
-
-
-def raw2tokens(raw):
-	tokens = []
-	for i, char in enumerate(raw):
-		if char in known_chars:
-			symid=known_chars[char]
-		else:
-			symid=syms.any
-		tokens.append(symid)
-	return tokens
 
 def parse(raw):
 
@@ -624,61 +532,96 @@ def do_steps(tree, tokens, raw, rules):
 	print ("tada:"+json.dumps(stack2[0], indent=2))
 
 
+m=666
+
+def uniq(x):
+   r = []
+   for i in x:
+       if i not in r:
+           r.append(i)
+   return r
 
 @topic ('setup_grammar')
-def setup_grammar(scope):
-	fresh_grammar()
+def setup_grammar(root,scope):
+	global m
 
-	log(scope)
+	#my eyes bleed...
+	for i in root.flatten():
+		if isinstance(i, NodeclBase):
+			i.instance_class._decl_symbol = None
+		i._node_symbol = None
+
+	m = HigherMarpa()
+
+	m.symbol('start')
+
+	assert scope == uniq(scope)
 	for i in scope:
-		_ = i.node_symbol
-		if isinstance(i, Nodecl):
-			_ = i.decl_symbol
+		if isinstance(i, FunctionDefinitionBase):
+			log("WUT")
+		#the property is accessed here, forcing the registering of the nodes grammars
+		sym = i.node_symbol
+		if sym != None:
+			m.rule(m.symbol2name(sym), m.syms.start, sym)
+			#maybe could use an action to differentiate an "any node is a start" from ...from what?
+		if isinstance(i, NodeclBase):
+			sym = i.decl_symbol
+			if sym != None:
+				log(sym)
+				m.rule("start_is_"+m.symbol2name(sym), m.syms.start, sym)
+				log("m.rule(m.symbol2name(sym), m.syms.start, sym)")
 
-	log(rules)
+	m.set_start_symbol(m.syms.start)
 
-	#g.precompute()
+	m.print_syms()
+	m.print_rules()
 
-	#for i in syms._dict.items():
-	#	if not g.symbol_is_accessible(i[1]):
-	#		print ("inaccessible: %s (%s)"%i)
+	m.g.precompute()
 
+	m.check_accessibility()
 
 class NodeMarpism(object):
+	_decl_symbol = None
 	def __init__(s):
 		super(NodeMarpism, s).__init__()
 		s._node_symbol  = None
 	@property
 	def node_symbol(s):
+		log("gimme node_symbol")
 		if s._node_symbol == None:
-			s._node_symbol = s.register_node_grammar()
+			s.register_node_grammar()
+			pass
 		return s._node_symbol
+
 	def register_node_grammar(s):
-		pass
-	def register_decl_grammar(s):
+		log("default")
+	@classmethod
+	def register_decl_grammar(cls):
 		pass
 
 class NodeclBaseMarpism(object):
 	def __init__(s):
 		super(NodeclBaseMarpism, s).__init__()
-		s._decl_symbol = None
 	@property
 	def decl_symbol(s):
-		if s._decl_symbol == None:
-			s._decl_symbol = s.instance_class.register_decl_grammar()
-		return s._decl_symbol
+		#log("getting decl_symbol")
+		if s.instance_class._decl_symbol == None:
+			s.instance_class.register_decl_grammar()
+		#log("returning %s"%s.instance_class._decl_symbol)
+		return s.instance_class._decl_symbol
 
 class NumberMarpism(object):
-	def register_decl_grammar(s):
-		symbol('digit')
-		symbol('digits')
+	@classmethod
+	def register_decl_grammar(cls):
+		log("registering number grammar for class %s"%cls)
+		m.symbol('digit')
+		m.symbol('digits')
 		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
-			rule(i + "_is_a_digit",syms.digit, known(i))
+			m.rule(i + "_is_a_digit",m.syms.digit, m.known(i))
 
-		sequence('digits_is_sequence_of_digit', syms.digits, syms.digit, join)
-		s._decl_symbol = symbol('number')
-		rule('number_is_digits', s._decl_symbol, syms.digits, (ident, int))
-
+		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
+		cls._decl_symbol = m.symbol('number')
+		m.rule('number_is_digits', cls._decl_symbol, m.syms.digits, (ident, int))
 
 class FunctionDefinitionBaseMarpism(object):
 	@topic ("FunctionDefinitionBase register_node_grammar")
@@ -686,16 +629,16 @@ class FunctionDefinitionBaseMarpism(object):
 		rhs = []
 		for i in s.sig:
 			if type(i) == Text:
-				a = known_string(i.pyval)
+				a = m.known_string(i.pyval)
 			elif isinstance(i, TypedParameter):
 				#TypedParameter means its supposed to be an expression
-				a = b['expression'].get_symbol()
+				a = b['expression'].node_symbol
 			elif isinstance(i, UnevaluatedArgument):
-				a = i.type.instance_class.get_symbol()
+				a = deref_decl(i.type).instance_class.decl_symbol
 			rhs.append(a)
-			log('rhs:%s'%rhs)
-			s._symbol = symbol()
-			rule(s._symbol, rhs, s.marpa_make_call)
+		log('rhs:%s'%rhs)
+		s._node_symbol = m.symbol(repr(s))
+		m.rule(str(s), s._node_symbol, rhs, s.marpa_make_call)
 	def marpa_make_call(s, args):
 		'gets an array of argument nodes, presumably'
 		return FunctionCall(s)
@@ -2480,7 +2423,7 @@ class ParserBase(Node):
 				s.type_tree(s.type, s.scope())
 				return True
 			if e.key == K_RETURN:
-				setup_grammar(s.scope())
+
 
 				return True
 			else:
@@ -2720,6 +2663,8 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 	@topic("menu")
 	def menu_for_item(self, i=0, debug = False):
+		log("SETUP GRAMMA")
+		setup_grammar(self.root, self.scope())
 
 		if i == None:
 			if len(self.items) == 0:
@@ -3061,7 +3006,7 @@ build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
 
 
 
-class FunctionDefinitionBase(Syntaxed, FunctionDefinitionBaseMarpism):
+class FunctionDefinitionBase(FunctionDefinitionBaseMarpism, Syntaxed):
 
 	def __init__(self, kids):
 		super(FunctionDefinitionBase, self).__init__(kids)

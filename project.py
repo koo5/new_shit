@@ -66,7 +66,7 @@ def attadd(atts, key, val):
 
 class projection_results(object):
 	"""parameters, state and results of projection"""
-	__slots__ = "width indent_width atts lines arrows indent frame char_index rows_limit".split()
+	__slots__ = "width indent_width atts lines arrows indent frame char_index rows_limit _render_lines".split()
 
 	def __init__(s, cols, frame, rows_limit):
 		s.width = cols
@@ -78,7 +78,7 @@ class projection_results(object):
 		s.frame = frame
 		s.char_index = 0
 		s.rows_limit = rows_limit
-
+		s._render_lines = None
 
 
 # endregion
@@ -108,7 +108,7 @@ def project(root, cols, frame, rows_limit = False):
 
 def project_tags(tags, cols, frame, rows_limit = False):
 	p = projection_results(cols, frame, rows_limit)
-	p._render_lines = {frame:[{}]}
+	p._render_lines = {frame:[{}]}#?
 	_project_tags(p, p, tags)
 	return p
 
@@ -146,19 +146,18 @@ def _project_tags(p, elem, tag):
 	#		if _project_tags(p, elem, t) == DONE:
 	#			return DONE
 
-	try:
-		ee = None
+
+	try:#lets try if we can iterate over tag (hard to tell if its a list, generator or wut and how)
+		expecting_exception_now = True
 		for t in tag:
-			try:
-				if _project_tags(p, elem, t) == DONE:
-					return DONE
-			except TypeError as e:
-				ee = e
-				raise e
+			expecting_exception_now = False
+			if _project_tags(p, elem, t) == DONE:
+				return DONE
 		return
-	except TypeError as e:
-		if e is ee:
-			raise e
+	except:
+		if not expecting_exception_now:
+			raise
+		#otherwise pass
 
 	if type(tag) == ChildTag:
 			#assert(isinstance(elem, assnodes.Node))
@@ -192,7 +191,7 @@ def _project_tags(p, elem, tag):
 		p.arrows.append((len(p.lines[-1]), len(p.lines) - 1, tag.target))
 
 	else:
-		raise Exception("is %s a tag?" % repr(tag))
+		raise Exception("is %s a tag?, %s" % (repr(tag), elem))
 
 
 def _project_string(p, tag, elem):

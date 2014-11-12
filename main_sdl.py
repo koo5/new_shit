@@ -73,7 +73,7 @@ def resize(size):
 	screen_width, screen_height = screen_surface.get_size()
 	
 def resize_frames():
-	lemon.logframe.rect.height = log_height = 110
+	lemon.logframe.rect.height = log_height = args.log_height * font_height
 	lemon.logframe.rect.width = screen_width
 	lemon.logframe.rect.topleft = (0, screen_height - log_height)
 

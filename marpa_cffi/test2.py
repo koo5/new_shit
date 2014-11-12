@@ -177,6 +177,7 @@ def raw2tokens(raw):
 def test1(raw):
 	tokens = raw2tokens(raw)
 
+	g.start_symbol_set(syms.number)
 	g.precompute()
 
 	for i in syms._dict.items():
