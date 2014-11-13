@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-
-
 """
 take a list of tags (see tags.py) or an element and render everything into
 lines of tuples containing characters to be displayed on screen and their
 attributes (most importantly the element the char belongs to and color)
 line is a list of tuples: (character, attributes)
 """
+
+from __future__ import unicode_literals
+
+
 from lemon_six import str_and_uni
 from tags import *
 from lemon_logger import ping, log
@@ -19,10 +20,12 @@ if __debug__:
 	import element as asselement
 	import nodes as assnodes
 
+#__slow_debug__ = False #todo:lemon_options?
+
 # region utils
 
-def squash(l):
-	"""squash a stack of tuples into a single dict"""
+#def squash(l):
+#	"""squash a stack of tuples into a single dict"""
 #	ping()
 #	if __debug__:
 #		assert(isinstance(l, list))
@@ -35,13 +38,15 @@ def squash(l):
 #	for i in l:
 #		r[i[0]] = i[1]
 #	return r
-	return dict(l)
+#	return dict(l)
+squash = dict
 
 def test_squash():
 	assert squash([("a", 1), ("b", 2), ("a", 3)]) == {"a": 3, "b": 2}
 
 
-DONE = 1
+DONE = 1#kinda an enum
+
 def newline(p, elem):
 	if p.rows_limit and len(p.lines) == p.rows_limit:
 		return DONE

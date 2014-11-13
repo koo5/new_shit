@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 
 this file defines the AST classes of the language and everything around it.
@@ -19,6 +20,7 @@ nodecl can be thought of as a type, and objects pointing to them with their decl
 nodecls have a set of functions for instantiating the values, and those need some cleanup
 and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
+
 # region imports
 
 #http://python-future.org/
@@ -108,9 +110,289 @@ def make_dict(key_type_name, val_type_name):
 def make_dict_from_anything_to_anything():
 	return make_dict('anything', 'anything')
 
+def new_module():
+	return b['module'].inst_fresh()
+
+def is_flat(l):
+	return flatten(l) == l
+
+def to_lemon(x):
+	r = _to_lemon(x)
+	log ("to-lemon(%s) -> %s"%(x,r))
+	return r
+
+def _to_lemon(x):
+	if isinstance(x, str_and_uni):
+		return Text(x)
+	elif isinstance(x, bool):
+		if x:
+			return EnumVal(b['bool'], 1)
+		else:
+			return EnumVal(b['bool'], 0)
+	elif isinstance(x, (int, float)):
+		return Number(x)
+	elif isinstance(x, dict):
+		r = dict_from_to('anything', 'anything').inst_fresh()
+		r.pyval = x
+		return r
+	elif isinstance(x, list):
+		r = list_of('anything').inst_fresh()
+		r.pyval = x
+		return r
+	else:
+		raise Exception("i dunno how to convert %s"%repr(x))
+	#elif isinstance(x, list):
+
 class Children(dotdict):
 	"""this is the "ch" of Syntaxed nodes"""
 	pass
+
+# endregion
+
+# region marpa
+
+try:
+
+	from marpa_cffi.marpa import *
+	from marpa_cffi.higher import *
+	marpa = True
+except Exception as e:#todo:some specific cffi exception
+	marpa = False
+	log(e)
+	log('no marpa, no parsing!')
+
+
+def parse(raw): #just text now, list_of_texts_and_nodes later
+
+	tokens = m.raw2tokens(raw)
+
+	r = Recce(m.g)
+	r.start_input()
+
+	for i, sym in enumerate(tokens):
+		log ("input:symid:%s val:%s name:%s raw:%s"%(sym, i+1, m.symbol2name(sym),raw[i]))
+		assert type(sym) == symbol_int
+		r.alternative(sym, i+1)
+		r.earleme_complete()
+
+	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
+	tokens.insert(0,'dummy')
+
+	latest_earley_set_ID = r.latest_earley_set()
+	log ('latest_earley_set_ID=%s'%latest_earley_set_ID)
+
+	try:
+		b = Bocage(r, latest_earley_set_ID)
+	except:
+		return
+	o = Order(b)
+	tree = Tree(o)
+
+	import gc
+	for _ in tree.nxt():
+		r=do_steps(tree, tokens, raw, m.rules)
+		gc.collect() #force an unref of the valuator and stuff so we can move on to the next tree
+		yield r
+
+@topic('do steps')
+def do_steps(tree, tokens, raw, rules):
+	stack = defaultdict((lambda:666))
+	stack2= defaultdict((lambda:666))
+	v = Valuator(tree)
+	babble = False
+
+	while True:
+		s = v.step()
+		if babble:
+			log  ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
+			log ("step:%s"%codes.steps2[s])
+		if s == lib.MARPA_STEP_INACTIVE:
+			break
+
+		elif s == lib.MARPA_STEP_TOKEN:
+
+			pos = v.v.t_token_value - 1
+			sym = symbol_int(v.v.t_token_id)
+
+			assert v.v.t_result == v.v.t_arg_n
+
+			char = raw[pos]
+			where = v.v.t_result
+			if babble:
+				log ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
+			stack[where] = stack2[where] = char
+
+		elif s == lib.MARPA_STEP_RULE:
+			r = v.v.t_rule_id
+			#print ("rule id:%s"%r)
+			if babble:
+				log ("rule:"+rule2name(r))
+			arg0 = v.v.t_arg_0
+			argn = v.v.t_arg_n
+
+			#args = [stack[i] for i in range(arg0, argn+1)]
+			#stack[arg0] = (rule2name(r), args)
+
+
+			actions = m.actions[r]
+
+
+			val = [stack2[i] for i in range(arg0, argn+1)]
+
+
+			debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
+
+			try:
+				for action in actions:
+					val = action(val)
+					debug_log += '->'+repr(val)
+			finally:
+				log(debug_log)
+
+			stack2[arg0] = val
+
+
+	#print "tada:"+str(stack[0])
+#	print ("tada:"+json.dumps(stack[0], indent=2))
+	#log ("tada:"+json.dumps(stack2[0], indent=2))
+	res = stack2[0] # in position 0 is final result
+	log ("tada:"+repr(res))
+	return res
+
+
+m=666
+
+def uniq(x):
+   r = []
+   for i in x:
+       if i not in r:
+           r.append(i)
+   return r
+
+@topic ('setup_grammar')
+def setup_grammar(root,scope):
+	global m
+
+	#my eyes bleed...
+	for i in root.flatten():
+		if isinstance(i, NodeclBase):
+			i.instance_class._decl_symbol = None
+		i._node_symbol = None
+
+	m = HigherMarpa()
+
+	m.symbol('start')
+	m.symbol('any')
+
+	assert scope == uniq(scope)
+	for i in scope:
+		if isinstance(i, FunctionDefinitionBase):
+			log("WUT")
+		#the property is accessed here, forcing the registering of the nodes grammars
+		sym = i.node_symbol
+		if sym != None:
+			m.rule('start is %s' % m.symbol2name(sym), m.syms.start, sym)
+			#maybe could use an action to differentiate an "any node is a start" from ...from what?
+		if isinstance(i, NodeclBase):
+			sym = i.decl_symbol
+			if sym != None:
+				log(sym)
+				m.rule("start_is_"+m.symbol2name(sym), m.syms.start, sym)
+				log("m.rule(m.symbol2name(sym), m.syms.start, sym)")
+
+	m.set_start_symbol(m.syms.start)
+
+	m.print_syms()
+	m.print_rules()
+
+	m.g.precompute()
+
+	m.check_accessibility()
+
+class NodeMarpism(object):
+	_decl_symbol = None
+	def __init__(s):
+		super(NodeMarpism, s).__init__()
+		s._node_symbol  = None
+	@property
+	def node_symbol(s):
+		#log("gimme node_symbol")
+		if s._node_symbol == None:
+			s.register_node_grammar()
+			pass
+		return s._node_symbol
+
+	def register_node_grammar(s):
+		#log("default")
+		pass
+	@classmethod
+	def register_decl_grammar(cls):
+		pass
+
+class NodeclBaseMarpism(object):
+	def __init__(s):
+		super(NodeclBaseMarpism, s).__init__()
+	@property
+	def decl_symbol(s):
+		#log("getting decl_symbol")
+		if s.instance_class._decl_symbol == None:
+			s.instance_class.register_decl_grammar()
+		#log("returning %s"%s.instance_class._decl_symbol)
+		return s.instance_class._decl_symbol
+
+class NumberMarpism(object):
+	@classmethod
+	def register_decl_grammar(cls):
+		log("registering number grammar for class %s"%cls)
+		m.symbol('digit')
+		m.symbol('digits')
+		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
+			m.rule(i + "_is_a_digit",m.syms.digit, m.known(i))
+
+		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
+		cls._decl_symbol = m.symbol('number')
+		m.rule('number_is_digits', cls._decl_symbol, m.syms.digits, (ident, cls))
+
+class FunctionDefinitionBaseMarpism(object):
+	@topic ("FunctionDefinitionBase register_node_grammar")
+	def register_node_grammar(s):
+		rhs = []
+		for i in s.sig:
+			if type(i) == Text:
+				a = m.known_string(i.pyval)
+			elif isinstance(i, TypedParameter):
+				#TypedParameter means its supposed to be an expression
+				a = b['expression'].node_symbol
+				assert a,  i
+			elif isinstance(i, UnevaluatedArgument):
+				a = deref_decl(i.type).instance_class.decl_symbol
+				assert a,  i
+			assert a,  i
+			rhs.append(a)
+		log('rhs:%s'%rhs)
+		s._node_symbol = m.symbol(repr(s))
+		m.rule(str(s), s._node_symbol, rhs, s.marpa_make_call)
+	def marpa_make_call(s, args):
+		'gets an array of argument nodes, presumably'
+		return FunctionCall(s)
+
+class SyntacticCategoryMarpism(object):
+	def register_node_grammar(s):
+		log(s)
+		s._node_symbol = lhs = m.symbol(
+			repr(s)) # for example: 'Statement'
+
+class WorksAsMarpism(object):
+	def register_node_grammar(s):
+		s._symbol = lhs = symbol(
+			s.ch.sup.name) # for example: 'Statement'
+		rhs = symbol(
+			s.ch.sub.name) # for example: 'Expression'
+		rule(lhs, rhs)
+
+def destroy_all_symbols():
+	for i in root.flatten():
+		i._symbol = None
 
 # endregion
 
@@ -125,7 +407,7 @@ def deserialize(data, parent):
 	parent is a dummy node placed at the point where the deserialized node should go,
 	this makes things like List.above() work while getting scope
 	"""
-	
+
 	if 'resolve' in data:
 		return resolve(data, parent)
 	if not 'decl' in data:
@@ -202,7 +484,7 @@ def resolve(data, parent):
 					if i.name == name:
 						return i
 			raise DeserializationException("node not found: %s ,decl: %s"%(data,decl))
-	
+
 	elif 'class' in data:
 		name = data['name']
 		c = data['class']
@@ -211,11 +493,11 @@ def resolve(data, parent):
 			if i.__class__.__name__.lower()  == c and i.name == name:
 				return i
 		raise DeserializationException("node with name %s and class %s not found"%(name,c))
-	
+
 	else:
 		raise DeserializationException("dunno how to resolve %s" % data)
-	
-			
+
+
 #these PersistenceStuff classes are just bunches of functions
 #that could as well be in the node classes themselves,
 #the separation doesnt have any function besides having them all
@@ -427,252 +709,6 @@ class WidgetedValuePersistenceStuff(object):
 		r.text = data['text']
 		r.parent = parent
 		return r
-
-# endregion
-
-# region marpa
-
-try:
-
-	from marpa_cffi.marpa import *
-	from marpa_cffi.higher import *
-	marpa = True
-except Exception as e:#todo:some specific cffi exception
-	marpa = False
-	log(e)
-	log('no marpa, no parsing!')
-
-
-def parse(raw): #just text now, list_of_texts_and_nodes later
-
-	tokens = m.raw2tokens(raw)
-
-	r = Recce(m.g)
-	r.start_input()
-
-	for i, sym in enumerate(tokens):
-		log ("input:symid:%s val:%s name:%s raw:%s"%(sym, i+1, m.symbol2name(sym),raw[i]))
-		assert type(sym) == symbol_int
-		r.alternative(sym, i+1)
-		r.earleme_complete()
-
-	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
-	tokens.insert(0,'dummy')
-
-	latest_earley_set_ID = r.latest_earley_set()
-	log ('latest_earley_set_ID=%s'%latest_earley_set_ID)
-
-	try:
-		b = Bocage(r, latest_earley_set_ID)
-	except:
-		return
-	o = Order(b)
-	tree = Tree(o)
-
-	import gc
-	for _ in tree.nxt():
-		r=do_steps(tree, tokens, raw, m.rules)
-		gc.collect() #force an unref of the valuator and stuff so we can move on to the next tree
-		yield r
-
-@topic('do steps')
-def do_steps(tree, tokens, raw, rules):
-	stack = defaultdict((lambda:666))
-	stack2= defaultdict((lambda:666))
-	v = Valuator(tree)
-	babble = False
-
-	while True:
-		s = v.step()
-		if babble:
-			log  ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
-			log ("step:%s"%codes.steps2[s])
-		if s == lib.MARPA_STEP_INACTIVE:
-			break
-
-		elif s == lib.MARPA_STEP_TOKEN:
-
-			pos = v.v.t_token_value - 1
-			sym = symbol_int(v.v.t_token_id)
-
-			assert v.v.t_result == v.v.t_arg_n
-
-			char = raw[pos]
-			where = v.v.t_result
-			if babble:
-				log ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
-			stack[where] = stack2[where] = char
-
-		elif s == lib.MARPA_STEP_RULE:
-			r = v.v.t_rule_id
-			#print ("rule id:%s"%r)
-			if babble:
-				log ("rule:"+rule2name(r))
-			arg0 = v.v.t_arg_0
-			argn = v.v.t_arg_n
-
-			#args = [stack[i] for i in range(arg0, argn+1)]
-			#stack[arg0] = (rule2name(r), args)
-
-
-			actions = m.actions[r]
-
-
-			val = [stack2[i] for i in range(arg0, argn+1)]
-
-
-			debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
-
-			try:
-				for action in actions:
-					val = action(val)
-					debug_log += '->'+repr(val)
-			finally:
-				log(debug_log)
-
-			stack2[arg0] = val
-
-
-	#print "tada:"+str(stack[0])
-#	print ("tada:"+json.dumps(stack[0], indent=2))
-	#log ("tada:"+json.dumps(stack2[0], indent=2))
-	res = stack2[0] # in position 0 is final result
-	log ("tada:"+repr(res))
-	return res
-
-
-m=666
-
-def uniq(x):
-   r = []
-   for i in x:
-       if i not in r:
-           r.append(i)
-   return r
-
-@topic ('setup_grammar')
-def setup_grammar(root,scope):
-	global m
-
-	#my eyes bleed...
-	for i in root.flatten():
-		if isinstance(i, NodeclBase):
-			i.instance_class._decl_symbol = None
-		i._node_symbol = None
-
-	m = HigherMarpa()
-
-	m.symbol('start')
-
-	assert scope == uniq(scope)
-	for i in scope:
-		if isinstance(i, FunctionDefinitionBase):
-			log("WUT")
-		#the property is accessed here, forcing the registering of the nodes grammars
-		sym = i.node_symbol
-		if sym != None:
-			m.rule('start is %s' % m.symbol2name(sym), m.syms.start, sym)
-			#maybe could use an action to differentiate an "any node is a start" from ...from what?
-		if isinstance(i, NodeclBase):
-			sym = i.decl_symbol
-			if sym != None:
-				log(sym)
-				m.rule("start_is_"+m.symbol2name(sym), m.syms.start, sym)
-				log("m.rule(m.symbol2name(sym), m.syms.start, sym)")
-
-	m.set_start_symbol(m.syms.start)
-
-	m.print_syms()
-	m.print_rules()
-
-	m.g.precompute()
-
-	m.check_accessibility()
-
-class NodeMarpism(object):
-	_decl_symbol = None
-	def __init__(s):
-		super(NodeMarpism, s).__init__()
-		s._node_symbol  = None
-	@property
-	def node_symbol(s):
-		#log("gimme node_symbol")
-		if s._node_symbol == None:
-			s.register_node_grammar()
-			pass
-		return s._node_symbol
-
-	def register_node_grammar(s):
-		#log("default")
-		pass
-	@classmethod
-	def register_decl_grammar(cls):
-		pass
-
-class NodeclBaseMarpism(object):
-	def __init__(s):
-		super(NodeclBaseMarpism, s).__init__()
-	@property
-	def decl_symbol(s):
-		#log("getting decl_symbol")
-		if s.instance_class._decl_symbol == None:
-			s.instance_class.register_decl_grammar()
-		#log("returning %s"%s.instance_class._decl_symbol)
-		return s.instance_class._decl_symbol
-
-class NumberMarpism(object):
-	@classmethod
-	def register_decl_grammar(cls):
-		log("registering number grammar for class %s"%cls)
-		m.symbol('digit')
-		m.symbol('digits')
-		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
-			m.rule(i + "_is_a_digit",m.syms.digit, m.known(i))
-
-		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
-		cls._decl_symbol = m.symbol('number')
-		m.rule('number_is_digits', cls._decl_symbol, m.syms.digits, (ident, cls))
-
-class FunctionDefinitionBaseMarpism(object):
-	@topic ("FunctionDefinitionBase register_node_grammar")
-	def register_node_grammar(s):
-		rhs = []
-		for i in s.sig:
-			if type(i) == Text:
-				a = m.known_string(i.pyval)
-			elif isinstance(i, TypedParameter):
-				#TypedParameter means its supposed to be an expression
-				a = b['expression'].node_symbol
-				assert a,  i
-			elif isinstance(i, UnevaluatedArgument):
-				a = deref_decl(i.type).instance_class.decl_symbol
-				assert a,  i
-			assert a,  i
-			rhs.append(a)
-		log('rhs:%s'%rhs)
-		s._node_symbol = m.symbol(repr(s))
-		m.rule(str(s), s._node_symbol, rhs, s.marpa_make_call)
-	def marpa_make_call(s, args):
-		'gets an array of argument nodes, presumably'
-		return FunctionCall(s)
-
-class SyntacticCategoryMarpism(object):
-	def register_node_grammar(s):
-		log(s)
-		s._node_symbol = lhs = m.symbol(
-			repr(s)) # for example: 'Statement'
-
-class WorksAsMarpism(object):
-	def register_node_grammar(s):
-		s._symbol = lhs = symbol(
-			s.ch.sup.name) # for example: 'Statement'
-		rhs = symbol(
-			s.ch.sub.name) # for example: 'Expression'
-		rule(lhs, rhs)
-
-def destroy_all_symbols():
-	for i in root.flatten():
-		i._symbol = None
 
 # endregion
 
@@ -2286,6 +2322,8 @@ class Filter(Syntaxed):
 """
 # endregion
 
+# region parser
+
 class ParserBase(Node):
 
 	"""
@@ -2577,8 +2615,6 @@ class ParserBase(Node):
 		s.items[s.items.index(child)] = new
 		s.fix_parents()
 
-
-
 class Parser(ParserPersistenceStuff, ParserBase):
 	"""the awkward input node AKA the Beast.
 	im thinking about rewriting the items into nodes again.
@@ -2784,7 +2820,6 @@ class Parser(ParserPersistenceStuff, ParserBase):
 	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
-
 class ParserMenuItem(MenuItem):
 	def __init__(self, value, score = 0):
 		super(ParserMenuItem, self).__init__()
@@ -2988,6 +3023,7 @@ class LeshMenuItem(MenuItem):
 
 # endregion
 
+# endregion
 
 # region functions
 
@@ -3487,7 +3523,6 @@ def add_operators():
 		return list(range(min, max + 1))
 	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
 		num_list(), name = "range", note="inclusive")
-
 add_operators()
 
 # region regexes
@@ -3735,9 +3770,6 @@ def editor_load_file(name):
 
 # endregion
 
-# region objects
-# endregion
-
 # region lesh
 class Lesh(Node):
 	"""just another experiment: independent of the lemon language,
@@ -3803,9 +3835,6 @@ class LeshSnippet(Node):
 #todo: alt insert mode
 #todo: split on pipes
 # endregion
-
-def new_module():
-	return b['module'].inst_fresh()
 
 @topic ("make_root")
 def make_root():
@@ -3894,37 +3923,7 @@ def test_serialization(r):
 	s = c.serialize()
 	print("serialized:",s)
 
-def to_lemon(x):
-	r = _to_lemon(x)
-	log ("to-lemon(%s) -> %s"%(x,r))
-	return r
-
-def _to_lemon(x):
-	if isinstance(x, str_and_uni):
-		return Text(x)
-	elif isinstance(x, bool):
-		if x:
-			return EnumVal(b['bool'], 1)
-		else:
-			return EnumVal(b['bool'], 0)
-	elif isinstance(x, (int, float)):
-		return Number(x)
-	elif isinstance(x, dict):
-		r = dict_from_to('anything', 'anything').inst_fresh()
-		r.pyval = x
-		return r
-	elif isinstance(x, list):
-		r = list_of('anything').inst_fresh()
-		r.pyval = x
-		return r
-	else:
-		raise Exception("i dunno how to convert %s"%repr(x))
-	#elif isinstance(x, list):
-
-
-def is_flat(l):
-	return flatten(l) == l
-
+# region unipycation
 """
 
 #import uni
@@ -3937,6 +3936,7 @@ def ph_to_lemon(x):
 if __name__ == "__main__":
 	print "testing.."
 	e = uni.Engine("""
+
 """
 
 do(1, A) :-
@@ -3949,6 +3949,7 @@ do(1, A) :-
 	print [x for x in e.db.do.iter(1, None)]
 """
 
+# endregion
 
 """
 #todo: totally custom node:
@@ -3977,10 +3978,11 @@ lemon console node to run them from
 todo:pip search hjson
 #todo:xiki style terminal, standard terminal. Both favoring UserCommands
 #first user command: commit all and push;)
+
+todo:rename FunctionDefinition to Defun, FunctionCall to Call, maybe remove "Stuff"s
 """
 
-
-
+# region more nodes
 class Serialized(Syntaxed):
 	def __init__(self, kids):
 		#self.status = widgets.Text(self, "(status)")
@@ -4002,15 +4004,12 @@ class Serialized(Syntaxed):
 		log("voila:%s"%new)
 		self.parent.replace_child(self, new)
 
-
-
 build_in(SyntaxedNodecl(Serialized,
 			   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
 			   {'last_rendering': b['text'],
 			    'serialization':dict_from_to('text', 'anything')}))
 
 
-"""todo:rename FunctionDefinition to Defun, FunctionCall to Call, maybe remove "Stuff"s """
 
 
 
@@ -4021,3 +4020,4 @@ class CustomNodeDef(Syntaxed):
 build_in(SyntaxedNodecl(CustomNodeDef,
 			   ["define node with syntax:", ChildTag("syntax")],
 			   {'syntax': b['custom syntax list']}))
+# endregion

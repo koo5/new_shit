@@ -91,37 +91,24 @@ def draw():
 lemon.draw = draw
 
 def draw_lines(self, win, highlight=None):
-		win.clear()
-	#try:
-		#log(self)
-		for row, line in enumerate(self.lines):
-			for col, char in enumerate(line):
-				#log(row,col,":",ord(char[0]))
-				#if isinstance(self, frames.Menu):
-				#	if 'node' in char[1]:
-				#		log(char[1]['node'], '==', highlight)
-				#blehhack
-				#if (isinstance(highlight, (nodes.ParserMenuItem,
-				#	nodes.LeshMenuItem)) and
-				#'node' in char[1] and char[1]['node'] == highlight.value):
-
-				mode = 0
-				try:
-					if char[1]['node'] == highlight:
-						mode = c.A_BOLD + c.A_REVERSE
-				except:
-					pass
-
-				try:
-					win.addch(row,col,ord(char[0]), mode)
-				except c.error:
+	win.clear()
+	assert len(self.lines) <= self.rows
+	for row, line in enumerate(self.lines):
+		assert len(line) <= self.cols
+		for col, char in enumerate(line):
+			mode = 0
+			try:
+				if char[1]['node'] == highlight:
+					mode = c.A_BOLD + c.A_REVERSE
+			except:
+				pass
+			try:
+				win.addch(row,col,ord(char[0]), mode)
+			except c.error:
+				if (row+1, col+1) != win.getmaxyx():
+					log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
+					raise
 					
-					if (row+1, col+1) != win.getmaxyx():
-						log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
-					#	raise
-					
-#	except c.error as e:
-#		pass
 
 def bye():
 	sys.exit()
