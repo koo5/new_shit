@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+
 #this file tries to wrap libmarpa into something pythonic, and not specific to lemon
 """
  * 
@@ -53,15 +56,20 @@ class Grammar(object):
 
 	def check_int(s, result):
 		if result == -2:
-			e = lib.marpa_g_error(s.g, ffi.new("char**"))
-			log(codes.errors[e])
-			#assert e == lib.MARPA_ERR_NONE,  codes.errors[e]
+			s.get_and_log_error()
 		return result
-		
+
+	def check_null(s, result):
+		if result == ffi.NULL:
+			s.get_and_log_error()
+			raise Exception("NULL")
+		return result
+
 	def error_clear(s):
 		lib.marpa_g_error_clear(s.g)
 
 	def symbol_new(s):
+		#Return value: On success, the ID of a new symbol; On failure, −2.
 		r = lib.marpa_g_symbol_new(s.g)
 		r = s.check_int(r)
 		r = symbol_int(r)
@@ -102,10 +110,17 @@ class Grammar(object):
 	def start_symbol_set(s, sym):
 		s.check_int( lib.marpa_g_start_symbol_set(s.g, sym) )
 
+	def get_and_log_error(s):
+		log_error(lib.marpa_g_error(s.g, ffi.new("char**")))
+
+def log_error(e):
+	err = codes.errors[e]
+	log(err[0] + " " + repr(err[1]) )#constant + description
+
 class Recce(object):
 	def __init__(s, g):
 		s.g = g
-		s.r = lib.marpa_r_new(g.g)
+		s.r = s.g.check_null(lib.marpa_r_new(g.g))
 		log(s.r)
 	def __del__(s):
 		lib.marpa_r_unref(s.r)
@@ -117,8 +132,9 @@ class Recce(object):
 		assert type(val) == int
 		
 		r = lib.marpa_r_alternative(s.r, sym, val, length)
+		#Return value: On success, MARPA_ERR_NONE. On failure, some other error code.
 		if r != lib.MARPA_ERR_NONE:
-			log(codes.errors[r][0] + " " + repr(codes.errors[r][1]) )
+			log_error(r)
 
 	topic('earleme_complete')
 	def earleme_complete(s):
@@ -129,7 +145,7 @@ class Recce(object):
 class Bocage(object):
 	def __init__(s, r, earley_set_ID):
 		s.g = r.g
-		s.b = lib.marpa_b_new(r.r, earley_set_ID)
+		s.b = s.g.check_null(lib.marpa_b_new(r.r, earley_set_ID))
 		log(s.b)
 	def __del__(s):
 		lib.marpa_b_unref(s.b)
@@ -137,7 +153,7 @@ class Bocage(object):
 class Order(object):
 	def __init__(s, bocage):
 		s.g = bocage.g
-		s.o = lib.marpa_o_new(bocage.b)
+		s.o = s.g.check_null(lib.marpa_o_new(bocage.b))
 		log(s.o)
 	def __del__(s):
 		lib.marpa_o_unref(s.o)
@@ -145,7 +161,7 @@ class Order(object):
 class Tree(object):
 	def __init__(s, order):
 		s.g = order.g
-		s.t = lib.marpa_t_new(order.o)
+		s.t = s.g.check_null(lib.marpa_t_new(order.o))
 		log(s.t)
 	def __del__(s):
 		lib.marpa_t_unref(s.t)
@@ -159,7 +175,7 @@ class Tree(object):
 class Valuator(object):
 	def __init__(s, tree):
 		s.g = tree.g
-		s.v = lib.marpa_v_new(tree.t)
+		s.v = s.g.check_null(lib.marpa_v_new(tree.t))
 		log(s.v)
 	def __del__(s):
 		lib.marpa_v_unref(s.v)
@@ -295,3 +311,5 @@ def do_steps(tree, tokens, rules):
 	print ("tada:"+str(stack[0]))
 if __name__ == "__main__":
 	test1()
+
+# http://scipy-lectures.github.io/advanced/debugging/#debugging-segmentation-faults-using-gdb

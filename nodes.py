@@ -437,10 +437,11 @@ try:
 	from marpa_cffi.marpa import *
 	from marpa_cffi.higher import *
 	marpa = True
-except Exception as e:
+except Exception as e:#todo:some specific cffi exception
 	marpa = False
 	log(e)
 	log('no marpa, no parsing!')
+
 
 def parse(raw): #just text now, list_of_texts_and_nodes later
 
@@ -461,7 +462,10 @@ def parse(raw): #just text now, list_of_texts_and_nodes later
 	latest_earley_set_ID = r.latest_earley_set()
 	log ('latest_earley_set_ID=%s'%latest_earley_set_ID)
 
-	b = Bocage(r, latest_earley_set_ID)
+	try:
+		b = Bocage(r, latest_earley_set_ID)
+	except:
+		return
 	o = Order(b)
 	tree = Tree(o)
 
@@ -2673,7 +2677,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 
 	def parser_stuff(s, scope):
-		if marpa == None:
+		if not marpa:
 			return []
 		if len(s.items) != 1:
 			return []
