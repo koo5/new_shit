@@ -115,9 +115,10 @@ def draw_lines(self, win, highlight=None):
 				try:
 					win.addch(row,col,ord(char[0]), mode)
 				except c.error:
+					
 					if (row+1, col+1) != win.getmaxyx():
 						log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
-						raise
+					#	raise
 					
 #	except c.error as e:
 #		pass
