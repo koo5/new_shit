@@ -568,12 +568,12 @@ class Log(InfoFrame):
 		super(Log, s).__init__(666)
 		s.items = []
 		s.projected = []
-		s.top_bar = [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle), "\n"]
-		s.cols = 20#maybe we should just postpone the rendering until update()
+		s.top_bar = [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle)]
+		s.cols = 20#maybe we should just postpone the rendering until update()..setting cols here so add() doesnt crap out
 
 	def render(s):
-		s.lines = (project.project_tags(s.top_bar, s.cols, s).lines +
-				s.projected[-s.rows-s.scroll_lines:][:s.rows])
+		s.lines = project.project_tags(s.top_bar, s.cols, s).lines
+		s.lines += s.projected[-s.rows-s.scroll_lines:][:s.rows-len(s.lines)]
 		#print len(s.projected)
 		#print s.rows, s.scroll_lines, len(s.lines), len([x for x in s.tags()])
 
