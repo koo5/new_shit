@@ -152,14 +152,17 @@ class Children(dotdict):
 # region marpa
 
 try:
-
-	from marpa_cffi.marpa import *
-	from marpa_cffi.higher import *
+	import marpa_cffi.marpa_cffi
 	marpa = True
 except Exception as e:#todo:some specific cffi exception
 	marpa = False
 	log(e)
 	log('no marpa, no parsing!')
+
+if marpa:
+	from marpa_cffi.marpa import *
+	from marpa_cffi.higher import *
+	import marpa_cffi.graphing_wrapper as graphing_wrapper
 
 
 def parse(raw): #just text now, list_of_texts_and_nodes later
@@ -275,22 +278,23 @@ def setup_grammar(root,scope):
 
 	#my eyes bleed...
 	for i in root.flatten():
-		if isinstance(i, NodeclBase):
-			i.instance_class._decl_symbol = None
-		i._node_symbol = None
+		i.forget_registration()
 
 	m = HigherMarpa()
+
+	graphing_wrapper.start()
+	graphing_wrapper.symid2name = m.symbol2name
 
 	m.symbol('start')
 	m.symbol('any')
 
 	assert scope == uniq(scope)
 	for i in scope:
-		if isinstance(i, FunctionDefinitionBase):
-			log("WUT")
 		#the property is accessed here, forcing the registering of the nodes grammars
+		i.register_node_grammar()
 		sym = i.node_symbol
 		if sym != None:
+			log(sym)
 			m.rule('start is %s' % m.symbol2name(sym), m.syms.start, sym)
 			#maybe could use an action to differentiate an "any node is a start" from ...from what?
 		if isinstance(i, NodeclBase):
@@ -299,6 +303,9 @@ def setup_grammar(root,scope):
 				log(sym)
 				m.rule("start_is_"+m.symbol2name(sym), m.syms.start, sym)
 				log("m.rule(m.symbol2name(sym), m.syms.start, sym)")
+
+	graphing_wrapper.generate_gv()
+	graphing_wrapper.stop()
 
 	m.set_start_symbol(m.syms.start)
 
@@ -310,10 +317,13 @@ def setup_grammar(root,scope):
 	m.check_accessibility()
 
 class NodeMarpism(object):
-	_decl_symbol = None
 	def __init__(s):
 		super(NodeMarpism, s).__init__()
+		s._node_symbol = None
+
+	def forget_registration(s):
 		s._node_symbol  = None
+		log("forgotten")
 	@property
 	def node_symbol(s):
 		#log("gimme node_symbol")
@@ -330,8 +340,9 @@ class NodeMarpism(object):
 		pass
 
 class NodeclBaseMarpism(object):
-	def __init__(s):
-		super(NodeclBaseMarpism, s).__init__()
+	def forget_registration(s):
+		super(NodeclBaseMarpism, s).forget_registration()
+		s.instance_class._decl_symbol = None
 	@property
 	def decl_symbol(s):
 		#log("getting decl_symbol")
@@ -347,7 +358,7 @@ class NumberMarpism(object):
 		m.symbol('digit')
 		m.symbol('digits')
 		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
-			m.rule(i + "_is_a_digit",m.syms.digit, m.known(i))
+			m.rule(i + "_is_a_digit",m.syms.digit, m.known_char(i))
 
 		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
 		cls._decl_symbol = m.symbol('number')
@@ -383,16 +394,24 @@ class SyntacticCategoryMarpism(object):
 			repr(s)) # for example: 'Statement'
 
 class WorksAsMarpism(object):
-	def register_node_grammar(s):
-		s._symbol = lhs = symbol(
-			s.ch.sup.name) # for example: 'Statement'
-		rhs = symbol(
-			s.ch.sub.name) # for example: 'Expression'
-		rule(lhs, rhs)
+	def __init__(s):
+		super(WorksAsMarpism, s).__init__()
+		s._rule = None
+	def forget_registration(s):
+		super(WorksAsMarpism, s).forget_registration()
+		s._rule = None
 
-def destroy_all_symbols():
-	for i in root.flatten():
-		i._symbol = None
+	def register_node_grammar(s):
+		if s._rule:
+			return s._rule
+		#lhs = deref_decl(s.ch.sup).node_symbol
+		#rhs = deref_decl(s.ch.sub).node_symbol
+		lhs = s.ch.sup.target.node_symbol
+		rhs = s.ch.sub.target.node_symbol
+		log('%s %s %s'%(s, lhs, rhs))
+		if lhs != None and rhs != None:
+			r = m.rule(str(s), lhs, rhs)
+			s._rule = r
 
 # endregion
 
@@ -1750,7 +1769,7 @@ class Exp(Node):
 	def name(self):
 		return self.type.name + " expr"
 
-class NodeclBase(Node, NodeclBaseMarpism):
+class NodeclBase(NodeclBaseMarpism, Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
 	know their python class ("instance_class"), syntax and shit.
 	usually does something like instance_class.decl = self, so we can instantiate the
@@ -1819,7 +1838,7 @@ class TypeNodecl(NodeclBase):
 	""" "pass me a type" kind of value
 	instantiates Refs ..maybe should be TypeRefs
 	"""
-	help = ["points to another node, like using an identifier. Used to point to types."]
+	help = ["points to another node, like using an identifier. Used only for pointing to types."]
 	def __init__(self):
 		super(TypeNodecl, self).__init__(Ref)
 
@@ -2053,7 +2072,7 @@ class SyntacticCategory(SyntacticCategoryMarpism,Syntaxed):
 	def __init__(self, kids):
 		super(SyntacticCategory, self).__init__(kids)
 
-class WorksAs(Syntaxed):
+class WorksAs(WorksAsMarpism,Syntaxed):
 	help=["declares a subtype relation between two existing types"]
 	def __init__(self, kids):
 		super(WorksAs, self).__init__(kids)

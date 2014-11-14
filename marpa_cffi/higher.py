@@ -30,6 +30,14 @@ class HigherMarpa(object):
 		s.syms[name] = r
 		return r
 
+	def unnamed_symbol(s,name):
+		r = s.g.symbol_new()
+		name = str(r)+'_'+name
+		if name in s.syms._dict:
+			raise Exception("%s already in syms"%name)
+		s.syms[name] = r
+		return r
+
 	def symbol2name(s,symid):
 		for k,v in s.syms._dict.items():
 			if v == symid:
@@ -70,7 +78,7 @@ class HigherMarpa(object):
 		s.actions[r] = action
 		return r
 
-	def known(s,char):
+	def known_char(s,char):
 		"""create a symbol for a char"""
 		if not char in s.known_chars:
 			s.known_chars[char] = s.symbol(char)
@@ -78,10 +86,9 @@ class HigherMarpa(object):
 
 	def known_string(s, string):
 		"""create a symbol for a string"""
-		rhs = [s.known(i) for i in string]
-		debug_name = 'known_string %s when len=%s'%(string,len(s.syms._dict))
-		lhs = s.symbol(debug_name)
-		s.rule(debug_name, lhs, rhs, join)
+		rhs = [s.known_char(i) for i in string]
+		lhs = s.unnamed_symbol(string)
+		s.rule(str(lhs)+'_'+string, lhs, rhs, join)
 		return lhs
 
 	def set_start_symbol(s,start):
@@ -106,7 +113,10 @@ class HigherMarpa(object):
 		log('syms:%s'%s.sorted_by_values(s.syms))
 
 	def print_rules(s):
-		log('rules:%s'%s.sorted_by_values(s.rules))
+		#log('rules:%s'%s.sorted_by_values(s.rules))
+		log('rules:')
+		for r in s.sorted_by_values(s.rules):
+			log(r)
 
 	def check_accessibility(s):
 		for i in s.syms._dict.items():

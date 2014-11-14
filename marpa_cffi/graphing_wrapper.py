@@ -1,0 +1,135 @@
+
+from marpa_cffi import lib
+
+class Orig(object):
+	pass
+orig = Orig()
+
+def clear():
+	global syms, rules, seqs
+	syms = []
+	rules= []
+	seqs = []
+
+def symid2name(id):
+	return str(id)
+
+def ruleid2name(id):
+	return str(id)
+
+def symbol_new(g):
+	s = orig.symbol_new(g)
+	syms.append(s)
+	return s
+
+def rule_new(g,lhs,rhs,length):
+	r = orig.rule_new(g,lhs,rhs,length)
+	rules.append((r, lhs, rhs))
+	return r
+
+def sequence_new(g,lhs,rhs,separator, min, flags ):
+	s = orig.sequence_new(g,lhs,rhs,separator, min, flags)
+	seqs.append((s, lhs, rhs, separator, min))
+	return s
+
+def stop():
+	lib.marpa_g_symbol_new = orig.symbol_new
+	lib.marpa_g_rule_new = orig.rule_new
+	lib.marpa_g_sequence_new = orig.sequence_new
+
+def start():
+	orig.symbol_new = lib.marpa_g_symbol_new
+	lib.marpa_g_symbol_new = symbol_new
+	orig.rule_new = lib.marpa_g_rule_new
+	lib.marpa_g_rule_new = rule_new
+	orig.sequence_new = lib.marpa_g_sequence_new
+	lib.marpa_g_sequence_new = sequence_new
+
+	clear()
+
+
+def esc(name):
+	r = ""
+	for ch in name:
+		if not ch.isalnum():
+			r+="_"
+		else:
+			r+=ch
+	return r
+
+	#,,,
+'''
+def sss(sym):
+	r = str(sym)
+	try:
+		name = symid2name(sym)
+	except:
+		name = None
+	if name:
+		r += "_" + esc(name)
+	return r
+'''
+def sss(sym):
+	return str(sym) + '_' + esc(symid2name(sym))
+
+
+
+def generate_bnf(filename='grammar.bnf'):
+	f = open(filename, "w")
+
+	for id, lhs, rhs in rules:
+		f.write(sss(lhs) + "\n\t::= " + ' '.join([sss(i) for i in rhs]) + '\n')
+
+	for id, lhs, rhs, sep, min in seqs:
+		f.write(sss(lhs) +
+		        "\n\t::=" +
+				sss(rhs) +
+		        ('*' if min == 0 else '+') +
+				'\n')
+				#todo:sep
+
+	f.close()
+
+
+
+def generate_png(filename='grammar.png'):
+	graph = generate()
+	graph.format = 'png'
+	graph.render(filename)
+
+def generate_gv(filename='grammar.gv'):
+	generate().save(filename)
+
+def generate():
+
+	import graphviz
+
+	graph = graphviz.Graph()
+	
+	for sym in syms:
+		try:
+			label = symid2name(sym)
+			color = 'black'
+		except:
+			label = str(sym)
+			color = 'gray'
+
+		graph.node(str(sym), label,
+	                          #style="filled",
+	                          #fillcolor="green",
+	                          fontcolor=color)
+
+
+	for id, lhs, rhs in rules:
+		#if len(rhs) > 1:
+			#sub = graphviz.Digraph()
+		for i in rhs:
+			graph.edge(str(lhs), str(i))
+
+
+	for id, lhs, rhs, sep, min in seqs:
+		graph.edge(str(lhs), str(rhs))
+	
+	return graph
+
+
