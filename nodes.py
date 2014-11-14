@@ -276,7 +276,8 @@ def uniq(x):
 def setup_grammar(root,scope):
 	global m
 
-	#my eyes bleed...
+	assert scope == uniq(scope)
+
 	for i in root.flatten():
 		i.forget_registration()
 
@@ -288,21 +289,14 @@ def setup_grammar(root,scope):
 	m.symbol('start')
 	m.symbol('any')
 
-	assert scope == uniq(scope)
 	for i in scope:
 		#the property is accessed here, forcing the registering of the nodes grammars
-		i.register_node_grammar()
-		sym = i.node_symbol
+		i.register_symbol()
+		sym = i.symbol
 		if sym != None:
 			log(sym)
 			m.rule('start is %s' % m.symbol2name(sym), m.syms.start, sym)
-			#maybe could use an action to differentiate an "any node is a start" from ...from what?
-		if isinstance(i, NodeclBase):
-			sym = i.decl_symbol
-			if sym != None:
-				log(sym)
-				m.rule("start_is_"+m.symbol2name(sym), m.syms.start, sym)
-				log("m.rule(m.symbol2name(sym), m.syms.start, sym)")
+			#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
 
 	graphing_wrapper.generate_gv()
 	graphing_wrapper.stop()
@@ -316,102 +310,6 @@ def setup_grammar(root,scope):
 
 	m.check_accessibility()
 
-class NodeMarpism(object):
-	def __init__(s):
-		super(NodeMarpism, s).__init__()
-		s._node_symbol = None
-
-	def forget_registration(s):
-		s._node_symbol  = None
-		log("forgotten")
-	@property
-	def node_symbol(s):
-		#log("gimme node_symbol")
-		if s._node_symbol == None:
-			s.register_node_grammar()
-			pass
-		return s._node_symbol
-
-	def register_node_grammar(s):
-		#log("default")
-		pass
-	@classmethod
-	def register_decl_grammar(cls):
-		pass
-
-class NodeclBaseMarpism(object):
-	def forget_registration(s):
-		super(NodeclBaseMarpism, s).forget_registration()
-		s.instance_class._decl_symbol = None
-	@property
-	def decl_symbol(s):
-		#log("getting decl_symbol")
-		if s.instance_class._decl_symbol == None:
-			s.instance_class.register_decl_grammar()
-		#log("returning %s"%s.instance_class._decl_symbol)
-		return s.instance_class._decl_symbol
-
-class NumberMarpism(object):
-	@classmethod
-	def register_decl_grammar(cls):
-		log("registering number grammar for class %s"%cls)
-		m.symbol('digit')
-		m.symbol('digits')
-		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
-			m.rule(i + "_is_a_digit",m.syms.digit, m.known_char(i))
-
-		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
-		cls._decl_symbol = m.symbol('number')
-		m.rule('number_is_digits', cls._decl_symbol, m.syms.digits, (ident, cls))
-
-class FunctionDefinitionBaseMarpism(object):
-	@topic ("FunctionDefinitionBase register_node_grammar")
-	def register_node_grammar(s):
-		rhs = []
-		for i in s.sig:
-			if type(i) == Text:
-				a = m.known_string(i.pyval)
-			elif isinstance(i, TypedParameter):
-				#TypedParameter means its supposed to be an expression
-				a = b['expression'].node_symbol
-				assert a,  i
-			elif isinstance(i, UnevaluatedArgument):
-				a = deref_decl(i.type).instance_class.decl_symbol
-				assert a,  i
-			assert a,  i
-			rhs.append(a)
-		log('rhs:%s'%rhs)
-		s._node_symbol = m.symbol(repr(s))
-		m.rule(str(s), s._node_symbol, rhs, s.marpa_make_call)
-	def marpa_make_call(s, args):
-		'gets an array of argument nodes, presumably'
-		return FunctionCall(s)
-
-class SyntacticCategoryMarpism(object):
-	def register_node_grammar(s):
-		log(s)
-		s._node_symbol = lhs = m.symbol(
-			repr(s)) # for example: 'Statement'
-
-class WorksAsMarpism(object):
-	def __init__(s):
-		super(WorksAsMarpism, s).__init__()
-		s._rule = None
-	def forget_registration(s):
-		super(WorksAsMarpism, s).forget_registration()
-		s._rule = None
-
-	def register_node_grammar(s):
-		if s._rule:
-			return s._rule
-		#lhs = deref_decl(s.ch.sup).node_symbol
-		#rhs = deref_decl(s.ch.sub).node_symbol
-		lhs = s.ch.sup.target.node_symbol
-		rhs = s.ch.sub.target.node_symbol
-		log('%s %s %s'%(s, lhs, rhs))
-		if lhs != None and rhs != None:
-			r = m.rule(str(s), lhs, rhs)
-			s._rule = r
 
 # endregion
 
@@ -733,7 +631,7 @@ class WidgetedValuePersistenceStuff(object):
 
 # region basic node classes
 
-class Node(NodePersistenceStuff, NodeMarpism, element.Element):
+class Node(NodePersistenceStuff, element.Element):
 	"""a node is more than an element, its a standalone unit.
 	nodes can added, cut'n'pasted around, evaluated etc.
 	every node class has a corresponding decl object
@@ -747,7 +645,26 @@ class Node(NodePersistenceStuff, NodeMarpism, element.Element):
 		self.runtime = dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
-		self.fresh = "i think youre looking for inst_fresh"
+		self.fresh = "i think youre looking for inst_fresh, fresh() is a class method"
+		self.forget_registration()
+
+	def forget_registration(s):
+		s._symbol  = None
+
+	@property
+	def symbol(s):
+		#log("gimme node_symbol")
+		if s._symbol == None:
+			s.register_symbol()
+		return s._symbol
+
+	def register_symbol(s):
+		#log("default")
+		pass
+
+	@classmethod
+	def register_class_symbol(cls):
+		pass
 
 	def make_rainbow(s):
 		try:#hacky rainbow depending on the colors module
@@ -860,17 +777,15 @@ class Node(NodePersistenceStuff, NodeMarpism, element.Element):
 		self.runtime.unimplemented = True
 		return Text("not implemented")
 
-	"""
-	def program(self):
-		if isinstance(self, Program):
+	def module(self):
+		if isinstance(self, Module):
 			return self
 		else:
 			if self.parent != None:
-				return self.parent.program()
+				return self.parent.module()
 			else:
 				print self, "has no parent"
 				return None
-	"""
 
 	@classmethod
 	def fresh(cls, decl=None):
@@ -964,6 +879,7 @@ class Node(NodePersistenceStuff, NodeMarpism, element.Element):
 
 	def delete_child(self, child):
 		log("not implemented")
+
 
 class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
@@ -1567,12 +1483,24 @@ class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.pyval)+"')"
 
-
-class Number(NumberMarpism, WidgetedValue):
+class Number(WidgetedValue):
 	def __init__(self, value="0"):
 		super(Number, self).__init__()
 		self.widget = widgets.Number(self, value)
 		self.widget.brackets = ('','')
+
+	@classmethod
+	def register_decl_symbol(cls):
+		log("registering number grammar")
+		m.symbol('digit')
+		m.symbol('digits')
+		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
+			m.rule(i + "_is_a_digit",m.syms.digit, m.known_char(i))
+
+		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
+		r = m.symbol('number')
+		m.rule('number_is_digits', cls._decl_symbol, m.syms.digits, (ident, cls))
+		return r
 
 	def _eval(self):
 		return Number(self.pyval)
@@ -1707,7 +1635,6 @@ class Module(Syntaxed):
 
 # region nodecls and stuff
 
-
 class Ref(RefPersistenceStuff, Node):
 	"""points to another node.
 	if a node already has a parent, you just want to point to it, not own it"""
@@ -1735,7 +1662,6 @@ class Ref(RefPersistenceStuff, Node):
 				return True
 	def copy(s):
 		return Ref(s.target)
-
 
 class VarRef(VarRefPersistenceStuff, Node):
 	def __init__(self, target):
@@ -1769,7 +1695,7 @@ class Exp(Node):
 	def name(self):
 		return self.type.name + " expr"
 
-class NodeclBase(NodeclBaseMarpism, Node):
+class NodeclBase(Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
 	know their python class ("instance_class"), syntax and shit.
 	usually does something like instance_class.decl = self, so we can instantiate the
@@ -1782,7 +1708,9 @@ class NodeclBase(NodeclBaseMarpism, Node):
 		self.decl = None
 		self.example = None
 
-	#identification = ['instance_class', 'name']
+	def register_symbol(s):
+		s._symbol = s.instance_class.register_class_symbol()
+
 	def make_example(s):
 		return None
 
@@ -2066,16 +1994,35 @@ class EnumType(ParametricTypeBase):
 	def inst_fresh(s):
 		return EnumVal(s, 0)
 
-class SyntacticCategory(SyntacticCategoryMarpism,Syntaxed):
+class SyntacticCategory(Syntaxed):
 	help=['this is a syntactical category(?) of nodes, used for "statement" and "expression"']
 
 	def __init__(self, kids):
 		super(SyntacticCategory, self).__init__(kids)
 
-class WorksAs(WorksAsMarpism,Syntaxed):
+	def register_symbol(s):
+		s._symbol = lhs = m.symbol(
+			repr(s))
+
+class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
 	def __init__(self, kids):
 		super(WorksAs, self).__init__(kids)
+
+	def forget_registration(s):
+		super(WorksAs, s).forget_registration()
+		s._rule = None
+
+	def register_grammar(s):
+		if s._rule != None:
+			return
+		lhs = s.ch.sup.target.symbol
+		rhs = s.ch.sub.target.symbol
+		log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
+		if lhs != None and rhs != None:
+			r = m.rule(str(s), lhs, rhs)
+			s._rule = r
+
 	@classmethod
 	def b(cls, sub, sup):
 		return cls({'sub': Ref(b[sub]), 'sup': Ref(b[sup])})
@@ -3106,10 +3053,33 @@ build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
 
 
 
-class FunctionDefinitionBase(FunctionDefinitionBaseMarpism, Syntaxed):
+class FunctionDefinitionBase(Syntaxed):
 
 	def __init__(self, kids):
 		super(FunctionDefinitionBase, self).__init__(kids)
+
+	@topic ("FunctionDefinitionBase register_node_grammar")
+	def register_node_grammar(s):
+		rhs = []
+		for i in s.sig:
+			if type(i) == Text:
+				a = m.known_string(i.pyval)
+			elif isinstance(i, TypedParameter):
+				#TypedParameter means its supposed to be an expression
+				a = b['expression'].node_symbol
+				assert a,  i
+			elif isinstance(i, UnevaluatedArgument):
+				a = deref_decl(i.type).instance_class.decl_symbol
+				assert a,  i
+			assert a,  i
+			rhs.append(a)
+		log('rhs:%s'%rhs)
+		s._node_symbol = m.symbol(repr(s))
+		m.rule(str(s), s._node_symbol, rhs, s.marpa_create_call)
+
+	def marpa_create_call(s, args):
+		'takes an array of argument nodes, presumably'
+		return FunctionCall(s)
 
 	@property
 	def params(self):
@@ -3542,7 +3512,7 @@ def add_operators():
 		return list(range(min, max + 1))
 	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
 		num_list(), name = "range", note="inclusive")
-add_operators()
+#add_operators()
 
 # region regexes
 """

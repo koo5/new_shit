@@ -377,48 +377,6 @@ http://yager.io/programming/go.html
 
 
 
-semantic terminal:
-===
->>
->> i would break it down into two parts: the editor-is-terminal part, i
->> think that is also a functionality in emacs, and the "semantic"
->> terminal part:
->>
->> in http://acko.net/blog/on-termkit/ (which seems to have died several
->> years ago right after getting some publicity), commands are strictly
->> made to speak in some JSON encoded format, and plain old ordinary
->> commands run wrapped. You can draw a parallel to a fully structured
->> editor.
-sort of post-mortem to termkit from the author:
-http://www.reddit.com/r/programming/comments/137kd9/18_months_ago_termkit_a_nextgeneration_terminal/
-also: https://news.ycombinator.com/item?id=2559734
-but see forks on github.
-
->>
->> towards the other side of the continuum is http://finalterm.org/ (and that enlightenment thing)
->> which runs bash inside, and only tries to extract information from the
->> text stream. Thats like a semantically aware ide:)
->>
->> i dont know where xiki stands in this, they say "wiki-ish text
->> syntax", i guess it might be a nice middle way.
->>
->>  (another project to mention might be
->> https://github.com/guitarvydas/vsh , but pretty dead too)
->>
->>  Anyway, judging by the google group activity, xiki seems to be a long
->> running project and i hope it gets far, and i will give it a try
->> sometime
->>> http://xiki.org/
->
->heres another: xpipe
->https://vimeo.com/68400623
->
-https://github.com/zsh-users/zaw
-
-plan9 terminal too..
-
-http://satyajit.ranjeev.in/2014/07/06/introducing-edi.html
-
 
 
 
