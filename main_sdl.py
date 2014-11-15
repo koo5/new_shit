@@ -28,8 +28,7 @@ from lemon import frames
 import lemon_logger
 from lemon_logger import log
 from lemon_colors import colors, color
-import lemon_args
-
+from lemon_args import args
 
 for f in allframes:
 	f.rect = pygame.Rect((6,6),(6,6))
@@ -323,8 +322,6 @@ def fuck_sdl():
 
 
 def main():
-	global args
-	args = lemon.args = lemon_args.parse_args()
 
 	pygame.display.init()
 	pygame.font.init()
@@ -355,8 +352,6 @@ def main():
 	lemon.change_font_size = user_change_font_size
 	lemon.draw = draw
 	lemon.render = render
-	if args.noalpha:
-		lemon.root.arrows_visible = False
 
 	lemon.start()
 	render()

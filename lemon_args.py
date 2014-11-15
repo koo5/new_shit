@@ -29,5 +29,8 @@ def parse_args():
 	parser.add_argument('--run', type=unicode,
 				   default=False)
 	parser.add_argument('--log-height', default=4, type=int)
+	parser.add_argument('--lame', action='store_true',
+				   default=False)
 	return parser.parse_args()
-#args = parse_args()
+
+args = parse_args()

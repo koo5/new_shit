@@ -81,7 +81,8 @@ class HigherMarpa(object):
 	def known_char(s,char):
 		"""create a symbol for a char"""
 		if not char in s.known_chars:
-			s.known_chars[char] = s.symbol(char)
+			r = s.known_chars[char] = s.symbol(char)
+			s.rule(char+"_is_known_char", s.syms.known_char, r)
 		return s.known_chars[char]
 
 	def known_string(s, string):
@@ -101,7 +102,7 @@ class HigherMarpa(object):
 			if char in s.known_chars:
 				symid=s.known_chars[char]
 			else:
-				symid=s.syms.any
+				symid=s.syms.nonspecial_char
 			tokens.append(symid)
 		return tokens
 

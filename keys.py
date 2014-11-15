@@ -1,8 +1,8 @@
 """
+LICENSE: pygame_cffi_license.txt
 taken from pygame_cffi with
 for k,v in sorted([(k,v) for k,v in pygame._sdl_keys.__dict__.iteritems() if isinstance(v, int)],key=operator.itemgetter(1)):
     print k, "=", v
-see pygame_cffi_license.txt
 """
 KMOD_NONE = 0
 K_FIRST = 0

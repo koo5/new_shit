@@ -15,7 +15,10 @@ import widgets
 from lemon_logger import log, topic
 from keys import *
 from lemon_six import iteritems, str_and_uni
+from lemon_args import args
+
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
+
 
 class Frame(object):
 #	def on_mouse_press(self, e):
@@ -72,6 +75,8 @@ class Root(Frame):
 		self.arrows_visible = True
 		self.cursor_blink_phase = True
 		self.menu_dirty = True
+		if args.noalpha:
+			self.arrows_visible = False
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]: s.move_cursor_h(-1)

@@ -51,8 +51,25 @@ from tags import ChildTag, ElementTag, MemberTag, AttTag, TextTag, ColorTag, End
 import lemon_colors as colors
 from keys import *
 from utils import flatten, odict
+from lemon_args import args
 
 tags.asselement = element
+
+try:
+	import marpa_cffi.marpa_cffi
+	marpa = True
+except Exception as e:#todo:some specific cffi exception
+	log(e)
+	log('no marpa, no parsing!')
+	if not args.lame:
+		log("run with --lame or install libmarpa")
+		raise e
+	else:
+		marpa = False
+if marpa:
+	from marpa_cffi.marpa import *
+	from marpa_cffi.higher import *
+	import marpa_cffi.graphing_wrapper as graphing_wrapper
 
 # endregion
 
@@ -151,20 +168,6 @@ class Children(dotdict):
 
 # region marpa
 
-try:
-	import marpa_cffi.marpa_cffi
-	marpa = True
-except Exception as e:#todo:some specific cffi exception
-	marpa = False
-	log(e)
-	log('no marpa, no parsing!')
-
-if marpa:
-	from marpa_cffi.marpa import *
-	from marpa_cffi.higher import *
-	import marpa_cffi.graphing_wrapper as graphing_wrapper
-
-
 def parse(raw): #just text now, list_of_texts_and_nodes later
 
 	tokens = m.raw2tokens(raw)
@@ -173,7 +176,7 @@ def parse(raw): #just text now, list_of_texts_and_nodes later
 	r.start_input()
 
 	for i, sym in enumerate(tokens):
-		log ("input:symid:%s val:%s name:%s raw:%s"%(sym, i+1, m.symbol2name(sym),raw[i]))
+		log ("input:symid:%s name:%s raw:%s"%(sym, m.symbol2name(sym),raw[i]))
 		assert type(sym) == symbol_int
 		r.alternative(sym, i+1)
 		r.earleme_complete()
@@ -194,7 +197,7 @@ def parse(raw): #just text now, list_of_texts_and_nodes later
 	import gc
 	for _ in tree.nxt():
 		r=do_steps(tree, tokens, raw, m.rules)
-		gc.collect() #force an unref of the valuator and stuff so we can move on to the next tree
+		gc.collect() #force a marpa_v_unref of the valuator so we can move on to the next tree
 		yield r
 
 @topic('do steps')
@@ -262,7 +265,6 @@ def do_steps(tree, tokens, raw, rules):
 	log ("tada:"+repr(res))
 	return res
 
-
 m=666
 
 def uniq(x):
@@ -287,7 +289,8 @@ def setup_grammar(root,scope):
 	graphing_wrapper.symid2name = m.symbol2name
 
 	m.symbol('start')
-	m.symbol('any')
+	m.symbol('nonspecial_char')
+	m.symbol('known_char')
 
 	for i in scope:
 		#the property is accessed here, forcing the registering of the nodes grammars
@@ -1490,7 +1493,7 @@ class Number(WidgetedValue):
 		self.widget.brackets = ('','')
 
 	@classmethod
-	def register_decl_symbol(cls):
+	def register_class_symbol(cls):
 		log("registering number grammar")
 		m.symbol('digit')
 		m.symbol('digits')
@@ -1499,7 +1502,7 @@ class Number(WidgetedValue):
 
 		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
 		r = m.symbol('number')
-		m.rule('number_is_digits', cls._decl_symbol, m.syms.digits, (ident, cls))
+		m.rule('number_is_digits', r, m.syms.digits, (ident, cls))
 		return r
 
 	def _eval(self):
@@ -1522,6 +1525,28 @@ class Text(WidgetedValue):
 		self.brackets_color = "text brackets"
 		self.brackets = ('[',']')
 		self.debug_note = debug_note
+
+	@classmethod
+	def register_class_symbol(cls):
+		log("registering text grammar")
+		double_slash = m.known_string('//')
+		slashed_end =  m.known_string('/]')
+		body_part = m.symbol('body_part')
+		m.rule('string_body_part_is_double_slash', body_part, double_slash)
+		m.rule('string_body_part_is_slashed_end', body_part, slashed_end)
+		m.rule('string_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
+		m.rule('string_body_part_is_known_char', body_part, m.syms.known_char)
+		body = m.symbol('body')
+		m.sequence('string_body is seq of body part', body, body_part, join)
+		text = m.symbol('Text')
+		opening =  m.known_char('[')
+		closing =  m.known_char(']')
+		m.rule('Text_is_[body]', text, [opening, body, closing], cls.from_parse)
+		return text
+
+	@classmethod
+	def from_parse(cls, args):
+		return cls(args[1])
 
 	def render(self):
 		return self.widget.render()
@@ -3059,7 +3084,7 @@ class FunctionDefinitionBase(Syntaxed):
 		super(FunctionDefinitionBase, self).__init__(kids)
 
 	@topic ("FunctionDefinitionBase register_node_grammar")
-	def register_node_grammar(s):
+	def register_grammar(s):
 		rhs = []
 		for i in s.sig:
 			if type(i) == Text:

@@ -23,6 +23,7 @@ import frames
 import project
 import lemon_colors as colors
 from keys import *
+from lemon_args import args
 
 fast_forward = False # quickly replaying input events without drawing
 sidebar = None # active sidebar
@@ -185,23 +186,19 @@ def pickle_event(e):
 
 
 def start():
-#	global root, sidebars, logframe, allframes
-	frames.args = args
-	#nodes.args = args
-
 	colors.cache(args)
 	root.render()
 
 	try:
-		if args.lesh:
-			something = root.root['lesh'].command_line
-		else:
-			something = root.root['some program'].ch.statements.items[1]
+		#if args.lesh:
+		#	something = root.root['lesh'].command_line
+		#else:
+		something = root.root['some program'].ch.statements.items[1]
 
 		root.cursor_c, root.cursor_r = project.find(something, root.lines)
 		#root.cursor_c += 1
 	except Exception as e:
-		print (e.__repr__(), ", cant set initial cursor position")
+		log (e.__repr__(), ", cant set initial cursor position")
 
 	#import parser_test
 	#parser_test.test(root.root['some program'].ch.statements.items[0])
