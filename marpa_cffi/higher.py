@@ -12,6 +12,8 @@ def ident(x):
 def join(args):
 	return ''.join(args)
 
+def ignore(args):
+	return None
 
 class HigherMarpa(object):
 	def __init__(s):

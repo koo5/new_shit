@@ -1,3 +1,17 @@
+"""
+this replaces a few functions of marpa_cffi with wrappers that collect rules etc. usage:
+import graphing_wrapper
+graphing_wrapper.start()
+#optionally set:
+graphing_wrapper.symid2name = m.symbol2name
+#then finally:
+graphing_wrapper.generate_gv() #or _png or _bnf
+#you can try rendering the bnf with https://metacpan.org/pod/GraphViz2::Marpa
+#default filename is "grammar.XXX"
+graphing_wrapper.stop() # you can restore original functions
+
+"""
+
 
 from marpa_cffi import lib
 

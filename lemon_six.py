@@ -139,6 +139,7 @@ else:
 
 if PY3:
 	str_and_uni = (str)
+	unicode = str
 else:
 	str_and_uni = (str, unicode)
 

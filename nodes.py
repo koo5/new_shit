@@ -274,6 +274,8 @@ def uniq(x):
            r.append(i)
    return r
 
+m = HigherMarpa()
+
 @topic ('setup_grammar')
 def setup_grammar(root,scope):
 	global m
@@ -292,9 +294,11 @@ def setup_grammar(root,scope):
 	m.symbol('nonspecial_char')
 	m.symbol('known_char')
 
+	m.symbol('maybe_spaces')
+	m.sequence('maybe_spaces', m.syms.maybe_spaces, m.known_char(' '), action=ignore, min=0)
+
 	for i in scope:
 		#the property is accessed here, forcing the registering of the nodes grammars
-		i.register_symbol()
 		sym = i.symbol
 		if sym != None:
 			log(sym)
@@ -2038,7 +2042,7 @@ class WorksAs(Syntaxed):
 		super(WorksAs, s).forget_registration()
 		s._rule = None
 
-	def register_grammar(s):
+	def register_symbol(s):
 		if s._rule != None:
 			return
 		lhs = s.ch.sup.target.symbol
@@ -3083,32 +3087,49 @@ class FunctionDefinitionBase(Syntaxed):
 	def __init__(self, kids):
 		super(FunctionDefinitionBase, self).__init__(kids)
 
-	@topic ("FunctionDefinitionBase register_node_grammar")
-	def register_grammar(s):
+	def register_symbol(s):
+
 		rhs = []
 		for i in s.sig:
 			if type(i) == Text:
 				a = m.known_string(i.pyval)
 			elif isinstance(i, TypedParameter):
 				#TypedParameter means its supposed to be an expression
-				a = b['expression'].node_symbol
+				a = b['expression'].symbol
 				assert a,  i
 			elif isinstance(i, UnevaluatedArgument):
-				a = deref_decl(i.type).instance_class.decl_symbol
+				a = deref_decl(i.type).class_symbol
 				assert a,  i
 			assert a,  i
 			rhs.append(a)
+			rhs.append(m.syms.maybe_spaces)
 		log('rhs:%s'%rhs)
-		s._node_symbol = m.symbol(repr(s))
-		m.rule(str(s), s._node_symbol, rhs, s.marpa_create_call)
+		debugname = "call of "+repr(s)
+		s._symbol = m.symbol(debugname)
+		m.rule(debugname, s._symbol, rhs, s.marpa_create_call)
+		m.rule("call is "+debugname, b['call'].symbol, s._symbol)
 
 	def marpa_create_call(s, args):
 		'takes an array of argument nodes, presumably'
-		return FunctionCall(s)
+		for i in args:
+			if i != None: # a separator
+				assert isinstance(i, (unicode, Node)),  i
+		args = [i for i in args if isinstance(i, Node)]
+
+		assert len(args) == len(s.params)
+
+		r = FunctionCall(s)
+
+		for k,v in iteritems(s.params):
+			r.args[k] = args.pop()
+
+		r.fix_parents()
+
+		return r
 
 	@property
 	def params(self):
-		r = dict([(i.name, i) for i in self.sig if isinstance(i, FunctionParameterBase)])
+		r = odict([(i.name, i) for i in self.sig if isinstance(i, FunctionParameterBase)])
 		#for i in itervalues(r):
 		#	assert(i.parent)
 		return r
@@ -3390,6 +3411,10 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		self.args = dict([(name, Parser(name)) for name, v in iteritems(self.target.params)]) #this should go to fresh(?)
 		self.fix_parents()
 
+	@classmethod
+	def register_class_symbol(cls):
+		return m.symbol("function_call")
+
 	@property
 	def slots(s):
 		return s.target.params
@@ -3451,6 +3476,7 @@ class FunctionCallNodecl(NodeclBase):
 #		return [ParserMenuItem(FunctionCall(x)) for x in decls]
 
 build_in(FunctionCallNodecl(), 'call')
+build_in(WorksAs.b("call", "expression"), False)
 
 
 
@@ -3537,7 +3563,7 @@ def add_operators():
 		return list(range(min, max + 1))
 	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
 		num_list(), name = "range", note="inclusive")
-#add_operators()
+add_operators()
 
 # region regexes
 """
