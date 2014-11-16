@@ -3136,6 +3136,7 @@ class FunctionDefinitionBase(Syntaxed):
 
 		return r
 
+
 	@property
 	def params(self):
 		r = odict([(i.name, i) for i in self.sig if isinstance(i, FunctionParameterBase)])
