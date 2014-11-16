@@ -50,7 +50,7 @@ from tags import ChildTag, ElementTag, MemberTag, AttTag, TextTag, ColorTag, End
 #from input import levent
 import lemon_colors as colors
 from keys import *
-from utils import flatten, odict
+from utils import flatten, odict, evil
 from lemon_args import args
 
 tags.asselement = element
@@ -69,6 +69,7 @@ except Exception as e:#todo:some specific cffi exception
 if marpa:
 	from marpa_cffi.marpa import *
 	from marpa_cffi.higher import *
+	import marpa_cffi.marpa_codes
 	import marpa_cffi.graphing_wrapper as graphing_wrapper
 
 # endregion
@@ -202,8 +203,8 @@ def parse(raw): #just text now, list_of_texts_and_nodes later
 
 @topic('do steps')
 def do_steps(tree, tokens, raw, rules):
-	stack = defaultdict((lambda:666))
-	stack2= defaultdict((lambda:666))
+	stack = defaultdict((lambda:evil('default stack item, what the beep')))
+	stack2= defaultdict((lambda:evil('default stack2 item, what the beep')))
 	v = Valuator(tree)
 	babble = False
 
@@ -257,6 +258,14 @@ def do_steps(tree, tokens, raw, rules):
 
 			stack2[arg0] = val
 
+		elif s == lib.MARPA_STEP_NULLING_SYMBOL:
+			stack2[v.v.t_result] = "nulled"
+		elif s == lib.MARPA_STEP_INACTIVE:
+			log("MARPA_STEP_INACTIVE:i'm done")
+		elif s == lib.MARPA_STEP_INITIAL:
+			log("MARPA_STEP_INITIAL:stating...")
+		else:
+			log(marpa_cffi.marpa_codes.steps[s])
 
 	#print "tada:"+str(stack[0])
 #	print ("tada:"+json.dumps(stack[0], indent=2))
@@ -265,7 +274,7 @@ def do_steps(tree, tokens, raw, rules):
 	log ("tada:"+repr(res))
 	return res
 
-m=666
+m='a HigherMarpa instance should go into this variable'
 
 def uniq(x):
    r = []
@@ -3121,7 +3130,7 @@ class FunctionDefinitionBase(Syntaxed):
 		r = FunctionCall(s)
 
 		for k,v in iteritems(s.params):
-			r.args[k] = args.pop()
+			r.args[k] = args.pop(0)
 
 		r.fix_parents()
 

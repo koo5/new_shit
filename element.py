@@ -11,6 +11,7 @@ from lemon_logger import log, ping
 import tags
 from keys import *
 from lemon_six import *
+from utils import evil
 
 class Element(event.EventDispatcher):
 	"""an object that can be rendered"""
@@ -20,7 +21,7 @@ class Element(event.EventDispatcher):
 	def __init__(self):
 		if platform.frontend != platform.brython: # https://github.com/PierreQuentel/brython/issues/15
 			super(Element, self).__init__()
-		self._parent = 666
+		self._parent = evil('666:evil _parent placeholder')
 		self.brackets_color = (200,0,0)
 		self.brackets = ('<','>')
 		self._render_lines = {}

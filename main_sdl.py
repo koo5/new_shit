@@ -7,6 +7,7 @@ import subprocess
 from math import *
 
 from lemon_six import iteritems, PY3
+from utils import evil
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 
@@ -237,7 +238,7 @@ def arrow_side(s, length,a,x2,y2, surface):
 
 def root_draw(self, surf):
 	if self.arrows_visible:
-		draw_lines(self, surf, self.under_cursor, 666, True)
+		draw_lines(self, surf, self.under_cursor, evil('justbg, so no transparent'), True)
 		draw_arrows(self, surf)
 		draw_lines(self, surf, self.under_cursor, True)
 	else:

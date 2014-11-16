@@ -35,3 +35,10 @@ def test_flatten():
 
 test_flatten()
 
+class evil(object):
+	"""this is an evil default object. if you ran into it, you made a wrong turn somewhere"""
+	__slots__ = ['note']
+	def __init__(s, note="damn"):
+		s.note = note
+	def __repr__(s):
+		return str(s.note)

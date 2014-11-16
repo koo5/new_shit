@@ -16,7 +16,7 @@ from lemon_logger import log, topic
 from keys import *
 from lemon_six import iteritems, str_and_uni
 from lemon_args import args
-
+from utils import evil
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
 
@@ -570,7 +570,7 @@ import time
 
 class Log(InfoFrame):
 	def __init__(s):
-		super(Log, s).__init__(666)
+		super(Log, s).__init__(evil('no root needed'))
 		s.items = []
 		s.projected = []
 		s.top_bar = [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle)]
