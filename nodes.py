@@ -40,6 +40,8 @@ from fuzzywuzzy import fuzz
 from collections import defaultdict
 import json
 
+from notifyinglist import NotifyingList
+
 from dotdict import dotdict
 from lemon_logger import log, topic
 import element
@@ -177,7 +179,8 @@ def parse(raw): #just text now, list_of_texts_and_nodes later
 	r.start_input()
 
 	for i, sym in enumerate(tokens):
-		log ("input:symid:%s name:%s raw:%s"%(sym, m.symbol2name(sym),raw[i]))
+		if args.log_parsing:
+			log ("input:symid:%s name:%s raw:%s"%(sym, m.symbol2name(sym),raw[i]))
 		assert type(sym) == symbol_int
 		r.alternative(sym, i+1)
 		r.earleme_complete()
@@ -195,14 +198,15 @@ def parse(raw): #just text now, list_of_texts_and_nodes later
 	o = Order(b)
 	tree = Tree(o)
 
-	import gc
+	#import gc
 	for _ in tree.nxt():
-		r=do_steps(tree, tokens, raw, m.rules)
-		gc.collect() #force a marpa_v_unref of the valuator so we can move on to the next tree
+		r=do_steps(tree, tokens, raw)
+		#gc.collect() #force a marpa_v_unref of the valuator so we can move on to the next tree
+
 		yield r
 
 @topic('do steps')
-def do_steps(tree, tokens, raw, rules):
+def do_steps(tree, tokens, raw):
 	stack = defaultdict((lambda:evil('default stack item, what the beep')))
 	stack2= defaultdict((lambda:evil('default stack2 item, what the beep')))
 	v = Valuator(tree)
@@ -246,15 +250,17 @@ def do_steps(tree, tokens, raw, rules):
 
 			val = [stack2[i] for i in range(arg0, argn+1)]
 
-
-			debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
+			if args.log_parsing:
+				debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
 
 			try:
 				for action in actions:
 					val = action(val)
-					debug_log += '->'+repr(val)
+					if args.log_parsing:
+						debug_log += '->'+repr(val)
 			finally:
-				log(debug_log)
+				if args.log_parsing:
+					log(debug_log)
 
 			stack2[arg0] = val
 
@@ -267,6 +273,7 @@ def do_steps(tree, tokens, raw, rules):
 		else:
 			log(marpa_cffi.marpa_codes.steps[s])
 
+	v.unref()#promise me not to use it from now on
 	#print "tada:"+str(stack[0])
 #	print ("tada:"+json.dumps(stack[0], indent=2))
 	#log ("tada:"+json.dumps(stack2[0], indent=2))
@@ -294,33 +301,40 @@ def setup_grammar(root,scope):
 	for i in root.flatten():
 		i.forget_registration()
 
-	m = HigherMarpa()
+	m = HigherMarpa(args.graph_grammar or args.log_parsing)
 
-	graphing_wrapper.start()
-	graphing_wrapper.symid2name = m.symbol2name
+	if args.graph_grammar:
+		graphing_wrapper.start()
+		graphing_wrapper.symid2name = m.symbol2name
 
-	m.symbol('start')
-	m.symbol('nonspecial_char')
-	m.symbol('known_char')
+	m.named_symbol('start')
+	m.named_symbol('nonspecial_char')
+	m.named_symbol('known_char')
 
-	m.symbol('maybe_spaces')
+	m.named_symbol('maybe_spaces')
 	m.sequence('maybe_spaces', m.syms.maybe_spaces, m.known_char(' '), action=ignore, min=0)
 
 	for i in scope:
 		#the property is accessed here, forcing the registering of the nodes grammars
 		sym = i.symbol
 		if sym != None:
-			log(sym)
-			m.rule('start is %s' % m.symbol2name(sym), m.syms.start, sym)
+			if args.log_parsing:
+				log(sym)
+				rulename = 'start is %s' % m.symbol2name(sym)
+			else:
+				rulename = ""
+			m.rule(rulename , m.syms.start, sym)
 			#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
 
-	graphing_wrapper.generate_gv()
-	graphing_wrapper.stop()
+	if args.graph_grammar:
+		graphing_wrapper.generate_gv()
+		graphing_wrapper.stop()
 
 	m.set_start_symbol(m.syms.start)
 
-	m.print_syms()
-	m.print_rules()
+	if args.log_parsing:
+		m.print_syms()
+		m.print_rules()
 
 	m.g.precompute()
 
@@ -1508,14 +1522,14 @@ class Number(WidgetedValue):
 	@classmethod
 	def register_class_symbol(cls):
 		log("registering number grammar")
-		m.symbol('digit')
-		m.symbol('digits')
+		digit = m.symbol('digit')
+		digits = m.symbol('digits')
 		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
-			m.rule(i + "_is_a_digit",m.syms.digit, m.known_char(i))
+			m.rule(i + "_is_a_digit",digit, m.known_char(i))
 
-		m.sequence('digits_is_sequence_of_digit', m.syms.digits, m.syms.digit, join)
+		m.sequence('digits_is_sequence_of_digit', digits, digit, join)
 		r = m.symbol('number')
-		m.rule('number_is_digits', r, m.syms.digits, (ident, cls))
+		m.rule('number_is_digits', r, digits, (ident, cls))
 		return r
 
 	def _eval(self):
@@ -2056,7 +2070,8 @@ class WorksAs(Syntaxed):
 			return
 		lhs = s.ch.sup.target.symbol
 		rhs = s.ch.sub.target.symbol
-		log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
+		if args.log_parsing:
+			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
 		if lhs != None and rhs != None:
 			r = m.rule(str(s), lhs, rhs)
 			s._rule = r
@@ -2339,11 +2354,27 @@ class ParserBase(Node):
 
 	def __init__(self):
 		super(ParserBase, self).__init__()
-		self.items = []
+		self.items = NotifyingList()
 		self.decl = None
 		self.register_event_types('on_edit')
 		self.brackets_color = "compiler brackets"
 		self.brackets = ('{', '}')
+		self.reregister = False
+
+	@property
+	def items(s):
+		return s._items
+
+	@items.setter
+	def items(s, x):
+		s._items = NotifyingList(x)
+		s._items.register_callback(s.items_changed)
+
+	def items_changed(s):
+		#s.root.rerender = s.reparse = True
+		pass
+
+		#hmm,,...
 
 	def __getitem__(self, i):
 		return self.items[i]
@@ -2364,6 +2395,7 @@ class ParserBase(Node):
 		assert isinstance(item, str_and_uni +(Node,) ), repr(item)
 		if isinstance(item, Node):
 			item.parent = self
+		self.reparse = True
 
 	def edit_text(s, ii, pos, e):
 		#item index, cursor position in item, event
@@ -2382,6 +2414,7 @@ class ParserBase(Node):
 
 		#log(self.text + "len: " + len(self.text))
 		s.dispatch_event('on_edit', s)
+
 		return True
 
 
@@ -2397,7 +2430,7 @@ class ParserBase(Node):
 		"""
 
 	def render(self):
-		if len(self.items) == 0: #hint at the type expected
+		if len(self.items) == 0: # no items, show the gray type hint
 			return self.empty_render()
 
 		r = [AttTag("compiler body", self)]
@@ -2716,7 +2749,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 			raise Exception("whats that shit, cowboy?")
 
 
-	def parser_stuff(s, scope):
+	def parse(s, scope):
 		if not marpa:
 			return []
 		if len(s.items) != 1:
@@ -2760,7 +2793,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		menu = []
 
 		if text != "":
-			menu += self.parser_stuff(scope)
+			menu += self.parse(scope)
 
 		log("%s parser results:%s"%(len(menu), [i.value for i in menu]))
 
@@ -3112,8 +3145,11 @@ class FunctionDefinitionBase(Syntaxed):
 			assert a,  i
 			rhs.append(a)
 			rhs.append(m.syms.maybe_spaces)
-		log('rhs:%s'%rhs)
-		debugname = "call of "+repr(s)
+		if args.log_parsing:
+			log('rhs:%s'%rhs)
+			debugname = "call of "+repr(s)
+		else:
+			debugname=""
 		s._symbol = m.symbol(debugname)
 		m.rule(debugname, s._symbol, rhs, s.marpa_create_call)
 		m.rule("call is "+debugname, b['call'].symbol, s._symbol)

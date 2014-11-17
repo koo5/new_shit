@@ -3,6 +3,7 @@ from __future__ import print_function
 import traceback, logging
 from inspect import *
 from time import time
+from lemon_args import args
 
 #logging is really only for debugging purposes. users will have key/action log frame.
 
@@ -16,7 +17,7 @@ debug = print
 
 topics = []
 
-do_topics = 1
+do_topics = not args.debug
 
 def topic(text=None):
 	"""decorator to put before your function with a logging topic"""

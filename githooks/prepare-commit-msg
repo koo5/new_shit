@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+
+awk '/----/ {exit} {print} ' todo > "$1-tmp"
+cat $1 >> "$1-tmp";
+mv "$1-tmp" $1
+

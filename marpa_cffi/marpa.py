@@ -40,6 +40,7 @@ from lemon_logger import topic, log
 
 
 class symbol_int(int):pass # just for some type checking
+class rule_int(int):pass
 
 
 class Grammar(object):
@@ -82,11 +83,11 @@ class Grammar(object):
 		return r
 		
 	def rule_new(s, lhs, rhs):
-		return s.check_int(lib.marpa_g_rule_new(s.g, lhs, rhs, len(rhs)))
+		return rule_int(s.check_int(lib.marpa_g_rule_new(s.g, lhs, rhs, len(rhs))))
 
 	def sequence_new(s, lhs, rhs, separator=-1, min=1, proper=False):
-		return s.check_int(lib.marpa_g_sequence_new(s.g, lhs, rhs, separator, min,
-		    MARPA_PROPER_SEPARATION if proper else 0))
+		return rule_int(s.check_int(lib.marpa_g_sequence_new(s.g, lhs, rhs, separator, min,
+		    MARPA_PROPER_SEPARATION if proper else 0)))
 
 	def precompute(s):
 		r = s.check_int(lib.marpa_g_precompute(s.g))
@@ -177,9 +178,15 @@ class Valuator(object):
 		s.g = tree.g
 		s.v = s.g.check_null(lib.marpa_v_new(tree.t))
 		log(s.v)
+		s.unreffed = False
 	def __del__(s):
+		if not s.unreffed:
+			s.unref()
+	def unref(s):
 		lib.marpa_v_unref(s.v)
+		s.unreffed = True
 	def step(s):
+		assert not s.unreffed
 		return s.g.check_int(lib.marpa_v_step(s.v))
 		
 

@@ -18,19 +18,20 @@ def parse_args():
 				   help='webos keys hack')
 	parser.add_argument('--invert', action='store_true',
 				   help='invert colors')
-	parser.add_argument('--replay', action='store_true',
-				   default=False)
-	parser.add_argument('--lesh', action='store_true',
-				   default=False)
+	parser.add_argument('--replay', action='store_true')
+	parser.add_argument('--lesh', action='store_true')
 	parser.add_argument('--font-size', type=int,
 				   default=22)
 	parser.add_argument('--load', type=unicode,
 				   default=False)
 	parser.add_argument('--run', type=unicode,
 				   default=False)
-	parser.add_argument('--log-height', default=4, type=int)
-	parser.add_argument('--lame', action='store_true',
-				   default=False)
+	parser.add_argument('--log-height', type=int,
+					default=4)
+	parser.add_argument('--lame', action='store_true')
+	parser.add_argument('--log-parsing', action='store_true')
+	parser.add_argument('--graph-grammar', action='store_true')
+	parser.add_argument('--debug', action='store_false')
 	return parser.parse_args()
 
 args = parse_args()

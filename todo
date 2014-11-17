@@ -1,0 +1,31 @@
+added parameters --log-parsing and --graph-grammar. complicated HigherMarpa quite a bit. added notifyinglist
+----
+
+only register grammar if root.reregister is set. Only render if root.rerender. 
+#Only output grammar debugging info if --debug-grammar
+#only parse if Parser.reparse
+
+
+
+
+#total split or threading? reading https://wiki.python.org/moin/GlobalInterpreterLock
+
+add --server to main_sdl and main_curses
+
+accepts tcp connection, creates some 
+client object
+  .proxy is a weakref dict from some int
+
+for tag in tags:
+  if type(tag) == ElementTag:
+    proxy[len(proxy)] = weakref(node)
+
+    
+    
+
+    
+    
+continue work on user-defined syntax
+
+split Ref and TypeRef
+

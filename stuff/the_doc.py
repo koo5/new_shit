@@ -104,9 +104,11 @@ python -m cProfile -s cumulative  new_shit.py
 
 echo -e "\e\e" | pypy -c "import cProfile; import main_curses; cProfile.run('main_curses.main(True)', 'ssss1')"
 
+python -c "import cProfile; import main_sdl; cProfile.run('main_sdl.main()', 'ssss1')"
+
 time pypy ./main_curses.py --replay
 
-import cProfile pstats
+import cProfile, pstats
 p = pstats.Stats("ssss1")
 p.strip_dirs().sort_stats('cumulative')
 p.print_stats()
@@ -117,7 +119,7 @@ import project test__project
 reload(project); reload(test__project)
 
 import main_sdl
-cProfile.run('main_sdl.main()', "sss")
+cProfile.run('main_sdl.main(True)', "ssss1")
 
 			"""),				
 			Chapter("coupling to pygame", """

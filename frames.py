@@ -75,6 +75,7 @@ class Root(Frame):
 		self.arrows_visible = True
 		self.cursor_blink_phase = True
 		self.menu_dirty = True
+
 		if args.noalpha:
 			self.arrows_visible = False
 
@@ -246,7 +247,8 @@ class Root(Frame):
 			elif k == K_g:
 				graph.gen_graph(s.root)
 			elif k == K_q:
-				exit()#a quit shortcut that goes thru the event pickle/replay mechanism
+				import sys
+				sys.exit()#a quit shortcut that goes thru the event pickle/replay mechanism
 			else:
 				return False
 		else:
