@@ -1,7 +1,7 @@
 import operator
 from marpa import *
 from dotdict import *
-from lemon_six import str_and_uni
+from lemon_six import str_and_uni, itervalues
 
 #some parser action callbacks
 
@@ -23,11 +23,12 @@ class HigherMarpa(object):
 		s.known_chars = {}
 		s.actions = {} # per-rule valuator callbacks (functions that the parser steps loop calls to actually create basic values or Nodes from lists of values or child nodes
 		if debug:
-			s.symbol = s.named_symbol
-			s.rules = dotdict()
+			s.rules = {}
+			s.symbol = s.symbol_debug
 			s.rule = s._rule_debug
 			s.sequence = s._sequence_debug
 		else:
+			s.symbol = s.symbol_fast
 			s.rule = s._rule_fast
 			s.sequence = s._sequence_fast
 
@@ -39,10 +40,15 @@ class HigherMarpa(object):
 		s.syms[name] = r
 		return r
 
-	def unnamed_symbol(s,name):
-		return s.symbol(str(r)+'_'+name)
+	def symbol_debug(s,name):
+		r = s.g.symbol_new()
+		name = str(r) + "_" + name
+		if name in s.syms._dict:
+			raise Exception("%s already in syms"%name)
+		s.syms[name] = r
+		return r
 
-	def symbol(s,name):
+	def symbol_fast(s,name):
 		return s.g.symbol_new()
 
 	def symbol2name(s,symid):
@@ -52,10 +58,7 @@ class HigherMarpa(object):
 		assert False
 
 	def rule2name(s,r):
-		for k,v in s.rules._dict.items():
-			if v == r:
-				return k
-		assert False
+		return s.rules[r]
 
 	def _rule(s, lhs,rhs,action=ident):
 		assert type(lhs) == symbol_int
@@ -77,8 +80,10 @@ class HigherMarpa(object):
 
 	def _rule_debug(s,name, lhs,rhs,action=ident):
 		assert type(name) in str_and_uni
-		assert name not in s.rules._dict
-		r = s.rules[name] = s._rule(lhs,rhs,action)
+		assert name not in itervalues(s.rules)
+		r = s._rule(lhs,rhs,action)
+		s.rules[r] = name
+		return r
 
 	def _rule_fast(s,name, lhs,rhs,action=ident):
 		return s._rule(lhs,rhs,action)
@@ -89,12 +94,14 @@ class HigherMarpa(object):
 		assert type(rhs) == symbol_int
 		r = s.g.sequence_new(lhs, rhs, separator, min, proper)
 		s._add_action(r, action)
+		return r
 
 	def _sequence_debug(s,name, lhs, rhs, action=ident, separator=-1, min=1, proper=False):
 		assert type(name) in str_and_uni
-		assert name not in s.rules._dict
+		assert name not in itervalues(s.rules)
 
-		r = s.rules[name] = s._sequence(lhs, rhs, action, separator, min, proper)
+		r = s._sequence(lhs, rhs, action, separator, min, proper)
+		s.rules[r] = name
 		return r
 
 	def _sequence_fast(s,name, lhs, rhs, action=ident, separator=-1, min=1, proper=False):
@@ -137,10 +144,7 @@ class HigherMarpa(object):
 		log('syms:%s'%s.sorted_by_values(s.syms))
 
 	def print_rules(s):
-		#log('rules:%s'%s.sorted_by_values(s.rules))
-		log('rules:')
-		for r in s.sorted_by_values(s.rules):
-			log(r)
+		log("rules:",s.rules)
 
 	def check_accessibility(s):
 		for i in s.syms._dict.items():

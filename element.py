@@ -22,7 +22,7 @@ class Element(event.EventDispatcher):
 		if platform.frontend != platform.brython: # https://github.com/PierreQuentel/brython/issues/15
 			super(Element, self).__init__()
 		self._parent = evil('666:evil _parent placeholder')
-		self.brackets_color = (200,0,0)
+		self.brackets_color = (200,200,200)
 		self.brackets = ('<','>')
 		self._render_lines = {}
 		#new-style events

@@ -281,8 +281,6 @@ def do_steps(tree, tokens, raw):
 	log ("tada:"+repr(res))
 	return res
 
-m='a HigherMarpa instance should go into this variable'
-
 def uniq(x):
    r = []
    for i in x:
@@ -290,7 +288,7 @@ def uniq(x):
            r.append(i)
    return r
 
-m = HigherMarpa()
+m = HigherMarpa() # just to confuse pycharm less, will be overwritten in setup_grammar
 
 @topic ('setup_grammar')
 def setup_grammar(root,scope):
@@ -704,7 +702,8 @@ class Node(NodePersistenceStuff, element.Element):
 			r = hsv2.rgb
 			return (int(r.red), int(r.green), int(r.blue))
 		except:
-			return colors.color("fg")
+			#return colors.color("fg")
+			return "fg"
 
 	@property
 	def brackets_color(s):
@@ -1714,6 +1713,7 @@ class Ref(RefPersistenceStuff, Node):
 				return True
 	def copy(s):
 		return Ref(s.target)
+
 
 class VarRef(VarRefPersistenceStuff, Node):
 	def __init__(self, target):
@@ -2767,6 +2767,20 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		parse_result = parse(it)
 		if parse_result  == None:
 			return []
+
+		"""maybe we want to only make the start_is_something rules
+		when that something cant be reached from Statement thru WorksAs..
+		lets just prune the duplicate results for now"""
+		"""
+		parse_result = list(parse_result)
+		r2 = parse_result[:]
+		nope = []
+		for i,v in enumerate(parse_result):
+			for susp in parse_result:
+				if susp != v and v.eq_by_value(susp):
+					nope.append(v)
+		parse_result = [i for i in parse_result if not i in nope]
+		"""#i dont feel like implementing eq_by_value for everything now
 
 		for i in parse_result:
 			r.append(ParserMenuItem(i, 333))

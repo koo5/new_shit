@@ -1,4 +1,3 @@
-added parameters --log-parsing and --graph-grammar. complicated HigherMarpa quite a bit. added notifyinglist
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 
