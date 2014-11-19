@@ -1,2 +1,8 @@
+Libmarpa seems a fit for my project, so the plan is to continue working on the bindings.
+So far, there is:
+marpa_cffi.py itself, which exposes the library calls and constants,
+marpa.py, which defines classes for marpa structs and does error chacking and memory management,
+higher.py, another layer which lets you name symbols and rules for access by name and debugging and helper functions for tokenizer-less parsing. There is also graphing_wrapper.py which replaces some functions in marpa_cffi and lets you generate a bnf or graphviz graph from intercepted symbol and rule calls.
 
-if anyone wants to hack on this with me to shape it into something more widely useful, you can find me in the #marpa irc channel
+if anyone wants to hack on this with me to shape it into something more widely useful, you can find me in the #marpa irc channel. One issue is the logging and utils dependency.
+I dont know where this is going next, but i dont plan on creating anything like the SLIF or NAIF layers for my use, because all the grammar is generated from the objects in my editor.
