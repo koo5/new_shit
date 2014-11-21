@@ -15,7 +15,7 @@ debug = print
 
 topics = []
 
-do_topics = not args.debug
+do_topics = not args.debug#wat
 
 def topic(text=None):
 	"""decorator to put before your function with a logging topic"""
@@ -39,30 +39,29 @@ def topic(text=None):
 		else:
 			return function_with_decorator
 	return decorator_inner_crap
-
+"""
 def bt(x):
 	bt = getouterframes(currentframe())
 	for f in reversed(bt):
 		a,b,c,d = getargvalues(f[0])
 		line = f[1]+":"+str(f[2])+":"+f[3]+formatargvalues(a,b,c,d)
 		debug(line + (("    :    " + x) if (f == bt[0]) else ""))
-
+"""
+"""
 def ping(level = 1):
 	bt = getouterframes(currentframe())
 	f = bt[level]
 	a,b,c,d = getargvalues(f[0])
 	line = f[1]+":"+str(f[2])+":"+f[3]+formatargvalues(a,b,c,d)
 	debug(line)
+"""
 
 def log(*vargs):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
-	x = ', '.join([str(x) for x in vargs])
-	text = str(time()) + ":"
-	text += ":".join(topics)
-	text+=": "
-	text += str(x)
-	debug(text)
+	text = ', '.join([str(x) for x in vargs])
+	debug(time(), ":".join(topics), text)
 
+"""
 def plog(*args):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
 	bt = getouterframes(currentframe())
@@ -70,7 +69,7 @@ def plog(*args):
 	a,b,c,d = getargvalues(f[0])
 	line = f[1]+":"+str(f[2])+":"+f[3]+formatargvalues(a,b,c,d)
 	debug(line+" logs: "+' '.join([str(x) for x in args]))
-
+"""
 #def catch(fun):
 #	try:
 

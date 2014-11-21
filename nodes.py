@@ -813,7 +813,7 @@ class Node(NodePersistenceStuff, element.Element):
 			if self.parent != None:
 				return self.parent.module()
 			else:
-				print self, "has no parent"
+				log (self, "has no parent")
 				return None
 
 	@classmethod

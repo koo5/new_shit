@@ -20,7 +20,7 @@ from lemon_args import args
 if args.debug_objgraph:
 	import objgraph, gc
 
-version = "0.3 silly pancake"
+version = "0.3 silly socks"
 
 fast_forward = False # quickly replaying input events without drawing
 sidebar = None # active sidebar
