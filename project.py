@@ -90,66 +90,6 @@ class projection_results(object):
 
 
 
-"""
-def collect_tags(tags):
-	for tag in tags:
-		if isinstance(tag, list):
-			for t in _collect_tags(tags):
-				yield t
-		elif isinstance(tag, ChildTag):
-			for t in _collect_tags(elem.ch[tag.name]):
-				yield t
-			tag = ElementTag()
-"""
-#https://docs.python.org/2/library/collections.html#collections.deque
-#(tags.color, (3,3,3))..
-"""
-from types import GeneratorType
-
-def _collect_tags(p, elem, tags):
-	for tag in tags:
-		if type(tag) in (GeneratorType, list):
-			for i in _collect_tags(p, elem, tag):
-				yield i
-		elif type(tag) == TextTag:
-			yield tag.text
-
-		elif type(tag) == ChildTag:
-			e = elem.ch[tag.name]
-			return _collect_tags(p, e, e.tags())
-
-		elif type(tag) == MemberTag:
-				#get the element as an attribute
-				#i think this should be getattr, but it seems to work
-			return _project_elem(p, elem.__dict__[tag.name])
-
-		elif type(tag) == ElementTag:
-			return _project_elem(p, tag.element)
-
-		elif type(tag) == EndTag:
-			p.atts.pop()
-
-		elif type(tag) == AttTag:
-			attadd(p.atts, tag.key, tag.val)
-
-		elif type(tag) == ColorTag:
-			attadd(p.atts, "color", tag.color)
-
-		elif type(tag) == IndentTag:
-			p.indent+=1
-
-		elif type(tag) == DedentTag:
-			p.indent-=1
-
-		elif type(tag) == ArrowTag:
-			p.arrows.append((len(p.lines[-1]), len(p.lines) - 1, tag.target))
-
-		else:
-			raise Exception("is %s a tag?, %s" % (repr(tag), elem))
-"""
-
-
-
 def project(root, cols, frame, rows_limit = False):
 	"""the main entry point to the projection functionality. This is what is used now. The collecting of tags is coupled with the rendering"""
 	p = projection_results(cols, frame, rows_limit)
@@ -227,9 +167,6 @@ def _project_tags(p, elem, tag):
 	elif type(tag) == AttTag:
 		attadd(p.atts, tag.key, tag.val)
 
-	elif type(tag) == ColorTag:
-		attadd(p.atts, "color", tag.color)
-
 	elif type(tag) == IndentTag:
 		p.indent+=1
 
@@ -295,4 +232,9 @@ def find(node, lines):
 
 if __debug__:
 	test_squash()
+
+
+
+#could use https://docs.python.org/2/library/collections.html#collections.deque
+#to flatten the collection loop
 

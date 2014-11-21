@@ -13,8 +13,6 @@ from lemon_args import args
 
 debug = print
 
-#gui = None
-
 topics = []
 
 do_topics = not args.debug

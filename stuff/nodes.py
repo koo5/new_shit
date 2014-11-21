@@ -22,7 +22,7 @@ import element
 import widgets
 from menu import MenuItem, InfoMenuItem, HelpMenuItem
 import tags
-from tags import ChildTag as ch, MemberTag as w, TextTag as t, NewlineTag as nl, IndentTag as indent, DedentTag as dedent, ColorTag, EndTag, ElementTag, MenuTag
+from tags import *
 import tags
 tags.asselement = element
 import project

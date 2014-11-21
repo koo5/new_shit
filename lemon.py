@@ -1,21 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-#frontend-agnostic middle, complicated by debug replay functionality
+"""frontend-agnostic middle, with input event replay functionality for debugging"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
 
-version=0.21
-
-"""
-try:
-	import objgraph, gc
-except:
-	pass
-"""
-import sys, os
-import pickle, copy
+import sys
+import pickle
 
 import lemon_logger
 from lemon_logger import log, topic
@@ -25,9 +17,14 @@ import lemon_colors as colors
 from keys import *
 from lemon_args import args
 
+if args.debug_objgraph:
+	import objgraph, gc
+
+version = "0.3 silly pancake"
+
 fast_forward = False # quickly replaying input events without drawing
 sidebar = None # active sidebar
-is_first_event = True # debug replay is cleared if first event isnt an F2 keypress
+is_first_event = True # debug replay is cleared if first event isnt an F2 keypress so we need to track if this is the first event after program start
 
 
 def cycle_sidebar():
@@ -131,15 +128,11 @@ def keypress(e):
 	else:
 		if args.log_events:
 			log("unhandled")
-	#render()#?
 
-	"""
-	try:
+	if args.debug_objgraph:
 		gc.collect()
 		objgraph.show_most_common_types(30)
-	except:
-		pass
-	"""
+
 
 def handle(event):
 	if event.type == KEYDOWN:
@@ -227,18 +220,21 @@ def try_move_cursor(n):
 	if l:
 		root.cursor_c, root.cursor_r = l
 
+
+
+
 root = frames.Root()
+logframe = frames.Log()
 
 sidebars = [frames.Intro(root),
             frames.GlobalKeys(root),
             frames.Menu(root),
             frames.NodeInfo(root)]
             #frames.ContextInfo(root)]#carry on...
-sidebars.append(sidebars[0])#sentinel:)
-sidebar = sidebars[2]
+sidebars.append(sidebars[0])#a sentinel for easy cycling:)
 
-logframe = frames.Log()
-lemon_logger.gui = logframe
+sidebar = sidebars[2] # currently active sidebar
+
 
 allframes = sidebars + [logframe, root]
 
