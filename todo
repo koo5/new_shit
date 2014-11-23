@@ -1,5 +1,4 @@
-created collect_tags(), tags_fast. Starting to design the frontend/backend split. 
-
+rewrote the todo commit hook in python. 
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 
