@@ -1196,7 +1196,7 @@ class List(ListPersistenceStuff, Collapsible):
 		#defined declaratively so Parser can deal with it
 		yield TextTag('[')
 		for item in self.items:
-			yield ElementTag(item)
+			yield [AttTag( ElementTag(item)
 			if self.view_mode == 2:
 				yield '\n'
 			else:
@@ -1224,27 +1224,18 @@ class List(ListPersistenceStuff, Collapsible):
 	def on_keypress(self, e):
 
 		if e.key == K_DELETE and e.mod & KMOD_CTRL:
-			item_index = self.insertion_pos(e.frame, e.cursor)
+			item_index = self.item_index(e)
 			if len(self.items) > item_index:
 				del self.items[item_index]
 			return True
 		#???
 		if e.key == K_RETURN:
-			pos = self.insertion_pos(e.frame, e.cursor)
-			self.newline(pos)
+			item_index = self.item_index(e)
+			self.newline(item_index)
 			return True
 
-	def insertion_pos(self, frame, cl):
-		(char, line) = cl
-		i = -1
-		for i, item in enumerate(self.items):
-			if (frame in item._render_lines and
-				#this will probably break finding insertion_pos and so inserting items
-				#when cursor is towards the bottom of the screen
-				item._render_lines[frame]["startline"] >= line and
-				item._render_lines[frame]["startchar"] >= char):
-				return i
-		return i + 1
+	def item_index(self, event):
+		return event.atts.list_item
 
 	def _eval(self):
 		r = List()

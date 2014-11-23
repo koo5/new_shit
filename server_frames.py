@@ -229,71 +229,7 @@ class Root(Frame):
 			element = element.parent
 
 
-	def top_keypress(s, event):
-
-		k = event.key
-
-		if KMOD_CTRL & event.mod:
-			if k == K_LEFT:
-				s.prev_elem()
-			elif k == K_RIGHT:
-				s.next_elem()
-			elif k == K_HOME:
-				s.cursor_top()
-			elif k == K_END:
-				s.cursor_bottom()
-			elif k == K_f:
-				s.dump_to_file()
-			elif k == K_p:
-				s.dump_parents()
-			elif k == K_g:
-				graph.gen_graph(s.root)
-			elif k == K_q:
-				import sys
-				sys.exit()#a quit shortcut that goes thru the event pickle/replay mechanism
-			else:
-				return False
-		else:
-			"""if k == K_F12:
-				for item in root.flatten():
-					if isinstance(item, nodes.Syntaxed):
-						item.view_normalized = not item.view_normalized
-			el"""
-
-			if k == K_F4:
-				s.clear()
-			elif k == K_F5:
-				s.run()
-			elif k == K_F6:
-				s.run_line()
-			elif k == K_F8:
-				s.toggle_arrows()
-			elif k == K_UP:
-				s.move_cursor_v(-1)
-				s.and_sides(event)
-			elif k == K_DOWN:
-				s.move_cursor_v(+1)
-				s.and_sides(event)
-			elif k == K_LEFT:
-				s.move_cursor_h(-1)
-				s.and_updown(event)
-			elif k == K_RIGHT:
-				s.move_cursor_h(+1)
-				s.and_updown(event)
-			elif k == K_HOME:
-				s.cursor_home()
-			elif k == K_END:
-				s.cursor_end()
-			elif k == K_PAGEUP:
-				s.move_cursor_v(-10)
-			elif k == K_PAGEDOWN:
-				s.move_cursor_v(10)
-			else:
-				return False
-		return True
-
-
-	def on_keypress(self, event):
+	def handle_keypress_by_element(self, event):
 		event.frame = self
 		event.cursor = (self.cursor_c, self.cursor_r)
 		event.atts = self.atts
@@ -373,28 +309,6 @@ class Menu(Frame):
 				if not s.valid_only or i.valid:
 					yield i
 
-	def on_keypress(self, e):
-		if platform.frontend == platform.sdl and e.mod & KMOD_CTRL:
-			if e.key == K_UP:
-				self.move(-1)
-				return True
-			elif e.key == K_DOWN:
-				self.move(1)
-				return True
-			elif e.key == K_m:
-				self.menu_dump()
-				return True
-		elif platform.frontend == platform.curses:
-			if e.key == K_INSERT:
-				self.move(-1)
-				return True
-			elif e.key == K_DELETE:
-				self.move(1)
-				return True
-			
-		#if e.key == K_SPACE:
-		if e.uni == ' ':
-			return self.accept()
 
 	def menu_dump(s):
 		e = s.element = s.root.under_cursor
@@ -582,8 +496,9 @@ class Log(InfoFrame):
 	def collect_top_bar(s):
 		return collect_tags(s.top_bar, s)
 
-	def add(s, text):
-		text = time.strftime("%H:%M:%S:%f", time.localtime()) + text
+	def add(s, msg):
+		timestamp, topics, body = msg
+		if type(text) != unicode:
 		it = InfoItem(text)
 		s.items.append(it)
 		s.projected += project.project_tags([ColorTag("fg"), ElementTag(it)], s.cols, s).lines

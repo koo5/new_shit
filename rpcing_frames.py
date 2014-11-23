@@ -30,7 +30,6 @@ class Frame(object):
 	def __init__(s):
 		s.lines = [] # lines actually on screen
 		s.scroll_lines = 0 # how many lines the user has scrolled
-		s._render_lines = {}#hack to satisfy project_elem(), not used here
 
 	def on_keypress(self, event):
 		return False
@@ -72,14 +71,11 @@ class Root(Frame):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.cursor_c = self.cursor_r = 0
-		self.root = nodes.make_root()
-		self.root.fix_parents()
 		self.arrows_visible = True
-		self.cursor_blink_phase = True
-		self.menu_dirty = True
-
+		self.cursor_blinking_phase = True
 		if args.noalpha:
 			self.arrows_visible = False
+		self.server = rpc...
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]: s.move_cursor_h(-1)
@@ -146,6 +142,8 @@ class Root(Frame):
 
 	def render(self):
 		tags_generator = server.root.render()
+		
+		
 		s.project(tags_generator
 
 
@@ -207,15 +205,6 @@ class Root(Frame):
 	def cursor_bottom(s):
 		log("hmpf")
 
-	def run(s):
-		s.root['some program'].run()
-
-	def run_line(s):
-		s.root['some program'].run_line(s.under_cursor)
-
-	def clear(s):
-		s.root['some program'].clear()
-
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible
 
@@ -227,107 +216,7 @@ class Root(Frame):
 			f.write("\n")
 		f.close()
 
-	@topic('parents')
-	def dump_parents(self):
-		element = self.under_cursor
-		while element != None:
-			assert isinstance(element, Element), (assold, element)
-			log(str(element))
-			assold = element
-			element = element.parent
 
-
-	def top_keypress(s, event):
-
-		k = event.key
-
-		if KMOD_CTRL & event.mod:
-			if k == K_LEFT:
-				s.prev_elem()
-			elif k == K_RIGHT:
-				s.next_elem()
-			elif k == K_HOME:
-				s.cursor_top()
-			elif k == K_END:
-				s.cursor_bottom()
-			elif k == K_f:
-				s.dump_to_file()
-			elif k == K_p:
-				s.dump_parents()
-			elif k == K_g:
-				graph.gen_graph(s.root)
-			elif k == K_q:
-				import sys
-				sys.exit()#a quit shortcut that goes thru the event pickle/replay mechanism
-			else:
-				return False
-		else:
-			"""if k == K_F12:
-				for item in root.flatten():
-					if isinstance(item, nodes.Syntaxed):
-						item.view_normalized = not item.view_normalized
-			el"""
-
-			if k == K_F4:
-				s.clear()
-			elif k == K_F5:
-				s.run()
-			elif k == K_F6:
-				s.run_line()
-			elif k == K_F8:
-				s.toggle_arrows()
-			elif k == K_UP:
-				s.move_cursor_v(-1)
-				s.and_sides(event)
-			elif k == K_DOWN:
-				s.move_cursor_v(+1)
-				s.and_sides(event)
-			elif k == K_LEFT:
-				s.move_cursor_h(-1)
-				s.and_updown(event)
-			elif k == K_RIGHT:
-				s.move_cursor_h(+1)
-				s.and_updown(event)
-			elif k == K_HOME:
-				s.cursor_home()
-			elif k == K_END:
-				s.cursor_end()
-			elif k == K_PAGEUP:
-				s.move_cursor_v(-10)
-			elif k == K_PAGEDOWN:
-				s.move_cursor_v(10)
-			else:
-				return False
-		return True
-
-
-	def on_keypress(self, event):
-		event.frame = self
-		event.cursor = (self.cursor_c, self.cursor_r)
-		event.atts = self.atts
-		if self.top_keypress(event):
-			if args.log_events:
-				log("handled by root frame")
-			return True
-		element = self.under_cursor
-
-		#new style handlers
-		#if element != None and element.dispatch_levent(event):
-		#	return True
-
-		#old style
-		while element != None:
-			assert isinstance(element, Element), (assold, element)
-			if element.on_keypress(event):
-				break
-			assold = element
-			element = element.parent
-
-		#some element handled it
-		if element != None:
-			if args.log_events:
-				log("handled by "+str(element))
-			return True
 
 	def do_post_render_move_cursor(s):
 		if isinstance(s.root.post_render_move_caret, int):
@@ -607,3 +496,4 @@ class Log(InfoFrame):
 		s.scroll_lines -= l
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
+
