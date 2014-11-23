@@ -1,7 +1,18 @@
-#!/bin/sh
-#
+#!/usr/bin/env python
+import sys
 
-awk '/----/ {exit} {print} ' todo > "$1-tmp"
-cat $1 >> "$1-tmp";
-mv "$1-tmp" $1
+out = ""
+msg = sys.argv[1]
+todo = open("todo", "r").xreadlines()
+
+for line in todo:
+	if line != "----\n":
+		out += line
+	else:
+		out = out + open(msg, "r").read()
+		open(msg, "w").write(out)
+		newtodo = line + "".join(todo)
+		open("todo", "w").write(newtodo)
+
+
 

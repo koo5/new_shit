@@ -779,6 +779,7 @@ def test_serialization(r):
 
 
 
+pygame with py3:
 http://pygame.org/wiki/CompileUbuntu?parent=Compilation
 
 
@@ -805,3 +806,14 @@ cycle with Fs
 generate an uml graph:
 apt-get install pylint graphviz
 pyreverse -ASmy -k -o png  nodes.py -p nodes
+
+
+
+
+pondering
+===
+* the client and server can either be both the same language and we could use some way of just proxying the python objects, this has the advantage that we might be able to more easily play with rendering fun stuff in the frontend (VPython) or we go full separation/serialization. Shrug.
+* try changing the input handling to make Parser simple (and working) (left_keypress, right_keypress, middle_keypress)
+* emit python or picolisp?
+* exploding nodes
+* finish the curses interface (keyboard input handling)
