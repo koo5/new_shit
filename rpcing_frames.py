@@ -61,6 +61,9 @@ class Frame(object):
 		elif e.button == 5:
 			s.scroll(5)
 
+	def on_keypress(s, event):
+
+
 	def scroll(s,l):
 		s.scroll_lines += l
 		if s.scroll_lines < 0:

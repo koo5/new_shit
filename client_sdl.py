@@ -34,11 +34,14 @@ from client_args import args
 
 
 import zerorpc
-server = zerorpc.connect(args.server)
+server = zerorpc.Client()
+
+server.connect(args.server)
 
 import rpcing_frames
 if args.log:
-	frame = rpcing_frames.Log(server)
+	frame = log = rpcing_frames.Log(server)
+	root = server
 
 for f in allframes:
 	f.rect = pygame.Rect((6,6),(6,6))
@@ -107,14 +110,14 @@ def keypressevent__repr__(self):
 lemon.KeypressEvent.__repr__ = keypressevent__repr__ #a better repr that translates keys to key names
 
 def keypress(e):
-	def on_keypress(self, event):
-		event.cursor = (self.cursor_c, self.cursor_r)
-		event.atts = self.atts
 
-		if keybindings.keypress(event):
-			server.handle_with_element(event)
+	event = KeypressEvent(pygame.key.get_pressed(), e.unicode, e.key, e.mod)
 
-	event = lemon.KeypressEvent(pygame.key.get_pressed(), e.unicode, e.key, e.mod)
+	if not keybindings.keypress(event):
+
+		event.cursor = (s.root.cursor_c, s.root.cursor_r)
+		root.keypress_on_element(event)
+
 	render()
 	reset_cursor_blink_timer()
 	draw()

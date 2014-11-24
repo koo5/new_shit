@@ -1,11 +1,14 @@
 
 def keypress(event):
+	if not frame_level(event):
+		element_level(event)
 
-	k = event.key
+def frame_level(e):
+	k = e.key
 
 #with CTRL
 
-	if KMOD_CTRL & event.mod:
+	if KMOD_CTRL & e.mod:
 		if k == K_LEFT:
 			root.prev_elem()
 		elif k == K_RIGHT:
@@ -71,4 +74,6 @@ def keypress(event):
 			return self.accept()
 		else:
 			return False
-h
+
+def element_level:
+	root.on_keypress(e)
