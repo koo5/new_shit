@@ -9,16 +9,10 @@ line is a list of tuples: (character, attributes)
 
 from __future__ import unicode_literals
 
-
-from lemon_six import str_and_uni
 from tags import *
-from lemon_logger import ping, log
-from nodes import Node, Parser
-from dotdict import dotdict
 
 if __debug__:
 	import element as asselement
-	import nodes as assnodes
 
 #__slow_debug__ = False #todo:lemon_options?
 

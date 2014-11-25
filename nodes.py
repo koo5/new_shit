@@ -28,8 +28,9 @@ and the whole language is very..umm..not well-founded...for now. improvements we
 
 from __future__ import unicode_literals
 
-from lemon_six import iteritems, iterkeys, itervalues, str_and_uni, PY2, PY3
+from lemon_utils.lemon_six import iteritems, iterkeys, PY2
 import lemon_platform as platform
+
 BRY = platform.frontend == platform.brython
 
 import sys
@@ -37,13 +38,10 @@ sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodu
 
 from fuzzywuzzy import fuzz
 
-from collections import defaultdict
 import json
 
 from notifyinglist import NotifyingList
 
-from dotdict import dotdict
-from lemon_logger import log, topic
 import element
 from menu_items import MenuItem
 import widgets
@@ -52,7 +50,8 @@ from tags import ChildTag, ElementTag, MemberTag, AttTag, TextTag, ColorTag, End
 #from input import levent
 import lemon_colors as colors
 from keys import *
-from utils import flatten, odict, evil
+from lemon_utils.utils import flatten, odict, evil
+from lemon_utils.dotdict import dotdict
 from lemon_args import args
 
 tags.asselement = element
@@ -194,18 +193,16 @@ def parse(raw): #just text now, list_of_texts_and_nodes later
 	try:
 		b = Bocage(r, latest_earley_set_ID)
 	except:
-		return
+		return # no parse
+
 	o = Order(b)
 	tree = Tree(o)
 
-	#import gc
 	for _ in tree.nxt():
 		r=do_steps(tree, tokens, raw)
-		#gc.collect() #force a marpa_v_unref of the valuator so we can move on to the next tree
-
 		yield r
 
-@topic('do steps')
+@topic2
 def do_steps(tree, tokens, raw):
 	stack = defaultdict((lambda:evil('default stack item, what the beep')))
 	stack2= defaultdict((lambda:evil('default stack2 item, what the beep')))
@@ -331,8 +328,8 @@ def setup_grammar(root,scope):
 	m.set_start_symbol(m.syms.start)
 
 	if args.log_parsing:
-		m.print_syms()
-		m.print_rules()
+		log(m.syms_sorted_by_values)
+		log(m.rules)
 
 	m.g.precompute()
 

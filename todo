@@ -1,5 +1,4 @@
-created collect_tags(), tags_fast. Starting to design the frontend/backend split. 
-
+i have no idea what im doing
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 

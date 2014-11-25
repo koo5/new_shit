@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
-
 import argparse
+
+from lemon_utils.lemon_six import unicode
 
 def parse_args():
 	parser = argparse.ArgumentParser()

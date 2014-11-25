@@ -24,7 +24,7 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 
-from marpa_cffi import *
+from .marpa_cffi import *
 
 
 config = ffi.new("Marpa_Config*")
@@ -35,8 +35,7 @@ lib.marpa_c_init(config)
 
 #a wee bit of dependency on something in the lemon repo, feel free to use it or
 #cut it out
-import sys; sys.path.append('..')
-from lemon_logger import topic, log
+from lemon_utils.lemon_logger import topic,topic2,log
 
 
 class symbol_int(int):pass # just for some type checking
@@ -97,16 +96,18 @@ class Grammar(object):
 	def events(s):
 		count = s.check_int(lib.marpa_g_event_count(s.g))
 		log('%s events'%count)
-		result = ffi.new('Marpa_Event*')
-		for i in range(count):
-			event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
-			event_value = result.t_value
-			r = event_type, event_value
-			log(i,r)
-			yield r
+		if count > 0:
+			result = ffi.new('Marpa_Event*')
+			for i in range(count):
+				event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
+				event_value = result.t_value
+				r = event_type, event_value
+				log(i,r)
+				yield r
 
 	def print_events(s):
-		[None for dummy in s.events()]
+		for dummy in s.events():
+			pass
 
 	def start_symbol_set(s, sym):
 		s.check_int( lib.marpa_g_start_symbol_set(s.g, sym) )
@@ -127,7 +128,7 @@ class Recce(object):
 		lib.marpa_r_unref(s.r)
 	def start_input(s):
 		s.g.check_int(lib.marpa_r_start_input(s.r))
-	@topic('alternative')
+	@topic2
 	def alternative(s, sym, val, length=1):
 		assert type(sym) == symbol_int
 		assert type(val) == int
@@ -137,7 +138,7 @@ class Recce(object):
 		if r != lib.MARPA_ERR_NONE:
 			log_error(r)
 
-	topic('earleme_complete')
+	topic2
 	def earleme_complete(s):
 		s.g.check_int(lib.marpa_r_earleme_complete(s.r))
 	def latest_earley_set(s):

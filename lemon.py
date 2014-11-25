@@ -9,13 +9,15 @@ from __future__ import unicode_literals
 import sys
 import pickle
 
-import lemon_logger
-from lemon_logger import log, topic
+from lemon_utils.lemon_logger import log, topic
 import frames
 import project
 import lemon_colors as colors
 from keys import *
 from lemon_args import args
+import lemon_utils.lemon_logger
+lemon_utils.lemon_logger.do_topics = args.debug
+
 
 if args.debug_objgraph:
 	import objgraph, gc
@@ -83,7 +85,6 @@ class MousedownEvent(object):
 @topic ("replay")
 def do_replay(ff):
 	global fast_forward
-	import time
 	try:
 		with open("replay.p", "rb") as f:
 			log("replaying...")

@@ -1,7 +1,9 @@
 import operator
-from marpa import *
-from dotdict import *
-from lemon_six import str_and_uni, itervalues
+
+from lemon_utils.dotdict import dotdict
+from lemon_utils.lemon_six import str_and_uni, itervalues
+from .marpa import *
+
 
 #some parser action callbacks
 
@@ -14,6 +16,8 @@ def join(args):
 
 def ignore(args):
 	return None
+
+
 
 class HigherMarpa(object):
 	def __init__(s, debug=False):
@@ -140,14 +144,12 @@ class HigherMarpa(object):
 	def sorted_by_values(dotdict):
 		return sorted(dotdict._dict.items(),key=operator.itemgetter(1))
 
-	def print_syms(s):
-		log('syms:%s'%s.sorted_by_values(s.syms))
-
-	def print_rules(s):
-		log("rules:",s.rules)
+	@property
+	def syms_sorted_by_values(s):
+		return s.sorted_by_values(s.syms)
 
 	def check_accessibility(s):
 		for i in s.syms._dict.items():
 			if not s.g.symbol_is_accessible(i[1]):
-				log("inaccessible: %s (%s)"%i)
+				raise Exception("inaccessible: %s (%s)"%i)
 

@@ -4,14 +4,15 @@ from __future__ import unicode_literals
 from __future__ import print_function
 
 from collections import defaultdict
-from collections import namedtuple
+import sys;
 
 from marpa import *
+from lemon_utils import dotdict
 
-import sys; sys.path.append('..')
-from dotdict import dotdict
-from lemon_logger import topic, log
-from lemon_six import str_and_uni
+
+sys.path.append('..')
+from lemon_utils.lemon_logger import topic, log
+from lemon_utils.lemon_six import str_and_uni
 
 def ident(x):
 	assert len(x) == 1

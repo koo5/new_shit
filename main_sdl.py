@@ -6,8 +6,10 @@ import os, sys
 import subprocess
 from math import *
 
-from lemon_six import iteritems, PY3
-from utils import evil
+from lemon_utils.lemon_six import iteritems, PY3
+from lemon_utils import lemon_logger
+from lemon_utils.utils import evil
+
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 
@@ -24,10 +26,9 @@ from pygame import draw, Rect
 import lemon_platform as platform
 platform.frontend = platform.sdl
 import lemon
-from lemon import logframe, root, sidebars, allframes
+from lemon import logframe, root, allframes
 from lemon import frames
-import lemon_logger
-from lemon_logger import log
+from lemon_utils.lemon_logger import log
 from lemon_colors import colors, color
 from lemon_args import args
 

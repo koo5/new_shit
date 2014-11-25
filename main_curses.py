@@ -8,18 +8,16 @@ import curses as c
 import sys
 
 import lemon_platform as platform
+from lemon_utils import lemon_logger
+
 platform.frontend = platform.curses
 import lemon
-from lemon import logframe, root, sidebars, allframes
+from lemon import logframe, root, allframes
 from lemon import frames
-import lemon_logger
-from lemon_logger import log
-from lemon_colors import colors, color
-from lemon_six import iteritems
+from lemon_utils.lemon_logger import log
 import lemon_args
 from rect import Rect
 import keys
-import nodes
 
 
 def debug_out(text):
