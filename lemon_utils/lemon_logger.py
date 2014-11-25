@@ -58,7 +58,7 @@ def topic2(function_with_decorator):
 def log(*vargs):
 	#ping(2) #for those wherethefuckdoesthatlinecomefrom moments
 	text = ', '.join([str(x) for x in vargs])
-	debug(time(), ":".join(topics), text)
+	debug((time(), ":".join(topics), text))
 
 
 """
