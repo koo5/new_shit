@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 
-from lemon_six import iteritems, str_and_uni
-from lemon_logger import log
-from dotdict import dotdict
+from lemon_utils.lemon_six import iteritems, str_and_uni
+from lemon_utils.dotdict import dotdict
+
 try:
 	#im gonna have to ditch this crappy module
 	from colors import *

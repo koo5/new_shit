@@ -142,7 +142,7 @@ __docformat__ = 'restructuredtext'
 __version__ = '$Id$'
 
 import inspect
-from lemon_six import get_method_self, str_and_uni
+from lemon_utils.lemon_six import get_method_self, str_and_uni
 
 EVENT_HANDLED = True 
 EVENT_UNHANDLED = None

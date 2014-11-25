@@ -23,7 +23,6 @@
 #import functools
 import operator
 import sys
-#import types
 
 __author__ = "Benjamin Peterson <benjamin@python.org>"
 __version__ = "1.7.3"
@@ -138,8 +137,8 @@ else:
 
 
 if PY3:
-	str_and_uni = (str)
+	str_and_uni = (str,)
 	unicode = str
 else:
 	str_and_uni = (str, unicode)
-
+	unicode = unicode

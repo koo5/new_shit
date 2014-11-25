@@ -21,9 +21,6 @@
  */
 """
 
-from marpa_cffi import *
-
-
 config = ffi.new("Marpa_Config*")
 lib.marpa_c_init(config)
 #Always succeeds.
@@ -31,7 +28,7 @@ lib.marpa_c_init(config)
 
 import sys; sys.path.append('..')
 
-from lemon_logger import topic, log
+from lemon_utils.lemon_logger import topic, log
 
 class symbol_int(int):pass
 

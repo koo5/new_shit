@@ -5,18 +5,17 @@ from __future__ import unicode_literals
 import graph
 
 import lemon_platform as platform
-from lemon_colors import color, colors
 import project
 import nodes
 from element import Element
 from menu_items import InfoItem
-from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
+from tags import TextTag, ElementTag, ColorTag, EndTag, AttTag
 import widgets
-from lemon_logger import log, topic
+from lemon_utils.lemon_logger import log, topic
 from keys import *
-from lemon_six import iteritems, str_and_uni
+from lemon_utils.lemon_six import iteritems, str_and_uni
 from lemon_args import args
-from utils import evil
+from lemon_utils.utils import evil
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
 

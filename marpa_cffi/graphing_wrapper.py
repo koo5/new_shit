@@ -20,7 +20,7 @@ graphing_wrapper.stop() # you can restore original functions
 """
 
 
-from marpa_cffi import lib
+from .marpa_cffi import lib
 
 class Orig(object):
 	pass

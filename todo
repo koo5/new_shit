@@ -1,6 +1,4 @@
-from types import GeneratorType
-
-created collect_tags(), tags_fast. Starting to design the frontend/backend split. 
+a bit of marpa_cffi sanitizing. refucktoring stuff into lemon_utils. bet its gonna bite me.
 
 ----
 
