@@ -1,14 +1,15 @@
 
 from __future__ import unicode_literals
 
-from lemon_six import str_and_uni
+from lemon_utils.lemon_six import str_and_uni
 
 try:
 	from collections import OrderedDict as odict
 except:#be compatible with older python (2.4?)
-	from odict import OrderedDict as odict
+	from lemon_utils.odict import OrderedDict as odict
 
 def updated(d, d2):
+	"""update d with d2 and return it"""
 	d.update(d2)
 	return d
 

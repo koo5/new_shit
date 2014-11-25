@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 
 import element
-from lemon_logger import log, ping
+from lemon_utils.lemon_logger import log
 from tags import TextTag, ColorTag, EndTag, MemberTag
 from keys import *
 

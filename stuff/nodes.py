@@ -8,28 +8,21 @@
 #make sense for widgets
 
 
-import pygame
-
 from collections import OrderedDict
+
+import pygame
 from compiler.ast import flatten
 #import weakref
 
 
 
-from dotdict import dotdict
-from lemon_logger import ping, log
+from lemon_utils.lemon_logger import log
 import element
+from lemon_utils import dotdict
 import widgets
-from menu import MenuItem, InfoMenuItem, HelpMenuItem
-import tags
 from tags import *
 import tags
 tags.asselement = element
-import project
-import colors
-
-
-
 
 b = {}
 
