@@ -322,6 +322,19 @@ def fuck_sdl():
 	return w,h
 
 
+def fix_keyboard():
+	repeat_delay, repeat_rate = 300, 30
+	try:#try to set SDL keyboard settings to system settings
+		lines = subprocess.check_output(['xset', '-q']).split(b'\n')
+		line = [line.split() for line in lines if "repeat delay" in line][0]
+		#old: line = os.popen('xset -q  | grep "repeat delay"').read().split()
+		repeat_delay, repeat_rate = int(line[3]), int(line[6])
+	except Exception as e:
+		print ("cant get system keyboard repeat delay/rate:", e)
+	#print ("setting repeat delay to %s, repeat rate to %s" % (repeat_delay, repeat_rate))
+	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
+
+
 def main():
 
 	pygame.display.init()
@@ -337,16 +350,7 @@ def main():
 		resize(fuck_sdl())
 	except Exception as e:
 		print (e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize")
-
-	repeat_delay, repeat_rate = 300, 30
-	try:#try to set SDL keyboard settings to system settings
-		lines = subprocess.check_output(['xset', '-q']).split(b'\n')
-		line = [line.split() for line in lines if "repeat delay" in line][0]
-		#old: line = os.popen('xset -q  | grep "repeat delay"').read().split()
-		repeat_delay, repeat_rate = int(line[3]), int(line[6])
-	except Exception as e:
-		print ("cant get system keyboard repeat delay/rate:", e)
-	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
+	fix_keyboard()
 
 	change_font_size()
 	resize_frames()
