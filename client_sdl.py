@@ -110,9 +110,8 @@ def keypress(e):
 
 	if not keybindings.keypress(event):
 
-
-		root.keypress_on_element(event)
-		#where root is either a client root frame from rpcing_frames
+		server.keypress(event)
+		#where root is either a client root frame from rpcing_framess
 		#or a proxy to a client proxy on the server that relays it
 		#to a client root frame in another window
 

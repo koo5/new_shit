@@ -13,7 +13,7 @@ lemon.start()
 
 #event -> render ->
 
-def on_keypress(event):
+def keypress(event):
 	#for now, always talk to the element to the right of the cursor,
 	# left is [0], right is [1]
 	right = event.atts[1]
@@ -40,3 +40,5 @@ def on_keypress(event):
 
 def render_root():
 	collect.collect_elem(lemon.root)
+
+def client_log_keypress(
