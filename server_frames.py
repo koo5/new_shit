@@ -230,35 +230,10 @@ class Root(Frame):
 
 
 	def handle_keypress_by_element(self, event):
-		event.frame = self
-		event.cursor = (self.cursor_c, self.cursor_r)
-		event.atts = self.atts
-		if self.top_keypress(event):
-			if args.log_events:
-				log("handled by root frame")
-			return True
-		element = self.under_cursor
 
-		#new style handlers
-		#if element != None and element.dispatch_levent(event):
-		#	return True
-
-		#old style
-		while element != None:
-			assert isinstance(element, Element), (assold, element)
-			if element.on_keypress(event):
-				break
-			assold = element
-			element = element.parent
-
-		#some element handled it
-		if element != None:
-			if args.log_events:
-				log("handled by "+str(element))
-			return True
 
 	def do_post_render_move_cursor(s):
-		if isinstance(s.root.post_render_move_caret, int):
+		if isinstance(s.server.root.post_render_move_caret, int):
 			s.move_cursor_h(s.root.post_render_move_caret)
 		else: #its a node
 			log("moving cursor to " +str(s.root.post_render_move_caret))

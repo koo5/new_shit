@@ -1,10 +1,15 @@
 from __future__ import unicode_literals
 from weakref import WeakValueDictionary
+from lemon_utils.utils import evil
 
+asselement = evil()
 
-asselement = 666
 
 proxied = WeakValueDictionary()
+
+
+att_node = 0
+att_color = 1
 
 
 def TextTag(text):

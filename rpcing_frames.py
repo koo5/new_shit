@@ -100,15 +100,6 @@ class Root(Frame):
 			else:
 				return r
 
-	def element_char_index(self):
-		return self.atts["char_index"]
-
-	@property
-	def atts(self):
-		try:
-			return self.lines[self.cursor_r][self.cursor_c][1]
-		except IndexError:
-			return None
 
 	def move_cursor_h(s, x):
 		"""returns True if it moved"""
@@ -229,6 +220,35 @@ class Root(Frame):
 			s.cursor_c, s.cursor_r = project.find(s.root.post_render_move_caret, s.lines)
 		s.root.post_render_move_caret = 0
 
+
+	@property
+	def atts_at_cursor(self):
+		try:
+			return self.lines[self.cursor_r][self.cursor_c][1]
+		except IndexError:
+			return None
+
+
+	@property
+	def atts(self):
+		#for now, if the cursor isnt strictly on a char that was rendered, we return None
+
+		#lets try moving the cursor to see if theres a char to the cursors left
+		if move_cursor_h(-1):
+			left = atts_at_cursor()
+			move_cursor_h(1) # and move it back
+		else:
+			left = None
+
+		right = atts_at_cursor()
+
+		return left, right
+
+	def keypress_on_element(event):
+		#event.cursor = (s.cursor_c, s.cursor_r)
+		event.atts = self.atts
+
+		server.on_keypress(event)
 
 class Menu(Frame):
 	def __init__(s, root):

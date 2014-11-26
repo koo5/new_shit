@@ -48,11 +48,6 @@ for f in allframes:
 
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
-def debug_out(msg):
-	print(msg)
-	logframe.add(msg)
-
-lemon_logger.debug = debug_out
 
 def render():
 	root.render()
@@ -115,8 +110,11 @@ def keypress(e):
 
 	if not keybindings.keypress(event):
 
-		event.cursor = (s.root.cursor_c, s.root.cursor_r)
+
 		root.keypress_on_element(event)
+		#where root is either a client root frame from rpcing_frames
+		#or a proxy to a client proxy on the server that relays it
+		#to a client root frame in another window
 
 	render()
 	reset_cursor_blink_timer()
