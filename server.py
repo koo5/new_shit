@@ -1,8 +1,9 @@
 
 
 import lemon_platform
+import server_frames
 
-lemon_platform.frontend = lemon_platform.server
+#lemon_platform.frontend = lemon_platform.server
 
 import lemon
 
@@ -11,9 +12,7 @@ import collect
 lemon.start()
 
 
-#event -> render ->
-
-def keypress(event):
+def element_keypress(event):
 	#for now, always talk to the element to the right of the cursor,
 	# left is [0], right is [1]
 	right = event.atts[1]
@@ -30,7 +29,7 @@ def keypress(event):
 		element = element.parent
 
 
-	if element != None:
+	if element != None
 	# the loop didnt end with root.parent, so some element must have handled it
 		if args.log_events:
 			log("handled by "+str(element))
@@ -38,7 +37,6 @@ def keypress(event):
 
 
 
-def render_root():
-	collect.collect_elem(lemon.root)
 
-def client_log_keypress(
+intro = server_frames.Intro()
+log = server_frames.Log()

@@ -817,3 +817,19 @@ pondering
 * emit python or picolisp?
 * exploding nodes
 * finish the curses interface (keyboard input handling)
+
+
+
+
+
+
+
+http://bugs.python.org/issue18172
+
+
+
+
+
+
+future ui dreaming:
+	ctrl-shift-scroll:bring in/out the toolbars/infobars;)

@@ -41,10 +41,9 @@ server.connect(args.server)
 import rpcing_frames
 if args.log:
 	frame = log = rpcing_frames.Log(server)
-	root = server
+	root = keybindings.root = zerorpc.Client()
+	root.connect(server+ports.root_proxy)
 
-for f in allframes:
-	f.rect = pygame.Rect((6,6),(6,6))
 
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 

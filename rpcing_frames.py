@@ -520,3 +520,63 @@ class Log(InfoFrame):
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
 
+
+	# lets try setting a reasonable rpc timeout on the proxy
+	#and wrapping everything in a try except catching the timeout?
+
+	#also, i will be adressing the server objects explicitly
+	#or not...
+	#instead of instantiating the client frames with references to the server counterparts
+	#this way it will be easier to have it survive a reconnect/server restart..
+
+	#		counterpart = core.log
+
+	def maybe_draw(s):
+		if s.counterpart.needs_redraw():
+			# todo set it on resize too
+			s.must_recollect = True
+			s.must_re = True
+			s.draw()
+
+	@property
+	def collected_tags(s):
+		if s.must_recollect:
+			s._collected_tags = []
+			for batch in s.counterpart.collect_tags():
+				s._collected_tags.append(batch)
+				yield batch
+		else:
+			for batch in s._collected_tags:
+				yield batch
+
+	@property
+	def projected_lines(s):
+		if s.must_reproject:
+			s._projected_lines = []
+			for line in s.project(s.collected_tags):
+				s._projected_lines.append(line)
+				yield line
+		else:
+			for line in s._projected_lines:
+				yield line
+
+
+	def curses_draw(self):
+		win = s.curses_win
+		s.curses_win.clear()
+
+		for row, line in enumerate(self.projected_lines):
+			assert len(line) <= self.cols
+			for col, char in enumerate(line):
+				mode = 0
+				try:
+					if char[1][att_node] == s.highlight:
+						mode = c.A_BOLD + c.A_REVERSE
+				except:	pass
+				try:
+					win.addch(row,col,ord(char[0]), mode)
+				except c.error:
+					#it throws an error to indicate last cell. what error?
+					if (row+1, col+1) != win.getmaxyx():
+						log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
+						raise

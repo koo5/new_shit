@@ -111,35 +111,6 @@ class Root(Frame):
 		except IndexError:
 			return None
 
-	def move_cursor_h(s, x):
-		"""returns True if it moved"""
-		old = s.cursor_c, s.cursor_r, s.scroll_lines
-		s.cursor_c += x
-		if len(s.lines) <= s.cursor_r or s.cursor_c > len(s.lines[s.cursor_r]):
-			s.move_cursor_v(x)
-			s.cursor_c = 0
-		if s.cursor_c < 0:
-			if s.move_cursor_v(-1):
-				s.cursor_c = len(s.lines[s.cursor_r])
-		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
-
-	def move_cursor_v(s, count):
-		"""returns True if it moved. atm, screen bottom is unlimited"""
-		old = s.cursor_c, s.cursor_r, s.scroll_lines
-		r = s.cursor_r + count
-		sl = s.scroll_lines
-		if r >= s.rows:
-			sl += r - s.rows +1
-			r = s.rows-1
-		if r < 0:
-			sl += r
-			r = 0
-			if sl < 0:
-				sl = 0
-		s.cursor_r = r
-		s.scroll_lines = sl
-		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
-
 	def render(self):
 		return collect_elem(self.root)
 		self.lines = p.lines[self.scroll_lines:]
@@ -175,29 +146,6 @@ class Root(Frame):
 		while s.move_cursor_h(-1):
 			if e != s.under_cursor:
 				break
-
-	def next_elem(s):
-		e = s.under_cursor
-		while s.move_cursor_h(1):
-			if e != s.under_cursor:
-				break
-
-	def cursor_home(s):
-		if len(s.lines) > s.cursor_r:
-			if s.cursor_c != 0:
-				s.cursor_c = 0
-			else:
-				s.cursor_c = s.first_nonblank()
-
-	def cursor_end(s):
-		if len(s.lines) > s.cursor_r:
-			s.cursor_c = len(s.lines[s.cursor_r])
-
-	def cursor_top(s):
-		s.cursor_r = 0
-
-	def cursor_bottom(s):
-		log("hmpf")
 
 	def run(s):
 		s.root['some program'].run()
@@ -322,9 +270,8 @@ def collidepoint(r, pos):
 
 class InfoFrame(Frame):
 	info = []
-	def __init__(s, root):
+	def __init__(s):
 		super(InfoFrame, s).__init__()
-		s.root = root
 		s.hidden_toggle = widgets.Toggle(s, True, ("(.....)", "(...)"))
 		s.hidden_toggle.color = s.hidden_toggle.brackets_color = "info item visibility toggle"
 		s.name = s.__class__.__name__
@@ -403,82 +350,20 @@ class Intro(InfoFrame):
 
 
 
+class Log(InfoFrame):
+	def __init__(s):
+		super(Log, s).__init__()
+		s.items = []
+
+	def add(s, msg):
+		#timestamp, topics, text = msg
+		#if type(text) != unicode:
+		s.items.append(msg)
+
+
+
+
 #todo: function definition / insight frame? preferably able to float in multiple numbers around the code
 #status / action log window <- with keypresses too
 #toolbar (toolbar.py)
 #settings, the doc?
-
-
-"""
-class FunkyLog(Frame):
-
-	def __init__(s):
-		s.contents = []
-		s.scroll_lines = -6
-
-	def project(s):
-		s.lines = project.project(s,#gotta change project() to work with a list of cols
-		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:s.rows]
-
-
-	def update_fonts(s):
-		min = 6
-		s.fonts = []
-		for size in range(min, font_size+1, (font_size-min)/s.rows):
-			f = font.SysFont('monospace', size
-			w,h = f.size("X")
-			s.fonts.append((f,w,h))
-
-	def draw_lines(self, surf):
-		y = 0
-		for row, line in enumerate(self.lines):
-			font, font_width, font_height = s.fonts[row]
-			for col, char in enumerate(line):
-				x = font_width * col
-				fg = color(char[1]['color'])
-				bg = color("bg")
-				sur = font.render(char[0],1,fg,bg)
-				surf.blit(sur,(x,y))
-			y += font_height
-
-	def mousedown(s,e,pos):
-		if e.button == 4:
-			s.scroll(-1)
-		elif e.button == 5:
-			s.scroll(1)
-
-	def scroll(s,l):
-		s.scroll_lines += l
-
-	@property
-	def rows(self):
-		return 6
-
-	@property
-	def cols(self):
-		return self.rect.w / font_width
-"""
-
-import time
-
-class Log(InfoFrame):
-	def __init__(s):
-		super(Log, s).__init__(evil('no root needed'))
-		s.items = []
-		s.top_bar = [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle)]
-		s.cols = 20#maybe we should just postpone the rendering until update()..setting cols here so add() doesnt crap out
-
-	def collect_top_bar(s):
-		return collect_tags(s.top_bar, s)
-
-	def add(s, msg):
-		timestamp, topics, body = msg
-		if type(text) != unicode:
-		it = InfoItem(text)
-		s.items.append(it)
-		s.projected += project.project_tags([ColorTag("fg"), ElementTag(it)], s.cols, s).lines
-
-	def scroll(s,l):
-		s.scroll_lines -= l
-		if s.scroll_lines < 0:
-			s.scroll_lines = 0

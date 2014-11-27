@@ -1,12 +1,23 @@
+#maybe when we have multiple editor frames instead of one "root" frame,
+#we will want to just pass the event on to perhaps the previously focused frame
+#for now im trying having all top level handlers in one file here
 
-def keypress(event):
-	if not frame_level(event):
-		element_level(event)
+#todo:look into FRP
 
-def frame_level(e):
+def keypress(e):
 	k = e.key
 
 #with CTRL
+
+	ctrl = KMOD_CTRL & event.mod
+
+	if k == K_F1:
+		cycle_sidebar()
+	elif ctrl and event.uni == '=':
+		change_font_size(1)
+	elif ctrl and event.uni == '-':
+		change_font_size(-1)
+
 
 	if KMOD_CTRL & e.mod:
 		if k == K_LEFT:
@@ -20,28 +31,25 @@ def frame_level(e):
 		elif k == K_f:
 			root.dump_to_file()
 		elif k == K_q:
-			import sys
-			syroot.exit()#a quit shortcut that goes thru the event pickle/replay mechanism
+			server.bye()
 
 #with CTRL on SDL
 
 		elif platform.frontend == platform.sdl:
 			if e.key == K_UP:
-				self.move(-1)
+				sidebar.move(-1)
 			elif e.key == K_DOWN:
-				self.move(1)
-			elif e.key == K_m:
-				self.menu_dump()
+				sidebar.move(1)
 			else:
 				return False
 
 # with CTRL on CURSES
 
 		elif platform.frontend == platform.curses:
-			if e.key == K_INSERT:
-				self.move(-1)
+			if e.key == K_INSERT: # todo: find better keybindings for curses
+				sidebar.move(-1)
 			elif e.key == K_DELETE:
-				self.move(1)
+				sidebar.move(1)
 			else:
 				return False
 
@@ -71,9 +79,6 @@ def frame_level(e):
 		elif k == K_PAGEDOWN:
 			root.move_cursor_v(10)
 		if e.uni == ' ':
-			return self.accept()
+			return menu.accept()
 		else:
 			return False
-
-def element_level:
-	root.on_keypress(e)

@@ -33,21 +33,6 @@ def cycle_sidebar():
 	global sidebar
 	sidebar = sidebars[sidebars.index(sidebar) + 1]
 
-def top_keypress(event):
-	k = event.key
-	ctrl = KMOD_CTRL & event.mod
-
-	if k == K_F1:
-		cycle_sidebar()
-	elif ctrl and event.uni == '=':
-		change_font_size(1)
-	elif ctrl and event.uni == '-':
-		change_font_size(-1)
-
-	else:
-		return False
-	return True
-
 
 class KeypressEvent(object):
 	def __init__(self, all, uni, key, mod):
@@ -80,103 +65,6 @@ class MousedownEvent(object):
 		s.pos = e.pos
 		s.button = e.button
 		s.type = e.type
-
-
-@topic ("replay")
-def do_replay(ff):
-	global fast_forward
-	try:
-		with open("replay.p", "rb") as f:
-			log("replaying...")
-			if ff:
-				fast_forward = True #ok, not much of a speedup. todo:dirtiness
-			while 1:
-				try:
-					e = pickle.load(f)
-					log(str(e))
-					if e.type == KEYDOWN:
-						keypress(e)
-					elif e.type == MOUSEBUTTONDOWN:
-						mousedown(e)
-					else:
-						raise Exception("unexpected event type:", e)
-					render()
-					if not fast_forward:
-						draw()
-
-				except EOFError:
-					break
-
-			fast_forward = False
-
-	except IOError as e:
-		log("couldnt open replay.p",e)
-
-
-def keypress(e):
-	if args.log_events:
-		log(e)
-
-	if top_keypress(e):
-		if args.log_events:
-			log("handled by main top")
-	elif sidebar.on_keypress(e):
-		if args.log_events:
-			log("handled by menu")
-	elif root.on_keypress(e):
-		if args.log_events:
-			log("handled by root")
-	else:
-		if args.log_events:
-			log("unhandled")
-
-	if args.debug_objgraph:
-		gc.collect()
-		objgraph.show_most_common_types(30)
-
-
-def handle(event):
-	if event.type == KEYDOWN:
-		if event.key == K_F2:
-			ff = event.mod & KMOD_SHIFT
-			do_replay(ff)
-		else:
-			if event.key == K_ESCAPE:
-				bye()
-			else:
-				record_and_handle(event)
-
-	if event.type == MOUSEBUTTONDOWN:
-		record_and_handle(event)
-
-def record_and_handle(e):
-	global is_first_event
-	
-	if is_first_event:
-		clear_replay()
-	pickle_event(e)
-	dispatch(e)
-	is_first_event = False
-
-def dispatch(e):
-	if e.type == MOUSEDOWN:
-		mousedown(e)
-	elif e.type == KEYPRESS:
-		keypress(e)
-	else:
-		raise Exception("ehh")
-
-def clear_replay():
-	f = open("replay.p", 'w')
-	f.truncate()
-	f.close()
-
-def pickle_event(e):
-	with open("replay.p", "ab") as f:
-		try:
-			pickle.dump(e, f)
-		except pickle.PicklingError as error:
-			print (error, ", are you profiling?")
 
 
 def start():

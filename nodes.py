@@ -1193,7 +1193,7 @@ class List(ListPersistenceStuff, Collapsible):
 		#defined declaratively so Parser can deal with it
 		yield TextTag('[')
 		for item in self.items:
-			yield [AttTag( ElementTag(item)
+			yield [ElementTag(item)]
 			if self.view_mode == 2:
 				yield '\n'
 			else:
@@ -4109,3 +4109,4 @@ build_in(SyntaxedNodecl(CustomNodeDef,
 			   ["define node with syntax:", ChildTag("syntax")],
 			   {'syntax': b['custom syntax list']}))
 # endregion
+#todo: why isnt b a dotdict?
