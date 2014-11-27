@@ -22,29 +22,167 @@ from utils import evil
 server = x
 
 
-class Frame(object):
-#	def on_mouse_press(self, e):
-#	def on_keypress(self, e):
-#	def draw(self):
+class ClientFrame(object):
+
+	def scroll(s,l):
+		s.scroll_lines -= l
+		if s.scroll_lines < 0:
+			s.scroll_lines = 0
+
+
+	# lets try setting a reasonable rpc timeout on the proxy
+	#and wrapping everything in a try except catching the timeout?
+
+	#also, i will be adressing the server objects explicitly
+	#or not...
+	#instead of instantiating the client frames with references to the server counterparts
+	#this way it will be easier to have it survive a reconnect/server restart..
+
+	#		counterpart = core.log
+
+	def maybe_draw(s):
+		if s.counterpart.needs_redraw():
+			# todo set it on resize too
+			s.must_recollect = True
+			s.must_re = True
+			s.draw()
+
+	@property
+	def collected_tags(s):
+		if s.must_recollect:
+			s._collected_tags = []
+			for batch in s.counterpart.collect_tags():
+				s._collected_tags.append(batch)
+				yield batch
+		else:
+			for batch in s._collected_tags:
+				yield batch
+
+	@property
+	def projected_lines(s):
+		if s.must_reproject:
+			s._projected_lines = []
+			for line in s.project(s.collected_tags):
+				s._projected_lines.append(line)
+				yield line
+		else:
+			for line in s._projected_lines:
+				yield line
+
+
+	def curses_draw(self):
+		win = s.curses_win
+		s.curses_win.clear()
+
+		for row, line in enumerate(self.projected_lines):
+
+			#lets implement scrolling here, for once. Im still pondering a proper, somewhat element-based solution
+			real_row = row + s.scroll_lines
+			if real_row < 0:
+				continue
+			if real_row > s.rows:
+				return
+
+			assert len(line) <= self.cols
+			for col, char in enumerate(line):
+				mode = 0
+				try:
+					if char[1][att_node] == s.highlight:
+						mode = c.A_BOLD + c.A_REVERSE
+				except:	pass
+				try:
+					win.addch(row,col,ord(char[0]), mode)
+				except c.error:
+					#it throws an error to indicate last cell. what error?
+					if (row+1, col+1) != win.getmaxyx():
+						log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
+						raise
+
+
+
+#these are the tags that come over the wire:
+# unicode,
+# attribute tuple, end_tag,
+# indent_tag, dedent_tag,
+# dict with custom stuff
+
+
+
+	def project_tags(batches):
+		line = []
+		atts = []
+		char_index = 0
+		indent = 0
+
+		def newline():
+			numspaces = indent * indent_width
+			spaceleft = cols - len(line)
+			to_go = min(spaceleft, numspaces)
+			for i in xrange(0, to_go):
+				line.append((' ', dict(atts))
+				#calling a dict() with atts, which is a list of tuples (key, value)
+				#"squashes" it, the last attributes (on top) overwrite the ones below
+
+
+		for batch in batches:
+			for tag in batch:
+
+				if type(tag) == unicode:
+
+					for char in tag:
+						atts.append()
+						if char == "\n":
+							yield line
+						else:
+							line.append((char, atts + (att_char_index, char_index)))
+							if len(line) == cols:
+								yield line
+							char_index += 1
+
+				elif tag == end_tag:
+					atts.pop()
+
+				elif type(tag) == tuple: # an attribute tuple
+					atts.append(tag)
+
+				elif tag == indent_tag:
+					indent += 1
+
+				elif tag == dedent_tag:
+					indent -= 1
+
+				elif type(tag) == dict:
+					s.arrows_append((len(line), len(s._projected_lines), tag.target))
+
+				else:
+					raise Exception("is %s a tag?, %s" % (repr(tag)))
+
+
+		def test():
+			#we would have to set cols somehow
+			project_tags([[
+				(color_att, (0,0,0)),
+				"hey",
+				"how does this work\n\n",
+				(node_att, 333),
+				"wut wut",
+				pop_tag,
+			    indent_tag,
+			    "yo!\n",
+			    dedent_tag
+	              ]])
+
+
 
 	def __init__(s):
-		s.lines = [] # lines actually on screen
 		s.scroll_lines = 0 # how many lines the user has scrolled
 
-	def on_keypress(self, event):
-		return False
-
-	def project(s):
-		s.lines = project.project(s, # calls back our tags()
-		    s.cols, s,
-		    s.scroll_lines + s.rows  # bottom cut off
-		).lines[s.scroll_lines:] # top cut off
 
 
 	def under_cr(self, cr):
 		c,r = cr
 		try:
-			return self.lines[r][c][1]["node"]
+			return self.lines[r][c][1][node_tag]
 		except:
 			return None
 
@@ -61,13 +199,12 @@ class Frame(object):
 		elif e.button == 5:
 			s.scroll(5)
 
-	def on_keypress(s, event):
-
-
 	def scroll(s,l):
 		s.scroll_lines += l
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
+
+
 
 
 class Root(Frame):
@@ -515,68 +652,4 @@ class Log(InfoFrame):
 		s.items.append(it)
 		s.projected += project.project_tags([ColorTag("fg"), ElementTag(it)], s.cols, s).lines
 
-	def scroll(s,l):
-		s.scroll_lines -= l
-		if s.scroll_lines < 0:
-			s.scroll_lines = 0
 
-
-	# lets try setting a reasonable rpc timeout on the proxy
-	#and wrapping everything in a try except catching the timeout?
-
-	#also, i will be adressing the server objects explicitly
-	#or not...
-	#instead of instantiating the client frames with references to the server counterparts
-	#this way it will be easier to have it survive a reconnect/server restart..
-
-	#		counterpart = core.log
-
-	def maybe_draw(s):
-		if s.counterpart.needs_redraw():
-			# todo set it on resize too
-			s.must_recollect = True
-			s.must_re = True
-			s.draw()
-
-	@property
-	def collected_tags(s):
-		if s.must_recollect:
-			s._collected_tags = []
-			for batch in s.counterpart.collect_tags():
-				s._collected_tags.append(batch)
-				yield batch
-		else:
-			for batch in s._collected_tags:
-				yield batch
-
-	@property
-	def projected_lines(s):
-		if s.must_reproject:
-			s._projected_lines = []
-			for line in s.project(s.collected_tags):
-				s._projected_lines.append(line)
-				yield line
-		else:
-			for line in s._projected_lines:
-				yield line
-
-
-	def curses_draw(self):
-		win = s.curses_win
-		s.curses_win.clear()
-
-		for row, line in enumerate(self.projected_lines):
-			assert len(line) <= self.cols
-			for col, char in enumerate(line):
-				mode = 0
-				try:
-					if char[1][att_node] == s.highlight:
-						mode = c.A_BOLD + c.A_REVERSE
-				except:	pass
-				try:
-					win.addch(row,col,ord(char[0]), mode)
-				except c.error:
-					#it throws an error to indicate last cell. what error?
-					if (row+1, col+1) != win.getmaxyx():
-						log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
-						raise

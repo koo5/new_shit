@@ -8,8 +8,8 @@ asselement = evil()
 proxied = WeakValueDictionary()
 
 
-att_node = 0
-att_color = 1
+node_att  = 0
+color_att = 1
 
 
 def TextTag(text):
@@ -23,12 +23,15 @@ def AttTag(k,v):
 	else:
 		return (k,v)
 
+end_tag = 0
 def EndTag():
 	return 0
 
+indent_tag = 1
 def IndentTag():
 	return 1
 
+dedent_tag = 2
 def DedentTag():
 	return 2
 
