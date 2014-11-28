@@ -833,3 +833,18 @@ http://bugs.python.org/issue18172
 
 future ui dreaming:
 	ctrl-shift-scroll:bring in/out the toolbars/infobars;)
+
+
+
+#maybe we could use one of the enters for menu selection..in sdl too
+#http://lists.gnu.org/archive/html/bug-ncurses/2011-01/msg00011.html
+
+
+
+
+
+
+
+"The editors in some integrated development environments parse the source code and generate a parse tree, allowing the same analysis as by a structure editor, but the actual editing of the source code is generally done as raw text."
+http://en.wikipedia.org/wiki/Structure_editor
+what is the additional work tht a structured editor has to do? user interaction with the projected nodes, meaning with the node objects themselves, as opposed to just generating text and reparsing as necessary...

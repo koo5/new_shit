@@ -1,3 +1,4 @@
+rpcing continues...
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 
@@ -21,10 +22,36 @@ for tag in tags:
 
     
     
-
-    
-    
-continue work on user-defined syntax
-
 split Ref and TypeRef
+
+
+
+
+continue work on user-defined syntax, at this point, functions serve that role, completely?
+streamline things. what are
+*elementary nodes - text, number, ..,? how can we formalize their definition in terms of a nodecl(?) and python code?
+*nodes that define a language? nodecl, worksas, definition, syntacticcategory, exp.. syntax definition node..
+*nodes of some language itself? customnode?
+
+>return a generator that appends each item of collect() to _collected and yields it
+return <value> is a node
+generator is a node
+<node> that <???>  - attribute?
+<node> and <node>
+appends <x> to <y>
+..etc, see ACE and i7 etc
+...then formalize code generation
+
+
+
+
+
+create actions module, handle everything thru Action objects, try undo/redo
+
+
+change b into a dotdict
+
+optimize rendering of scrolled frames
+
+
 

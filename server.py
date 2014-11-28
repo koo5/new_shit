@@ -9,8 +9,6 @@ import lemon
 
 import collect
 
-lemon.start()
-
 
 def element_keypress(event):
 	#for now, always talk to the element to the right of the cursor,

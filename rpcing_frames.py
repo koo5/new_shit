@@ -43,34 +43,32 @@ class ClientFrame(object):
 	def maybe_draw(s):
 		if s.counterpart.needs_redraw():
 			# todo set it on resize too
-			s.must_recollect = True
-			s.must_re = True
+			s.must_re_collect = True
+			s.must_re_project = True
 			s.draw()
 
 	@property
 	def collected_tags(s):
-		if s.must_recollect:
-			s._collected_tags = []
-			for batch in s.counterpart.collect_tags():
-				s._collected_tags.append(batch)
-				yield batch
-		else:
-			for batch in s._collected_tags:
-				yield batch
+		return s._maybe_cached(s.must_recollect,
+		                       s.counterpart.collect_tags(),
+		                       s._collected_tags)
 
 	@property
 	def projected_lines(s):
-		if s.must_reproject:
-			s._projected_lines = []
-			for line in s.project(s.collected_tags):
-				s._projected_lines.append(line)
-				yield line
+		s._maybe_cached(s.must_reproject,
+						s.project(s.collected_tags),
+						s._projected_lines)
+
+	def _maybe_cached(get_fresh, generator, cache):
+		if get_fresh:
+			cache.clear()
+			for item in generator:
+				cache.append(item)
+				yield item
 		else:
-			for line in s._projected_lines:
-				yield line
+			return cache
 
-
-	def curses_draw(self):
+	def curses_draw_chars(self):
 		win = s.curses_win
 		s.curses_win.clear()
 
@@ -207,15 +205,16 @@ class ClientFrame(object):
 
 
 
-class Root(Frame):
+
+class Root(ClientFrame):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.cursor_c = self.cursor_r = 0
-		self.arrows_visible = True
 		self.cursor_blinking_phase = True
-		if args.noalpha:
-			self.arrows_visible = False
-		self.server = rpc...
+
+		self.arrows_visible = True and (
+			not args.noalpha
+			and lemon_platform.frontend == lemon_platform.sdl)
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]: s.move_cursor_h(-1)
@@ -231,7 +230,7 @@ class Root(Frame):
 
 	def first_nonblank(self):
 		r = 0
-		for ch, a in self.lines[self.cursor_r]:
+		for ch, a in self._projected_lines[self.cursor_r]:
 			if ch == " ":
 				r += 1
 			else:
@@ -242,7 +241,8 @@ class Root(Frame):
 		"""returns True if it moved"""
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
-		if len(s.lines) <= s.cursor_r or s.cursor_c > len(s.lines[s.cursor_r]):
+		if len(s._projected_lines) <= s.cursor_r or \
+						s.cursor_c > len(s._projected_lines[s.cursor_r]):
 			s.move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
@@ -267,44 +267,6 @@ class Root(Frame):
 		s.scroll_lines = sl
 		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 
-	def project(tags):
-		for tag in tags:
-
-
-	def render(self):
-		tags_generator = server.root.render()
-		
-		
-		s.project(tags_generator
-
-
-		(self.root, self.cols, self, self.scroll_lines + self.rows)
-		self.lines = p.lines[self.scroll_lines:]
-		self.arrows = self.complete_arrows(p.arrows)
-		self.do_post_render_move_cursor()
-
-		if False:#__debug__:  #todo: __debug__projection__ or something, this is eating quite some cpu i think and only checks the projection code (i think)
-			assert(isinstance(self.lines, list))
-			for l in self.lines:
-				assert(isinstance(l, list))
-				for i in l:
-					assert(isinstance(i, tuple))
-					assert(isinstance(i[0], str_and_uni))
-					assert(len(i[0]) == 1)
-					assert(isinstance(i[1], dict))
-					assert(i[1]['node'])
-					assert('char_index' in i[1])
-
-	#todo: clean this up ugh, oh and arrows are broken, the source point stays stuck when you scoll
-	def complete_arrows(self, arrows):
-		if not self.arrows_visible:
-			return []
-		r = []
-		for a in arrows:
-			target = project.find(a[2], self.lines)
-			if target:
-				r.append(((a[0],a[1] - self.scroll_lines),target))
-		return r
 
 
 	def prev_elem(s):
@@ -336,6 +298,35 @@ class Root(Frame):
 	def cursor_bottom(s):
 		log("hmpf")
 
+
+	def draw(s):
+		s.draw_lines()
+		s.arrows = s.complete_arrows(s.arrows)
+		s.do_post_render_move_cursor()
+
+		if __debug__:  #todo: __debug__projection__ or something, this is eating quite some cpu i think and only checks the projection code (i think)
+			for l in self._projected_lines:
+				assert(isinstance(l, list))
+				for i in l:
+					assert(isinstance(i, tuple))
+					assert(isinstance(i[0], unicode))
+					assert(len(i[0]) == 1)
+					assert(isinstance(i[1], dict))
+					assert(node_att in i[1])
+					assert(char_index_att in i[1])
+
+	def complete_arrows(s):
+		if not s.arrows_visible:
+			s.arrows = []
+		else:
+			r = []
+			for a in s.arrows:
+				target = project.find(a[2], self._projected_lines)
+				if target:
+					r.append(((a[0],a[1] - self.scroll_lines),target))
+			s.arrows = r
+
+
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible
 
@@ -346,7 +337,6 @@ class Root(Frame):
 				f.write(ch[0])
 			f.write("\n")
 		f.close()
-
 
 
 	def do_post_render_move_cursor(s):
@@ -386,6 +376,10 @@ class Root(Frame):
 		event.atts = self.atts
 
 		server.on_keypress(event)
+
+
+
+
 
 class Menu(Frame):
 	def __init__(s, root):
@@ -577,55 +571,6 @@ class Intro(InfoFrame):
 #settings, the doc?
 
 
-"""
-class FunkyLog(Frame):
-
-	def __init__(s):
-		s.contents = []
-		s.scroll_lines = -6
-
-	def project(s):
-		s.lines = project.project(s,#gotta change project() to work with a list of cols
-		    s.cols, s, s.scroll_lines + s.rows).lines[s.scroll_lines:s.rows]
-
-
-	def update_fonts(s):
-		min = 6
-		s.fonts = []
-		for size in range(min, font_size+1, (font_size-min)/s.rows):
-			f = font.SysFont('monospace', size
-			w,h = f.size("X")
-			s.fonts.append((f,w,h))
-
-	def draw_lines(self, surf):
-		y = 0
-		for row, line in enumerate(self.lines):
-			font, font_width, font_height = s.fonts[row]
-			for col, char in enumerate(line):
-				x = font_width * col
-				fg = color(char[1]['color'])
-				bg = color("bg")
-				sur = font.render(char[0],1,fg,bg)
-				surf.blit(sur,(x,y))
-			y += font_height
-
-	def mousedown(s,e,pos):
-		if e.button == 4:
-			s.scroll(-1)
-		elif e.button == 5:
-			s.scroll(1)
-
-	def scroll(s,l):
-		s.scroll_lines += l
-
-	@property
-	def rows(self):
-		return 6
-
-	@property
-	def cols(self):
-		return self.rect.w / font_width
-"""
 
 import time
 

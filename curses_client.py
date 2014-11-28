@@ -25,41 +25,23 @@ import rpcing_frames
 if args.log:
 	frame = rpcing_frames.Log()
 
-for f in allframes:
-	f.rect = Rect(6,6,6,6)
+elif args.root:
+	frame = rpcing_frames.Root()
+	#server.root_client =...
 
-def render():
-	root.render()
-	lemon.sidebar.render()
-	logframe.render()
-lemon.render = render # for replays and stuff
+
+
+def log(text):
+	server.log.add(text)
 
 def resize_frames():
-	screen_height, screen_width = scr.getmaxyx()
-	log("HW",screen_height, screen_width)
+	rows, cols = scr.getmaxyx()
+	log("H:%s W:%s",(rows, cols))
 
-	lemon.logframe.rect.height = log_height = args.log_height
-	lemon.logframe.rect.width = screen_width
-	lemon.logframe.rect.topleft = (0, screen_height - log_height)
+	frame.rows = rows
+	frame.cols = cols
 
-	lemon.root.rect.topleft = (0,0)
-	lemon.root.rect.width = screen_width // 3 * 2
-	lemon.root.rect.height = screen_height - log_height
-
-	sidebar_rect = Rect((root.rect.w+1, 0),(0,0))
-	sidebar_rect.width = screen_width - root . rect . width -1
-	sidebar_rect.height = root.rect.height
-	for frame in lemon.sidebars:
-		frame.rect = sidebar_rect
-
-	for f in allframes:
-		f.cols = f.rect.width
-		f.rows = f.rect.height
-
-	for x,y in [(mainw, root), (logw, logframe), (sidebarw, lemon.sidebar)]:
-		log("f",y, (y.rect.y, y.rect.x),(y.rows,y.cols))
-		x.resize(y.rows,y.cols)
-		x.mvwin(y.rect.y, y.rect.x)
+	window.resize(rows, cols)
 
 
 def change_font_size():
@@ -67,44 +49,9 @@ def change_font_size():
 
 
 def draw():
-	#ok this is hacky
-	#log("root")
-	draw_lines(root, mainw, root.under_cursor)
-	
-	if isinstance(lemon.sidebar, frames.Menu):
-		#log("menu")
-		draw_lines(lemon.sidebar, sidebarw, lemon.sidebar.selected)
-	else:
-		#log("info")
-		draw_lines(lemon.sidebar, sidebarw)
-	
-	#log("log")
-	draw_lines(logframe, logw)
-	
-	for w in [mainw, sidebarw, logw]:
-		w.refresh()
+	frame.draw()
+	window.refresh()
 	scr.refresh()
-lemon.draw = draw
-
-def draw_lines(self, win, highlight=None):
-	win.clear()
-	assert len(self.lines) <= self.rows
-	for row, line in enumerate(self.lines):
-		assert len(line) <= self.cols
-		for col, char in enumerate(line):
-			mode = 0
-			try:
-				if char[1]['node'] == highlight:
-					mode = c.A_BOLD + c.A_REVERSE
-			except:
-				pass
-			try:
-				win.addch(row,col,ord(char[0]), mode)
-			except c.error:
-				if (row+1, col+1) != win.getmaxyx():
-					log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
-					raise
-					
 
 def bye():
 	sys.exit()
@@ -140,10 +87,9 @@ c.KEY_F12: keys.K_F12}
 #oh...unfinished..
 def loop():
 
-	render()
 	draw()
 	inp = scr.getch(root.cursor_r,root.cursor_c)
-	dummy_allkeys = [False]*(keys.K_MAX+1)
+	dummy_allkeys = [False]*(keys.K_MAX+1)#curses wont tell us what other keys are pressed at any moment
 	if inp in curses2sdl:
 		lemon.handle(lemon.KeypressEvent(dummy_allkeys, False, curses2sdl[inp], 0))
 	else:
@@ -151,27 +97,11 @@ def loop():
 	log(inp, c.unctrl(inp))
 
 def main_func(stdscr, replay):
-	global scr, mainw, logw, sidebarw, args, logfile
+	global scr, window, logw, sidebarw, args, logfile
 	scr = stdscr
 	scr.keypad(1)
-	mainw = c.newwin(0,0,6,6)
-	logw = c.newwin(0,0,6,6)
-	sidebarw = c.newwin(0,0,6,6)
-
-	args = lemon_args.parse_args()
-	if replay:
-		args.replay = True
-	lemon.args = args
-	logfile = open("curses_log", "w")
-
+	window = c.newwin(0,0,6,6)
 	resize_frames()
-
-	lemon.change_font_size = change_font_size
-	lemon.root.arrows_visible = False
-	lemon.start()
-
-	render()
-	draw()
 
 	while True:
 		loop()
@@ -181,26 +111,8 @@ def main(replay = False):
 		c.wrapper(main_func, replay)
 	except Exception as e:
 		log(e)
-		logfile.flush()
-		logfile.close()
 		raise
 
 if __name__ == "__main__":
     main()
 
-# __________  Entry point  __________
-#just playing with rpython..
-def entry_point(argv):
-    main()
-    return 0
-
-# _____ Define and setup target ___
-
-def target(*args):
-    return entry_point, None
-
-
-#        stdscr.addstr(ypos[j],     xpos[j] - 1, "|.|")
-
-#maybe we could use one of the enters for menu selection..in sdl too
-#http://lists.gnu.org/archive/html/bug-ncurses/2011-01/msg00011.html
