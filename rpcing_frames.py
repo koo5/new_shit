@@ -41,23 +41,30 @@ class ClientFrame(object):
 	#		counterpart = core.log
 
 	def maybe_draw(s):
-		if s.counterpart.needs_redraw():
+		if s.counterpart.s.counterpart.must_re_collect():
 			# todo set it on resize too
-			s.must_re_collect = True
-			s.must_re_project = True
+			s.must_re_collect = s.must_re_project = True
 			s.draw()
+			s.must_re_collect = s.must_re_project = False
 
-	@property
-	def collected_tags(s):
-		return s._maybe_cached(s.must_recollect,
-		                       s.counterpart.collect_tags(),
-		                       s._collected_tags)
+	def do_draw(s):
+		s.must_re_collect = s.must_re_project = True
+		s.draw()
+		s.must_re_collect = s.must_re_project = False
+
 
 	@property
 	def projected_lines(s):
 		s._maybe_cached(s.must_reproject,
 						s.project(s.collected_tags),
 						s._projected_lines)
+
+	@property
+	def collected_tags(s):
+		return s._maybe_cached(s.must_re_collect,
+		                       s.counterpart.collect_tags() ,
+		                       s._collected_tags)
+
 
 	def _maybe_cached(get_fresh, generator, cache):
 		if get_fresh:
@@ -170,10 +177,6 @@ class ClientFrame(object):
 			    dedent_tag
 	              ]])
 
-
-
-	def __init__(s):
-		s.scroll_lines = 0 # how many lines the user has scrolled
 
 
 
@@ -340,12 +343,14 @@ class Root(ClientFrame):
 
 
 	def do_post_render_move_cursor(s):
-		if isinstance(s.root.post_render_move_caret, int):
-			s.move_cursor_h(s.root.post_render_move_caret)
-		else: #its a node
-			log("moving cursor to " +str(s.root.post_render_move_caret))
-			s.cursor_c, s.cursor_r = project.find(s.root.post_render_move_caret, s.lines)
-		s.root.post_render_move_caret = 0
+		where = s.counterpart.root.post_render_move_caret
+		if isinstance(where, int): # by this many chars
+			s.move_cursor_h(where)
+		else: #to a node, lets indicate it with a tuple hmmm
+			where = where[0]
+			log("moving cursor to node " +str(where))
+			s.cursor_c, s.cursor_r = s.find(where)
+		s.counterpart.root.post_render_move_caret = 0
 
 
 	@property
@@ -376,6 +381,17 @@ class Root(ClientFrame):
 		event.atts = self.atts
 
 		server.on_keypress(event)
+
+
+
+class InfoFrame(ClientFrame):
+	def __init__(s, counterpart):
+		super(InfoFrame, s).__init__()
+		s.counterpart = counterpart
+
+
+
+
 
 
 
@@ -481,98 +497,6 @@ def collidepoint(r, pos):
 	x, y = pos
 	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]
 
-
-class InfoFrame(Frame):
-	info = []
-	def __init__(s, root):
-		super(InfoFrame, s).__init__()
-		s.root = root
-		s.hidden_toggle = widgets.Toggle(s, True, ("(.....)", "(...)"))
-		s.hidden_toggle.color = s.hidden_toggle.brackets_color = "info item visibility toggle"
-		s.name = s.__class__.__name__
-		#create *all* infoitems at __init__, will make persistence possible (for visibility state)
-		s.default_items = [InfoItem(i) for i in s.info]
-
-	def update(s):
-		s.items = s.default_items[:]
-
-	def tags(s):
-		yield [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle), "\n"]
-		for i in s.items:
-			if not s.hidden_toggle.value or i.visibility_toggle.value:
-				yield [ElementTag(i), "\n"]
-		yield [EndTag()]
-
-	def render(s):
-		s.update()
-		s.project()
-
-
-class GlobalKeys(InfoFrame):
-	info = ["ctrl + =,- : font size",
-			"f5 : eval",
-			"f4 : clear eval results",
-			"f2 : replay keypresses from previous session",
-			"ctrl + up, down: menu movement",
-			"space: menu selection",
-	        "ctrl + d : dump root frame to dump.txt",
-	        "ctrl + p : dump parents",
-	        "ctrl + g : generate graph.gif",
-
-			"f9 : only valid items in menu - doesnt do much atm",
-			"f8 : toggle the silly arrows from Refs to their targets, (and current node highlighting, oops)"]
-
-class NodeInfo(InfoFrame):
-	def __init__(s, root):
-		super(NodeInfo, s).__init__(root)
-		#s.node_infoitem = InfoItem("bla")
-		#s.deffun_infoitem = InfoItem("bla")
-
-	def update(s):
-		super(NodeInfo, s).update()
-		uc = s.root.under_cursor
-		while uc != None:
-			if isinstance(uc, nodes.FunctionCall):
-				s.items.append(InfoItem(["target=", ElementTag(uc.target)]))
-
-			if uc.keys_help_items == None:
-				uc.generate_keys_help_items()
-			s.items += uc.keys_help_items
-
-			uc = uc.parent
-
-		uc = s.root.under_cursor
-		while uc != None:
-			s.items.append(InfoItem([
-				str(s.root.cursor_c) + ":"+ str(s.root.cursor_r)+ ":" + 
-				uc.long__repr__()]))
-			uc = uc.parent
-
-
-class Intro(InfoFrame):
-	info = ["welcome to lemon!",
-		    "press F1 to cycle this sidebar",
-			"hide help items by clicking the gray X next to each",
-			"unhide all by clicking the dots",
-	        "scrolling with mousewheel is supported",
-	        "",
-			"nodes:",
-			"red <>'s enclose nodes or other widgets",
-			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
-			#["{Parser} looks like this: ", ElementTag(nodes.Parser(nodes.b['type']))],
-			#"(in gray) is the expected type",
-		    "see intro.txt for hopefully more info"]
-
-
-
-#todo: function definition / insight frame? preferably able to float in multiple numbers around the code
-#status / action log window <- with keypresses too
-#toolbar (toolbar.py)
-#settings, the doc?
-
-
-
-import time
 
 class Log(InfoFrame):
 	def __init__(s):

@@ -1,7 +1,6 @@
 from types import GeneratorType
 
 import lemon_platform
-assert lemon_platform.frontend == lemon_platform.server
 
 from tags import *
 

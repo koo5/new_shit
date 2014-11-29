@@ -24,6 +24,8 @@ import rpcing_frames
 
 if args.log:
 	frame = rpcing_frames.Log()
+elif args.intro:
+	frame = rpcing_frames.InfoFrame(server.intro)
 
 elif args.root:
 	frame = rpcing_frames.Root()

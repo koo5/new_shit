@@ -12,14 +12,12 @@ from element import Element
 from menu_items import InfoItem
 from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
-from lemon_logger import log, topic
+from lemon_utils.lemon_logger import log, topic
 from keys import *
-from lemon_six import iteritems, str_and_uni
+from lemon_utils.lemon_six import iteritems, str_and_uni
 from lemon_args import args
-from utils import evil
+from lemon_utils.utils import evil
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
-
-server = x
 
 
 class Frame(object):
@@ -177,9 +175,6 @@ class Root(Frame):
 			element = element.parent
 
 
-	def handle_keypress_by_element(self, event):
-
-
 	def do_post_render_move_cursor(s):
 		if isinstance(s.server.root.post_render_move_caret, int):
 			s.move_cursor_h(s.root.post_render_move_caret)
@@ -272,29 +267,21 @@ class InfoFrame(Frame):
 	info = []
 	def __init__(s):
 		super(InfoFrame, s).__init__()
-		s.hidden_toggle = widgets.Toggle(s, True, ("(.....)", "(...)"))
-		s.hidden_toggle.color = s.hidden_toggle.brackets_color = "info item visibility toggle"
 		s.name = s.__class__.__name__
-		#create *all* infoitems at __init__, will make persistence possible (for visibility state)
-		s.default_items = [InfoItem(i) for i in s.info]
 
-	def update(s):
-		s.items = s.default_items[:]
+	def	must_re_collect(s):
+		return False
 
 	def tags(s):
-		yield [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle), "\n"]
+		yield [ColorTag("help"), s.name + ":  "+"\n"]
 		for i in s.items:
-			if not s.hidden_toggle.value or i.visibility_toggle.value:
-				yield [ElementTag(i), "\n"]
-		yield [EndTag()]
-
-	def render(s):
-		s.update()
-		s.project()
+			yield i
+			yield ["\n"]
+		yield [EndTag()] # color
 
 
 class GlobalKeys(InfoFrame):
-	info = ["ctrl + =,- : font size",
+	items = ["ctrl + =,- : font size",
 			"f5 : eval",
 			"f4 : clear eval results",
 			"f2 : replay keypresses from previous session",
@@ -335,7 +322,7 @@ class NodeInfo(InfoFrame):
 
 
 class Intro(InfoFrame):
-	info = ["welcome to lemon!",
+	items = ["welcome to lemon!",
 		    "press F1 to cycle this sidebar",
 			"hide help items by clicking the gray X next to each",
 			"unhide all by clicking the dots",
@@ -358,7 +345,8 @@ class Log(InfoFrame):
 	def add(s, msg):
 		#timestamp, topics, text = msg
 		#if type(text) != unicode:
-		s.items.append(msg)
+		s.items.append(str(msg))
+		print(str(msg))
 
 
 

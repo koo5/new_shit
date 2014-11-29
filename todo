@@ -1,4 +1,4 @@
-rpcing continues...
+test
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 
@@ -54,4 +54,13 @@ change b into a dotdict
 optimize rendering of scrolled frames
 
 
+
+
+
+
+frames:
+#todo: function definition / insight frame? preferably able to float in multiple numbers around the code
+#status / action log window <- with keypresses too
+#toolbar (toolbar.py)
+#settings, the doc?
 

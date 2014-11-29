@@ -5,8 +5,6 @@ import server_frames
 
 #lemon_platform.frontend = lemon_platform.server
 
-import lemon
-
 import collect
 
 
@@ -27,7 +25,7 @@ def element_keypress(event):
 		element = element.parent
 
 
-	if element != None
+	if element != None:
 	# the loop didnt end with root.parent, so some element must have handled it
 		if args.log_events:
 			log("handled by "+str(element))
