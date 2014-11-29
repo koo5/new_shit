@@ -33,6 +33,5 @@ def element_keypress(event):
 
 
 
-
 intro = server_frames.Intro()
 log = server_frames.Log()

@@ -7,8 +7,8 @@ template_file = open(template_filename, "r")
 nonempty = [line for line in template_file if len(line) > 0 and line[0] not in ("#","\n")]
 
 if nonempty != []:
-	print "there is/are already nonempty lines there:%s, bye"%nonempty
-	exit() # there was already some message there, probably from git commit -m
+	print "there is/are already nonempty lines in %s :%s, will not use the todo file, bye"%(nonempty, template_filename) # ( probably from git commit -m )
+	exit() 
 
 template_file.seek(0)
 
