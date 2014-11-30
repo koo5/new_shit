@@ -6,6 +6,20 @@ asselement = evil()
 
 
 proxied = WeakValueDictionary()
+key_counter = 0
+# distributed computing is fun.
+# lets work with the theoretical possibiliy that the counter
+# will overflow (makes me feel a bit easier than a runaway bignum)
+# the point is that we want to be sure what object the client is talking about.
+# ids can repeat. This doesnt save the clients from sending events while their data is
+# outdated, but at least it cant seem they reference a different object than they mean.
+#
+def proxy_this(v):
+	global key_counter
+	while key_counter in proxied:
+		key_counter += 1
+	proxied[key_counter] = v
+	return key_counter
 
 
 node_att  = 0
@@ -17,9 +31,8 @@ def TextTag(text):
 
 def AttTag(k,v):
 	if isinstance(v, Element): # or any nonbasic value
-		idx = id(v)
-		proxied[idx] = v
-		return (k, idx)
+		proxykey = proxy_this(v)
+		return (k, proxykey)
 	else:
 		return (k,v)
 

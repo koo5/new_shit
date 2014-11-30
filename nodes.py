@@ -1576,18 +1576,21 @@ class Text(WidgetedValue):
 	def match(text):
 		return 100
 
+from lemon_utils.flipflop import FlipFlop
 
 class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
 		self.decl = None
-		self.post_render_move_caret = 0 #the frontend moves the cursor by this many chars after a render()
+		self.delayed_cursor_move = 0
+		#the frontend moves the cursor by this many chars after a render()
 		## The reason is for example a textbox recieves a keyboard event,
 		## appends a character to its contents, and wants to move the cursor,
-		## but before re-rendering, it might move it beyond end of line
+		## but before re-rendering, it might move it beyond the end of file
 		self.indent_length = 4 #not really used but would be nice to have it variable
-		self.dirty = False #todo
+		self.changed = FlipFlop()
+		self.ast_changed = FlipFlop()
 
 	def render(self):
 		#there has to be some default color for everything, the rendering routine looks for it..
@@ -2391,12 +2394,12 @@ class ParserBase(Node):
 		if e.key == K_BACKSPACE:
 			if pos > 0 and len(text) > 0 and pos <= len(text):
 				text = text[0:pos -1] + text[pos:]
-				s.root.post_render_move_caret -= 1
+				s.root.delayed_cursor_move -= 1
 		else:
 			assert isinstance(text, str_and_uni), (s.items, ii, text)
 			#print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
 			text = text[:pos] + e.uni + text[pos:]
-			s.root.post_render_move_caret += len(e.uni)
+			s.root.delayed_cursor_move += len(e.uni)
 
 		s.items[ii] = text
 
@@ -2513,7 +2516,7 @@ class ParserBase(Node):
 		if (not e.uni) and not e.key in [K_BACKSPACE]: #backspace and something else comes with some unicode
 			return False
 
-		assert s.root.post_render_move_caret == 0
+		assert s.root.delayed_cursor_move == 0
 
 		items = s.items
 		atts = e.atts
@@ -2523,7 +2526,7 @@ class ParserBase(Node):
 		if i == None:
 			items.append("")
 			#snap cursor to the beginning of Parser
-			s.root.post_render_move_caret -= atts['char_index'] -1
+			s.root.delayed_cursor_move -= atts['char_index'] -1
 			return s.edit_text(0, 0, e)
 		elif isinstance(items[i], str_and_uni):
 			if "compiler item char" in atts:
@@ -2613,20 +2616,20 @@ class ParserBase(Node):
 			if isinstance(fch, Syntaxed):
 				fch = s.first_child(fch)
 				#...
-			s.root.post_render_move_caret = fch
+			s.root.delayed_cursor_move = (proxy_this(fch),)
 		#todo
 		#elif isinstance(node, FunctionCall):
 		#	if len(node.args) > 0:
 		#		s.root.post_render_move_caret = node.args[0]
 		elif isinstance(node, WidgetedValue):
 			if len(node.widget.text) > 0:
-				s.root.post_render_move_caret += 2
+				s.root.delayed_cursor_move += 2
 				#another hacky option: post_render_move_caret_after
 				#nonhacky option: render out a tag acting as an anchor to move the cursor to
 				#this would be also useful above
 		elif isinstance(node, List):
 			if len(node.items) > 0:
-				s.root.post_render_move_caret = node.items[0]
+				s.root.delayed_cursor_move = (proxy_this(node.items[0]),)
 		#todo etc. make the cursor move naturally
 
 	def menu(self, atts, debug = False):

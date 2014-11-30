@@ -47,7 +47,7 @@ class Text(Widget):
 			if pos > 0 and len(self.text) > 0 and pos < len(self.text)+2:
 				self.text = self.text[0:pos-2] + self.text[pos-1:]
 #				log(self.text)
-				self.root.post_render_move_caret = -1
+				self.root.delayed_cursor_move = -1
 		elif e.key == K_DELETE:
 			if pos > 0 and len(self.text) > 0 and pos < len(self.text)+1:
 				self.text = self.text[0:(pos-1)] + self.text[pos:]
@@ -56,7 +56,7 @@ class Text(Widget):
 		elif e.uni:
 			if 0 < pos < len(self.text)+2:
 				self.text = self.text[:(pos-1)] + e.uni + self.text[(pos-1):]
-				self.root.post_render_move_caret = len(e.uni)
+				self.root.delayed_cursor_move = len(e.uni)
 
 		else: return False
 		#log(self.text + "len: " + len(self.text))

@@ -47,6 +47,7 @@ def modify(c, max=255):
 	assert(isinstance(c, tuple))
 	return c
 
+
 def color(c):
 	"""return an rgb tuple by name, modified by display filters(mono,invert) and ready for use"""
 	if isinstance(c, str_and_uni):
@@ -57,3 +58,5 @@ def color(c):
 	else:
 		#log(c)
 		return modify(c)
+
+#class colors?

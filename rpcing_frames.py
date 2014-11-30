@@ -62,7 +62,7 @@ class ClientFrame(object):
 	@property
 	def collected_tags(s):
 		return s._maybe_cached(s.must_re_collect,
-		                       s.counterpart.collect_tags() ,
+		                       server.collect_tags(s.counterpart) ,
 		                       s._collected_tags)
 
 
@@ -400,45 +400,6 @@ class InfoFrame(ClientFrame):
 class Menu(Frame):
 	def __init__(s, root):
 		super(Menu, s).__init__()
-		s.root = root
-		s.sel = 0
-		#index to items_on_screen. not ideal.
-		#todo: a separate wishedfor_sel
-		s.valid_only = False
-
-	@property
-	def selected(s):
-		assert(s.sel != -1)
-		if s.sel >= len(s.items_on_screen):
-			return None
-		#log("sel:", s.sel, s.items_on_screen)
-		return s.items_on_screen[s.sel]
-
-	def clamp_sel(s):
-		if s.sel >= len(s.items_on_screen):
-			s.sel = len(s.items_on_screen) - 1
-		if s.sel < 0:
-			s.sel = 0
-
-	def render(s):
-		s.project()
-		s.clamp_sel()
-
-	def tags(s):
-		s.items_on_screen = []
-		yield ColorTag("fg")
-		for i in s.generate_palette():
-			s.items_on_screen.append(i)
-			yield [AttTag("node", i), ElementTag(i), EndTag(), "\n"]
-		yield EndTag()
-
-	def generate_palette(s):
-		e = s.element = s.root.under_cursor
-		atts = s.root.atts
-		if e != None:
-			for i in e.menu(atts):
-				if not s.valid_only or i.valid:
-					yield i
 
 	def on_keypress(self, e):
 		if platform.frontend == platform.sdl and e.mod & KMOD_CTRL:
