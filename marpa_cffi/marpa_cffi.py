@@ -19,6 +19,7 @@
  */
 """
 from __future__ import absolute_import
+
 from . import marpa_codes as codes
 
 from cffi import FFI

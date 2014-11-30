@@ -10,15 +10,9 @@ import sys
 import lemon_platform as platform
 platform.frontend = platform.curses
 
-import lemon_args
+from lemon_utils.lemon_args import args
 from rect import Rect
 import keys
-
-import pizco
-
-server = pizco.Proxy(args.server)
-server.connect()
-keybindings.server = server
 
 import rpcing_frames
 
@@ -26,10 +20,8 @@ if args.log:
 	frame = rpcing_frames.Log()
 elif args.intro:
 	frame = rpcing_frames.InfoFrame(server.intro)
-
 elif args.root:
 	frame = rpcing_frames.Root()
-	#server.root_client =...
 
 
 

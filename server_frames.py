@@ -195,12 +195,46 @@ class Log(ServerFrame):
 def collect_tags(proxied_serverframe):
 	return deproxy(proxied_serverframe).collect_tags()
 
-def click_element(proxied_element):
+def element_click(proxied_element):
 	return deproxy(proxied_element).on_mouse_press(e)
 
-"""
-pizco missing features: _multiobject branch, streams like in zerorpc
+def element_keypress(event):
+	#for now, always talk to the element to the right of the cursor,
+	# left is [0], right is [1]
+	right = event.atts[1]
+	if type(right) == dict and tags.att_node in right:
+		element_id = right[tags.att_node]
+		element = tags.proxied[element_id]
 
+	#old style
+	while element != None:
+		assert isinstance(element, Element), (assold, element)
+		if element.on_keypress(event):
+			break
+		assold = element
+		element = element.parent
+
+
+	if element != None:
+	# the loop didnt end with root.parent, so some element must have handled it
+		if args.log_events:
+			log("handled by "+str(element))
+			return True
+
+
+
+after_event = Signal()
+
+
+
+
+
+
+
+
+
+
+"""
 general ways that rpcing complicates things;
 
 have to do more effort at proper mvc-y eventing, but this would in some form be
@@ -209,7 +243,5 @@ necessary for best performance anyway (keeping track of dirtiness at various lev
 proxying elements: wont be a performance hit, if it will, it can be easily stubbed
 proxy_this() and deproxy() have to be in places tho
 
-the de-ooped structure of this file: its a no-brainer to make it oopy.
-this form could become a hassle.
 
 """

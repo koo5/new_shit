@@ -1,17 +1,15 @@
 import pizco
 
-import server
+import server_frames
 
-"""
-class MyServer(pizco.Server):
-	def return_as_remote(s, attr):
-		return True # return all the server module globals as remotes
-"""
 
-first_server = dict(
-	intro =
-
-s = MyServer(first_server) #, "tcp://127.0.0.1:13000")
+s = pizco.Server(server_frames)
 open("addy", "w").write(str(s.rep_endpoint))
 s.serve_forever()
 
+
+"""
+pizco missing features:
+ _multiobject branch. the de-ooped structure of server_Frames is a no-brainer to revert, but this form could become a hassle.
+ remote generators (streams in zerorpc)
+"""

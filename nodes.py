@@ -53,26 +53,25 @@ from keys import *
 from lemon_utils.utils import flatten, odict, evil
 from lemon_utils.dotdict import dotdict
 from lemon_args import args
+from lemon_utils.lemon_logger import log, topic, topic2
 
 tags.asselement = element
 
-try:
-	import marpa_cffi.marpa_cffi
-	marpa = True
-except Exception as e:#todo:some specific cffi exception
-	log(e)
-	log('no marpa, no parsing!')
-	if not args.lame:
-		log("run with --lame or install libmarpa")
-		raise e
-	else:
-		marpa = False
-if marpa:
+import marpa_cffi
+marpa = marpa_cffi.try_loading_marpa()
+if marpa == True:
 	from marpa_cffi.marpa import *
 	from marpa_cffi.higher import *
 	import marpa_cffi.marpa_codes
 	import marpa_cffi.graphing_wrapper as graphing_wrapper
-
+else:
+	log(marpa)
+	log('no marpa, no parsing!')
+	if not args.lame:
+		log("install libmarpa or run with --lame")
+		raise marpa
+	else:
+		marpa = False
 # endregion
 
 # region utils

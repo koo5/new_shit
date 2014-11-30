@@ -19,8 +19,7 @@ from lemon_args import args
 from utils import evil
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
-server = x
-
+from server import server
 
 class ClientFrame(object):
 
@@ -459,13 +458,13 @@ def collidepoint(r, pos):
 	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]
 
 
-class Log(InfoFrame):
+class Log(ClientFrame):
 	def __init__(s):
-		super(Log, s).__init__(evil('no root needed'))
+		super(Log, s).__init__()
 		s.items = []
 		s.projected = []
 		s.top_bar = [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle)]
-		s.cols = 20#maybe we should just postpone the rendering until update()..setting cols here so add() doesnt crap out
+		server.log_on_add_connect(s.add)
 
 	def render(s):
 		s.lines = project.project_tags(s.top_bar, s.cols, s).lines
@@ -476,10 +475,11 @@ class Log(InfoFrame):
 	def update(s):
 		pass
 
-	def add(s, text):
-		text = time.strftime("%H:%M:%S:%f", time.localtime()) + text
-		it = InfoItem(text)
+	def add(s, msg):
+		time, topic, text = msg
+		it = LogItem(msg)
 		s.items.append(it)
-		s.projected += project.project_tags([ColorTag("fg"), ElementTag(it)], s.cols, s).lines
+		s.projected.append(s.project_tags([it.tags()]))
+
 
 
