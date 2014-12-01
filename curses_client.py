@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 from __future__ import division
+from __future__ import print_function
 
 import curses as c
 import sys
@@ -10,32 +11,50 @@ import sys
 import lemon_platform as platform
 platform.frontend = platform.curses
 
-from lemon_utils.lemon_args import args
+from lemon_args import args
+import lemon_utils.lemon_logger
+from lemon_utils.lemon_logger import log
+
 from rect import Rect
 import keys
 
+
+from server import server
+
 import rpcing_frames
 
-if args.log:
-	frame = rpcing_frames.Log()
-elif args.intro:
-	frame = rpcing_frames.InfoFrame(server.intro)
-elif args.root:
-	frame = rpcing_frames.Root()
+#if args.log:
+#	frame = rpcing_frames.Log()
+if args.rpc:
+	if args.intro:
+		frame = rpcing_frames.StaticInfoFrame(server.intro)
+	elif args.root:
+		frame = rpcing_frames.Root()
+	else:
+		raise Exception("rpc but no frame? try --root or --menu")
+else:
+	assert False
 
 
+def logging_handler(msg):
+	server.log_add(msg)
 
-def log(text):
-	server.log.add(text)
+def logging_printer(msg):
+	print(">"+str(msg))
+
+log("setting logger.debug to server.log_add")
+server.log_on_add.connect(logging_printer)
+lemon_utils.lemon_logger.debug = logging_handler
+
 
 def resize_frames():
 	rows, cols = scr.getmaxyx()
-	log("H:%s W:%s",(rows, cols))
+	log("H:%s W:%s"%(rows, cols))
+
+	window.resize(rows, cols)
 
 	frame.rows = rows
 	frame.cols = cols
-
-	window.resize(rows, cols)
 
 
 def change_font_size():

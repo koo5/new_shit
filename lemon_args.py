@@ -34,6 +34,11 @@ def parse_args():
 	parser.add_argument('--graph-grammar', action='store_true')
 	parser.add_argument('--debug', action='store_false')
 	parser.add_argument('--debug-objgraph', action='store_true')
+	parser.add_argument('--rpc', action='store_true')
+	parser.add_argument('--root', action='store_true')
+	parser.add_argument('--menu', action='store_true')
+	parser.add_argument('--intro', action='store_true')
+
 
 	return parser.parse_args()
 

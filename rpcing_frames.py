@@ -1,6 +1,6 @@
 """root, menu, log, info, help.."""
 #todo:rename root to code or main or document or..
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import graph
 
@@ -12,11 +12,11 @@ from element import Element
 from menu_items import InfoItem
 from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
-from lemon_logger import log, topic
+from lemon_utils.lemon_logger import log, topic
 from keys import *
-from lemon_six import iteritems, str_and_uni
+from lemon_utils.lemon_six import iteritems, str_and_uni
 from lemon_args import args
-from utils import evil
+from lemon_utils.utils import evil
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
 from server import server
@@ -68,11 +68,15 @@ class ClientFrame(object):
 	def _maybe_cached(get_fresh, generator, cache):
 		if get_fresh:
 			cache.clear()
-			for item in generator:
-				cache.append(item)
-				yield item
+			return cache_and_yield(generator, cache)
 		else:
 			return cache
+
+	def cache_and_yield(generator, cache):
+		for item in generator:
+			cache.append(item)
+			yield item
+
 
 	def curses_draw_chars(self):
 		win = s.curses_win
@@ -123,7 +127,7 @@ class ClientFrame(object):
 			spaceleft = cols - len(line)
 			to_go = min(spaceleft, numspaces)
 			for i in xrange(0, to_go):
-				line.append((' ', dict(atts))
+				line.append((' ', dict(atts)))
 				#calling a dict() with atts, which is a list of tuples (key, value)
 				#"squashes" it, the last attributes (on top) overwrite the ones below
 
@@ -383,7 +387,7 @@ class Root(ClientFrame):
 
 
 
-class InfoFrame(ClientFrame):
+class StaticInfoFrame(ClientFrame):
 	def __init__(s, counterpart):
 		super(InfoFrame, s).__init__()
 		s.counterpart = counterpart
@@ -396,7 +400,7 @@ class InfoFrame(ClientFrame):
 
 
 
-class Menu(Frame):
+class Menu(ClientFrame):
 	def __init__(s, root):
 		super(Menu, s).__init__()
 
@@ -458,6 +462,16 @@ def collidepoint(r, pos):
 	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]
 
 
+class Log(object):
+	def __init__(s):
+		super(Log, s).__init__()
+		server.log_on_add_connect(s.add)
+
+	def add(s, msg):
+		#time, topic, text = msg
+		print (msg)
+
+"""
 class Log(ClientFrame):
 	def __init__(s):
 		super(Log, s).__init__()
@@ -465,6 +479,7 @@ class Log(ClientFrame):
 		s.projected = []
 		s.top_bar = [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle)]
 		server.log_on_add_connect(s.add)
+		server.after_event(s.add)
 
 	def render(s):
 		s.lines = project.project_tags(s.top_bar, s.cols, s).lines
@@ -480,6 +495,6 @@ class Log(ClientFrame):
 		it = LogItem(msg)
 		s.items.append(it)
 		s.projected.append(s.project_tags([it.tags()]))
-
+"""
 
 

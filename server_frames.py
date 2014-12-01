@@ -109,7 +109,6 @@ def menu_toggle_valid():
 
 
 class StaticInfoFrame(ServerFrame):
-	info = []
 	def __init__(s):
 		super(StaticInfoFrame, s).__init__()
 		s.name = s.__class__.__name__
@@ -177,6 +176,8 @@ class Intro(StaticInfoFrame):
 			#"(in gray) is the expected type",
 		    "see intro.txt for hopefully more info"]
 
+intro = Intro()
+proxied_intro = proxy_this(intro)
 
 
 class Log(ServerFrame):
@@ -189,7 +190,13 @@ class Log(ServerFrame):
 		#if type(text) != unicode:
 		s.items.append(str(msg))
 		print(str(msg))
+		log_on_add.emit(msg)
 
+log = Log()
+log_on_add = Signal(1)
+
+def log_add(msg):
+	log.add(msg)
 
 
 def collect_tags(proxied_serverframe):
