@@ -4,7 +4,7 @@ from __future__ import unicode_literals, print_function
 
 import graph
 
-import lemon_platform as platform
+import lemon_platform as lemon_platform
 from lemon_colors import color, colors
 import project
 import nodes
@@ -27,6 +27,12 @@ class ClientFrame(object):
 		s.scroll_lines -= l
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
+
+
+	def try_move_cursor(s, n):
+		l = s.find(n)
+		if l:
+			s.cursor_c, s.cursor_r = l
 
 
 	# lets try setting a reasonable rpc timeout on the proxy
@@ -212,9 +218,9 @@ class ClientFrame(object):
 
 
 
-class Root(ClientFrame):
+class Editor(ClientFrame):
 	def __init__(self):
-		super(Root, self).__init__()
+		super(Editor, self).__init__()
 		self.cursor_c = self.cursor_r = 0
 		self.cursor_blinking_phase = True
 
@@ -465,7 +471,7 @@ def collidepoint(r, pos):
 class Log(object):
 	def __init__(s):
 		super(Log, s).__init__()
-		server.log_on_add_connect(s.add)
+		server.log.on_add.connect(s.add)
 
 	def add(s, msg):
 		#time, topic, text = msg

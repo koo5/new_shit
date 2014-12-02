@@ -1,4 +1,10 @@
-#maybe when we have multiple editor frames instead of one "root" frame,
+
+"""here we count on the fact that each client frame has been assigned to an
+attribute of the server module. to do this with rpcing,
+clients or client frames will have to act as servers too, with the messaging
+loop integrated with the gui loop"""
+
+#maybe when we have multiple editor frames,
 #we will want to just pass the event on to perhaps the previously focused frame
 #for now im trying having all top level handlers in one file here
 

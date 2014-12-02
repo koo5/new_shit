@@ -1,6 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""can a client be a server at the same time? question of event loops integration i think
+a not so neat but okay alternative for the distributed event handling:
+make the nonlocal client frames in keybindings.py stubs that raise an error
+catch and proceed to emit a signal with that event on the server (implemented in pizco in one of the forks/branches?)
+then all clients try it again? or more organized, at the moment its just root and menu,
+ so 'all' would work, if there will be multiple editor clients, we can have 'last active editor'
+...?.?.?"""
+
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
@@ -26,14 +34,14 @@ import rpcing_frames
 #if args.log:
 #	frame = rpcing_frames.Log()
 if args.rpc:
+	raise Exception('not finished')
 	if args.intro:
-		frame = rpcing_frames.StaticInfoFrame(server.intro)
+		frames = [rpcing_frames.StaticInfoFrame(server.intro)]
 	elif args.root:
-		frame = rpcing_frames.Root()
+		frames = [rpcing_frames.Root()]...
 	else:
 		raise Exception("rpc but no frame? try --root or --menu")
 else:
-	assert False
 
 
 def logging_handler(msg):
@@ -128,4 +136,5 @@ def main(replay = False):
 
 if __name__ == "__main__":
     main()
+
 

@@ -25,7 +25,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 
 from .marpa_cffi import *
-
+from .marpa_misc import *
 
 config = ffi.new("Marpa_Config*")
 lib.marpa_c_init(config)
@@ -34,12 +34,10 @@ lib.marpa_c_init(config)
 
 
 #a wee bit of dependency on something in the lemon repo, feel free to use it or
-#cut it out
+#cut it out...we have to ..somehow..i have to learn to use the python logging module
 from lemon_utils.lemon_logger import topic,topic2,log
 
 
-class symbol_int(int):pass # just for some type checking
-class rule_int(int):pass
 
 
 class Grammar(object):

@@ -64,6 +64,9 @@ def ColorTag(value):
 
 # nesting, expanded in collect()
 
+class Tag(object):
+	__slots__=[]
+
 class ChildTag(Tag):
 	__slots__ = ['name']
 	def __init__(self, name):

@@ -358,7 +358,7 @@ but i think what i got so far is relevant
 
 
 PYTHONPATH=~/pygame_cffi pypy new_shit/new_shit.py
-
+https://packages.debian.org/experimental/python3-pygame
 
 
 Levels of detail

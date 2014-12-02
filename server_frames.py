@@ -19,6 +19,7 @@ from lemon_utils.lemon_logger import log, topic
 from lemon_utils.lemon_six import iteritems, str_and_uni
 from lemon_args import args
 from lemon_utils.utils import evil
+from tags_fast import proxy_this
 
 from pizco import Signal
 
@@ -184,23 +185,18 @@ class Log(ServerFrame):
 	def __init__(s):
 		super(Log, s).__init__()
 		s.items = []
+		s.on_add = Signal(1)
 
 	def add(s, msg):
 		#timestamp, topics, text = msg
 		#if type(text) != unicode:
 		s.items.append(str(msg))
 		print(str(msg))
-		log_on_add.emit(msg)
+		s.on_add.emit(msg)
 
 log = Log()
-log_on_add = Signal(1)
-
-def log_add(msg):
-	log.add(msg)
 
 
-def collect_tags(proxied_serverframe):
-	return deproxy(proxied_serverframe).collect_tags()
 
 def element_click(proxied_element):
 	return deproxy(proxied_element).on_mouse_press(e)
@@ -234,9 +230,36 @@ after_event = Signal()
 
 
 
+def after_start():
+	if args.load:
+		load(args.load)
 
+	if args.run:
+		load(args.run)
+		root.root['loaded program'].run()
 
+	initially_position_cursor()
 
+def initially_position_cursor():
+	root.render()
+
+	try:
+		#if args.lesh:
+		#	something = root.root['lesh'].command_line
+		#else:
+		something = root.root['some program'].ch.statements.items[1]
+
+		root.cursor_c, root.cursor_r = project.find(something, root.lines)
+		#root.cursor_c += 1
+	except Exception as e:
+		log (e.__repr__(), ", cant set initial cursor position")
+
+def load(name):
+	assert(isinstance(name, unicode))
+	nodes.b_lemon_load_file(editor.root, name)
+	editor.render()
+	edi
+	try_move_cursor(root.root['loaded program'])
 
 
 
