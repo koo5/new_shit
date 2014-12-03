@@ -849,7 +849,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	def tags(elem):
 
-		yield [AttTag("node", elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
+		yield [AttTag(att_node, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
 		yield [elem.render(), ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
 		#results of eval

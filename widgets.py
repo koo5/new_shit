@@ -6,7 +6,8 @@ from __future__ import unicode_literals
 
 import element
 from lemon_utils.lemon_logger import log
-from tags import TextTag, ColorTag, EndTag, MemberTag
+from lemon_utils.lemon_six import unicode
+from tags import TextTag, ColorTag, EndTag, MemberTag, node_att, char_index_att
 from keys import *
 
 
@@ -23,45 +24,44 @@ class Text(Widget):
 		super(Text, self).__init__(parent)
 		self.register_event_types('on_edit')
 		self.color = (150,150,255,255)
+		assert isinstance(text, unicode)
 		self.text = text
 
 	def render(self):
 		return [TextTag(self.text)]
 	
 	def on_keypress(self, e):
-		pos = e.atts["char_index"]
-		return self._keypress(e, pos)
+		return self._keypress(e, e.atts[char_index_att])
 
 	keys = ["text editing keys"]
 	def _keypress(self, e, pos):
-		#first, things that a we should pass up
+
+		# do not steal ctrl-delete event from others
 		if e.mod & KMOD_CTRL:
 			return False
-		elif e.key == K_ESCAPE:
-			return False
-		elif e.key == K_RETURN:
-			return False
-		log(pos)
-		#editing keys
-		if e.key == K_BACKSPACE:
-			if pos > 0 and len(self.text) > 0 and pos < len(self.text)+2:
-				self.text = self.text[0:pos-2] + self.text[pos-1:]
-#				log(self.text)
-				self.root.delayed_cursor_move = -1
-		elif e.key == K_DELETE:
-			if pos > 0 and len(self.text) > 0 and pos < len(self.text)+1:
-				self.text = self.text[0:(pos-1)] + self.text[pos:]
 
-		#letters
-		elif e.uni:
-			if 0 < pos < len(self.text)+2:
+		log("text widget editing on char_index %s"%pos)
+
+		#editing keys
+		if e.key == K_BACKSPACE	and pos > 0 and len(self.text) > 0 and pos < len(self.text)+2:
+			self.text = self.text[0:pos-2] + self.text[pos-1:]
+			self.root.delayed_cursor_move = -1
+
+		elif e.key == K_DELETE and pos > 0 and len(self.text) > 0 and pos < len(self.text)+1:
+			self.text = self.text[0:(pos-1)] + self.text[pos:]
+
+		#text input
+		elif e.uni \
+			and e.key not in (K_DELETE, K_BACKSPACE, K_ESCAPE) \
+			and 0 < pos < len(self.text)+2:
 				self.text = self.text[:(pos-1)] + e.uni + self.text[(pos-1):]
 				self.root.delayed_cursor_move = len(e.uni)
 
-		else: return False
+		else:
+			return False
 		#log(self.text + "len: " + len(self.text))
 		self.dispatch_event('on_edit', self)
-		return True
+		return CHANGED
 
 	@property
 	def value(self):

@@ -145,7 +145,7 @@ class Element(event.EventDispatcher):
 
 	def tags(self):
 		#this needs to be refactored in with Node.tags
-		r = [tags.AttTag("node", self)] + self.render() + [tags.ColorTag(self.brackets_color), tags.TextTag(self.brackets[1]), tags.EndTag()] + [tags.EndTag()]
+		r = [tags.AttTag(node_att, self)] + self.render() + [tags.ColorTag(self.brackets_color), tags.TextTag(self.brackets[1]), tags.EndTag()] + [tags.EndTag()]
 
 		assert( isinstance(r, list))
 		return r

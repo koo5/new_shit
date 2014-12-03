@@ -24,7 +24,7 @@ def proxy_this(v):
 
 node_att  = 0
 color_att = 1
-
+char_index_att = 2
 
 def TextTag(text):
 	return text
