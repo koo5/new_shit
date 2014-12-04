@@ -1429,6 +1429,20 @@ class Statements(List):
 					return i
 		return 0 #i give up
 
+"""
+class SortedView():
+	S_orig = 0
+	S_alpha_type_betically_with_flattened_classes?
+
+	@property
+	def source(s):
+		return (s.parent. #module
+				ch.statements.parsed.items)
+
+"""
+
+
+
 
 class NoValue(Node):
 	def __init__(self):
@@ -1620,10 +1634,13 @@ class Root(Dict):
 		#	return [] #nothing above but Root
 
 
+
+
 class Module(Syntaxed):
-	"""module or program, really"""
+	"""module or program"""
 	def __init__(self, kids):
 		super(Module, self).__init__(kids)
+		#self.sortedview = SortableStatements(self)
 
 	def add(self, item):
 		self.ch.statements.add(item)
@@ -3117,19 +3134,23 @@ builtin_unevaluatedparameter = build_in(SyntaxedNodecl(UnevaluatedParameter,
 
 #lets define a function signature type
 tmp = b['union'].inst_fresh()
+
 tmp.ch["items"].add(Ref(b['text']))
 tmp.ch["items"].add(Ref(b['typedparameter']))
 tmp.ch["items"].add(Ref(builtin_unevaluatedparameter))
-build_in(Definition({'name': Text('function signature node'), 'type': tmp}))
-tmp = b['list'].make_type({'itemtype': Ref(b['function signature node'])})
+
+build_in(Definition({'name': Text('union of function signature item types'), 'type': tmp}))
+tmp = b['list'].make_type({'itemtype': Ref(b['union of function signature item types'])})
 build_in(Definition({'name': Text('function signature list'), 'type':tmp}))
 #todo:refactor
 #and a custom node syntax type
 tmp = b['union'].inst_fresh()
+
 tmp.ch["items"].add(Ref(b['text']))
 tmp.ch["items"].add(Ref(b['type']))
-build_in(Definition({'name': Text('custom syntax'), 'type': tmp}))
-tmp = b['list'].make_type({'itemtype': Ref(b['custom syntax'])})
+
+build_in(Definition({'name': Text('union of custom syntax item types'), 'type': tmp}))
+tmp = b['list'].make_type({'itemtype': Ref(b['union of custom syntax item types'])})
 build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
 
 
@@ -4110,11 +4131,41 @@ build_in(SyntaxedNodecl(Serialized,
 
 
 
-
+"""
 class CustomNodeDef(Syntaxed):
 	pass
 
 build_in(SyntaxedNodecl(CustomNodeDef,
-			   ["define node with syntax:", ChildTag("syntax")],
+"""
+
+
+
+class NodeSyntax(Syntaxed):
+	pass
+
+build_in(SyntaxedNodecl(NodeSyntax,
+			   ["node syntax:", ChildTag("syntax")],
 			   {'syntax': b['custom syntax list']}))
+
+
+
+
+
+
+
+
+"""
+add python_env to Module?
+
+
+
+
+
+
+
+
+
+
+"""
+
 # endregion
