@@ -6,7 +6,7 @@
  			if object.__getattribute__(s, "_locked"):
 -				if not k in s._dict.iterkeys():
 +				if not k in iter(s._dict.keys()):
- 					raise Exception("setting an unknown item of a locked-down dotdict")
+ 					raise Exception("setting an unknown item of a locked-down Dotdict")
  			s._dict[k] = v
  	def __getattr__ (s, k):
 --- element.py	(original)

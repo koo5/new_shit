@@ -1,7 +1,7 @@
 
 from __future__ import unicode_literals
 
-from lemon_utils.lemon_six import str_and_uni
+from lemon_utils.lemon_six import unicode
 
 try:
 	from collections import OrderedDict as odict
@@ -17,7 +17,7 @@ odict.updated = updated
 
 def flatten_gen(x):
 	for y in x:
-		if isinstance(y, str_and_uni) or not isinstance(y, list):
+		if not isinstance(y, list):
 			yield y
 		else:
 			for z in flatten_gen(y):

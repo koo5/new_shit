@@ -5,19 +5,20 @@ from __future__ import unicode_literals
 from weakref import ref as weakref
 
 import lemon_platform as platform
-import event #event module from pyglet, used to pass events from widgets to parent nodes
 from lemon_utils.lemon_logger import log
 import tags
 from lemon_utils.utils import evil
 
-class Element(event.EventDispatcher):
+CHANGED = 1
+AST_CHANGED = 2
+
+class Element(object):
 	"""an object that can be rendered"""
 	help = []
 	keys = []
 	keys_help_items = None
 	def __init__(self):
-		if platform.frontend != platform.brython: # https://github.com/PierreQuentel/brython/issues/15
-			super(Element, self).__init__()
+		super(Element, self).__init__()
 		self._parent = evil('666:evil _parent placeholder')
 		self.brackets_color = (200,200,200)
 		self.brackets = ('<','>')
@@ -26,6 +27,10 @@ class Element(event.EventDispatcher):
 		#if not hasattr(self, "levent_handlers"):
 		#self.__class__.levent_handlers = self.find_levent_handlers()
 		#log("eee"+str(self.levent_handlers))
+		#i didnt find a good way to declaratively specify key combinations
+		#sometimes a mod must be, sometimes it must not be because something else
+		#handles that.. i guess a handler would just have to specify which mods
+		#it acccepts ..
 
 
 	#parent property wraps the weakrefing of parents
@@ -138,10 +143,6 @@ class Element(event.EventDispatcher):
 	def on_mouse_press(self, button):
 		ping()
 		return False
-
-	def register_event_types(self, types):
-		for item in types.split(','):
-			self.register_event_type(item.strip())
 
 	def tags(self):
 		#this needs to be refactored in with Node.tags

@@ -7,18 +7,10 @@ we also build up the builtins module along the way
 
 the philosophy of this codebase is "constant surprise". it keeps you alert.
 
-notes on the current state of this constantly changing code:
-i use "kids" and "children" interchangeably.
-sometimes i use "s", sometimes "self".
+"kids" and "children" mean the same.
+sometimes i use "s" instead of "self".
 "ch" is children of syntaxed
 
-creation of new nodes. 
-__init__ usually takes children or value as arguments.
-fresh() calls it with some defaults (as the user would have it inserted from the menu)
-each class has a decl, which is an object descending from NodeclBase (nodecl for node declaration).
-nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
-nodecls have a set of functions for instantiating the values, and those need some cleanup
-and the whole language is very..umm..not well-founded...for now. improvements welcome.
 """
 
 # region imports
@@ -40,9 +32,12 @@ from fuzzywuzzy import fuzz
 
 import json
 
+from pizco import Signal
+
 from notifyinglist import NotifyingList
 
 import element
+from element import Element, CHANGED, AST_CHANGED
 from menu_items import MenuItem
 import widgets
 import tags
@@ -51,7 +46,7 @@ from tags import ChildTag, ElementTag, MemberTag, AttTag, TextTag, ColorTag, End
 import lemon_colors as colors
 from keys import *
 from lemon_utils.utils import flatten, odict, evil
-from lemon_utils.dotdict import dotdict
+from lemon_utils.dotdict import Dotdict
 from lemon_args import args
 from lemon_utils.lemon_logger import log, topic, topic2
 
@@ -140,7 +135,7 @@ def to_lemon(x):
 	return r
 
 def _to_lemon(x):
-	if isinstance(x, str_and_uni):
+	if isinstance(x, unicode):
 		return Text(x)
 	elif isinstance(x, bool):
 		if x:
@@ -161,7 +156,7 @@ def _to_lemon(x):
 		raise Exception("i dunno how to convert %s"%repr(x))
 	#elif isinstance(x, list):
 
-class Children(dotdict):
+class Children(Dotdict):
 	"""this is the "ch" of Syntaxed nodes"""
 	pass
 
@@ -361,7 +356,7 @@ def deserialize(data, parent):
 		return FunctionDefinitionBase.deserialize(data, parent)
 	#if decl == 'varref':
 	#	return VarRef.deserialize(data, parent)
-	if isinstance(decl, str_and_uni):
+	if isinstance(decl, unicode):
 		decl = find_decl(decl, parent.nodecls)
 		if decl:
 			log("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
@@ -389,7 +384,7 @@ def failed_deser(data):
 
 
 def find_decl(name, decls):
-	assert isinstance(name, str_and_uni)
+	assert isinstance(name, unicode)
 	for i in decls:
 		if name == i.name:
 			log("found",name)
@@ -564,7 +559,7 @@ class ParserPersistenceStuff(object):
 		r = []
 		for i in s.items:
 			#log("serializing " + str(i))
-			if isinstance(i, str_and_uni):
+			if isinstance(i, unicode):
 				r.append(i)
 			else:
 				r.append(i.serialize())
@@ -576,7 +571,7 @@ class ParserPersistenceStuff(object):
 		r.parent = parent
 		log("deserializing Parser "+str(data))
 		for i in data['items']:
-			if isinstance(i, str_and_uni):
+			if isinstance(i, unicode):
 				r.add(i)
 			else:
 				r.add(deserialize(i, r))
@@ -663,10 +658,17 @@ class Node(NodePersistenceStuff, element.Element):
 	help = None
 
 	def __init__(self):
-		"""overrides in subclasses may require children as arguments"""
+		"""creation of new nodes.
+		__init__ usually takes children or value as arguments.
+		fresh() calls it with some defaults (as the user would have it inserted from the menu)
+		each class has a decl, which is an object descending from NodeclBase (nodecl for node declaration).
+		nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
+		nodecls have a set of functions for instantiating the values, and those need some cleanup
+		and the whole language is very..umm..not well-founded...for now. improvements welcome."""
+
 		super(Node, self).__init__()
 		self.brackets_color = "node brackets rainbow"
-		self.runtime = dotdict() #various runtime data herded into one place
+		self.runtime = Dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
 		self.fresh = "i think youre looking for inst_fresh, fresh() is a class method"
@@ -826,11 +828,11 @@ class Node(NodePersistenceStuff, element.Element):
 	def on_keypress(self, e):
 		if e.key == K_F7:
 			self.eval()
-			return True
+			return CHANGED
 
 		if e.key == K_DELETE and e.mod & KMOD_CTRL:
 			self.parent.delete_child(self)
-			return True
+			return AST_CHANGED
 
 	"""
 	@topic("delete_self")
@@ -933,7 +935,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		self._fix_parents(list(self.ch._dict.values()))
 
 	def set_child(self, name, item):
-		assert isinstance(name, str_and_uni), repr(name)
+		assert isinstance(name, unicode), repr(name)
 		assert isinstance(item, Node)
 		item.parent = self
 		self.ch[name] = item
@@ -969,7 +971,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		if __debug__:
 			assert(isinstance(slots, dict))
 			for name, slot in iteritems(slots):
-				assert(isinstance(name, str_and_uni))
+				assert(isinstance(name, unicode))
 				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
 	@property
@@ -997,10 +999,10 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		if KMOD_CTRL & e.mod:
 			if e.key == K_COMMA:
 				self.prev_syntax()
-				return True
+				return CHANGED
 			if e.key == K_PERIOD:
 				self.next_syntax()
-				return True
+				return CHANGED
 		return super(Syntaxed, self).on_keypress(e)
 
 	@classmethod
@@ -1123,7 +1125,7 @@ class Dict(Collapsible):
 
 	def __getitem__(s, key):
 		#as a special hack,
-		if isinstance(key, str_and_uni):
+		if isinstance(key, unicode):
 			key = Text(key, debug_note="created in Dict.find")
 
 		k = s.find(key)
@@ -1134,7 +1136,7 @@ class Dict(Collapsible):
 
 	def __setitem__(s, key, val):
 		#as a special hack,
-		if isinstance(key, str_and_uni):
+		if isinstance(key, unicode):
 			key = Text(key, debug_note="created in Dict.find")
 
 		k = s.find(key)
@@ -1175,7 +1177,7 @@ class Dict(Collapsible):
 		key, val = kv
 		assert(key not in self.items)
 		self.items[key] = val
-		assert(isinstance(key, str_and_uni))
+		assert(isinstance(key, unicode))
 		assert(isinstance(val, element.Element))
 		val.parent = self
 		return val
@@ -1223,12 +1225,13 @@ class List(ListPersistenceStuff, Collapsible):
 			item_index = self.item_index(e)
 			if len(self.items) > item_index:
 				del self.items[item_index]
+				return CHANGED
 			return True
 		#???
 		if e.key == K_RETURN:
 			item_index = self.item_index(e)
 			self.newline(item_index)
-			return True
+			return CHANGED
 
 	def item_index(self, event):
 		return event.atts.list_item
@@ -1411,13 +1414,7 @@ class Statements(List):
 			return super(Statements, self).on_keypress(e)
 
 	def index_of_item_under_cursor(self, event):
-		(char, line) = event.cursor
-		for i, item in enumerate(self.items):
-			if 'frame' in item._render_lines:
-				x = item._render_lines[event.frame]
-				if "endline" in x and x['endline'] >= line and x["startchar"] >= char:
-					return i
-		return 0 #i give up
+		return event.atts[item_index_att]
 
 
 class NoValue(Node):
@@ -1564,7 +1561,6 @@ class Text(WidgetedValue):
 	def render(self):
 		return self.widget.render()
 
-	#hmm
 	def on_keypress(self, e):
 		return self.widget.on_keypress(e)
 
@@ -1575,7 +1571,6 @@ class Text(WidgetedValue):
 	def match(text):
 		return 100
 
-from lemon_utils.flipflop import FlipFlop
 
 class Root(Dict):
 	def __init__(self):
@@ -1588,8 +1583,8 @@ class Root(Dict):
 		## appends a character to its contents, and wants to move the cursor,
 		## but before re-rendering, it might move it beyond the end of file
 		self.indent_length = 4 #not really used but would be nice to have it variable
-		self.changed = FlipFlop()
-		self.ast_changed = FlipFlop()
+		self.changed = True
+		self.ast_changed = True
 
 	def render(self):
 		#there has to be some default color for everything, the rendering routine looks for it..
@@ -1898,7 +1893,7 @@ class SyntaxedNodecl(NodeclBase):
 	"""
 	def __init__(self, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , self).__init__(instance_class)
-		self.instance_slots = dict([(k, b[i] if isinstance(i, str_and_uni) else i) for k,i in iteritems(instance_slots)])
+		self.instance_slots = dict([(k, b[i] if isinstance(i, unicode) else i) for k,i in iteritems(instance_slots)])
 		if isinstance(instance_syntaxes[0], list):
 			self.instance_syntaxes = instance_syntaxes
 		else:
@@ -2346,7 +2341,7 @@ class ParserBase(Node):
 		super(ParserBase, self).__init__()
 		self.items = NotifyingList()
 		self.decl = None
-		self.register_event_types('on_edit')
+		self.on_edit = Signal()
 		self.brackets_color = "compiler brackets"
 		self.brackets = ('{', '}')
 		self.reregister = False
@@ -2382,7 +2377,7 @@ class ParserBase(Node):
 
 	def add(self, item):
 		self.items.append(item)
-		assert isinstance(item, str_and_uni +(Node,) ), repr(item)
+		assert isinstance(item, (unicode, Node) ), repr(item)
 		if isinstance(item, Node):
 			item.parent = self
 		self.reparse = True
@@ -2395,7 +2390,7 @@ class ParserBase(Node):
 				text = text[0:pos -1] + text[pos:]
 				s.root.delayed_cursor_move -= 1
 		else:
-			assert isinstance(text, str_and_uni), (s.items, ii, text)
+			assert isinstance(text, unicode), (s.items, ii, text)
 			#print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
 			text = text[:pos] + e.uni + text[pos:]
 			s.root.delayed_cursor_move += len(e.uni)
@@ -2426,7 +2421,7 @@ class ParserBase(Node):
 		r = [AttTag("compiler body", self)]
 		for i, item in enumerate(self.items):
 			r += [AttTag("compiler item", i)]
-			if isinstance(item, str_and_uni):
+			if isinstance(item, unicode):
 				for j, c in enumerate(item):
 					r += [AttTag("compiler item char", j), TextTag(c), EndTag()]
 			else:
@@ -2527,7 +2522,7 @@ class ParserBase(Node):
 			#snap cursor to the beginning of Parser
 			s.root.delayed_cursor_move -= atts['char_index'] -1
 			return s.edit_text(0, 0, e)
-		elif isinstance(items[i], str_and_uni):
+		elif isinstance(items[i], unicode):
 			if "compiler item char" in atts:
 				ch = atts["compiler item char"]
 			else:
@@ -2535,7 +2530,7 @@ class ParserBase(Node):
 			return s.edit_text(i, ch, e)
 		elif isinstance(items[i], Node):
 			items.insert(i, "")
-			assert isinstance(items[i], str_and_uni), (items, i)
+			assert isinstance(items[i], unicode), (items, i)
 			return s.edit_text(i, 0, e)
 
 	@topic ("Parser.mine")
@@ -2593,7 +2588,7 @@ class ParserBase(Node):
 			i = 0
 		else:
 			i = s.mine(atts)
-			if isinstance(i, str_and_uni):
+			if isinstance(i, unicode):
 				if "compiler item char" in atts:
 					char_index = atts["compiler item char"]
 				else:
@@ -2654,7 +2649,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 	def copy(s):
 		r = Parser(s.slot)
 		for i in s.items:
-			if isinstance(i, str_and_uni):
+			if isinstance(i, unicode):
 				x = i
 			else:
 				x = i.copy()
@@ -2866,7 +2861,7 @@ class ParserMenuItem(MenuItem):
 		super(ParserMenuItem, self).__init__()
 		self.value = value
 		value.parent = self
-		self.scores = dotdict()
+		self.scores = Dotdict()
 		if score != 0:  self.scores._ = score
 		self.brackets_color = (0,255,255)
 
@@ -2944,7 +2939,7 @@ class LeshCommandLine(ParserBase):
 
 			if child_index != None:
 				orig = self.items[child_index]
-				if isinstance(orig, str_and_uni):
+				if isinstance(orig, unicode):
 					self.items = insert_between_pipes(snippet, char_index, child_index, self.items)
 				#self.items[child_index] = snippet
 			else:
@@ -3052,7 +3047,7 @@ class LeshMenuItem(MenuItem):
 	def __init__(self, snippet, score = 0):
 		super(LeshMenuItem, self).__init__()
 		self.value = snippet
-		self.scores = dotdict()
+		self.scores = Dotdict()
 		self.brackets_color = (0,255,255)
 
 	@property #duplicate...
@@ -3287,7 +3282,7 @@ class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionB
 
 	def copy_args(self, call_args):
 		for k,v in iteritems(call_args):
-			assert isinstance(k, str_and_uni)
+			assert isinstance(k, unicode)
 			assert isinstance(v, Node)
 			self.params[k].append_value(v.copy())
 
@@ -4111,4 +4106,4 @@ build_in(SyntaxedNodecl(CustomNodeDef,
 			   ["define node with syntax:", ChildTag("syntax")],
 			   {'syntax': b['custom syntax list']}))
 # endregion
-#todo: why isnt b a dotdict?
+#todo: why isnt b a Dotdict?

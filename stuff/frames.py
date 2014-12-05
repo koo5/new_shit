@@ -14,7 +14,7 @@ from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
 from lemon_utils.lemon_logger import log, topic
 from keys import *
-from lemon_utils.lemon_six import iteritems, str_and_uni
+from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
 from lemon_utils.utils import evil
 
@@ -149,7 +149,7 @@ class Root(Frame):
 				assert(isinstance(l, list))
 				for i in l:
 					assert(isinstance(i, tuple))
-					assert(isinstance(i[0], str_and_uni))
+					assert(isinstance(i[0], unicode))
 					assert(len(i[0]) == 1)
 					assert(isinstance(i[1], dict))
 					assert(i[1]['node'])

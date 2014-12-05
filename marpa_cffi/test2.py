@@ -12,7 +12,7 @@ from lemon_utils import dotdict
 
 sys.path.append('..')
 from lemon_utils.lemon_logger import topic, log
-from lemon_utils.lemon_six import str_and_uni
+from lemon_utils.lemon_six import unicode
 
 def ident(x):
 	assert len(x) == 1
@@ -51,7 +51,7 @@ def rule2name(r):
 
 
 def rule(name, lhs,rhs,action=ident):
-	assert type(name) in str_and_uni
+	assert type(name) in unicode
 	assert name not in rules._dict
 	assert type(lhs) == symbol_int
 
@@ -66,7 +66,7 @@ def rule(name, lhs,rhs,action=ident):
 	return r
 
 def sequence(name, lhs, rhs, action=ident, separator=-1, min=1, proper=False,):
-	assert type(name) in str_and_uni
+	assert type(name) in unicode
 	assert name not in rules._dict
 	assert type(lhs) == symbol_int
 

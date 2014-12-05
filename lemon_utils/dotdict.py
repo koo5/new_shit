@@ -1,10 +1,10 @@
 
 from __future__ import print_function, unicode_literals
 
-class dotdict(object):
+class Dotdict(object):
 	"""
 	wraps a dict and allows access by both attributes and index.
-	for example: ch = dotdict(); ch._dict = {a:1}; ch.a = ch[a] + 1
+	for example: ch = Dotdict(); ch._dict = {a:1}; ch.a = ch[a] + 1
 	subclassing a dict inherits many atributtes, do not want.
 	python 3.3 introduces SimpleNamespace, equivalent to an empty object with nice __repr__.
 	could use that and just add __getitem__ and __setitem__ (access by index)
@@ -22,7 +22,7 @@ class dotdict(object):
 	def __setattr__ (s, k, v):
 		if object.__getattribute__(s, "_locked"):
 			if not k in s._dict:
-				raise Exception("setting an unknown item of a locked-down dotdict")
+				raise Exception("setting an unknown item of a locked-down Dotdict")
 
 		if k != "_dict":
 			s._dict[k] = v
@@ -37,5 +37,6 @@ class dotdict(object):
 		return s._dict[k]
 	def __repr__(s):
 		return str(s._dict)
-
+	def __len__(s):
+		return len(s._dict)
 

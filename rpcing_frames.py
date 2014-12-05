@@ -14,7 +14,7 @@ from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
 from lemon_utils.lemon_logger import log, topic
 from keys import *
-from lemon_utils.lemon_six import iteritems, str_and_uni
+from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
 from lemon_utils.utils import evil
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something

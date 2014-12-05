@@ -1,7 +1,7 @@
 import operator
 
-from lemon_utils.dotdict import dotdict
-from lemon_utils.lemon_six import str_and_uni, itervalues
+from lemon_utils.dotdict import Dotdict
+from lemon_utils.lemon_six import unicode, itervalues
 from .marpa import *
 
 
@@ -22,7 +22,7 @@ def ignore(args):
 class HigherMarpa(object):
 	def __init__(s, debug=False):
 		"""create a new grammar object and stuff"""
-		s.syms = dotdict()
+		s.syms = Dotdict()
 		s.g = Grammar()
 		s.known_chars = {}
 		s.actions = {} # per-rule valuator callbacks (functions that the parser steps loop calls to actually create basic values or Nodes from lists of values or child nodes

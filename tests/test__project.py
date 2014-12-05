@@ -58,7 +58,7 @@ import sys
 sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
 from fuzzywuzzy import fuzz
 
-from dotdict import dotdict
+from Dotdict import Dotdict
 from logger import log, topic
 import element
 from menu_items import MenuItem
@@ -122,7 +122,7 @@ def dict_from_to(key, val):
 	%_%a helper for creating a type%_%
 	return b["dict"].make_type({'keytype': Ref(b[key]), 'valtype': Ref(b[val])})
 
-class Children(dotdict):
+class Children(Dotdict):
 	%_%this is the "ch" of Syntaxed nodes%_%
 	pass
 
@@ -457,7 +457,7 @@ class Node(NodePersistenceStuff, element.Element):
 		%_%overrides in subclasses may require children as arguments%_%
 		super(Node, self).__init__()
 		self.brackets_color = "node brackets rainbow"
-		self.runtime = dotdict() #various runtime data herded into one place
+		self.runtime = Dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
 
@@ -2678,7 +2678,7 @@ class ParserMenuItem(MenuItem):
 		super(ParserMenuItem, self).__init__()
 		self.value = value
 		value.parent = self
-		self.scores = dotdict()
+		self.scores = Dotdict()
 		self.brackets_color = (0,255,255)
 
 	@property
@@ -2697,7 +2697,7 @@ class LeshMenuItem(MenuItem):
 	def __init__(self, snippet, score = 0):
 		super(LeshMenuItem, self).__init__()
 		self.value = snippet
-		self.scores = dotdict()
+		self.scores = Dotdict()
 		self.brackets_color = (0,255,255)
 
 	@property #duplicate...

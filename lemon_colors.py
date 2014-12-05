@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
-from lemon_utils.lemon_six import iteritems, str_and_uni
-from lemon_utils.dotdict import dotdict
+from lemon_utils.lemon_six import iteritems, unicode
+from lemon_utils.dotdict import Dotdict
 
 try:
 	#im gonna have to ditch this crappy module
@@ -30,8 +30,8 @@ default_colors = {
     "eval results":(150,150,150)
 	}
 
-colors = dotdict()
-#colors._dict = dict(default_colors) #fix dotdict..but not needed..
+colors = Dotdict()
+#colors._dict = dict(default_colors) #fix Dotdict..but not needed..
 
 def cache(args):
 	global colors, invert, mono

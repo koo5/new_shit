@@ -4,14 +4,16 @@
 
 from __future__ import unicode_literals
 
-import element
+from pizco import Signal
+
+from element import Element, CHANGED
 from lemon_utils.lemon_logger import log
 from lemon_utils.lemon_six import unicode
-from tags import TextTag, ColorTag, EndTag, MemberTag, node_att, char_index_att
+from tags_fast import TextTag, ColorTag, EndTag, MemberTag, node_att, char_index_att
 from keys import *
 
 
-class Widget(element.Element):
+class Widget(Element):
 	def __init__(self, parent):
 		super(Widget, self).__init__()
 		self.parent = parent
@@ -22,7 +24,7 @@ class Widget(element.Element):
 class Text(Widget):
 	def __init__(self, parent, text):
 		super(Text, self).__init__(parent)
-		self.register_event_types('on_edit')
+		self.on_edit = Signal()
 		self.color = (150,150,255,255)
 		assert isinstance(text, unicode)
 		self.text = text
@@ -90,17 +92,17 @@ class ShadowedText(Text):
 class Button(Widget):
 	def __init__(self, parent, text="[button]", description = "?"):#🔳🔳🔳🔳]"):
 		super(Button, self).__init__(parent)
-		self.register_event_types('on_click, on_text')
+		self.on_press = Signal(1)
+		self.on_text = Signal(1)
 		self.color = (255,150,150,255)
 		self.text = text
 	def on_mouse_press(self, button):
 		ping()
-		self.dispatch_event('on_click', self)
+		self.on_click.emit(self)
 	keys = ["return, space: press button"]
 	def on_keypress(self, e):
-		ping()
 		if e.key == K_RETURN or e.key == K_SPACE:
-			self.dispatch_event('on_click', self)
+			self.on_press.emit(self)
 			return True
 	def render(self):
 		return [ColorTag(self.color),TextTag(self.text), EndTag()]
@@ -116,9 +118,11 @@ class Number(Text):
 		for b in (self.plus_button, self.minus_button):
 			b.brackets = ('{','}')
 			b.brackets_color = b.color = "number buttons"
-		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
-		self.plus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
-		self.register_event_types('on_change')
+		self.minus_button.on_click.connect(self.on_widget_click)
+		self.minus_button.on_text. connect(self.on_widget_text)
+		self.plus_button. on_click.connect(self.on_widget_click)
+		self.plus_button. on_text. connect(self.on_widget_text)
+		self.on_change = Signal(1)
 
 	def render(self):
 		return [MemberTag('minus_button'), TextTag(self.text), MemberTag('plus_button')]
@@ -134,12 +138,12 @@ class Number(Text):
 	def inc(self):
 		if self.limits[1] == None or self.limits[1] > int(self.text):
 			self.text = str(int(self.text)+1)
-			self.dispatch_event('on_change', self)
+			self.on_change.emit(self)
 	
 	def dec(self):
 		if self.limits[0] == None or self.limits[0] < int(self.text):
 			self.text = str(int(self.text)-1)
-			self.dispatch_event('on_change', self)
+			self.on_change.emit(self)
 	
 	def on_widget_click(self,widget):
 		if widget == self.minus_button:
@@ -158,8 +162,9 @@ class Number(Text):
 			self.dec()
 
 	def on_keypress(self, e):
-		"""crudity crudity messity mess!"""
-		pos = e.atts["char_index"] - 2
+		#since Number is a subclass of Text, with buttons, we substract the left button chars,
+		#then pass it to Text's handler
+		pos = e.atts[char_index_att] - 2
 		return self._keypress(e, pos)
 
 
@@ -167,7 +172,7 @@ class Number(Text):
 class NState(Widget):
 	def __init__(self, parent, value, texts = ("to state 1", "to state 2", "to state 0")):
 		super(NState, self).__init__(parent)
-		self.register_event_types('on_change')
+		self.on_change = Signal()
 		self.value = value
 		assert(0 <= value < len(texts))
 		self.texts = texts
@@ -181,7 +186,7 @@ class NState(Widget):
 		self.value = self.value + 1
 		if self.value == len(self.texts):
 			self.value = 0
-		self.dispatch_event('on_change', self)
+		self.on_change.emit(self)
 	def on_mouse_press(self, button):
 		self.toggle()
 		return True
@@ -189,14 +194,14 @@ class NState(Widget):
 	def on_keypress(self, e):
 		if e.key == K_RETURN or e.key == K_SPACE:
 			self.toggle()
-			return True
+			return CHANGED
 
 #NState uses a number, Toggle bool..
 
 class Toggle(Widget):
 	def __init__(self, parent, value, texts = ("checked", "unchecked")):
 		super(Toggle, self).__init__(parent)
-		self.register_event_types('on_change')
+		self.on_change = Signal(1)
 		self.value = value
 		self.texts = texts
 		self.color = "fg"
@@ -207,11 +212,11 @@ class Toggle(Widget):
 		return self.texts[0] if self.value else self.texts[1]
 	def toggle(self):
 		self.value = not self.value
-		self.dispatch_event('on_change', self)
+		self.on_change.emit(self)
 	def on_mouse_press(self, button):
 		self.toggle()
 	keys = ["return, space: toggle"]
 	def on_keypress(self, e):
 		if e.key == K_RETURN or e.key == K_SPACE:
 			self.toggle()
-			return True
+			return CHANGED
