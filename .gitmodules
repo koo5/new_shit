@@ -1,6 +1,9 @@
 [submodule "fuzzywuzzy"]
-	path = fuzzywuzzy
+	path = fuzzywuzzy_git
 	url = https://github.com/seatgeek/fuzzywuzzy.git
 [submodule "pygame_cffi"]
 	path = pygame_cffi
 	url = https://github.com/CTPUG/pygame_cffi.git
+[submodule "pizco_git"]
+	path = pizco_git
+	url = https://github.com/koo5/pizco.git

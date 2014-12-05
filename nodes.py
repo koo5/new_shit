@@ -15,18 +15,12 @@ sometimes i use "s" instead of "self".
 
 # region imports
 
-#http://python-future.org/
-#from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame?
+from lemon_utils.lemon_six import iteritems, iterkeys
 
-from __future__ import unicode_literals
-
-from lemon_utils.lemon_six import iteritems, iterkeys, PY2
 import lemon_platform as platform
-
 BRY = platform.frontend == platform.brython
 
 import sys
-sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
 
 from fuzzywuzzy import fuzz
 
@@ -37,7 +31,7 @@ from pizco import Signal
 from notifyinglist import NotifyingList
 
 import element
-from element import Element, CHANGED, AST_CHANGED
+from element import Element
 from menu_items import MenuItem
 import widgets
 import tags
@@ -55,8 +49,7 @@ tags.asselement = element
 import marpa_cffi
 marpa = marpa_cffi.try_loading_marpa()
 if marpa == True:
-	from marpa_cffi.marpa import *
-	from marpa_cffi.higher import *
+	from marpa_cffi.rpc_client import *
 	import marpa_cffi.marpa_codes
 	import marpa_cffi.graphing_wrapper as graphing_wrapper
 else:
@@ -73,6 +66,7 @@ else:
 
 #b is for staging the builtins module and referencing builtin nodes from python code
 b = odict()
+
 def build_in(node, name=None):
 	#modifies b
 	if isinstance(node, list):
@@ -655,18 +649,16 @@ class Node(NodePersistenceStuff, element.Element):
 	nodes can added, cut'n'pasted around, evaluated etc.
 	every node class has a corresponding decl object
 	"""
+	AST_CHANGED = 2
 	help = None
 
 	def __init__(self):
-		"""creation of new nodes.
-		__init__ usually takes children or value as arguments.
+		"""	__init__ usually takes children or value as arguments.
 		fresh() calls it with some defaults (as the user would have it inserted from the menu)
 		each class has a decl, which is an object descending from NodeclBase (nodecl for node declaration).
 		nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
-		nodecls have a set of functions for instantiating the values, and those need some cleanup
-		and the whole language is very..umm..not well-founded...for now. improvements welcome."""
-
-		super(Node, self).__init__()
+		nodecls have a set of functions for instantiating the values, and those need some cleanup"""
+		super().__init__()
 		self.brackets_color = "node brackets rainbow"
 		self.runtime = Dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()

@@ -2,15 +2,17 @@
 
 """textbox, button, toggle.."""
 
-from __future__ import unicode_literals
-
 from pizco import Signal
 
-from element import Element, CHANGED
+from element import Element
 from lemon_utils.lemon_logger import log
 from lemon_utils.lemon_six import unicode
-from tags_fast import TextTag, ColorTag, EndTag, MemberTag, node_att, char_index_att
+from tags import TextTag, ColorTag, EndTag, MemberTag, node_att, char_index_att
 from keys import *
+
+
+class Event(object):
+	"""a base class for user events"""
 
 
 class Widget(Element):

@@ -1,9 +1,3 @@
-"""this file works as a rpc interface, so instead of looking for the perfect rpc library,
-i will just rewrite it into a little less oop-y style, so the clients dont have to be able
-to access complex objects as atributes of this file, but just call various functions"""
-
-from __future__ import unicode_literals
-
 import graph
 
 import lemon_platform as platform
@@ -19,7 +13,7 @@ from lemon_utils.lemon_logger import log, topic
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
 from lemon_utils.utils import evil
-from tags_fast import proxy_this
+from tags import proxy_this
 
 from pizco import Signal
 
@@ -36,41 +30,40 @@ class Editor(ServerFrame):
 		self.root = nodes.make_root()
 		self.root.fix_parents()
 
-		self.root.ast_changed.connect(self.on_root_changed)
-		self.root.changed.connect(self.on_root_changed)
 		self.on_root_change = Signal()
-	#can we chain these somehow?
-	def on_root_changed(s):
-		s.on_root_change.emit()
 
 	def tags(s):
 		return s.root.tags()
 
 	@property
 	def element_under_cursor(s):
-		return atts[att_node]
+		"""we shouldnt need this if atts are in event, but it makes it possible
+		to call things like run_line without passing it the event too.
+		Ofc, this has to be kept updated from the client
+		"""
+		return s.atts[att_node]
+
+	def set_atts(editor, atts):
+		assert type(atts) == dict
+		editor.atts = atts
+
+	def run_active_program(editor):
+		editor.root['some program'].run()
+
+	def run_line(editor):
+		editor.atts[node_att].module.run_line(editor.atts[node_att])
+
+	def clear(editor):
+		editor.root['some program'].clear()
+
+	def	dump_root_to_file(editor):
+		pass
+
+	def get_delayed_cursor_move(editor):
+		return editor.root.delayed_cursor_move
+
 
 editor = Editor()
-
-def editor_notify_cursor_on_atts(atts):
-	assert type(atts) == dict
-	editor.atts = atts
-
-def editor_run_active_program():
-	editor.root['some program'].run()
-
-def editor_run_line():
-	editor.atts[node_att].module.run_line(root.atts[node_att])
-
-def editor_clear():
-	editor.root['some program'].clear()
-
-def	editor_dump_root_to_file():
-	pass
-
-def editor_get_delayed_cursor_move():
-	return editor.root.delayed_cursor_move
-
 
 
 class Menu(ServerFrame):
@@ -258,7 +251,6 @@ def load(name):
 	assert(isinstance(name, unicode))
 	nodes.b_lemon_load_file(editor.root, name)
 	editor.render()
-	edi
 	try_move_cursor(root.root['loaded program'])
 
 
@@ -267,11 +259,11 @@ def load(name):
 """
 general ways that rpcing complicates things;
 
-have to do more effort at proper mvc-y eventing, but this would in some form be
-necessary for best performance anyway (keeping track of dirtiness at various levels
+have to do more effort at proper mvc-y eventing, This would in some form be
+necessary for best performance anyway (keeping track of dirtiness at various levels.
+But the split between the server and client part of frames isnt nice..
 
 proxying elements: wont be a performance hit, if it will, it can be easily stubbed
 proxy_this() and deproxy() have to be in places tho
-
 
 """

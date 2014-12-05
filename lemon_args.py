@@ -1,9 +1,9 @@
-from __future__ import unicode_literals
 import argparse
 
 from lemon_utils.lemon_six import unicode
 
 def parse_args():
+	global args
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--eightbit', action='store_true',
 				   help='try to be compatible with 8 bit color mode.')
@@ -40,6 +40,5 @@ def parse_args():
 	parser.add_argument('--intro', action='store_true')
 
 
-	return parser.parse_args()
+	args = parser.parse_args()
 
-args = parse_args()

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-
 from weakref import ref as weakref
 
 import lemon_platform as platform
@@ -9,16 +7,15 @@ from lemon_utils.lemon_logger import log
 import tags
 from lemon_utils.utils import evil
 
-CHANGED = 1
-AST_CHANGED = 2
 
-class Element(object):
-	"""an object that can be rendered"""
+class Element():
+	"""an object that can be rendered, a common base for widgets and nodes"""
+	CHANGED = 1
 	help = []
 	keys = []
 	keys_help_items = None
 	def __init__(self):
-		super(Element, self).__init__()
+		super().__init__()
 		self._parent = evil('666:evil _parent placeholder')
 		self.brackets_color = (200,200,200)
 		self.brackets = ('<','>')
@@ -137,11 +134,11 @@ class Element(object):
 
 
 	def on_keypress(self, event):
-#		ping()
+		log('default handler')
 		return False
 		
 	def on_mouse_press(self, button):
-		ping()
+		log('default handler')
 		return False
 
 	def tags(self):
@@ -194,20 +191,6 @@ class Element(object):
 	def menu_item_selected(self, item, atts):
 		if self.parent:
 			return self.parent.menu_item_selected(item, atts)
-	"""
-	#def position(self):
-	#	return self.doc.positions[self]
-	
-
-	#	def is_active(self):
-	#		return False
-"""
 
 	def long__repr__(s):
 		return object.__repr__(s)
-
-	#todo
-	def set_dirty(s):
-		s.root.dirty = True
-
-
