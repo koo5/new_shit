@@ -1,5 +1,3 @@
-a bit of marpa_cffi sanitizing. refucktoring stuff into lemon_utils. bet its gonna bite me.
-
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 

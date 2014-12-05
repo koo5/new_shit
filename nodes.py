@@ -4123,7 +4123,7 @@ class Serialized(Syntaxed):
 		self.parent.replace_child(self, new)
 
 build_in(SyntaxedNodecl(Serialized,
-			   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
+			   ["serialized node:", ChildTag("last_rendering"), ChildTag("serialization")],
 			   {'last_rendering': b['text'],
 			    'serialization':dict_from_to('text', 'anything')}))
 
@@ -4132,20 +4132,26 @@ build_in(SyntaxedNodecl(Serialized,
 
 
 """
-class CustomNodeDef(Syntaxed):
-	pass
-
-build_in(SyntaxedNodecl(CustomNodeDef,
-"""
-
-
-
 class NodeSyntax(Syntaxed):
 	pass
 
 build_in(SyntaxedNodecl(NodeSyntax,
 			   ["node syntax:", ChildTag("syntax")],
 			   {'syntax': b['custom syntax list']}))
+"""
+
+
+
+class CustomNodeDef(Syntaxed):
+	pass
+
+build_in(SyntaxedNodecl(CustomNodeDef,
+			   ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
+			   {'name' : b['text'],
+			   'syntax': b['custom syntax list']}))
+"""this gets us a node defining nodes, so it should have nodecl functionality"""
+
+
 
 
 
