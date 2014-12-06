@@ -7,12 +7,12 @@ a protoprototype of a structural editor and a programming / shell language / use
 
 running it
 ===
-requires pygame and fuzzywuzzy (colors optional)  
+requires pygame and fuzzywuzzy (colors.py optional)  
 
 there is a proof-of-concept ncurses frontend, just need to come up with good key combinations and finish the translation table
 
 * apt-get install python-pygame python-pip
-* pip install --user fuzzywuzzy colors
+* pip install --user fuzzywuzzy colors.py
 #(or without --user)
 
 it should work with python 2.5, OrderedDict is bundled in (maybe not anymore)  
