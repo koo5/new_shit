@@ -9,7 +9,7 @@ from .marpa_misc import *
 
 
 class MarpaClient(object):
-	def __init__(s, debug=False):
+	def __init__(s, debug=True):
 		s.debug = debug
 		s.named_syms = Dotdict()
 		s.syms = {}
@@ -22,7 +22,7 @@ class MarpaClient(object):
 		if s.debug:
 			if name in s.named_syms._dict:
 				raise Exception("%s already in named_syms"%name)
-		r = s.named_syms[name] = symbol(name)
+		r = s.named_syms[name] = s.symbol(name)
 		return r
 
 	def symbol(s,debug_name):
@@ -31,7 +31,7 @@ class MarpaClient(object):
 			s.syms[pyid] = (debug_name)
 		else:
 			raise Exception("#todo, just use a counter")
-		return r
+		return pyid
 
 	def symbol2name(s,symid):
 		assert s.debug

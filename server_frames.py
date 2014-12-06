@@ -178,7 +178,7 @@ class Log(ServerFrame):
 	def __init__(s):
 		super(Log, s).__init__()
 		s.items = []
-		s.on_add = Signal(1)
+		s.on_add = Signal()
 
 	def add(s, msg):
 		#timestamp, topics, text = msg

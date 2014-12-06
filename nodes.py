@@ -15,20 +15,20 @@ sometimes i use "s" instead of "self".
 
 # region imports
 
+import json
+
+
+from fuzzywuzzy import fuzz
+from pizco import Signal
+
+from notifyinglist import NotifyingList
+
 from lemon_utils.lemon_six import iteritems, iterkeys
 
 import lemon_platform as platform
 BRY = platform.frontend == platform.brython
 
-import sys
 
-from fuzzywuzzy import fuzz
-
-import json
-
-from pizco import Signal
-
-from notifyinglist import NotifyingList
 
 import element
 from element import Element
@@ -60,6 +60,8 @@ else:
 		raise marpa
 	else:
 		marpa = False
+
+
 # endregion
 
 # region utils
@@ -83,6 +85,7 @@ def build_in(node, name=None):
 		assert key not in b,  repr(key) + " already in builtins:" + repr(node)
 		b[key] = node
 	return node
+
 
 def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase, ParametricNodecl))
@@ -126,6 +129,7 @@ def is_flat(l):
 def to_lemon(x):
 	r = _to_lemon(x)
 	log ("to-lemon(%s) -> %s"%(x,r))
+
 	return r
 
 def _to_lemon(x):
@@ -153,6 +157,7 @@ def _to_lemon(x):
 class Children(Dotdict):
 	"""this is the "ch" of Syntaxed nodes"""
 	pass
+
 
 # endregion
 
@@ -273,7 +278,7 @@ def uniq(x):
            r.append(i)
    return r
 
-m = HigherMarpa() # just to confuse pycharm less, will be overwritten in setup_grammar
+m = MarpaClient()
 
 @topic ('setup_grammar')
 def setup_grammar(root,scope):
@@ -3565,11 +3570,8 @@ def add_operators():
 	#file into some reasonable modules would still create complications
 	import operator as op
 
-	if PY2:
-		pfn(op.div, [num_arg('A'), Text("/"), num_arg('B')])
-	else:
-		pfn(op.floordiv, [num_arg('A'), Text("//"), num_arg('B')])
-		pfn(op.truediv,  [num_arg('A'), Text("/"), num_arg('B')])
+	pfn(op.floordiv, [num_arg('A'), Text("//"), num_arg('B')])
+	pfn(op.truediv,  [num_arg('A'), Text("/"), num_arg('B')])
 	
 	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
 	pfn(op.add, [num_arg('A'), Text("+"), num_arg('B')])
