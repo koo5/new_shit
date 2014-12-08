@@ -1,3 +1,4 @@
+working my way thru declarativizing keypress handlers, rpcizing marpa, reorganizing stuff..
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 

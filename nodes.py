@@ -44,7 +44,7 @@ from lemon_utils.dotdict import Dotdict
 from lemon_args import args
 from lemon_utils.lemon_logger import log, topic, topic2
 
-tags.asselement = element
+tags.asselement = element # for assertions
 
 import marpa_cffi
 marpa = marpa_cffi.try_loading_marpa()
@@ -167,113 +167,10 @@ def parse(raw): #just text now, list_of_texts_and_nodes later
 
 	tokens = m.raw2tokens(raw)
 
-	r = Recce(m.g)
-	r.start_input()
 
-	for i, sym in enumerate(tokens):
-		if args.log_parsing:
-			log ("input:symid:%s name:%s raw:%s"%(sym, m.symbol2name(sym),raw[i]))
-		assert type(sym) == symbol_int
-		r.alternative(sym, i+1)
-		r.earleme_complete()
-
-	#token value 0 has special meaning(unvalued), so lets i+1 over there and insert a dummy over here
-	tokens.insert(0,'dummy')
-
-	latest_earley_set_ID = r.latest_earley_set()
-	log ('latest_earley_set_ID=%s'%latest_earley_set_ID)
-
-	try:
-		b = Bocage(r, latest_earley_set_ID)
-	except:
-		return # no parse
-
-	o = Order(b)
-	tree = Tree(o)
-
-	for _ in tree.nxt():
-		r=do_steps(tree, tokens, raw)
-		yield r
-
-@topic2
-def do_steps(tree, tokens, raw):
-	stack = defaultdict((lambda:evil('default stack item, what the beep')))
-	stack2= defaultdict((lambda:evil('default stack2 item, what the beep')))
-	v = Valuator(tree)
-	babble = False
-
-	while True:
-		s = v.step()
-		if babble:
-			log  ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
-			log ("step:%s"%codes.steps2[s])
-		if s == lib.MARPA_STEP_INACTIVE:
-			break
-
-		elif s == lib.MARPA_STEP_TOKEN:
-
-			pos = v.v.t_token_value - 1
-			sym = symbol_int(v.v.t_token_id)
-
-			assert v.v.t_result == v.v.t_arg_n
-
-			char = raw[pos]
-			where = v.v.t_result
-			if babble:
-				log ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
-			stack[where] = stack2[where] = char
-
-		elif s == lib.MARPA_STEP_RULE:
-			r = v.v.t_rule_id
-			#print ("rule id:%s"%r)
-			if babble:
-				log ("rule:"+rule2name(r))
-			arg0 = v.v.t_arg_0
-			argn = v.v.t_arg_n
-
-			#args = [stack[i] for i in range(arg0, argn+1)]
-			#stack[arg0] = (rule2name(r), args)
-
-
-			actions = m.actions[r]
-
-
-			val = [stack2[i] for i in range(arg0, argn+1)]
-
-			if args.log_parsing:
-				debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
-
-			try:
-				for action in actions:
-					val = action(val)
-					if args.log_parsing:
-						debug_log += '->'+repr(val)
-			finally:
-				if args.log_parsing:
-					log(debug_log)
-
-			stack2[arg0] = val
-
-		elif s == lib.MARPA_STEP_NULLING_SYMBOL:
-			stack2[v.v.t_result] = "nulled"
-		elif s == lib.MARPA_STEP_INACTIVE:
-			log("MARPA_STEP_INACTIVE:i'm done")
-		elif s == lib.MARPA_STEP_INITIAL:
-			log("MARPA_STEP_INITIAL:stating...")
-		else:
-			log(marpa_cffi.marpa_codes.steps[s])
-
-	v.unref()#promise me not to use it from now on
-	#print "tada:"+str(stack[0])
-#	print ("tada:"+json.dumps(stack[0], indent=2))
-	#log ("tada:"+json.dumps(stack2[0], indent=2))
-	res = stack2[0] # in position 0 is final result
-	log ("tada:"+repr(res))
-	return res
-
-def uniq(x):
+def uniq(lst):
    r = []
-   for i in x:
+   for i in lst:
        if i not in r:
            r.append(i)
    return r
@@ -287,7 +184,7 @@ def setup_grammar(root,scope):
 	assert scope == uniq(scope)
 
 	for i in root.flatten():
-		i.forget_registration()
+		i.forget_symbols()
 
 	m = HigherMarpa(args.graph_grammar or args.log_parsing)
 
@@ -669,9 +566,9 @@ class Node(NodePersistenceStuff, element.Element):
 		self.clear_runtime_dict()
 		self.isconst = False
 		self.fresh = "i think youre looking for inst_fresh, fresh() is a class method"
-		self.forget_registration()
+		self.forget_symbols()
 
-	def forget_registration(s):
+	def forget_symbols(s):
 		s._symbol  = None
 
 	@property
@@ -819,25 +716,6 @@ class Node(NodePersistenceStuff, element.Element):
 			r.decl = decl
 		return r
 
-	keys = ["f7: evaluate node",
-		"ctrl del: delete"]
-	
-	def on_keypress(self, e):
-		if e.key == K_F7:
-			self.eval()
-			return CHANGED
-
-		if e.key == K_DELETE and e.mod & KMOD_CTRL:
-			self.parent.delete_child(self)
-			return AST_CHANGED
-
-	"""
-	@topic("delete_self")
-	@levent(mod=KMOD_CTRL, key=K_DELETE)
-	def delete_self(self):
-		self.parent.delete_child(self)
-	"""
-
 	def to_python_str(self):
 		return str(self)
 		#danger: uni
@@ -911,17 +789,17 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	their types are in slots.
 	syntax is a list of Tags, and it can contain ChildTag
 	"""
-	def __init__(self, kids):
+	def __init__(self, children):
 		super(Syntaxed, self).__init__()
 		self.check_slots(self.slots)
 		self.syntax_index = 0
 		self.ch = Children()
 
-		assert len(kids) == len(self.slots)
+		assert len(children) == len(self.slots)
 
 		#set children from the constructor argument
 		for k in iterkeys(self.slots):
-			self.set_child(k, kids[k])
+			self.set_child(k, children[k])
 
 		# prevent setting new ch keys
 		self.ch._lock()
@@ -983,24 +861,15 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		if self.syntax_index < 0:
 			self.syntax_index = 0
 		log("previous syntax")
+		return CHANGED
 
 	def next_syntax(self):
 		self.syntax_index  += 1
 		if self.syntax_index == len(self.syntaxes):
 			self.syntax_index = len(self.syntaxes)-1
 		log("next syntax")
+		return CHANGED
 
-	keys = ["ctrl ,: previous syntax",
-			"ctrl .: next syntax"]
-	def on_keypress(self, e):
-		if KMOD_CTRL & e.mod:
-			if e.key == K_COMMA:
-				self.prev_syntax()
-				return CHANGED
-			if e.key == K_PERIOD:
-				self.next_syntax()
-				return CHANGED
-		return super(Syntaxed, self).on_keypress(e)
 
 	@classmethod
 	def create_kids(cls, slots):
@@ -1093,7 +962,7 @@ class Collapsible(Node):
 		yield [DedentTag()]
 
 	@classmethod
-	@topic ("Collapsible.fresh")
+	@topic2
 	def fresh(cls, decl):
 		#log("decl="+repr(decl))
 		r = cls()
@@ -1213,25 +1082,11 @@ class List(ListPersistenceStuff, Collapsible):
 	def slots(s):
 		return [s.item_type]
 
-	keys = ["ctrl del: delete item",
-			"return: add item"]
-
-	def on_keypress(self, e):
-
-		if e.key == K_DELETE and e.mod & KMOD_CTRL:
-			item_index = self.item_index(e)
-			if len(self.items) > item_index:
-				del self.items[item_index]
-				return CHANGED
-			return True
-		#???
-		if e.key == K_RETURN:
-			item_index = self.item_index(e)
-			self.newline(item_index)
-			return CHANGED
-
 	def item_index(self, event):
-		return event.atts.list_item
+		li = event.any_atts.get('list_item')
+		if li:
+			if deproxy(li[0]) == self:
+				return li[1]
 
 	def _eval(self):
 		r = List()
@@ -1607,8 +1462,8 @@ class Root(Dict):
 
 class Module(Syntaxed):
 	"""module or program, really"""
-	def __init__(self, kids):
-		super(Module, self).__init__(kids)
+	def __init__(self, children):
+		super(Module, self).__init__(children)
 
 	def add(self, item):
 		self.ch.statements.add(item)
@@ -1920,10 +1775,10 @@ class ParametricTypeBase(Syntaxed):
 class ParametricType(ParametricTypeBase):
 	"""like..list of <type>, the <type> will be a child of this node.
 	 ParametricType is instantiated by ParametricNodecl """
-	def __init__(self, kids, decl):
+	def __init__(self, children, decl):
 		self.decl = decl
 		self.instance_class = self.decl.value_class
-		super(ParametricType, self).__init__(kids)
+		super(ParametricType, self).__init__(children)
 
 
 	@property
@@ -2014,9 +1869,9 @@ class EnumVal(Node):
 
 class EnumType(ParametricTypeBase):
 	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
-	def __init__(self, kids):
+	def __init__(self, children):
 		self.instance_class = EnumVal
-		super(EnumType, self).__init__(kids)
+		super(EnumType, self).__init__(children)
 	def palette(self, scope, text, node):
 		r = [ParserMenuItem(EnumVal(self, i)) for i in range(len(self.ch.options.items))]
 		#print ">",r
@@ -2031,8 +1886,8 @@ class EnumType(ParametricTypeBase):
 class SyntacticCategory(Syntaxed):
 	help=['this is a syntactical category(?) of nodes, used for "statement" and "expression"']
 
-	def __init__(self, kids):
-		super(SyntacticCategory, self).__init__(kids)
+	def __init__(self, children):
+		super(SyntacticCategory, self).__init__(children)
 
 	def register_symbol(s):
 		s._symbol = lhs = m.symbol(
@@ -2040,11 +1895,11 @@ class SyntacticCategory(Syntaxed):
 
 class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
-	def __init__(self, kids):
-		super(WorksAs, self).__init__(kids)
+	def __init__(self, children):
+		super(WorksAs, self).__init__(children)
 
-	def forget_registration(s):
-		super(WorksAs, s).forget_registration()
+	def forget_symbols(s):
+		super(WorksAs, s).forget_symbols()
 		s._rule = None
 
 	def register_symbol(s):
@@ -2065,8 +1920,8 @@ class WorksAs(Syntaxed):
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
 	help=['used just for types, currently.']
-	def __init__(self, kids):
-		super(Definition, self).__init__(kids)
+	def __init__(self, children):
+		super(Definition, self).__init__(children)
 
 	def inst_fresh(self):
 		return self.ch.type.inst_fresh(self)
@@ -2185,8 +2040,8 @@ b['union'].notes="""should appear as "type or type or type", but a Syntaxed with
 
 
 class UntypedVar(Syntaxed):
-	def __init__(self, kids):
-		super(UntypedVar, self).__init__(kids)
+	def __init__(self, children):
+		super(UntypedVar, self).__init__(children)
 
 build_in(SyntaxedNodecl(UntypedVar,
 			   [ChildTag("name")],
@@ -3076,8 +2931,8 @@ class FunctionParameterBase(Syntaxed):
 
 class TypedParameter(FunctionParameterBase):
 	"""a parameter to a function, with a name and a type specified"""
-	def __init__(self, kids):
-		super(TypedParameter, self).__init__(kids)
+	def __init__(self, children):
+		super(TypedParameter, self).__init__(children)
 	@property
 	def type(s):
 		return s.ch.type.parsed
@@ -3088,8 +2943,8 @@ build_in(SyntaxedNodecl(TypedParameter,
 
 class UnevaluatedParameter(FunctionParameterBase):
 	"""this argument will be passed to the called function as is, without evaluation"""
-	def __init__(self, kids):
-		super(UnevaluatedParameter, self).__init__(kids)
+	def __init__(self, children):
+		super(UnevaluatedParameter, self).__init__(children)
 	@property
 	def type(s):
 		return s.ch.argument.type
@@ -3122,8 +2977,8 @@ build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
 
 class FunctionDefinitionBase(Syntaxed):
 
-	def __init__(self, kids):
-		super(FunctionDefinitionBase, self).__init__(kids)
+	def __init__(self, children):
+		super(FunctionDefinitionBase, self).__init__(children)
 
 	def register_symbol(s):
 
@@ -3269,8 +3124,8 @@ class FunctionDefinitionBase(Syntaxed):
 
 class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionBase):
 	"""function definition in the lemon language"""
-	def __init__(self, kids):
-		super(FunctionDefinition, self).__init__(kids)
+	def __init__(self, children):
+		super(FunctionDefinition, self).__init__(children)
 
 	def _call(self, call_args):
 		self.copy_args(call_args)
@@ -3313,10 +3168,10 @@ class PassedFunctionCall(Syntaxed):
 class BuiltinFunctionDecl(FunctionDefinitionBase):
 	"""dumb and most powerful builtin function kind,
 	leaves type-checking to the function"""
-	def __init__(self, kids):
+	def __init__(self, children):
 		self._name = 777
 		self.fun = 777
-		super(BuiltinFunctionDecl, self).__init__(kids)
+		super(BuiltinFunctionDecl, self).__init__(children)
 
 	@staticmethod
 	def create(name, fun, sig):
@@ -3370,11 +3225,11 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	but has to be set up from within python code.
 	this is just a step from user-addable python function
 	"""
-	def __init__(self, kids):
+	def __init__(self, children):
 		self.ret= 777
 		self.note = 777
 		self.pass_root = False # pass root as first argument to the called python function? For internal lemon functions, obviously
-		super(BuiltinPythonFunctionDecl, self).__init__(kids)
+		super(BuiltinPythonFunctionDecl, self).__init__(children)
 
 	@staticmethod
 	#todo:refactor to BuiltinFunctionDecl.create
@@ -3711,9 +3566,9 @@ Tah-dah!#you really like typing.
 
 # region misc nodes
 class Note(Syntaxed):
-	def __init__(self, kids):
+	def __init__(self, children):
 		self.text = widgets.Text(self, "")
-		super(Note,self).__init__(kids)
+		super(Note,self).__init__(children)
 
 build_in(SyntaxedNodecl(Note,
 			   [["note: ", MemberTag("text")]],
@@ -3754,8 +3609,8 @@ SyntaxedNodecl(PythonEval,
 
 class ShellCommand(Syntaxed):
 	info = ["runs a command with os.system"]
-	def __init__(self, kids):
-		super(ShellCommand, self).__init__(kids)
+	def __init__(self, children):
+		super(ShellCommand, self).__init__(children)
 
 	def _eval(s):
 		cmd = s.ch.command.eval()
@@ -3771,10 +3626,10 @@ build_in(SyntaxedNodecl(ShellCommand,
 
 
 class FilesystemPath(Syntaxed):
-	def __init__(self, kids):
+	def __init__(self, children):
 		self.status = widgets.Text(self, "(status)")
 		self.status.color = "compiler hint"
-		super(FilesystemPath, self).__init__(kids)
+		super(FilesystemPath, self).__init__(children)
 
 	def _eval(s):
 		p = s.ch.path.eval().pyval
@@ -3878,8 +3733,8 @@ class Lesh(Node):
 
 class LeshSnippetDeclaration(Syntaxed):
 	"""a declaration of a snippet"""
-	def __init__(self, kids):
-		super(LeshSnippetDeclaration, self).__init__(kids)
+	def __init__(self, children):
+		super(LeshSnippetDeclaration, self).__init__(children)
 	@property
 	def human(s):
 		return s.ch.human.pyval
@@ -4063,10 +3918,10 @@ todo:rename FunctionDefinition to Defun, FunctionCall to Call, maybe remove "Stu
 
 # region more nodes
 class Serialized(Syntaxed):
-	def __init__(self, kids):
+	def __init__(self, children):
 		#self.status = widgets.Text(self, "(status)")
 		#self.status.color = "compiler hint"
-		super(Serialized, self).__init__(kids)
+		super(Serialized, self).__init__(children)
 
 	def _eval(s):
 		return Banana("deserialize me first")

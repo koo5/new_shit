@@ -1,0 +1,400 @@
+Libmarpa 7.3.0
+failure return values, for your bindings-writing pleasure
+
+
+marpa_check_version
+    always succeeds, technically
+
+marpa_version
+    −2 
+
+marpa_c_init
+    Always succeeds. 
+
+marpa_c_error
+    Always succeeds. 
+
+marpa_g_new
+    NULL, and the error code is set in configuration. 
+
+marpa_g_force_valued
+    a negative integer. 
+
+Marpa_Grammar marpa_g_ref
+    NULL
+
+Marpa_Symbol_ID marpa_g_start_symbol
+    −2;
+
+11.4 Symbols
+
+marpa_g_start_symbol_set
+    no such symbol, -1. 
+    −2. 
+
+marpa_g_highest_symbol_id
+    −2. 
+
+marpa_g_symbol_is_accessible
+    no such symbol, -1
+    −2. 
+
+marpa_g_symbol_is_completion_event
+marpa_g_symbol_is_completion_event_set
+    no such symbol, -1
+    −2. 
+
+marpa_g_symbol_is_nulled_event
+marpa_g_symbol_is_nulled_event_set
+    no such symbol, -1. 
+    −2. 
+
+marpa_g_symbol_is_nullable
+    no such symbol, -1
+    −2. 
+
+marpa_g_symbol_is_nulling
+    no such symbol, -1
+    −2. 
+
+marpa_g_symbol_is_productive
+    no such symbol, -1
+    −2. 
+
+marpa_g_symbol_is_prediction_event
+marpa_g_symbol_is_prediction_event_set
+    no such symbol, -1. 
+    −2. 
+
+marpa_g_symbol_is_start
+    no such symbol, -1
+    −2. 
+
+marpa_g_symbol_is_terminal
+marpa_g_symbol_is_terminal_set
+    no such symbol, -1
+    −2. 
+
+marpa_g_symbol_new
+    −2. 
+
+11.5 Rules
+
+marpa_g_highest_rule_id
+    −2. 
+
+marpa_g_rule_is_accessible
+    no such rule, -1
+    −2. 
+
+marpa_g_rule_is_nullable
+    no such rule, -1
+    −2. 
+
+marpa_g_rule_is_nulling
+    no such rule, -1
+    −2. 
+
+marpa_g_rule_is_loop
+    no such rule, -1
+    −2. 
+
+marpa_g_rule_is_productive
+    no such rule, -1. 
+    −2. 
+
+marpa_g_rule_length
+    −2. 
+
+marpa_g_rule_lhs
+    no such rule, -1.
+    −2. 
+
+marpa_g_rule_new
+    −2. 
+
+marpa_g_rule_rhs
+    no such rule, -1
+    −2. 
+
+11.6 Sequences
+
+marpa_g_rule_is_proper_separation
+    no such rule, -1
+    −2. 
+
+marpa_g_sequence_min
+    not the rule ID of sequence rule, −1. 
+    −2. 
+
+marpa_g_sequence_new
+    −2. 
+
+marpa_g_sequence_separator
+    no separator, −1
+    −2. 
+
+marpa_g_symbol_is_counted
+    −2. 
+
+marpa_g_rule_rank
+marpa_g_rule_rank_set
+    −2, and sets the error code to an appropriate value, which will never be MARPA_ERR_NONE. Note that when the rank is −2, the error code is the only way to distinguish success from failure. The error code can be determined by using the marpa_g_error() call. 
+
+marpa_g_rule_null_high
+marpa_g_rule_null_high_set
+    −2. 
+
+marpa_g_precompute
+    marpa_g_precompute() is unusual in that it is possible to treat one of its failures as “advisory”...
+    −2. 
+
+marpa_g_is_precomputed
+    −2. 
+
+marpa_g_has_cycle
+    −2. 
+
+12 Recognizer methods
+
+marpa_r_new
+    NULL. 
+
+marpa_r_ref
+    NULL. 
+
+marpa_r_unref
+    void
+
+marpa_r_start_input
+    −2. 
+
+marpa_r_alternative
+    Several error codes leave the recognizer in a fully recoverable state, 
+    
+marpa_r_earleme_complete
+    An exhausted parse may cause a failure, 
+
+12.5 Location accessors
+
+marpa_r_current_earleme
+    If input has not started, −1. 
+    Always succeeds. 
+
+marpa_r_earleme
+    −2. 
+
+marpa_r_earley_set_value
+    −2. 
+
+marpa_r_earley_set_values
+    −2. 
+
+marpa_r_furthest_earleme
+    Always succeeds. 
+
+marpa_r_latest_earley_set
+    Always succeeds. 
+
+marpa_r_latest_earley_set_value_set
+    −2. 
+
+marpa_r_latest_earley_set_values_set
+    −2. 
+
+12.6 Other parse status methods
+
+marpa_r_earley_item_warning_threshold
+marpa_r_earley_item_warning_threshold_set
+    Always succeeds. 
+
+marpa_r_expected_symbol_event_set
+    -2
+    
+marpa_r_is_exhausted
+    Always succeeds. 
+
+marpa_r_terminals_expected
+    −2. 
+
+marpa_r_terminal_is_expected
+    −2
+
+12.7 Untested recognizer methods
+
+marpa_r_completion_symbol_activate
+    −2
+
+marpa_r_nulled_symbol_activate
+    −2
+
+marpa_r_prediction_symbol_activate
+    −2 
+
+13 Progress reports
+
+marpa_r_progress_report_reset
+    −2. 
+
+marpa_r_progress_report_start
+    −2. 
+
+marpa_r_progress_report_finish
+    −2
+    
+marpa_r_progress_item
+    −1 as a termination indicator 
+    −2. 
+
+14 Bocage methods
+
+marpa_b_new
+    If there is no parse ending at Earley set earley_set_ID, marpa_b_new fails and the error code is set to MARPA_ERR_NO_PARSE.
+    NULL. 
+
+marpa_b_ref
+    NULL. 
+
+marpa_b_unref
+    void
+
+14.4 Accessors
+
+marpa_b_ambiguity_metric
+    −2. 
+
+marpa_b_is_null
+    −2. 
+
+15 Ordering methods
+
+marpa_o_new
+    NULL. 
+
+marpa_o_ref
+    NULL. 
+
+marpa_o_unref
+    void
+    
+marpa_o_ambiguity_metric
+    −2. 
+
+marpa_o_is_null
+    −2. 
+
+15.5 Non-default ordering
+
+marpa_o_high_rank_only_set
+marpa_o_high_rank_only
+    −2. 
+
+marpa_o_rank
+    −2. 
+
+16 Tree methods
+
+marpa_t_new
+    NULL. 
+
+marpa_t_ref
+    NULL. 
+
+marpa_t_unref
+    void
+
+marpa_t_next
+    If the tree iterator is exhausted, −1. 
+    On failure, −2. 
+
+marpa_t_parse_count
+    Always succeeds. 
+
+17 Value methods
+marpa_v_new
+    NULL. 
+
+marpa_v_ref
+    NULL. 
+
+marpa_v_unref
+    void
+    
+17.7 Stepping through the valuator
+
+marpa_v_step
+    −2. 
+
+18 Events
+
+marpa_g_event
+    −2
+
+marpa_g_event_count
+    −2. 
+
+19 Error methods, macros and codes
+
+marpa_g_error
+    Always succeeds. 
+
+marpa_g_error_clear
+    Always succeeds. 
+
+
+21.1 Untested methods
+
+marpa_g_default_rank
+marpa_g_default_rank_set
+    −2, and sets the error code to an appropriate value, which will never be MARPA_ERR_NONE. Note that when the rank is −2, the error code is the only way to distinguish success from failure. The error code can be determined by using the marpa_g_error() call. 
+
+marpa_g_symbol_rank
+marpa_g_symbol_rank_set
+    −2, and sets the error code to an appropriate value, which will never be MARPA_ERR_NONE. Note that when the rank is −2, the error code is the only way to distinguish success from failure. The error code can be determined by using the marpa_g_error() call. 
+
+marpa_g_zwa_new
+marpa_g_zwa_place 
+    On success, returns previous default value of the assertion. 
+    ?
+
+marpa_r_zwa_default_set
+    On success, returns previous default value of the assertion. 
+
+marpa_g_highest_zwa_id
+    ?
+
+22.1.2 Grammar methods dealing with unvalued symbols
+marpa_g_symbol_is_valued
+marpa_g_symbol_is_valued_set
+    −2
+
+22.1.3 Registering semantics in the valuator
+
+marpa_v_symbol_is_valued
+marpa_v_symbol_is_valued_set
+    −2. 
+
+marpa_v_rule_is_valued
+marpa_v_rule_is_valued_set
+    −2. 
+
+marpa_v_valued_force
+    On success, a non-negative number. On failure, returns −2, and sets the error code to an appropriate value, which will never be MARPA_ERR_NONE. 
+
+
+
+ 
+ 
+-------------
+
+ 
+ 
+ 
+ 
+  
+ 
+This manual (12 November 2014) is for Libmarpa 7.3.0.
+ 
+Copyright © 2014 Jeffrey Kegler.
+ 
+http://irclog.perlgeek.de/marpa/2014-12-07#i_9772028 

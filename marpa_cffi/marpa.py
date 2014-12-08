@@ -177,17 +177,27 @@ class Valuator(object):
 		s.g = tree.g
 		s.v = s.g.check_null(lib.marpa_v_new(tree.t))
 		log(s.v)
-		s.unreffed = False
 	def __del__(s):
 		if not s.unreffed:
 			s.unref()
 	def unref(s):
 		lib.marpa_v_unref(s.v)
-		s.unreffed = True
+		s.v = None
 	def step(s):
-		assert not s.unreffed
+		assert s.v
 		return s.g.check_int(lib.marpa_v_step(s.v))
 		
+
+
+
+
+
+
+
+
+
+
+
 
 
 #aand a little test, same as in test0.py for now
@@ -319,3 +329,4 @@ if __name__ == "__main__":
 	test1()
 
 # http://scipy-lectures.github.io/advanced/debugging/#debugging-segmentation-faults-using-gdb
+# http://fpaste.scsys.co.uk/451285 -  typical marpa C calls

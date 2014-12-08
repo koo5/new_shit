@@ -848,3 +848,9 @@ future ui dreaming:
 "The editors in some integrated development environments parse the source code and generate a parse tree, allowing the same analysis as by a structure editor, but the actual editing of the source code is generally done as raw text."
 http://en.wikipedia.org/wiki/Structure_editor
 what is the additional work tht a structured editor has to do? user interaction with the projected nodes, meaning with the node objects themselves, as opposed to just generating text and reparsing as necessary...
+
+
+
+
+
+https://github.com/buildinspace/peru
