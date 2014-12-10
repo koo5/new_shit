@@ -1,3 +1,5 @@
+"""rpcing client. alternatively, it could just thread"""
+
 import operator
 import types
 

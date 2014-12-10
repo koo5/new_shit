@@ -10,6 +10,12 @@ loop integrated with the gui loop"""
 
 #todo:look into FRP
 
+from lemon_client import editor, sidebar, server, menu
+
+def change_font_size(x):
+	"""dummy"""
+	pass
+
 def keypress(e):
 	k = e.key
 

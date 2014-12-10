@@ -33,6 +33,10 @@ on ubuntu:
 * pip install --user fuzzywuzzy colors pizco
 (or without --user)
 
+python3 pygame:
+https://packages.debian.org/experimental/python3-pygame
+http://pygame.org/wiki/CompileUbuntu?parent=Compilation#Python%203.x
+https://launchpad.net/~thopiekar/+archive/ubuntu/pygame
 
 
 running it

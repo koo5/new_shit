@@ -240,26 +240,26 @@ def deserialize(data, parent):
 	this makes things like List.above() work while getting scope
 	"""
 
-	if 'resolve' in data:
+	if 'resolve' in data: # create a Ref pointing to another node
 		return resolve(data, parent)
-	if not 'decl' in data:
+	if not 'decl' in data: # every node must have a type
 		raise DeserializationException("decl key not in found in %s"%data)
 	decl = data['decl']
 	log("deserializing node with decl %s"%decl)
-	if decl == 'Parser':
+	if decl == 'Parser': # ok, some nodes are special, we dont have a type for Parser
 		return Parser.deserialize(data, parent)
-	if decl == 'defun':
+	if decl == 'defun': # or defun..apparently..
 		return FunctionDefinitionBase.deserialize(data, parent)
 	#if decl == 'varref':
 	#	return VarRef.deserialize(data, parent)
-	if isinstance(decl, unicode):
+	if isinstance(decl, unicode): # we will look for a nodecl node with this name
 		decl = find_decl(decl, parent.nodecls)
 		if decl:
 			log("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
 			return decl.instance_class.deserialize(data, parent)
 		else:
 			raise DeserializationException ("cto takoj " + repr(decl))
-	elif isinstance(decl, dict):
+	elif isinstance(decl, dict): # the node comes with a decl as, basically, its child
 		decl = deserialize(decl, parent)
 		try:
 			return deref_decl(decl).instance_class.deserialize(data, parent)
@@ -270,16 +270,17 @@ def deserialize(data, parent):
 		raise DeserializationException ("cto takoj " + repr(decl))
 
 def failed_deser(data):
+	"""create a Serialized node that holds the data that failed to deserialize"""
 	r = Serialized.fresh()
 	if 'last_rendering' in data:
 		r.ch.last_rendering.pyval = data['last_rendering']
 	r.ch.serialization = to_lemon(data)
 	r.fix_parents()
-
 	return r
 
 
 def find_decl(name, decls):
+	"""find decl by name"""
 	assert isinstance(name, unicode)
 	for i in decls:
 		if name == i.name:
@@ -754,7 +755,7 @@ class Node(NodePersistenceStuff, element.Element):
 	@topic ("flatten")
 	def _flatten(self):
 		if not isinstance(self, (WidgetedValue, EnumVal, Ref, SyntaxedNodecl, FunctionCallNodecl,
-			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, Lesh, VarRef)): #all childless nodes
+			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, VarRef)): #all childless nodes
 			log("warning: "+str(self)+ " flattens to self")
 		return [self]
 
@@ -1082,11 +1083,14 @@ class List(ListPersistenceStuff, Collapsible):
 	def slots(s):
 		return [s.item_type]
 
-	def item_index(self, event):
+	def index_of_item_under_cursor(self, event):
 		li = event.any_atts.get('list_item')
 		if li:
 			if deproxy(li[0]) == self:
 				return li[1]
+
+	def have_item_under_cursor(s, e):
+		return s.index_of_item_under_cursor(e) != None
 
 	def _eval(self):
 		r = List()
@@ -1253,20 +1257,7 @@ class Statements(List):
 	#	#r.fix_parents()#fuck fuck fuck
 	#	return r
 	#war
-	keys = ["ctrl return: execute current item"]
 
-	def on_keypress(self, e):
-		if e.key == K_RETURN and e.mod & KMOD_CTRL:
-			index = self.index_of_item_under_cursor(e)
-			result = self.items[index].eval()
-			result.parent = self
-			self.items.insert(index + 1, result)
-			return True
-		else:
-			return super(Statements, self).on_keypress(e)
-
-	def index_of_item_under_cursor(self, event):
-		return event.atts[item_index_att]
 
 
 class NoValue(Node):
@@ -1413,9 +1404,6 @@ class Text(WidgetedValue):
 	def render(self):
 		return self.widget.render()
 
-	def on_keypress(self, e):
-		return self.widget.on_keypress(e)
-
 	def _eval(self):
 		return Text(self.pyval)
 
@@ -1491,17 +1479,13 @@ class Module(Syntaxed):
 		if node:
 			return node.eval()
 
-	keys = ["ctrl - s: save"]
-	def on_keypress(s, e):
-		if e.key == K_s and e.mod & KMOD_CTRL:
-			s.save()
-			return True
-		if e.key == K_r and e.mod & KMOD_CTRL:
-			log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
-			return True
-		if e.key == K_BACKSLASH and e.mod & KMOD_CTRL:
-			log(s.run())
-			return True
+	def reload(s):
+		log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
+		return s.CHANGED
+
+	def run(s):
+		log(s.run())
+		return s.CHANGED
 
 	@topic ("save")
 	def save(self):
@@ -1517,6 +1501,7 @@ class Module(Syntaxed):
 		#except Exception as e:
 		#	log(e)
 		#	raise e
+		return s.CHANGED
 
 
 # endregion
@@ -2232,7 +2217,68 @@ class ParserBase(Node):
 		assert isinstance(item, (unicode, Node) ), repr(item)
 		if isinstance(item, Node):
 			item.parent = self
-		self.reparse = True
+
+
+	def even_out(inp):
+		"""
+		after each change, we go thru items:
+			input is a list of Texts and Nodes
+			if there are two Texts next to each other, concat them
+			if there are two Nodes next to each other, put a Text between them
+			ensure there is a Text at the beginning and at the end
+		"""
+
+		def find_same_type_pair(items, type):
+			for index, i in enumerate(items[:-1]):
+				if isinstance(i, type) and isinstance(items[index+1], type):
+					return index
+
+		Text=widgets.Text
+
+		while True:
+			index = find_same_type_pair(inp, Text)
+			if index == None: break
+			inp[index] = Text(inp[index].value + inp[index+1].value))
+			del inp[index+1]
+
+		while True:
+			index = find_same_type_pair(inp, Node)
+			if index == None: break
+			inp.insert(index+1, Text())
+
+		if type(inp[0]) != Text: inp.insert(0, Text())
+		if type(inp[-1]) != Text: inp.append(Text())
+
+		return inp
+
+
+
+		li = event.any_atts.get('list_item')
+		if li:
+			if deproxy(li[0]) == self:
+				return li[1]
+
+	"""if there is a node followed by text and backspace is pressed between"""
+	H((), K_BACKSPACE, LEFT): (Parser.check_backspace, Parser.backspace)
+
+	def check_backspace(atts):
+		a = atts[0]
+		if a:
+			i = a.get(item_att)
+			if i:
+				deproxy(i[0]) == s and s.items[i[1])
+
+
+"""
+	/analogically with delete,
+	both will know not to handle it so parser gets it,
+	so it must have a handler defined for between, or a checker, and
+	based on item_att delete(deconstruct) the node
+
+	empty: check succeeds only for UNICODE (on body), creates Text
+
+	"""
+
 
 	def edit_text(s, ii, pos, e):
 		#item index, cursor position in item, event
@@ -2282,8 +2328,8 @@ class ParserBase(Node):
 		r += [EndTag()]
 		return r
 
-	keys = ["text editing",
-			"ctrl del: delete item"]
+	#keys = ["text editing",
+	#		"ctrl del: delete item"]
 
 	"""
 	def on_keypress(s, e):
@@ -2736,181 +2782,6 @@ class DefaultParserMenuItem(MenuItem):
 
 	def tags(self):
 		return [TextTag(self.text)]
-
-# region lesh command line
-
-class LeshCommandLine(ParserBase):
-	def __init__(self):
-		super(LeshCommandLine, self).__init__()
-
-	def empty_render(s):
-		return []
-
-	@topic("lesh menu")
-	def menu_for_item(self, i=0, debug = False):
-
-		if i == None:
-			if len(self.items) == 0:
-				text = ""
-			else:
-				return []
-		else:
-			if isinstance(self.items[i], Node):
-				text = ""
-			else:
-				text = self.items[i]
-
-		scope = self.root["builtins"].ch.statements.parsed
-		menu = flatten([x.palette(scope, text, self) for x in scope if isinstance(x, LeshSnippetDeclaration)])
-
-		matchf = fuzz.token_set_ratio#partial_ratio
-
-		for item in menu:
-			v = item.value
-			item.scores.human = matchf(v.human, text), v.human #0-100
-			item.scores.command = matchf(v.command, text), v.command#0-100
-
-		menu.sort(key=lambda i: i.score)
-
-		menu.append(DefaultParserMenuItem(text))
-		menu.reverse()
-
-		return menu
-
-
-	def menu_item_selected_for_child(self, item, child_index, char_index, alt=False):
-		assert isinstance(item, (LeshMenuItem, DefaultParserMenuItem))
-		if isinstance(item, LeshMenuItem):
-
-			dec = item.value
-
-			if alt:
-				snippet = LeshSnippet(dec)
-			else:
-				snippet = dec.command
-
-			if child_index != None:
-				orig = self.items[child_index]
-				if isinstance(orig, unicode):
-					self.items = insert_between_pipes(snippet, char_index, child_index, self.items)
-				#self.items[child_index] = snippet
-			else:
-				self.items.append(snippet)
-
-			if alt:
-				snippet.parent = self
-			#self.post_insert_move_cursor(node)
-			return True
-
-		elif isinstance(item, DefaultParserMenuItem):
-			return False
-		else:
-			raise Exception("whats that shit, cowboy?")
-
-def cut_off_until(s, at):
-	for i,c in enumerate(s):
-		if c == at:
-			return s[i:]
-	return ""
-
-def rcut_off_until(s, at):
-	for i,c in reversed(list(enumerate(s))):
-		if c == at:
-			return s[:i+1]
-	return ""
-
-def test_cut_off_until():
-	testres = cut_off_until("cat x | y | z", "|")
-	testexp = "| y | z"
-	assert testres == testexp, (testres, testexp)
-
-	testres = cut_off_until("cat x  y  z", "|")
-	testexp = ""
-	assert testres == testexp, (testres, testexp)
-
-	testres = cut_off_until("", "|")
-	testexp = ""
-	assert testres == testexp, (testres, testexp)
-
-	testres = rcut_off_until("", "|")
-	testexp = ""
-	assert testres == testexp, (testres, testexp)
-
-	testres = rcut_off_until("cat x | y | z", "|")
-	testexp = "cat x | y |"
-	assert testres == testexp, (testres, testexp)
-
-	testres = rcut_off_until("cat x  y  z", "|")
-	testexp = ""
-	assert testres == testexp, (testres, testexp)
-
-test_cut_off_until()
-
-def insert_between_pipes(snippet, char_index,item_index, items):
-	"""if there are |'s in the replaced item, we want to split it in two or three parts,
-	and put the replacement in the middle
-	thats what you would want when editing a bit of bash...hmm
-	the lesh command line is technically text, id just rather work on something
-	that benefits both lemon and lesh, because this is ultimately about the sweet spot
-	between structured and textual editing. yeah
-	"""
-	delim = "|"
-	orig = items[item_index]
-	left,right = orig[:char_index], orig[char_index:]
-	#print (left,right)
-	left,right = rcut_off_until(left,delim),cut_off_until(right,delim)
-	r = items[:item_index]
-	if left != "":
-		r.append(left)
-	r.append(snippet)
-	if right != "":
-		r.append(right) #im back, sorry, chromium had a memory leak and i had to reboot.hey
-	r += items[item_index+1:]
-	return r
-
-#the Parser works with a list of items, they can be strings or Nodes
-#how or why is for a longer debate...
-
-
-def test_insert_between_pipes():
-	testres = insert_between_pipes(
-		'fart', #replacement item selected from menu
-		0, #this should be the index of the char of the item
-		7, #this is the index of the item on which the cursor is, we are replacing this item
-		[0,1,2,3,4,5,6,"cat x | count words | sum",8,9]) #this is the current items
-	#"cat x | count words | sum" is what you have on the command line,
-	#you typed "count words" between two pipes, and selected wc #mm
-	#what complicates this as compared to normal lemon Parser is umm...this!
-	testexp = [0,1,2,3,4,5,6,"fart", "| count words | sum",8,9]
-	assert testres == testexp, (testres, testexp)
-
-	testres = insert_between_pipes('fart', 6, 0, ["cat x | count words | sum"]) #you know, the gnu code standard says to put parentheses around stuff that doesnt really need it so emacs will indent it properly hmm no? just saying ok
-	testexp = ["fart", "| count words | sum"]
-	assert testres == testexp, (testres, testexp)
-
-	testres = insert_between_pipes('fart', 7, 0, ["cat x | count words | sum"])
-	testexp = ["cat x |", "fart", "| sum"]
-	assert testres == testexp, (testres, testexp)
-
-test_insert_between_pipes()
-
-class LeshMenuItem(MenuItem):
-	#hack
-	def __init__(self, snippet, score = 0):
-		super(LeshMenuItem, self).__init__()
-		self.value = snippet
-		self.scores = Dotdict()
-		self.brackets_color = (0,255,255)
-
-	@property #duplicate...
-	def score(s):
-		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
-
-	def tags(self):
-		return [self.value.human, ":\n", self.value.command]
-
-# endregion
-
 # endregion
 
 # region functions
@@ -3704,73 +3575,8 @@ def editor_load_file(name):
 
 # endregion
 
-# region lesh
-class Lesh(Node):
-	"""just another experiment: independent of the lemon language,
-	this is a command line that calls bash to execute commands.
-	a variation on shell snippets for fish / betty
-	lemon would probably make it more natural to have to option to insert
-	either raw text or a "human" snippet form, like <count lines>,
-	and toggle them freely
-	"""
-	#might add history later or xiki style?
-	def __init__(s):
-		super(Lesh, s).__init__()
-		s.command_line = LeshCommandLine()
-		s.command_line.parent = s
 
-	def on_keypress(self, e):
-		if e.key == K_RETURN:
-			import os
-			cmd = ''.join(self.command_line.items)
-			log("running "+cmd+":", os.system(cmd))
-			return True
-
-
-	def render(self):
-		return [TextTag("just a little experiment, a frontend for bash/fish/zsh that lets you insert snippets and stuff:\n"),
-		                MemberTag('command_line')]
-
-class LeshSnippetDeclaration(Syntaxed):
-	"""a declaration of a snippet"""
-	def __init__(self, children):
-		super(LeshSnippetDeclaration, self).__init__(children)
-	@property
-	def human(s):
-		return s.ch.human.pyval
-	@property
-	def command(s):
-		return s.ch.command.pyval
-
-	def palette(self, scope, text, node):
-		return [LeshMenuItem(self)]
-
-
-if False:#args.lesh:
-
-	build_in(SyntaxedNodecl(LeshSnippetDeclaration,
-					[[ChildTag("human"), ChildTag("command")]],
-					{'human': b['text'], #add more wordings later
-					'command': b['text']}))
-
-	for h,c in [
-		("count words", "wc"),
-		("mount all", "mount -a")
-
-		]:
-			build_in(LeshSnippetDeclaration({'human':Text(h), 'command':Text(c)}), False)
-
-class LeshSnippet(Node):
-	"""for the case you want to insert the snippet in the human readable form"""
-	def __init__(self, declaration):
-		super(LeshSnippet, self).__init__()
-		self.declaration = declaration
-
-#todo: alt insert mode
-#todo: split on pipes
-# endregion
-
-@topic ("make_root")
+@topic2
 def make_root():
 	r = Root()
 
@@ -3844,18 +3650,6 @@ Text("todo: smarter menu, better parser, save/load, a real language, fancy proje
 	#print (b['for'].long__repr__(), b['for'].parent)
 	return r
 
-@topic ("test_serialization")
-def test_serialization(r):
-	#create the range call
-	c = r['some program'].ch.statements[0]
-	c.items.append("range")
-	menu = c.menu_for_item()[1:]
-	log("menu:",menu)
-	calls = [i for i in menu if isinstance(i.value, FunctionCall)]
-	c.menu_item_selected(calls[0])
-	c = c.parsed
-	s = c.serialize()
-	print("serialized:",s)
 
 # region unipycation
 """

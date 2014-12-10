@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import os, sys
 import subprocess
@@ -11,38 +11,45 @@ from lemon_utils import lemon_logger
 from lemon_utils.utils import evil
 
 
+
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 
-if PY3 or hasattr(sys, 'pypy_version_info'):
-	print ("trying to load pygame_cffi")
+if hasattr(sys, 'pypy_version_info'):
+	print ("trying to load pygame_cffi, adding pygame_cffi to sys.path")
 	sys.path.append("pygame_cffi")
-	#todo: print more info
+
 import pygame
+
 if hasattr(pygame, 'cffi'):
 	print("yep, loaded pygame_cffi")
+
 from pygame import display, image
 from pygame import draw, Rect
 
+
+
 import lemon_platform as platform
 platform.frontend = platform.sdl
-import lemon_client
+import lemon_client as lemon
 from lemon_client import logframe, editor, allframes, frames
 from lemon_utils.lemon_logger import log
 from lemon_colors import colors, color
 from lemon_args import args
 
-for f in allframes:
-	f.rect = pygame.Rect((6,6),(6,6))
+
+
+#for f in allframes:
+#	f.rect = pygame.Rect((6,6),(6,6))
+
+
 
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
-#todo: logging isnt available when starting up, refactor
-def debug_out(text):
-	print(text)
-	logframe.add(text)
 
-lemon_logger.debug = debug_out
 
+
+
+"""
 def render():
 	root.render()
 	lemon.sidebar.render()
@@ -50,11 +57,17 @@ def render():
 	#log("boing")
 	if isinstance(lemon.sidebar, frames.Menu):
 		menu_generate_rects(lemon.sidebar)
+"""
+
+
 
 def reset_cursor_blink_timer():
 	if not args.dontblink:
 		pygame.time.set_timer(pygame.USEREVENT + 1, 1600)
 	root.cursor_blink_phase = True
+
+
+
 
 def user_change_font_size(by = 0):
 	change_font_size(by)
@@ -65,7 +78,11 @@ def change_font_size(by = 0):
 	args.font_size += by
 	font = pygame.font.SysFont('monospace', args.font_size)
 	font_width, font_height = font.size("X")
-	
+
+
+
+
+
 def resize(size):
 	global screen_surface, screen_width, screen_height
 	log("resize to "+str(size))
@@ -73,24 +90,30 @@ def resize(size):
 	screen_width, screen_height = screen_surface.get_size()
 	
 def resize_frames():
-	lemon.logframe.rect.height = log_height = args.log_height * font_height
-	lemon.logframe.rect.width = screen_width
-	lemon.logframe.rect.topleft = (0, screen_height - log_height)
+	if not args.rpc:
+		lemon.logframe.rect.height = log_height = args.log_height * font_height
+		lemon.logframe.rect.width = screen_width
+		lemon.logframe.rect.topleft = (0, screen_height - log_height)
 
-	lemon.root.rect.topleft = (0,0)
-	lemon.root.rect.width = screen_width / 3 * 2
-	lemon.root.rect.height = screen_height - log_height
+		lemon.root.rect.topleft = (0,0)
+		lemon.root.rect.width = screen_width / 3 * 2
+		lemon.root.rect.height = screen_height - log_height
 
-	sidebar_rect = Rect((root.rect.w, 0),(0,0))
-	sidebar_rect.width = screen_width - lemon. root.rect.width
-	sidebar_rect.height = root.rect.height
-	for frame in lemon.sidebars:
-		frame.rect = sidebar_rect
+		sidebar_rect = Rect((root.rect.w, 0),(0,0))
+		sidebar_rect.width = screen_width - lemon. root.rect.width
+		sidebar_rect.height = root.rect.height
+		for frame in lemon.sidebars:
+			frame.rect = sidebar_rect
 
-	for f in allframes:
-		f.cols = f.rect.width / font_width
-		f.rows = f.rect.height / font_height
-	log("resized frames")
+		for f in allframes:
+			f.cols = f.rect.width / font_width
+			f.rows = f.rect.height / font_height
+
+		log("resized frames")
+	else:
+		frame.rect.height = screen_height
+		frame.rect.width = screen_width
+
 
 
 def keypressevent__repr__(self):
@@ -221,8 +244,7 @@ def draw_lines(self, surf, highlight=None, transparent=False, justbg=False):
 				surf.blit(sur,(x,y))
 
 def draw_arrows(s, surface):
-	#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen
-	#pointing to that same target, to avoid making it unreadable
+	#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen pointing to that same target, to avoid making it unreadable
 	for ((c,r),(c2,r2)) in s.arrows:
 		x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
 		pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))
@@ -336,6 +358,7 @@ def fix_keyboard():
 
 
 def main():
+	lemon.setup(debug_out = print)
 
 	pygame.display.init()
 	pygame.font.init()
@@ -354,7 +377,7 @@ def main():
 
 	change_font_size()
 	resize_frames()
-	lemon.change_font_size = user_change_font_size
+	keybindings.change_font_size = user_change_font_size
 	lemon.draw = draw
 	lemon.render = render
 

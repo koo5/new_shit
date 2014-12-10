@@ -37,22 +37,9 @@ def topic(text=None):
 			return wrapped_function
 		else:
 			return function_with_decorator
+
 	return decorator_inner_crap
 
-def topic2(function_with_decorator):
-	"""like topic, but uses function name for the topic text"""
-	if do_topics:
-		text = function_with_decorator.__name__ #todo: add class
-		def wrapper_function(*vargs, **kwargs):
-			topics.append(text)
-			try:
-				result = function_with_decorator(*vargs, **kwargs)
-			finally:
-				topics.pop()
-			return result
-		return wrapped_function
-	else:
-		return function_with_decorator
 
 
 def log(*vargs):

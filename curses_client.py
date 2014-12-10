@@ -13,8 +13,9 @@ from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
 
-import curses as c
 import sys
+
+import curses as c
 
 import lemon_platform as platform
 platform.frontend = platform.curses
@@ -26,23 +27,8 @@ from lemon_utils.lemon_logger import log
 from rect import Rect
 import keys
 
-
 from server import server
-
 import rpcing_frames
-
-#if args.log:
-#	frame = rpcing_frames.Log()
-if args.rpc:
-	raise Exception('not finished')
-	if args.intro:
-		frames = [rpcing_frames.StaticInfoFrame(server.intro)]
-	elif args.root:
-		frames = [rpcing_frames.Root()]...
-	else:
-		raise Exception("rpc but no frame? try --root or --menu")
-else:
-
 
 def logging_handler(msg):
 	server.log_add(msg)

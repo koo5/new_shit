@@ -1,0 +1,30 @@
+only as an intellectual exercise for now:
+
+a subclass of ParserBase?
+this seems obscure but thats what the node does, parses the text inside it
+
+my dream doc format:
+
+*this will be a grammar independent of the lemon language
+
+
+*with a lexer:
+links
+markdown-style headings
+
+
+
+
+
+
+parser keys:
+ctrl [ and ] : inc/dec the heading level
+
+
+
+links should be clickable, sections collapsible
+this could be done on the level of the text in the Parser, but thats not
+what we're interested in. We want to instead have Link and Heading nodes,
+and have them function seamlessly with the rest of the text
+and created/destroyed based on the results of the tokenizer, on every change
+

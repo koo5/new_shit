@@ -10,7 +10,7 @@ import sys
 import pickle
 
 from lemon_utils.lemon_logger import log, topic
-import rpcing_frames as frames
+import rpcing_frames
 import lemon_colors as colors
 from keys import *
 from lemon_args import args
@@ -20,6 +20,7 @@ lemon_utils.lemon_logger.do_topics = args.debug
 
 if args.debug_objgraph:
 	import objgraph, gc
+
 
 
 sidebar = None # the frame that is currently displayed in the sidebar
@@ -81,26 +82,44 @@ def start():
 	if args.replay:
 		do_replay(False)
 
-
-
-
-
-editor = frames.Editor()
-logframe = frames.Log()
-
-sidebars = [#frames.Intro(root),
-            #frames.GlobalKeys(root),
-            frames.Menu(editor)]#,
-            #frames.NodeInfo(root)]
-            #frames.ContextInfo(root)]#carry on...
-sidebars.append(sidebars[0])#a sentinel for easy cycling:)
-
-sidebar = sidebars[0] # currently active sidebar
-
-
-allframes = sidebars + [logframe, editor]
-
-
 def bye():
 	log("deading")
 	sys.exit()
+
+
+def setup(debug_out=print):
+	if args.rpc:
+		lemon_logger.debug_out = client_debug_out
+	#else: logging goes thru the log frame
+
+
+#if args.log:
+#	frame = rpcing_frames.Log()
+if args.rpc:
+	"""select which frames we want to display"""
+	raise Exception('not finished')
+	if args.intro:
+		frames = [rpcing_frames.StaticInfoFrame(server.intro)]
+	elif args.editor:
+		frames = [rpcing_frames.editor]
+	else:
+		raise Exception("rpc but no frame? try --root or --menu")
+
+else:
+
+	editor = rpcing_frames.Editor()
+	logframe = rpcing_frames.Log()
+
+	sidebars = [#frames.Intro(root),
+	            #frames.GlobalKeys(root),
+	            rpcing_frames.Menu(editor)]#,
+	            #frames.NodeInfo(root)]
+	            #frames.ContextInfo(root)]#carry on...
+	sidebars.append(sidebars[0])#a sentinel for easy cycling:)
+
+	sidebar = sidebars[0] # currently active sidebar
+
+
+	allframes = sidebars + [logframe, editor]
+
+

@@ -1,8 +1,12 @@
+import collections
+
 from keys import *
 from tags import *
 
 import nodes as n
 import widgets as w
+
+from lemon_utils.utils import odict
 
 """ an event comes with two lists of attributes, one for the char(cell) that was on the left
 of the cursor and one for the right. If either side doesnt belong to the element whose handler
@@ -10,12 +14,16 @@ we are examining, it is set to None
 a handler is made to act on one or any of the sides(chars), # or perhaps not care - zero width elements
 so the sidedness of the handler, has to match the sidedness of the event in regard to the element
 """
-ANY = 0
+#sidedness:
 LEFT = 1
 RIGHT = 2
-NONE = 3
+#in addition to sdl key constants:
+UNICODE = -1
 
-H = collections.NamedTuple("Handler", 'side mods key')
+class H(collections.namedtuple("Handler", 'mods key sidedness')):
+	def __new__(cls, mods, key, sidedness=None):
+		return tuple.__new__(cls, (mods, key, sidedness))
+
 #condition function?
 
 """
@@ -49,9 +57,9 @@ def k_unicode(s, e):
 w.Text.k_unicode = k_unicode
 
 
-w.Text.keys = {H(LEFT,  [], K_BACKSPACE): w.Text.k_backspace,
-			   H(RIGHT, [], K_DELETE): w.Text.k_delete,
-			   H(NONE,  [], UNICODE): w.Text.k_unicode}
+w.Text.keys = {H((), K_BACKSPACE, LEFT): w.Text.k_backspace,
+			   H((), K_DELETE, RIGHT): w.Text.k_delete,
+			   H((), UNICODE): w.Text.k_unicode}
 
 
 def press(self, e):
@@ -60,9 +68,11 @@ def press(self, e):
 
 w.Button.press = press
 
-w.Button.keys = {H(NONE, [], (K_RETURN, K_SPACE)): w.Button.press}
+w.Button.keys = {H((), (K_RETURN, K_SPACE)): w.Button.press}
 
-w.NState.keys = {H(NONE, [], (K_RETURN, K_SPACE)): w.NState.toggle}
+w.NState.keys = {H((), (K_RETURN, K_SPACE)): w.NState.toggle}
+
+
 
 """
 nodes.py
@@ -77,14 +87,15 @@ def delete_self(s):
 	s.parent.delete_child(s)
 	return AST_CHANGED
 
-n.Node.keys = {
-	H(NONE, [], K_F7): eval,
-	H(NONE, [KMOD_CTRL], K_DELETE): delete_self}
+n.Node.keys = odict({
+	H((),           K_F7):      eval,
+	H(KMOD_CTRL,    K_DELETE):  delete_self
+})
 
 
-n.Syntaxed.keys = n.Node.keys.update({
-	H(NONE, [KMOD_CTRL], K_PERIOD): n.Syntaxed.prev_syntax,
-    H(NONE, [KMOD_CTRL], K_COMMA ): n.Syntaxed.next_syntax})
+n.Syntaxed.keys = n.Node.keys.updated({
+	H(KMOD_CTRL, K_PERIOD): n.Syntaxed.prev_syntax,
+    H(KMOD_CTRL, K_COMMA ): n.Syntaxed.next_syntax})
 
 
 def delete_item_check(s):
@@ -100,15 +111,39 @@ def newline(s):
 	self.newline(item_index)
 	return CHANGED
 
-n.List.keys = n.Collapsible.__bases__[-1].keys.update(
-	{[  (NONE, [KMOD_CTRL], K_DELETE): (delete_item_check, delete_item),
-		(NONE, [], K_RETURN): newline)]})
+n.List.keys = n.List.__bases__[-1].keys.updated(
+	{   H((KMOD_CTRL),  K_DELETE): (delete_item_check, delete_item),
+		H((),           K_RETURN): newline})
+
+def run_line(self, e):
+	index = self.index_of_item_under_cursor(e)
+	result = self.items[index].eval()
+	result.parent = self
+	self.items.insert(index + 1, result)
+	return s.CHANGED
+
+print(n.Statements.__bases__[-1])
+n.Statements.keys = n.Statements.__bases__[-1].keys.updated(
+	{H(KMOD_CTRL, K_RETURN): (n.Statements.have_item_under_cursor, run_line)})
+
+
+n.Module.keys = n.Module.__bases__[-1].keys.update({
+	H(KMOD_CTRL, K_s): n.Module.save,
+	H(KMOD_CTRL, K_r): n.Module.reload,
+	H(KMOD_CTRL, K_BACKSLASH ): n.Module.run})
+
+
 
 
 
 
 
 #i guess this goes in Editor...
+
+
+
+
+
 
 def element_keypress(event):
 	event.atts = namedtuple('atts', 'left right')(event.atts)
