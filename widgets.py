@@ -5,7 +5,7 @@
 from pizco import Signal
 
 from element import Element
-from lemon_utils.lemon_logger import log
+from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import unicode
 from tags import TextTag, ColorTag, EndTag, MemberTag, node_att, char_index_att
 from keys import *

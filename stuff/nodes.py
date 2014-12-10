@@ -16,7 +16,7 @@ from compiler.ast import flatten
 
 
 
-from lemon_utils.lemon_logger import log
+from lemon_utils.lemon_logging import log
 import element
 from lemon_utils import dotdict
 import widgets

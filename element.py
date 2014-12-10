@@ -3,7 +3,7 @@
 from weakref import ref as weakref
 
 import lemon_platform as platform
-from lemon_utils.lemon_logger import log
+from lemon_utils.lemon_logging import log
 import tags
 from lemon_utils.utils import evil
 
@@ -12,7 +12,7 @@ class Element():
 	"""an object that can be rendered, a common base for widgets and nodes"""
 	CHANGED = 1
 	help = []
-	keys = []
+
 	keys_help_items = None
 	def __init__(self):
 		super().__init__()

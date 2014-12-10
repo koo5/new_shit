@@ -9,13 +9,13 @@ from __future__ import unicode_literals
 import sys
 import pickle
 
-from lemon_utils.lemon_logger import log, topic
+from lemon_utils.lemon_logging import log
 import rpcing_frames
 import lemon_colors as colors
 from keys import *
 from lemon_args import args
-import lemon_utils.lemon_logger
-lemon_utils.lemon_logger.do_topics = args.debug
+import lemon_utils.lemon_logging
+lemon_utils.lemon_logging.do_topics = args.debug
 
 
 if args.debug_objgraph:
@@ -123,3 +123,11 @@ else:
 	allframes = sidebars + [logframe, editor]
 
 
+
+"""can a client be a server at the same time? question of event loops integration i think
+a not so neat but okay alternative for the distributed event handling:
+make the nonlocal client frames in keybindings.py stubs that raise an error
+catch and proceed to emit a signal with that event on the server (implemented in pizco in one of the forks/branches?)
+then all clients try it again? or more organized, at the moment its just root and menu,
+ so 'all' would work, if there will be multiple editor clients, we can have 'last active editor'
+...?.?.?"""

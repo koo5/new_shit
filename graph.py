@@ -1,4 +1,4 @@
-from lemon_utils.lemon_logger import log
+from lemon_utils.lemon_logging import log
 
 def gen_graph(root):
 	try:

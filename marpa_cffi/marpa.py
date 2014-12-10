@@ -35,7 +35,7 @@ lib.marpa_c_init(config)
 
 #a wee bit of dependency on something in the lemon repo, feel free to use it or
 #cut it out...we have to ..somehow..i have to learn to use the python logging module
-from lemon_utils.lemon_logger import topic,topic2,log
+from lemon_utils.lemon_logging import topic,topic2,log
 
 
 

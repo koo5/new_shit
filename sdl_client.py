@@ -7,7 +7,7 @@ import subprocess
 from math import *
 
 from lemon_utils.lemon_six import iteritems, PY3
-from lemon_utils import lemon_logger
+from lemon_utils import lemon_logging
 from lemon_utils.utils import evil
 
 
@@ -32,7 +32,7 @@ import lemon_platform as platform
 platform.frontend = platform.sdl
 import lemon_client as lemon
 from lemon_client import logframe, editor, allframes, frames
-from lemon_utils.lemon_logger import log
+from lemon_utils.lemon_logging import log
 from lemon_colors import colors, color
 from lemon_args import args
 

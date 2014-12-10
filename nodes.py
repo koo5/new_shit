@@ -42,7 +42,7 @@ from keys import *
 from lemon_utils.utils import flatten, odict, evil
 from lemon_utils.dotdict import Dotdict
 from lemon_args import args
-from lemon_utils.lemon_logger import log, topic, topic2
+from lemon_utils.lemon_logging import log, warn
 
 tags.asselement = element # for assertions
 
@@ -177,7 +177,7 @@ def uniq(lst):
 
 m = MarpaClient()
 
-@topic ('setup_grammar')
+
 def setup_grammar(root,scope):
 	global m
 
@@ -429,7 +429,7 @@ class VarRefPersistenceStuff(BaseRefPersistenceStuff):
 			target = s.target.unresolvize())
 
 	@classmethod
-	@topic ("varref deser")
+
 	def deserialize(cls, data, parent):
 		placeholder = Text("placeholder")
 		placeholder.parent = parent
@@ -752,11 +752,11 @@ class Node(NodePersistenceStuff, element.Element):
 		#return r
 		return flatten(r)
 
-	@topic ("flatten")
+
 	def _flatten(self):
 		if not isinstance(self, (WidgetedValue, EnumVal, Ref, SyntaxedNodecl, FunctionCallNodecl,
 			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, VarRef)): #all childless nodes
-			log("warning: "+str(self)+ " flattens to self")
+			warn(str(self)+ " flattens to self")
 		return [self]
 
 	def palette(self, scope, text, node):
@@ -963,7 +963,6 @@ class Collapsible(Node):
 		yield [DedentTag()]
 
 	@classmethod
-	@topic2
 	def fresh(cls, decl):
 		#log("decl="+repr(decl))
 		r = cls()
@@ -1136,7 +1135,7 @@ class List(ListPersistenceStuff, Collapsible):
 	def newline_with(self, node):
 		self.newline.add(node)
 
-	#@topic
+
 	@property
 	def item_type(self):
 		assert hasattr(self, "decl"),  "parent="+str(self.parent)+" contents="+str(self.items)
@@ -1487,7 +1486,7 @@ class Module(Syntaxed):
 		log(s.run())
 		return s.CHANGED
 
-	@topic ("save")
+
 	def save(self):
 		#import yaml
 		#s = yaml.dump(self.serialize(), indent = 4)
@@ -1669,7 +1668,7 @@ class VarRefNodecl(NodeclBase):
 	def __init__(self):
 		super(VarRefNodecl, self).__init__(VarRef)
 
-	@topic("varrefs")
+
 	def palette(self, scope, text, node):
 		r = []
 		for x in node.vardecls_in_scope:
@@ -1978,7 +1977,7 @@ build_in(WorksAs.b("dict", "expression"), False)
 
 
 class ListOfAnything(ParametricType):
-	@topic ("ListOfAnything palette")
+
 	def palette(self, scope, text, node):
 		#log(self.ch._dict)
 		i = self.inst_fresh()
@@ -2238,7 +2237,7 @@ class ParserBase(Node):
 		while True:
 			index = find_same_type_pair(inp, Text)
 			if index == None: break
-			inp[index] = Text(inp[index].value + inp[index+1].value))
+			inp[index] = Text(inp[index].value + inp[index+1].value)
 			del inp[index+1]
 
 		while True:
@@ -2258,18 +2257,25 @@ class ParserBase(Node):
 			if deproxy(li[0]) == self:
 				return li[1]
 
+
+
 	"""if there is a node followed by text and backspace is pressed between"""
-	H((), K_BACKSPACE, LEFT): (Parser.check_backspace, Parser.backspace)
 
 	def check_backspace(atts):
 		a = atts[0]
 		if a:
 			i = a.get(item_att)
 			if i:
-				deproxy(i[0]) == s and s.items[i[1])
+				return deproxy(i[0]) == s and s.items[i[1]]
 
 
-"""
+	def k_backspace(s):
+		s.root.delayed_cursor_move -= 1
+		s.on_edit.emit(s)
+		return s.CHANGED
+
+
+	"""
 	/analogically with delete,
 	both will know not to handle it so parser gets it,
 	so it must have a handler defined for between, or a checker, and
@@ -2280,37 +2286,11 @@ class ParserBase(Node):
 	"""
 
 
-	def edit_text(s, ii, pos, e):
-		#item index, cursor position in item, event
-		text = s.items[ii]
-		if e.key == K_BACKSPACE:
-			if pos > 0 and len(text) > 0 and pos <= len(text):
-				text = text[0:pos -1] + text[pos:]
-				s.root.delayed_cursor_move -= 1
-		else:
-			assert isinstance(text, unicode), (s.items, ii, text)
-			#print "assert(isinstance(text, (str, unicode)), ", s.items, ii, text
-			text = text[:pos] + e.uni + text[pos:]
-			s.root.delayed_cursor_move += len(e.uni)
-
-		s.items[ii] = text
-
-		#log(self.text + "len: " + len(self.text))
-		s.dispatch_event('on_edit', s)
-
-		return True
+	def k_delete(s):
+		s.on_edit.emit(s)
+		return s.CHANGED
 
 
-		"""
-				if e.key == K_BACKSPACE:
-					if pos > 0 and len(self.text) > 0 and pos <= len(self.text):
-						self.text = self.text[0:pos -1] + self.text[pos:]
-		#				log(self.text)
-						self.root.post_render_move_caret = -1
-				if e.key == K_DELETE:
-					if pos >= 0 and len(self.text) > 0 and pos < len(self.text):
-						self.text = self.text[0:pos] + self.text[pos + 1:]
-		"""
 
 	def render(self):
 		if len(self.items) == 0: # no items, show the gray type hint
@@ -2387,7 +2367,7 @@ class ParserBase(Node):
 
 				s.type_tree(i, scope, indent + 1)
 	"""
-	@topic ("parser on_keypress")
+
 	def on_keypress(s, e):
 
 		if e.mod & KMOD_CTRL:
@@ -2431,7 +2411,7 @@ class ParserBase(Node):
 			assert isinstance(items[i], unicode), (items, i)
 			return s.edit_text(i, 0, e)
 
-	@topic ("Parser.mine")
+
 	def mine(s, atts):
 		"""
 		atts are the attributs of the char under cursor,
@@ -2671,7 +2651,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		return r
 
 
-	@topic("menu")
+
 	def menu_for_item(self, i=0, debug = False):
 
 		if i == None:
@@ -2936,7 +2916,7 @@ class FunctionDefinitionBase(Syntaxed):
 		return rr
 
 	@property
-	@topic ("vardecls")
+
 	def vardecls(s):
 		log(s.params)
 		r = [i if isinstance(i, TypedParameter) else i.ch.argument for i in itervalues(s.params)]
@@ -2955,7 +2935,7 @@ class FunctionDefinitionBase(Syntaxed):
 					return Banana(str(arg.decl.name) +" != "+str(expected_type.name))
 		return True
 
-	@topic ("function call")
+
 	def call(self, args):
 		"""common for all function definitions"""
 		evaluated_args = {}
@@ -3156,7 +3136,7 @@ build_in(SyntaxedNodecl(BuiltinPythonFunctionDecl,
 
 #lets keep 'print' a BuiltinFunctionDecl until we have type conversions as first-class functions in lemon,
 #then it can be just a python library call printing strictly strings and we can dump the to_python_str (?)
-@topic("output")
+
 def b_print(args):
 	o = args['expression'].to_python_str()
 	#print o
@@ -3576,7 +3556,7 @@ def editor_load_file(name):
 # endregion
 
 
-@topic2
+
 def make_root():
 	r = Root()
 

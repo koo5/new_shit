@@ -12,7 +12,7 @@ from element import Element
 from menu_items import InfoItem
 from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
-from lemon_utils.lemon_logger import log, topic
+from lemon_utils.lemon_logging import log, topic
 from keys import *
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args

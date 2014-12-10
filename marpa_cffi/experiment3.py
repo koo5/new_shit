@@ -11,7 +11,7 @@ from lemon_utils import dotdict
 
 
 sys.path.append('..')
-from lemon_utils.lemon_logger import topic, log
+from lemon_utils.lemon_logging import topic, log
 from lemon_utils.lemon_six import unicode
 
 def ident(x):

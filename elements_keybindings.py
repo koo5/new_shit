@@ -133,6 +133,11 @@ n.Module.keys = n.Module.__bases__[-1].keys.update({
 	H(KMOD_CTRL, K_BACKSLASH ): n.Module.run})
 
 
+n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.updated({
+	H((), K_BACKSPACE, LEFT): (n.ParserBase.check_backspace, n.ParserBase.k_backspace),
+	H((), K_DELETE, LEFT): (n.ParserBase.check_backspace, n.ParserBase.k_delete)
+	})
+
 
 
 

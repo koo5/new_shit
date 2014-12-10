@@ -1,3 +1,5 @@
+from pizco import Signal
+
 import graph
 
 import lemon_platform as platform
@@ -8,7 +10,7 @@ from element import Element
 from menu_items import InfoItem
 from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
-from lemon_utils.lemon_logger import log, topic
+from lemon_utils.lemon_logging import log
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
@@ -182,7 +184,7 @@ class Log(ServerFrame):
 	def __init__(s):
 		super(Log, s).__init__()
 		s.items = []
-		s.on_add = Signal()
+		s.on_add = Signal(1)
 
 	def add(s, msg):
 		#timestamp, topics, text = msg

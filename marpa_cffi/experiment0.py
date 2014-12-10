@@ -28,7 +28,7 @@ lib.marpa_c_init(config)
 
 import sys; sys.path.append('..')
 
-from lemon_utils.lemon_logger import topic, log
+from lemon_utils.lemon_logging import topic, log
 
 class symbol_int(int):pass
 

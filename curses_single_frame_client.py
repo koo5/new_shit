@@ -1,17 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-"""can a client be a server at the same time? question of event loops integration i think
-a not so neat but okay alternative for the distributed event handling:
-make the nonlocal client frames in keybindings.py stubs that raise an error
-catch and proceed to emit a signal with that event on the server (implemented in pizco in one of the forks/branches?)
-then all clients try it again? or more organized, at the moment its just root and menu,
- so 'all' would work, if there will be multiple editor clients, we can have 'last active editor'
-...?.?.?"""
-
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import print_function
 
 import sys
 
@@ -21,27 +10,26 @@ import lemon_platform as platform
 platform.frontend = platform.curses
 
 from lemon_args import args
-import lemon_utils.lemon_logger
-from lemon_utils.lemon_logger import log
+args.rpc = True
 
-from rect import Rect
+import lemon_utils.lemon_logging
+from lemon_utils.lemon_logging import log
+
 import keys
 
 from server import server
 import rpcing_frames
 
+"""
 def logging_handler(msg):
 	server.log_add(msg)
 
-def logging_printer(msg):
-	print(">"+str(msg))
-
 log("setting logger.debug to server.log_add")
 server.log_on_add.connect(logging_printer)
-lemon_utils.lemon_logger.debug = logging_handler
+lemon_utils.lemon_logging.debug = logging_handler
+"""
 
-
-def resize_frames():
+def resize_frame():
 	rows, cols = scr.getmaxyx()
 	log("H:%s W:%s"%(rows, cols))
 
@@ -51,7 +39,7 @@ def resize_frames():
 	frame.cols = cols
 
 
-def change_font_size():
+def change_font_size_dummy():
 	log ("nope")
 
 
