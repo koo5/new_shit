@@ -1,3 +1,7 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+
 import pizco
 
 import server_frames

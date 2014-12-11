@@ -17,7 +17,7 @@ from lemon_utils.lemon_logging import log
 
 import keys
 
-from server import server
+from server_side import server
 import rpcing_frames
 
 """

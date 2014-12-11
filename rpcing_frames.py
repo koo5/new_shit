@@ -19,7 +19,7 @@ from lemon_args import args
 from lemon_utils.utils import evil
 #todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
-from server import server
+from server_side import server
 
 class ClientFrame(object):
 
