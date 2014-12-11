@@ -4156,7 +4156,16 @@ build_in(SyntaxedNodecl(CustomNodeDef,
 
 
 
+"""
 
+
+class: based on customnode, one level,
+
+how to do views best?
+
+
+
+"""
 
 
 
