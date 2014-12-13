@@ -30,7 +30,13 @@ class Dotdict(object):
 			object.__setattr__(s, "_dict", v)
 
 	def __getattr__ (s, k):
-		return s._dict[k]
+		if k.startswith('_'):
+			return super().__getattr__(k)
+		else:
+			try:
+				return s._dict[k]
+			except KeyError:
+				raise AttributeError()
 	def __setitem__(s, k, v):
 		s._dict[k] = v
 	def __getitem__ (s, k):
@@ -40,3 +46,32 @@ class Dotdict(object):
 	def __len__(s):
 		return len(s._dict)
 
+
+
+"""
+from types import SimpleNamespace
+
+but i dont want _locked to be in the dict. give up on locking, or ..??
+
+class Dotdict(SimpleNamespace):
+	def __init__(s, **kwargs):
+		super().__init__(**kwargs)
+		object.__setattr__(s, "_locked", False)
+	def _lock(s):
+		object.__setattr__(s, "_locked", True)
+	def __setattr__ (s, k, v):
+		if s._locked:
+			if not k in s.__dict__:
+				raise Exception("setting an unknown item of a locked-down Dotdict")
+		s.__dict__[k] = v
+
+	def __setitem__(s, k, v):
+		s.__dict__[k] = v
+	def __getitem__ (s, k):
+		return s.__dict__[k]
+	def __len__(s):
+		return len(s.__dict__)
+	@property
+	def _dict(s):
+		return s.__dict__
+"""

@@ -1,14 +1,15 @@
-from __future__ import unicode_literals
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_utils.dotdict import Dotdict
+from lemon_utils.lemon_logging import info,log
 
 try:
 	#im gonna have to ditch this crappy module
 	from colors import *
-	assert rgb #assert we didnt import some outdated .pyc
+	assert rgb,  'we imported some outdated .pyc or something'
 except ImportError as e:
-	print(e, "...but nevermind")
+	info(e, "...but nevermind")
+
 
 default_colors = {
 	"info item text": (224,224,224),

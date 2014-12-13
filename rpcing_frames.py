@@ -1,25 +1,22 @@
-"""root, menu, log, info, help.."""
-#todo:rename root to code or main or document or..
-from __future__ import unicode_literals, print_function
-
-import graph
-
 import lemon_platform as lemon_platform
 from lemon_colors import color, colors
+from lemon_utils.lemon_logging import log
+from lemon_utils.lemon_six import iteritems, unicode
+from lemon_args import args
+from lemon_utils.utils import evil
+
+import graph
 import project
 import nodes
 from element import Element
 from menu_items import InfoItem
 from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
-from lemon_utils.lemon_logging import log
 from keys import *
-from lemon_utils.lemon_six import iteritems, unicode
-from lemon_args import args
-from lemon_utils.utils import evil
-#todo:refactor stuff common to Menu and Info to some SimpleFrame or something
 
 from server_side import server
+
+
 
 class ClientFrame(object):
 

@@ -1,14 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import sys, logging
+
+from lemon_utils.lemon_logging import log
 
 import pizco
 
 import server_frames
 
+pizco.LOGGER.addHandler(logging.StreamHandler(sys.stderr))
+pizco.LOGGER.setLevel(logging.DEBUG)
 
 s = pizco.Server(server_frames)
-open("addy", "w").write(str(s.rep_endpoint))
+addy = s.rep_endpoint
+open("addy", "w").write(str(addy))
+log('serving %s on %s', server_frames, addy)
 s.serve_forever()
 
 

@@ -21,12 +21,14 @@ from tags import proxy_this
 import elements_keybindings
 
 
-from pizco import Signal
 
 class ServerFrame(object):
-
+	"""base class for the server halves of frames"""
 	def __init__(s):
-		pass
+		s.on_change = Signal(0)
+
+	def signal_change(s):
+		s.on_change.fire()
 
 
 class Editor(ServerFrame):
@@ -36,11 +38,6 @@ class Editor(ServerFrame):
 		self.root = nodes.make_root()
 		self.root.fix_parents()
 
-		self.on_root_change = Signal()
-
-	def tags(s):
-		return s.root.tags()
-
 	@property
 	def element_under_cursor(s):
 		"""we shouldnt need this if atts are in event, but it makes it possible
@@ -49,24 +46,97 @@ class Editor(ServerFrame):
 		"""
 		return s.atts[att_node]
 
+
+	def tags(s):
+		return s.root.tags()
+
+	def get_delayed_cursor_move(editor):
+		return editor.root.delayed_cursor_move
+
 	def set_atts(editor, atts):
 		assert type(atts) == dict
 		editor.atts = atts
 
 	def run_active_program(editor):
 		editor.root['some program'].run()
+		editor.signal_change()
 
 	def run_line(editor):
 		editor.atts[node_att].module.run_line(editor.atts[node_att])
+		editor.signal_change()
 
 	def clear(editor):
 		editor.root['some program'].clear()
+		editor.signal_change()
 
 	def	dump_root_to_file(editor):
 		pass
 
-	def get_delayed_cursor_move(editor):
-		return editor.root.delayed_cursor_move
+
+	def element_keypress(s, event):
+		#for now, always talk to the element to the right of the cursor,
+		# left is [0], right is [1]
+		right = event.atts[1]
+		if type(right) == dict and tags.att_node in right:
+			element_id = right[tags.att_node]
+			element = tags.proxied[element_id]
+
+		#old style
+		while element != None:
+			assert isinstance(element, Element), (assold, element)
+			if element.on_keypress(event):
+				break
+			assold = element
+			element = element.parent
+
+
+		if element != None:
+		# the loop didnt end with root.parent, so some element must have handled it
+			if args.log_events:
+				log("handled by "+str(element))
+				return True
+
+
+
+def element_keypress(event):
+	event.atts = namedtuple('atts', 'left right')(event.atts)
+
+	r = handle_keypress(event)
+
+	if r:
+		elem, handler_result = r
+		if handler_result:
+			module = elem.module
+			if module:
+				event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
+
+
+	def handle_keypress(event):
+		for side in [0,1]: #left, right
+			atts = e.atts[side]
+			if atts:
+				elem = atts[node_att]
+				h = find_handler(left_handlers, event)
+				if h:
+					return elem, fire(elem, h, event)
+
+
+	def find_handler(handlers, e):
+		for h in handlers:
+			if matches(h, e):
+				return (h, e)
+
+
+	def fire(elem, handler, event):
+		if h.side != BOTH:
+			if h.side != LEFT:
+				event = copy(event)
+				event.left = None
+			if h.side != RITE:
+				event = copy(event)
+				event.right = None
+		return handler.func(elem, event)
+
 
 
 editor = Editor()
@@ -89,21 +159,21 @@ class Menu(ServerFrame):
 menu = Menu(editor)
 
 
-def menu_generate_items():
-	s=menu
-	s.items = []
-	e = s.element = s.root.element_under_cursor
-	if e != None:
-		for i in e.menu(s.root.atts):
-			if not s.valid_only or i.valid: # move this check to nodes...or..lets have it in both places!
-				s.items.append(i)
-				yield i
+	def generate_items(s):
+		s.items = []
+		e = s.element = s.root.element_under_cursor
+		if e != None:
+			for i in e.menu(s.root.atts):
+				if not s.valid_only or i.valid: # move this check to nodes...or..lets have it in both places!
+					s.items.append(i)
+					yield i
 
-def menu_accept(idx):
-	return menu.element.menu_item_selected(menu.items[idx], menu.root.atts)
+	def accept(menu, idx):
+		return menu.element.menu_item_selected(menu.items[idx], menu.root.atts)
 
-def menu_toggle_valid():
-	menu.valid_only = not menu.valid_only
+	def toggle_valid(s):
+		s.valid_only = not s.valid_only
+		s.signal_change()
 
 
 
@@ -177,7 +247,6 @@ class Intro(StaticInfoFrame):
 		    "see intro.txt for hopefully more info"]
 
 intro = Intro()
-proxied_intro = proxy_this(intro)
 
 
 class Log(ServerFrame):
@@ -200,32 +269,8 @@ log = Log()
 def element_click(proxied_element):
 	return deproxy(proxied_element).on_mouse_press(e)
 
-def element_keypress(event):
-	#for now, always talk to the element to the right of the cursor,
-	# left is [0], right is [1]
-	right = event.atts[1]
-	if type(right) == dict and tags.att_node in right:
-		element_id = right[tags.att_node]
-		element = tags.proxied[element_id]
-
-	#old style
-	while element != None:
-		assert isinstance(element, Element), (assold, element)
-		if element.on_keypress(event):
-			break
-		assold = element
-		element = element.parent
 
 
-	if element != None:
-	# the loop didnt end with root.parent, so some element must have handled it
-		if args.log_events:
-			log("handled by "+str(element))
-			return True
-
-
-
-after_event = Signal()
 
 
 

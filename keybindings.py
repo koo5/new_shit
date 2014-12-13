@@ -10,7 +10,8 @@ loop integrated with the gui loop"""
 
 #todo:look into FRP
 
-from lemon_client import editor, sidebar, server, menu
+import lemon_client as client
+from server_side import server
 
 def change_font_size(x):
 	"""dummy"""

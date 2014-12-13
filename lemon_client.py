@@ -32,6 +32,9 @@ def cycle_sidebar():
 	global sidebar
 	sidebar = sidebars[sidebars.index(sidebar) + 1]
 
+def update_visibleframes():
+	global visibleframes
+	visibleframes = [sidebar, logframe, editor]
 
 class KeypressEvent(object):
 	"""a frontend-agnostic keypress event"""
@@ -87,11 +90,11 @@ def bye():
 	sys.exit()
 
 
-def setup(debug_out=print):
-	if args.rpc:
-		lemon_logger.debug_out = client_debug_out
+def setup():
+	#if args.rpc:
+	#	lemon_logger.debug_out = client_debug_out
 	#else: logging goes thru the log frame
-
+	pass
 
 #if args.log:
 #	frame = rpcing_frames.Log()
@@ -121,7 +124,7 @@ else:
 
 
 	allframes = sidebars + [logframe, editor]
-
+	update_visibleframes()
 
 
 """can a client be a server at the same time? question of event loops integration i think

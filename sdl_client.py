@@ -6,46 +6,40 @@ import os, sys
 import subprocess
 from math import *
 
-from lemon_utils.lemon_six import iteritems, PY3
-from lemon_utils import lemon_logging
+
+from lemon_utils.lemon_six import iteritems
 from lemon_utils.utils import evil
-
-
-
-os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
-
-if hasattr(sys, 'pypy_version_info'):
-	print ("trying to load pygame_cffi, adding pygame_cffi to sys.path")
-	sys.path.append("pygame_cffi")
-
-import pygame
-
-if hasattr(pygame, 'cffi'):
-	print("yep, loaded pygame_cffi")
-
-from pygame import display, image
-from pygame import draw, Rect
-
-
-
-import lemon_platform as platform
-platform.frontend = platform.sdl
-import lemon_client as lemon
-from lemon_client import logframe, editor, allframes, frames
-from lemon_utils.lemon_logging import log
+from lemon_utils.lemon_logging import log, info
 from lemon_colors import colors, color
 from lemon_args import args
 
 
-
-#for f in allframes:
-#	f.rect = pygame.Rect((6,6),(6,6))
-
-
-
+os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
+if hasattr(sys, 'pypy_version_info'):
+	print ("trying to load pygame_cffi, adding pygame_cffi to sys.path")
+	sys.path.append("pygame_cffi")
+import pygame
+if hasattr(pygame, 'cffi'):
+	print("yep, loaded pygame_cffi")
+from pygame import display, image
+from pygame import draw, Rect
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
 
+import lemon_platform as platform
+platform.frontend = platform.sdl
+
+
+import lemon_client, rpcing_frames
+from lemon_client import logframe, editor, allframes, visibleframes, sidebars
+
+
+
+import keybindings
+
+
+for f in allframes:
+	f.rect = pygame.Rect((6,6),(6,6))
 
 
 
@@ -90,19 +84,18 @@ def resize(size):
 	screen_width, screen_height = screen_surface.get_size()
 	
 def resize_frames():
-	if not args.rpc:
-		lemon.logframe.rect.height = log_height = args.log_height * font_height
-		lemon.logframe.rect.width = screen_width
-		lemon.logframe.rect.topleft = (0, screen_height - log_height)
+		logframe.rect.height = log_height = args.log_height * font_height
+		logframe.rect.width = screen_width
+		logframe.rect.topleft = (0, screen_height - log_height)
 
-		lemon.root.rect.topleft = (0,0)
-		lemon.root.rect.width = screen_width / 3 * 2
-		lemon.root.rect.height = screen_height - log_height
+		editor.rect.topleft = (0,0)
+		editor.rect.width = screen_width / 3 * 2
+		editor.rect.height = screen_height - log_height
 
-		sidebar_rect = Rect((root.rect.w, 0),(0,0))
-		sidebar_rect.width = screen_width - lemon. root.rect.width
-		sidebar_rect.height = root.rect.height
-		for frame in lemon.sidebars:
+		sidebar_rect = Rect((editor.rect.w, 0),(0,0))
+		sidebar_rect.width = screen_width - editor.rect.width
+		sidebar_rect.height = editor.rect.height
+		for frame in sidebars:
 			frame.rect = sidebar_rect
 
 		for f in allframes:
@@ -110,16 +103,15 @@ def resize_frames():
 			f.rows = f.rect.height / font_height
 
 		log("resized frames")
-	else:
-		frame.rect.height = screen_height
-		frame.rect.width = screen_width
 
 
 
-def keypressevent__repr__(self):
+def pygame_keypressevent__repr__(self):
+		#a better repr that translates keys to key names
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod)))
-lemon_client.KeypressEvent.__repr__ = keypressevent__repr__ #a better repr that translates keys to key names
+lemon_client.KeypressEvent.__repr__ = pygame_keypressevent__repr__
+
 
 def keypress(e):
 	reset_cursor_blink_timer()
@@ -159,7 +151,7 @@ def frame_click(s,e):
 	if args.log_events:
 		log(str(e) + " on " + str(s.under_cr(e.cr)))
 	s.click_cr(e)
-frames.ClientFrame.click = frame_click
+rpcing_frames.ClientFrame.click = frame_click
 
 def process_event(event):
 	if event.type == pygame.USEREVENT:
@@ -354,11 +346,11 @@ def fix_keyboard():
 	except Exception as e:
 		print ("cant get system keyboard repeat delay/rate:", e)
 	#print ("setting repeat delay to %s, repeat rate to %s" % (repeat_delay, repeat_rate))
-	pygame.key.set_repeat(repeat_delay, 1000/repeat_rate)
+	pygame.key.set_repeat(repeat_delay, 1000//repeat_rate)
 
 
 def main():
-	lemon.setup(debug_out = print)
+	lemon_client.setup()
 
 	pygame.display.init()
 	pygame.font.init()
@@ -372,17 +364,17 @@ def main():
 	try:
 		resize(fuck_sdl())
 	except Exception as e:
-		print (e, "failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize")
+		info("%s, failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize", e)
 	fix_keyboard()
 
 	change_font_size()
 	resize_frames()
 	keybindings.change_font_size = user_change_font_size
-	lemon.draw = draw
-	lemon.render = render
+	lemon_client.draw = draw
+	lemon_client.render = render
 
-	lemon.start()
-	render()
+	lemon_client.start()
+	#render()
 
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 	reset_cursor_blink_timer()

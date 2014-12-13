@@ -4,8 +4,17 @@ import traceback, logging
 from inspect import *
 from time import time
 import logging
-logger = logging.Logger(__name__)
+import sys
 
+logger = logging.Logger('lemon')
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler(sys.stderr)
+ch.setLevel(logging.DEBUG)
+logger.addHandler(ch)
+
+#log = logger.debug
+warn = logger.warning
+info = logger.info
 
 def log(format_string, *vargs):
 	if __debug__:
@@ -13,10 +22,9 @@ def log(format_string, *vargs):
 			text = format_string % vargs
 		except:
 			text = str((format_string, vargs))
-		logger.debug((time(), text))
+		logger.debug(text)
 
 
-def warn(format_string, *vargs):
-	log("WARNING:"+format_string, vargs)
+
 
 #https://code.google.com/p/kosciak-misc/source/browse/python/examples/curses/CursesHandler.py?spec=svn145&r=34

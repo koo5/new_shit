@@ -26,7 +26,7 @@ from notifyinglist import NotifyingList
 from lemon_utils.lemon_six import iteritems, iterkeys
 
 import lemon_platform as platform
-BRY = platform.frontend == platform.brython
+#BRY = platform.frontend == platform.brython
 
 
 
@@ -49,7 +49,7 @@ tags.asselement = element # for assertions
 import marpa_cffi
 marpa = marpa_cffi.try_loading_marpa()
 if marpa == True:
-	from marpa_cffi.rpc_client import *
+	from marpa_cffi.marpa_rpc_client import *
 	import marpa_cffi.marpa_codes
 	import marpa_cffi.graphing_wrapper as graphing_wrapper
 else:
