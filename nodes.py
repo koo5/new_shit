@@ -35,8 +35,9 @@ from element import Element
 from menu_items import MenuItem
 import widgets
 import tags
-from tags import ChildTag, ElementTag, MemberTag, AttTag, TextTag, ColorTag, EndTag, IndentTag, DedentTag, ArrowTag   #, MenuTag
-#from input import levent
+from tags import *
+
+
 import lemon_colors as colors
 from keys import *
 from lemon_utils.utils import flatten, odict, evil
@@ -727,7 +728,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	def tags(elem):
 
-		yield [AttTag(att_node, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
+		yield [AttTag(node_att, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
 		yield [elem.render(), ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
 		#results of eval

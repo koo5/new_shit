@@ -1,24 +1,61 @@
+from types import GeneratorType
+from itertools import *
+
 from pizco import Signal
 
-import graph
 
-import lemon_platform as platform
+from lemon_utils.lemon_six import iteritems, unicode
+from lemon_args import args
+from lemon_utils.utils import evil
 from lemon_colors import color, colors
 
 import nodes
 from element import Element
 from menu_items import InfoItem
-from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
 import widgets
+from tags import *
 from lemon_utils.lemon_logging import log
-
-from lemon_utils.lemon_six import iteritems, unicode
-from lemon_args import args
-from lemon_utils.utils import evil
+import graph
 from tags import proxy_this
 
 
 import elements_keybindings
+
+
+
+def batch_up(it, n=100):
+	m = n - 1
+	while True:
+		yield chain([next(it)], islice(it, 0, m))
+
+
+def _collect_tags(elem, tags):
+	for tag in tags:
+		if type(tag) in (GeneratorType, list):
+			for i in _collect_tags(elem, tag):
+				yield i
+
+		elif type(tag) == TextTag:
+			yield tag.text
+
+		elif type(tag) == ChildTag:
+			e = elem.ch[tag.name]
+			for i in _collect_tags(e, e.tags()):
+				yield i
+
+		elif type(tag) == MemberTag:
+			e = elem.__dict__[tag.name] #get the element as an attribute #i think this should be getattr, but it seems to work
+			for i in _collect_tags(e, e.tags()):
+				yield i
+
+		elif type(tag) == ElementTag:
+			e = tag.element
+			for i in _collect_tags(e, e.tags()):
+				yield i
+
+		else:
+			yield tag
+
 
 
 
@@ -30,6 +67,12 @@ class ServerFrame(object):
 	def signal_change(s):
 		s.on_change.fire()
 
+	def collect_tags(s):
+		return batch_up(_collect_tags(s, s.tags()))
+
+
+
+
 
 class Editor(ServerFrame):
 	def __init__(self):
@@ -37,6 +80,7 @@ class Editor(ServerFrame):
 
 		self.root = nodes.make_root()
 		self.root.fix_parents()
+		self.atts = {}
 
 	@property
 	def element_under_cursor(s):
@@ -44,7 +88,7 @@ class Editor(ServerFrame):
 		to call things like run_line without passing it the event too.
 		Ofc, this has to be kept updated from the client
 		"""
-		return s.atts[att_node]
+		return s.atts.get(node_att)
 
 
 	def tags(s):
@@ -73,33 +117,9 @@ class Editor(ServerFrame):
 		pass
 
 
-	def element_keypress(s, event):
-		#for now, always talk to the element to the right of the cursor,
-		# left is [0], right is [1]
-		right = event.atts[1]
-		if type(right) == dict and tags.att_node in right:
-			element_id = right[tags.att_node]
-			element = tags.proxied[element_id]
-
-		#old style
-		while element != None:
-			assert isinstance(element, Element), (assold, element)
-			if element.on_keypress(event):
-				break
-			assold = element
-			element = element.parent
-
-
-		if element != None:
-		# the loop didnt end with root.parent, so some element must have handled it
-			if args.log_events:
-				log("handled by "+str(element))
-				return True
-
-
 
 def element_keypress(event):
-	event.atts = namedtuple('atts', 'left right')(event.atts)
+	event.orig_atts = namedtuple('atts', 'left middle right')(event.atts)
 
 	r = handle_keypress(event)
 
@@ -111,31 +131,31 @@ def element_keypress(event):
 				event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
 
 
-	def handle_keypress(event):
-		for side in [0,1]: #left, right
-			atts = e.atts[side]
-			if atts:
-				elem = atts[node_att]
-				h = find_handler(left_handlers, event)
-				if h:
-					return elem, fire(elem, h, event)
+def handle_keypress(event):
+	for side in [1,0,2]: #middle, left, right
+		atts = e.orig_atts[side]
+		if atts != None:
+			elem = deproxy(atts[node_att])
+			h = find_handler(left_handlers, event)
+			if h:
+				return elem, fire(elem, h, event)
 
 
-	def find_handler(handlers, e):
-		for h in handlers:
-			if matches(h, e):
-				return (h, e)
+def find_handler(handlers, e):
+	for h in handlers:
+		if matches(h, e):
+			return (h, e)
 
 
-	def fire(elem, handler, event):
-		if h.side != BOTH:
-			if h.side != LEFT:
-				event = copy(event)
-				event.left = None
-			if h.side != RITE:
-				event = copy(event)
-				event.right = None
-		return handler.func(elem, event)
+def fire(elem, handler, event):
+	if h.side != BOTH:
+		if h.side != LEFT:
+			event = copy(event)
+			event.left = None
+		if h.side != RITE:
+			event = copy(event)
+			event.right = None
+	return handler.func(elem, event)
 
 
 
@@ -143,7 +163,7 @@ editor = Editor()
 
 
 class Menu(ServerFrame):
-	def __init__(s, root):
+	def __init__(s):
 		super(Menu, s).__init__()
 		s.editor = editor
 		s.valid_only = False
@@ -151,19 +171,15 @@ class Menu(ServerFrame):
 
 	def tags(s):
 		yield ColorTag("fg")
-		for i in s.generate_palette():
+		for i in s.generate_items():
 			yield [ElementTag(i)]
 		yield EndTag()
 
-
-menu = Menu(editor)
-
-
 	def generate_items(s):
 		s.items = []
-		e = s.element = s.root.element_under_cursor
+		e = s.element = s.editor.element_under_cursor
 		if e != None:
-			for i in e.menu(s.root.atts):
+			for i in e.menu(s.editor.atts):
 				if not s.valid_only or i.valid: # move this check to nodes...or..lets have it in both places!
 					s.items.append(i)
 					yield i
@@ -174,6 +190,9 @@ menu = Menu(editor)
 	def toggle_valid(s):
 		s.valid_only = not s.valid_only
 		s.signal_change()
+
+
+menu = Menu()
 
 
 
@@ -262,7 +281,7 @@ class Log(ServerFrame):
 		print(str(msg))
 		s.on_add.emit(msg)
 
-log = Log()
+logframe = Log()
 
 
 
@@ -318,3 +337,7 @@ proxying elements: wont be a performance hit, if it will, it can be easily stubb
 proxy_this() and deproxy() have to be in places tho
 
 """
+
+on_change = Signal()
+
+print(list(menu.collect_tags()))

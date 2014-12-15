@@ -1,4 +1,4 @@
-import lemon_platform as lemon_platform
+from lemon_platform import SDL, CURSES
 from lemon_colors import color, colors
 from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import iteritems, unicode
@@ -6,25 +6,65 @@ from lemon_args import args
 from lemon_utils.utils import evil
 
 import graph
-import project
 import nodes
 from element import Element
 from menu_items import InfoItem
-from tags import TextTag, ElementTag, MemberTag, ColorTag, EndTag, AttTag
+from tags import *
 import widgets
 from keys import *
-
 from server_side import server
 
+if SDL:
+	import pygame
+
+
+class Cache(object):
+	def __init__(s, generator):
+		s.dirty = True
+		s.generator = generator
+		s.data = []
+
+	def get(s):
+		if s.dirty:
+			s.data.clear()
+			return s.cache_and_yield()
+		else:
+			return s.data
+
+	def cache_and_yield(s):
+		s.dirty = False
+		for item in s.generator():
+			s.data.append(item)
+			yield item
 
 
 class ClientFrame(object):
+
+	def __init__(s, counterpart):
+		super().__init__()
+		s.arrows = []
+		s.indent_width = 4
+		s.counterpart = counterpart
+		s.tags = Cache(s.counterpart.collect_tags)
+		s.lines = Cache(lambda: s.project_tags(s.tags.get()))
+		if args.rpc:
+			s.hook_into_onchange_event()
+
+	def maybe_redraw(s):
+		if s.counterpart.must_recollect():
+			s.force_redraw()
+
+	def force_redraw(s):
+		s.tags.dirty = True
+		s.draw() #this is defined in the frontend
+
+	def hook_into_onchange_event(s):
+		s.counterpart.on_change.connect(s.maybe_redraw)
 
 	def scroll(s,l):
 		s.scroll_lines -= l
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
-
 
 	def try_move_cursor(s, n):
 		l = s.find(n)
@@ -32,60 +72,45 @@ class ClientFrame(object):
 			s.cursor_c, s.cursor_r = l
 
 
-	# lets try setting a reasonable rpc timeout on the proxy
-	#and wrapping everything in a try except catching the timeout?
-
-	#also, i will be adressing the server objects explicitly
-	#or not...
-	#instead of instantiating the client frames with references to the server counterparts
-	#this way it will be easier to have it survive a reconnect/server restart..
-
-	#		counterpart = core.log
-
-	def maybe_draw(s):
-		if s.counterpart.s.counterpart.must_re_collect():
-			# todo set it on resize too
-			s.must_re_collect = s.must_re_project = True
-			s.draw()
-			s.must_re_collect = s.must_re_project = False
-
-	def do_draw(s):
-		s.must_re_collect = s.must_re_project = True
-		s.draw()
-		s.must_re_collect = s.must_re_project = False
-
-
-	@property
-	def projected_lines(s):
-		s._maybe_cached(s.must_reproject,
-						s.project(s.collected_tags),
-						s._projected_lines)
-
-	@property
-	def collected_tags(s):
-		return s._maybe_cached(s.must_re_collect,
-		                       server.collect_tags(s.counterpart) ,
-		                       s._collected_tags)
-
-
-	def _maybe_cached(get_fresh, generator, cache):
-		if get_fresh:
-			cache.clear()
-			return cache_and_yield(generator, cache)
-		else:
-			return cache
-
-	def cache_and_yield(generator, cache):
-		for item in generator:
-			cache.append(item)
-			yield item
-
-
-	def curses_draw_chars(self):
-		win = s.curses_win
+	def curses_draw(s):
 		s.curses_win.clear()
+		s.curses_draw_stuff()
 
-		for row, line in enumerate(self.projected_lines):
+	def sdl_draw(self):
+		surface = pygame.Surface((self.rect.w, self.rect.h), 0)
+		if colors.bg != (0,0,0):
+			surface.fill(colors.bg)
+		self.sdl_draw_stuff(surface)
+		sdl_screen_surface.blit(surface, self.rect.topleft)
+
+	if SDL:	draw = sdl_draw
+	elif CURSES: draw = curses_draw
+
+	def sdl_draw_lines(self, surf, highlight=None, transparent=False, just_bg=False):
+		bg_cached = color("bg")
+		for row, line in enumerate(self.lines.get()):
+			for col, char in enumerate(line):
+				x = font_width * col
+				y = font_height * row
+				bg = color("highlighted bg" if (
+					'node' in char[1] and
+					char[1]['node'] == highlight and
+					not args.eightbit) else "bg")
+				if just_bg:
+					if bg != bg_cached:
+						pygame.draw.rect(surf,bg,(x,y,font_width,font_height))
+				#	sur = font.render(' ',0,(0,0,0),bg)#guess i could just make a rectangle
+				else:
+					fg = color(char[1]['color'])
+					if transparent:
+						sur = font.render(char[0],1,fg)
+					else:
+						sur = font.render(char[0],1,fg,bg)
+					surf.blit(sur,(x,y))
+
+
+	def curses_draw_lines(s, win):
+		for row, line in enumerate(s.lines):
 
 			#lets implement scrolling here, for once. Im still pondering a proper, somewhat element-based solution
 			real_row = row + s.scroll_lines
@@ -95,41 +120,43 @@ class ClientFrame(object):
 				return
 
 			assert len(line) <= self.cols
-			for col, char in enumerate(line):
-				mode = 0
-				try:
-					if char[1][att_node] == s.highlight:
-						mode = c.A_BOLD + c.A_REVERSE
-				except:	pass
-				try:
-					win.addch(row,col,ord(char[0]), mode)
-				except c.error:
-					#it throws an error to indicate last cell. what error?
-					if (row+1, col+1) != win.getmaxyx():
-						log(row,col,'of',  win.getmaxyx(),":",ord(char[0]))
-						raise
+			s.draw_line(win, line)
+
+	def curses_draw_line(s, win, line):
+		for col, char in enumerate(line):
+			mode = 0
+			try:
+				if char[1][node_att] == s.highlight:
+					mode = c.A_BOLD + c.A_REVERSE
+			except:	pass
+			try:
+				win.addch(row,col,ord(char[0]), mode)
+			except c.error:#it throws an error to indicate last cell
+				if (row+1, col+1) != win.getmaxyx():
+					raise
 
 
 
-#these are the tags that come over the wire:
-# unicode,
-# attribute tuple, end_tag,
-# indent_tag, dedent_tag,
-# dict with custom stuff
 
-
-
-	def project_tags(batches):
+	def project_tags(s,batches):
+		"""
+		#these are the tags that come over the wire:
+		# unicode,
+		# attribute tuple, end_tag,
+		# indent_tag, dedent_tag,
+		# dict with custom stuff
+		"""
 		line = []
 		atts = []
 		char_index = 0
-		indent = 0
+		indentation = 0
+		lines_count = 0
 
-		def newline():
-			numspaces = indent * indent_width
-			spaceleft = cols - len(line)
+		def indent():
+			numspaces = indentation * s.indent_width
+			spaceleft = s.cols - len(line)
 			to_go = min(spaceleft, numspaces)
-			for i in xrange(0, to_go):
+			for i in range(to_go):
 				line.append((' ', dict(atts)))
 				#calling a dict() with atts, which is a list of tuples (key, value)
 				#"squashes" it, the last attributes (on top) overwrite the ones below
@@ -139,16 +166,15 @@ class ClientFrame(object):
 			for tag in batch:
 
 				if type(tag) == unicode:
-
 					for char in tag:
-						atts.append()
-						if char == "\n":
-							yield line
-						else:
-							line.append((char, atts + (att_char_index, char_index)))
-							if len(line) == cols:
-								yield line
+						if char != "\n":
+							line.append((char, dict(atts + [(char_index_att, char_index)])))
 							char_index += 1
+						if len(line) == s.cols or char == "\n":
+							yield line
+							line.clear()
+							indent()
+							lines_count += 1
 
 				elif tag == end_tag:
 					atts.pop()
@@ -157,18 +183,21 @@ class ClientFrame(object):
 					atts.append(tag)
 
 				elif tag == indent_tag:
-					indent += 1
+					indentation += 1
 
 				elif tag == dedent_tag:
-					indent -= 1
+					indentation -= 1
+					assert indentation >= 0
 
 				elif type(tag) == dict:
-					s.arrows_append((len(line), len(s._projected_lines), tag.target))
+					log(tag)
+					s.arrows.append((len(line), lines_count, tag['arrow']))
 
 				else:
 					raise Exception("is %s a tag?, %s" % (repr(tag)))
 
 
+		"""
 		def test():
 			#we would have to set cols somehow
 			project_tags([[
@@ -182,9 +211,7 @@ class ClientFrame(object):
 			    "yo!\n",
 			    dedent_tag
 	              ]])
-
-
-
+		"""
 
 	def under_cr(self, cr):
 		c,r = cr
@@ -212,18 +239,18 @@ class ClientFrame(object):
 			s.scroll_lines = 0
 
 
-
+	if SDL:
+		draw = sdl_draw
 
 
 class Editor(ClientFrame):
 	def __init__(self):
-		super(Editor, self).__init__()
+		super().__init__(server.editor)
 		self.cursor_c = self.cursor_r = 0
-		self.cursor_blinking_phase = True
-
-		self.arrows_visible = True and (
-			not args.noalpha
-			and lemon_platform.frontend == lemon_platform.sdl)
+		self.completed_arrows = []
+		if SDL:
+			self.cursor_blinking_phase = True
+			self.arrows_visible = not args.noalpha
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]: s.move_cursor_h(-1)
@@ -239,11 +266,15 @@ class Editor(ClientFrame):
 
 	def first_nonblank(self):
 		r = 0
-		for ch, a in self._projected_lines[self.cursor_r]:
+		for ch, a in self.lines[self.cursor_r]:
 			if ch == " ":
 				r += 1
 			else:
 				return r
+
+
+	def update_atts_on_server(s):
+		s.counterpart.set_atts(s.atts)
 
 
 	def move_cursor_h(s, x):
@@ -257,7 +288,11 @@ class Editor(ClientFrame):
 		if s.cursor_c < 0:
 			if s.move_cursor_v(-1):
 				s.cursor_c = len(s.lines[s.cursor_r])
-		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
+		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
+		if moved:
+			s.update_atts_on_server()
+		return moved
+
 
 	def move_cursor_v(s, count):
 		"""returns True if it moved. atm, screen bottom is unlimited"""
@@ -274,8 +309,10 @@ class Editor(ClientFrame):
 				sl = 0
 		s.cursor_r = r
 		s.scroll_lines = sl
-		return old != (s.cursor_c, s.cursor_r, s.scroll_lines)
-
+		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
+		if moved:
+			s.update_atts_on_server()
+		return moved
 
 
 	def prev_elem(s):
@@ -308,13 +345,13 @@ class Editor(ClientFrame):
 		log("hmpf")
 
 
-	def draw(s):
-		s.draw_lines()
-		s.arrows = s.complete_arrows(s.arrows)
+	def after_project(s):
 		s.do_post_render_move_cursor()
+		s.update_atts_on_server()
+		s.complete_arrows(s.arrows)
 
-		if __debug__:  #todo: __debug__projection__ or something, this is eating quite some cpu i think and only checks the projection code (i think)
-			for l in self._projected_lines:
+		if __debug__:
+			for l in self.lines:
 				assert(isinstance(l, list))
 				for i in l:
 					assert(isinstance(i, tuple))
@@ -324,16 +361,59 @@ class Editor(ClientFrame):
 					assert(node_att in i[1])
 					assert(char_index_att in i[1])
 
+
+	def sdl_draw_stuff(s, surf):
+		if s.arrows_visible:
+			s.sdl_draw_lines(surf, highlight=s.under_cursor,
+			                 transparent=True)
+			s.sdl_draw_arrows(surf)
+		else:
+			s.sdl_draw_lines(surf, s.under_cursor, False)
+		s.draw_cursor(surf)
+
+	def curses_draw_stuff(s, win):
+		s.curses_draw_lines(win)
+
 	def complete_arrows(s):
 		if not s.arrows_visible:
 			s.arrows = []
 		else:
-			r = []
+			s.completed_arrows = []
 			for a in s.arrows:
-				target = project.find(a[2], self._projected_lines)
+				target = s.find_element(a[2])
 				if target:
-					r.append(((a[0],a[1] - self.scroll_lines),target))
-			s.arrows = r
+					s.completed_arrows.append(((a[0],a[1] - s.scroll_lines), target))
+
+	def find_element(s, e):
+		"""return coordinates of element"""
+		assert(isinstance(e, int)),  e
+		for r,line in enumerate(s.lines.get()):
+			for c,char in enumerate(line):
+				if char[1][node_att] == e:
+					return c, r
+
+
+	def sdl_draw_arrows(s, surface):
+		#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen pointing to that same target, to avoid making it unreadable
+		if not len(s.completed_arrows):
+			s.complete_arrows()
+		for ((c,r),(c2,r2)) in s.completed_arrows:
+			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
+			pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))
+			a = atan2(y-y2, x-x2)
+			angle = 0.1
+			length = 40
+			arrow_side(s, length, a+angle, x2,y2, surface)
+			arrow_side(s, length, a-angle, x2,y2, surface)
+
+	def arrow_side(s, length,a,x2,y2, surface):
+		x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
+		pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
+
+	def draw_cursor(self, surf):
+		if self.cursor_blink_phase:
+			x, y, y2 = cursor_xy(self.cursor_c, self.cursor_r)
+			pygame.draw.rect(surf, colors.cursor, (x, y, 1, y2 - y,))
 
 
 	def toggle_arrows(s):
@@ -355,7 +435,7 @@ class Editor(ClientFrame):
 		else: #to a node, lets indicate it with a tuple hmmm
 			where = where[0]
 			log("moving cursor to node " +str(where))
-			s.cursor_c, s.cursor_r = s.find(where)
+			s.cursor_c, s.cursor_r = s.find_element(where)
 		s.counterpart.root.post_render_move_caret = 0
 
 
@@ -397,6 +477,9 @@ class StaticInfoFrame(ClientFrame):
 
 
 
+def draw(s, surface):
+	s.draw_lines(surface)
+
 
 
 
@@ -405,7 +488,7 @@ class StaticInfoFrame(ClientFrame):
 
 class Menu(ClientFrame):
 	def __init__(s, root):
-		super(Menu, s).__init__()
+		super(Menu, s).__init__(server.menu)
 
 	def on_keypress(self, e):
 		if platform.frontend == platform.sdl and e.mod & KMOD_CTRL:
@@ -460,44 +543,100 @@ class Menu(ClientFrame):
 		s.valid_only = not s.valid_only
 
 
+	def menu_generate_rects(s):
+		s.rects = dict()
+		for i in s.items_on_screen:
+			rl = i._render_lines[s]
+
+			startline = rl["startline"] - s.scroll_lines if "startline" in rl else 0
+			endline = rl["endline"]  - s.scroll_lines if "endline" in rl else s.rows
+
+			if endline < 0 or startline > s.rows:
+				continue
+			if startline < 0:
+				startline = 0
+			if endline > s.rows - 1:
+				endline = s.rows - 1
+
+			startchar = 0
+			#print startline, endline+1
+			endchar = max([len(l) for l in s.lines[startline:endline+1]])
+			r = (startchar * font_width,
+				 startline * font_height,
+				 (endchar  - startchar) * font_width,
+				 (endline - startline+1) * font_height)
+			s.rects[i] = r
+
+
+	def sdl_draw_stuff(s, surface):
+		s.sdl_draw_lines(surface)
+		#s.sdl_draw_rects(surface)
+
+	def sdl_draw_rects(s, surface):
+		for i,r in iteritems(s.rects):
+			#print i ,s.selected
+			if i == s.selected:
+				c = colors.menu_rect_selected
+			else:
+				c = colors.menu_rect
+			pygame.draw.rect(surface, c, r, 1)
+
+
+
+
 def collidepoint(r, pos):
 	x, y = pos
 	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]
 
 
-class Log(object):
+class Log(ClientFrame):
 	def __init__(s):
-		super(Log, s).__init__()
-		server.log.on_add.connect(s.add)
+		super().__init__(server.logframe)
+		s.counterpart.on_add.connect(s.add)
+		s.tags = Cache(s.collect_tags)
+		s.items = []
+
+	def collect_tags(s):
+		for i in s.items:
+			yield [i, '\n']
 
 	def add(self, msg):
 		#time, topic, text = msg
 		print (msg)
+		self.items.append(str(msg))
+
+	def sdl_draw_stuff(s, surface):
+		s.sdl_draw_lines(surface)
+
+
+
+
+
+
+
+
+
+
+
+
+
+	# lets try setting a reasonable rpc timeout on the proxy
+	#and wrapping everything in a try except catching the timeout?
+	#also, i will be adressing the server objects explicitly
+	#instead of instantiating the client frames with references to the server counterparts
+	#this way it will be easier to have it survive a reconnect/server restart..
+
 
 """
-class Log(ClientFrame):
-	def __init__(s):
-		super(Log, s).__init__()
-		s.items = []
-		s.projected = []
-		s.top_bar = [ColorTag("help"), TextTag(s.name + ":  "), ElementTag(s.hidden_toggle)]
-		server.log_on_add_connect(s.add)
-		server.after_event(s.add)
+	def sdl_draw_stuff(s, surf):
+		if s.arrows_visible:
+			s.sdl_draw_lines(surf, highlight=s.under_cursor,
+			                 transparent=evil('justbg, so no transparent'),
+			                 just_bg=True)
+			s.sdl_draw_arrows(surf)
+			s.sdl_draw_lines(surf, s.under_cursor, True)
+		else:
+			s.sdl_draw_lines(surf, s.under_cursor, False)
+		s.draw_cursor(surf)
 
-	def render(s):
-		s.lines = project.project_tags(s.top_bar, s.cols, s).lines
-		s.lines += s.projected[-s.rows-s.scroll_lines:][:s.rows-len(s.lines)]
-		#print len(s.projected)
-		#print s.rows, s.scroll_lines, len(s.lines), len([x for x in s.tags()])
-
-	def update(s):
-		pass
-
-	def add(s, msg):
-		time, topic, text = msg
-		it = LogItem(msg)
-		s.items.append(it)
-		s.projected.append(s.project_tags([it.tags()]))
 """
-
-

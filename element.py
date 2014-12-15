@@ -5,6 +5,7 @@ from weakref import ref as weakref
 import lemon_platform as platform
 from lemon_utils.lemon_logging import log
 import tags
+from tags import *
 from lemon_utils.utils import evil
 
 
@@ -26,7 +27,7 @@ class Element():
 	def get_parent(s):
 		#sys.getrefcount
 		if type(s._parent) == weakref:
-			if platform.frontend == platform.brython:
+			if platform.BRYTHON:
 				r = s._parent.obj.obj # https://github.com/brython-dev/brython/blob/master/src/Lib/_weakref.py (?)
 			else:
 				r = s._parent()
@@ -123,3 +124,4 @@ class Element():
 
 
 
+tags.Element = Element

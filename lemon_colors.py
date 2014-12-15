@@ -3,12 +3,13 @@ from lemon_utils.lemon_six import iteritems, unicode
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_logging import info,log
 
+
 try:
 	#im gonna have to ditch this crappy module
 	from colors import *
 	assert rgb,  'we imported some outdated .pyc or something'
 except ImportError as e:
-	info(e, "...but nevermind")
+	info("%s, ...but nevermind", e)
 
 
 default_colors = {
@@ -51,7 +52,7 @@ def modify(c, max=255):
 
 def color(c):
 	"""return an rgb tuple by name, modified by display filters(mono,invert) and ready for use"""
-	if isinstance(c, str_and_uni):
+	if isinstance(c, unicode):
 		try:
 			return colors[c]
 		except KeyError:

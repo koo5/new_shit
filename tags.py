@@ -1,8 +1,6 @@
-from __future__ import unicode_literals
 from weakref import WeakValueDictionary
 from lemon_utils.utils import evil
 
-asselement = evil()
 
 
 proxied = WeakValueDictionary()
@@ -49,7 +47,7 @@ def DedentTag():
 	return 2
 
 def ArrowTag(target):
-	return {"arrow": target}
+	return {"arrow": proxy_this(target)}
 
 
 

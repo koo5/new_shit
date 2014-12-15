@@ -23,7 +23,7 @@ class Widget(Element):
 class Text(Widget):
 	def __init__(self, parent, text):
 		super().__init__(parent)
-		self.on_edit = Signal()
+		self.on_edit = Signal(1)
 		self.color = (150,150,255,255)
 		assert isinstance(text, unicode)
 		self.text = text
@@ -47,8 +47,8 @@ class Text(Widget):
 class Button(Widget):
 	def __init__(self, parent, text="[button]", description = "?"):#?
 		super().__init__(parent)
-		self.on_press = Signal()
-		self.on_text = Signal()
+		self.on_press = Signal(1)
+		self.on_text = Signal(1)
 		self.color = (255,150,150,255)
 		self.text = text
 
@@ -59,22 +59,25 @@ class Button(Widget):
 	def render(self):
 		return [ColorTag(self.color),TextTag(self.text), EndTag()]
 
-class Number(Text):
+class Number(Widget):
 	def __init__(self, parent, text, limits=(None,None)):
 		super().__init__(parent)
 		self.limits = limits
-		self.text = Text(str(text))
+		self.text = Text(self, str(text))
 		self.minus_button = Button(self, "-")
 		self.plus_button = Button(self, "+")
 		for b in (self.plus_button, self.minus_button):
 			b.brackets = ('[',']')
 			b.brackets_color = b.color = "number buttons"
-		self.minus_button.on_click.connect(self.on_widget_click)
+		self.minus_button.on_press.connect(self.on_widget_click)
 		self.minus_button.on_text. connect(self.on_widget_text)
-		self.plus_button. on_click.connect(self.on_widget_click)
+		self.plus_button. on_press.connect(self.on_widget_click)
 		self.plus_button. on_text. connect(self.on_widget_text)
-		self.text.on_edit.connect(s.on_change.emit) # ^.^
-		self.on_change = Signal()
+		self.on_change = Signal(1)
+		self.text.on_edit.connect(self._on_text_change) # ^.^
+
+	def _on_text_change(self, widget):
+		self.on_change.fire(self)
 
 	def render(self):
 		return [MemberTag('minus_button'), MemberTag('text'), MemberTag('plus_button')]
@@ -122,7 +125,7 @@ class Number(Text):
 class NState(Widget):
 	def __init__(self, parent, value, texts = ("to state 1", "to state 2", "to state 0")):
 		super(NState, self).__init__(parent)
-		self.on_change = Signal()
+		self.on_change = Signal(1)
 		self.value = value
 		assert(0 <= value < len(texts))
 		self.texts = texts

@@ -1,10 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""frontend-agnostic middle, with input event replay functionality for debugging"""
-
-from __future__ import print_function
-from __future__ import unicode_literals
+"""(sdl/curses)-agnostic frontend stuff,
+with input event replay functionality for debugging"""
 
 import sys
 import pickle
@@ -32,9 +30,8 @@ def cycle_sidebar():
 	global sidebar
 	sidebar = sidebars[sidebars.index(sidebar) + 1]
 
-def update_visibleframes():
-	global visibleframes
-	visibleframes = [sidebar, logframe, editor]
+def visibleframes():
+	return [sidebar, logframe, editor]
 
 class KeypressEvent(object):
 	"""a frontend-agnostic keypress event"""
@@ -78,7 +75,7 @@ class MousedownEvent(object):
 
 
 def start():
-	server.after_start()
+	#server.after_start()
 
 	colors.cache(args)
 
@@ -124,7 +121,6 @@ else:
 
 
 	allframes = sidebars + [logframe, editor]
-	update_visibleframes()
 
 
 """can a client be a server at the same time? question of event loops integration i think
