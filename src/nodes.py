@@ -3601,7 +3601,7 @@ Text("todo: smarter menu, better parser, save/load, a real language, fancy proje
 	r["builtins"] = b['module'].inst_fresh()
 	r["builtins"].ch.statements.items = list(itervalues(b))
 	assert len(r["builtins"].ch.statements.items) == len(b) and len(b) > 0
-	log("built in ",len(r["builtins"].ch.statements.items)," items")
+	log("built in %s nodes",len(r["builtins"].ch.statements.items))
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
 

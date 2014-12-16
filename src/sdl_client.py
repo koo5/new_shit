@@ -105,7 +105,7 @@ def resize_frames():
 		for f in allframes:
 			f.cols = f.rect.width // font_width
 			f.rows = f.rect.height // font_height
-			log(f, f.cols, f.rows)
+			log((f, f.cols, f.rows))
 
 		log("resized frames")
 

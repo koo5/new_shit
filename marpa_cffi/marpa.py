@@ -330,3 +330,4 @@ if __name__ == "__main__":
 
 # http://scipy-lectures.github.io/advanced/debugging/#debugging-segmentation-faults-using-gdb
 # http://fpaste.scsys.co.uk/451285 -  typical marpa C calls
+#https://github.com/Rizziepit/cffibuilder

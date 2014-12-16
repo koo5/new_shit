@@ -107,10 +107,11 @@ else:
 
 	editor = rpcing_frames.Editor()
 	logframe = rpcing_frames.Log()
+	menu = rpcing_frames.Menu(editor)
 
 	sidebars = [#frames.Intro(root),
 	            #frames.GlobalKeys(root),
-	            rpcing_frames.Menu(editor)]#,
+	            menu]#,
 	            #frames.NodeInfo(root)]
 	            #frames.ContextInfo(root)]#carry on...
 	sidebars.append(sidebars[0])#a sentinel for easy cycling:)

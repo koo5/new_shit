@@ -11,19 +11,12 @@ logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler(sys.stderr)
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
+ch.setFormatter(logging.Formatter(
+	'%(asctime)s %(module)s:%(lineno)d : %(message)s', '%H:%M:%S'))
 
-#log = logger.debug
+log = logger.debug
 warn = logger.warning
 info = logger.info
-
-def log(format_string, *vargs):
-	"backwards compatibility with my old system"
-	if __debug__:
-		try:
-			text = format_string % vargs
-		except:
-			text = str((format_string, vargs))
-		logger.debug(text)
 
 
 

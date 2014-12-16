@@ -1,6 +1,6 @@
-import keys
-
+from keys import *
 import lemon_client as client
+from lemon_client import editor, menu
 from server_side import server
 import replay
 
@@ -10,7 +10,7 @@ def change_font_size(x):
 
 def keypress(e):
 	k = e.key
-	CTRL = KMOD_CTRL & event.mod
+	CTRL = KMOD_CTRL & e.mod
 
 	if k == K_ESCAPE:
 		if not replay.are_we_replaying():
@@ -20,9 +20,9 @@ def keypress(e):
 		client.cycle_sidebar()
 	elif k == K_F2:
 		replay.do_replay()
-	elif ctrl and event.uni == '=':
+	elif CTRL and event.uni == '=':
 		change_font_size(1)
-	elif ctrl and event.uni == '-':
+	elif CTRL and event.uni == '-':
 		change_font_size(-1)
 
 

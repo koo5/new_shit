@@ -1,0 +1,9 @@
+import logging, sys
+
+logger = logging.Logger('sss')
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.DEBUG)
+logger.addHandler(ch)
+
+logger.debug(4)

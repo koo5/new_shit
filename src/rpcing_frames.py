@@ -36,6 +36,7 @@ class ClientFrame(object):
 	def __init__(s, counterpart):
 		super().__init__()
 		s.arrows = []
+		s.scroll_lines = 0
 		s.indent_width = 4
 		s.counterpart = counterpart
 		s.tags = Cache(s.counterpart.collect_tags)
@@ -82,7 +83,6 @@ class ClientFrame(object):
 	def sdl_draw_lines(self, surf, highlight=None, transparent=False, just_bg=False):
 		bg_cached = color("bg")
 		for row, line in enumerate(self.lines.get()):
-			log(line)
 			for col, char in enumerate(line):
 				x = font_width * col
 				y = font_height * row
@@ -461,17 +461,17 @@ class Editor(ClientFrame):
 
 
 	@property
-	def atts(self):
+	def atts(s):
 		#for now, if the cursor isnt strictly on a char that was rendered, we return None
 
 		#lets try moving the cursor to see if theres a char to the cursors left
-		if move_cursor_h(-1):
-			left = atts_at_cursor()
-			move_cursor_h(1) # and move it back
+		if s.move_cursor_h(-1):
+			left = s.atts_at_cursor()
+			s.move_cursor_h(1) # and move it back
 		else:
 			left = None
 
-		right = atts_at_cursor()
+		right = s.atts_at_cursor()
 
 		return left, right
 
