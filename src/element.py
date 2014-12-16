@@ -6,7 +6,7 @@ import lemon_platform as platform
 from lemon_utils.lemon_logging import log
 import tags
 from tags import *
-from lemon_utils.utils import evil
+from lemon_utils.utils import Evil
 
 
 class Element():
@@ -17,7 +17,7 @@ class Element():
 	keys_help_items = None
 	def __init__(self):
 		super().__init__()
-		self._parent = evil('666:evil _parent placeholder')
+		self._parent = Evil('666:Evil _parent placeholder')
 		self.brackets_color = (200,200,200)
 		self.brackets = ('<','>')
 		self._render_lines = {}

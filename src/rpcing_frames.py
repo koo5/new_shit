@@ -3,7 +3,8 @@ from lemon_colors import color, colors
 from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
-from lemon_utils.utils import evil
+from lemon_utils.utils import Evil
+from lemon_utils.cache import Cache
 
 import graph
 import nodes
@@ -17,25 +18,17 @@ from server_side import server
 if SDL:
 	import pygame
 
+	def sdl_cursor_xy(c,r):
+		return (font_width * c,
+				font_height * r,
+				font_height * (r + 1))
 
-class Cache(object):
-	def __init__(s, generator):
-		s.dirty = True
-		s.generator = generator
-		s.data = []
+	def xy2cr(xy):
+		x,y = xy
+		c = x / font_width
+		r = y / font_height
+		return c, r
 
-	def get(s):
-		if s.dirty:
-			s.data.clear()
-			return s.cache_and_yield()
-		else:
-			return s.data
-
-	def cache_and_yield(s):
-		s.dirty = False
-		for item in s.generator():
-			s.data.append(item)
-			yield item
 
 
 class ClientFrame(object):
@@ -89,6 +82,7 @@ class ClientFrame(object):
 	def sdl_draw_lines(self, surf, highlight=None, transparent=False, just_bg=False):
 		bg_cached = color("bg")
 		for row, line in enumerate(self.lines.get()):
+			log(line)
 			for col, char in enumerate(line):
 				x = font_width * col
 				y = font_height * row
@@ -157,10 +151,12 @@ class ClientFrame(object):
 			spaceleft = s.cols - len(line)
 			to_go = min(spaceleft, numspaces)
 			for i in range(to_go):
-				line.append((' ', dict(atts)))
+				append(' ')
 				#calling a dict() with atts, which is a list of tuples (key, value)
 				#"squashes" it, the last attributes (on top) overwrite the ones below
 
+		def append(char):
+			line.append((char, dict(atts + [(char_index_att, char_index)])))
 
 		for batch in batches:
 			for tag in batch:
@@ -168,7 +164,7 @@ class ClientFrame(object):
 				if type(tag) == unicode:
 					for char in tag:
 						if char != "\n":
-							line.append((char, dict(atts + [(char_index_att, char_index)])))
+							append(char)
 							char_index += 1
 						if len(line) == s.cols or char == "\n":
 							yield line
@@ -190,7 +186,6 @@ class ClientFrame(object):
 					assert indentation >= 0
 
 				elif type(tag) == dict:
-					log(tag)
 					s.arrows.append((len(line), lines_count, tag['arrow']))
 
 				else:
@@ -237,6 +232,11 @@ class ClientFrame(object):
 		s.scroll_lines += l
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
+
+
+	def sdl_mousedown(s,e):
+		e.cr = sdl_xy2cr(e.pos) #mouse xy to column, row
+		s.click_cr(e)
 
 
 	if SDL:
@@ -371,6 +371,18 @@ class Editor(ClientFrame):
 			s.sdl_draw_lines(surf, s.under_cursor, False)
 		s.draw_cursor(surf)
 
+	""" def sdl_draw_stuff(s, surf):
+		if s.arrows_visible:
+			s.sdl_draw_lines(surf, highlight=s.under_cursor,
+			                 transparent=Evil('justbg, so no transparent'),
+			                 just_bg=True)
+			s.sdl_draw_arrows(surf)
+			s.sdl_draw_lines(surf, s.under_cursor, True)
+		else:
+			s.sdl_draw_lines(surf, s.under_cursor, False)
+		s.draw_cursor(surf)"""
+
+
 	def curses_draw_stuff(s, win):
 		s.curses_draw_lines(win)
 
@@ -412,8 +424,9 @@ class Editor(ClientFrame):
 
 	def draw_cursor(self, surf):
 		if self.cursor_blink_phase:
-			x, y, y2 = cursor_xy(self.cursor_c, self.cursor_r)
+			x, y, y2 = sdl_cursor_xy(self.cursor_c, self.cursor_r)
 			pygame.draw.rect(surf, colors.cursor, (x, y, 1, y2 - y,))
+
 
 
 	def toggle_arrows(s):
@@ -615,28 +628,3 @@ class Log(ClientFrame):
 
 
 
-
-
-
-
-
-	# lets try setting a reasonable rpc timeout on the proxy
-	#and wrapping everything in a try except catching the timeout?
-	#also, i will be adressing the server objects explicitly
-	#instead of instantiating the client frames with references to the server counterparts
-	#this way it will be easier to have it survive a reconnect/server restart..
-
-
-"""
-	def sdl_draw_stuff(s, surf):
-		if s.arrows_visible:
-			s.sdl_draw_lines(surf, highlight=s.under_cursor,
-			                 transparent=evil('justbg, so no transparent'),
-			                 just_bg=True)
-			s.sdl_draw_arrows(surf)
-			s.sdl_draw_lines(surf, s.under_cursor, True)
-		else:
-			s.sdl_draw_lines(surf, s.under_cursor, False)
-		s.draw_cursor(surf)
-
-"""

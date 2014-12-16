@@ -8,9 +8,13 @@ from math import *
 
 
 from lemon_utils.lemon_six import iteritems
-from lemon_utils.utils import evil
+from lemon_utils.utils import Evil
 from lemon_utils.lemon_logging import log, info
 from lemon_colors import colors, color
+
+
+import lemon_args
+lemon_args.parse_args()
 from lemon_args import args
 
 
@@ -34,6 +38,8 @@ import lemon_client, rpcing_frames
 from lemon_client import logframe, editor, allframes, visibleframes, sidebars
 from server_side import server
 import keybindings
+import replay
+
 
 
 for f in allframes:
@@ -63,6 +69,8 @@ def reset_cursor_blink_timer():
 def user_change_font_size(by = 0):
 	change_font_size(by)
 	resize_frames()
+keybindings.change_font_size = user_change_font_size
+
 
 def change_font_size(by = 0):
 	global font, font_width, font_height
@@ -71,15 +79,13 @@ def change_font_size(by = 0):
 	rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height = font.size("X")
 
 
-
-
 def resize(size):
 	global screen_surface, screen_width, screen_height
 	log("resize to "+str(size))
 	rpcing_frames.sdl_screen_surface = screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
-	
-
+	resize_frames()
+replay.resize = resize
 
 def resize_frames():
 		logframe.rect.height = log_height = args.log_height * font_height
@@ -87,7 +93,7 @@ def resize_frames():
 		logframe.rect.topleft = (0, screen_height - log_height)
 
 		editor.rect.topleft = (0,0)
-		editor.rect.width = screen_width / 3 * 2
+		editor.rect.width = screen_width // 3 * 2
 		editor.rect.height = screen_height - log_height
 
 		sidebar_rect = Rect((editor.rect.w, 0),(0,0))
@@ -97,8 +103,9 @@ def resize_frames():
 			frame.rect = sidebar_rect
 
 		for f in allframes:
-			f.cols = f.rect.width / font_width
-			f.rows = f.rect.height / font_height
+			f.cols = f.rect.width // font_width
+			f.rows = f.rect.height // font_height
+			log(f, f.cols, f.rows)
 
 		log("resized frames")
 
@@ -113,7 +120,7 @@ lemon_client.KeypressEvent.__repr__ = pygame_keypressevent__repr__
 
 def keypress(e):
 	reset_cursor_blink_timer()
-	lemon.handle(lemon.KeypressEvent(pygame.key.get_pressed(), e.unicode, e.key, e.mod))
+	keybindings.keypress(e)
 	render()
 	draw()
 
@@ -126,30 +133,24 @@ def mousedown(e):
 			if e.button == 4: user_change_font_size(1)
 			if e.button == 5: user_change_font_size(-1)
 	else:
-		lemon.handle(lemon.MousedownEvent(e))
+		for f in lemon_client.visibleframes():
+			if f.rect.collidepoint(e.pos):
+				e.pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
+				f.sdl_mousedown(e)
+				break
 	render()
 	draw()
 
-def lemon_mousedown(e):
-	for f in lemon_client.visibleframes():
-		if f.rect.collidepoint(e.pos):
-			e.pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
-			f.mousedown(e)
-			break
-lemon_client.mousedown = lemon_mousedown
 
-def xy2cr(xy):
-	x,y = xy
-	c = x / font_width
-	r = y / font_height
-	return c, r
 
-def frame_click(s,e):
-	e.cr = xy2cr(e.pos) #mouse xy to column, row
-	if args.log_events:
-		log(str(e) + " on " + str(s.under_cr(e.cr)))
-	s.click_cr(e)
-rpcing_frames.ClientFrame.click = frame_click
+def handle_input(event):
+	if event.type == pygame.KEYDOWN:
+		keypress(event)
+		return True
+
+	elif event.type == pygame.MOUSEBUTTONDOWN:
+		mousedown(event)
+		return True
 
 def process_event(event):
 	if event.type == pygame.USEREVENT:
@@ -160,14 +161,18 @@ def process_event(event):
 		draw()
 
 	elif event.type == pygame.KEYDOWN:
-		keypress(event)
+		e = lemon_client.KeypressEvent(pygame.key.get_pressed(), event.unicode, event.key, event.mod)
+		handle_input(e)
+		replay.pickle_event(e)
 
 	elif event.type == pygame.MOUSEBUTTONDOWN:
-		mousedown(event)
+		e = lemon.MousedownEvent(event)
+		handle_input(e)
+		replay.pickle_event(e)
 
 	elif event.type == pygame.VIDEORESIZE:
+		replay.pickle_event(('resize', event.size))
 		resize(event.size)
-		resize_frames()
 		render()
 		draw()
 
@@ -181,7 +186,7 @@ def process_event(event):
 
 	elif event.type == pygame.QUIT:
 		pygame.display.iconify()
-		lemon.bye()
+		lemon_client.bye()
 
 
 
@@ -200,11 +205,6 @@ server.on_change.connect(draw)
 
 
 
-
-def cursor_xy(c,r):
-	return (font_width * c,
-			font_height * r,
-			font_height * (r + 1))
 
 
 
@@ -262,9 +262,11 @@ def main():
 		pass
 
 	fix_keyboard()
-	initial_resize()
 
 	change_font_size()
+
+	initial_resize()
+
 	resize_frames()
 	keybindings.change_font_size = user_change_font_size
 	lemon_client.draw = draw

@@ -1,5 +1,5 @@
 from weakref import WeakValueDictionary
-from lemon_utils.utils import evil
+from lemon_utils.utils import Evil
 
 
 

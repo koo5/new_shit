@@ -6,7 +6,7 @@ from pizco import Signal
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
-from lemon_utils.utils import evil
+from lemon_utils.utils import Evil
 from lemon_colors import color, colors
 
 import nodes
@@ -325,18 +325,6 @@ def load(name):
 
 
 
-
-"""
-general ways that rpcing complicates things;
-
-have to do more effort at proper mvc-y eventing, This would in some form be
-necessary for best performance anyway (keeping track of dirtiness at various levels.
-But the split between the server and client part of frames isnt nice..
-
-proxying elements: wont be a performance hit, if it will, it can be easily stubbed
-proxy_this() and deproxy() have to be in places tho
-
-"""
 
 on_change = Signal()
 

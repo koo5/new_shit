@@ -1,0 +1,58 @@
+i wanted to rpc seamlessly. (after an appropriate redesign). This needs multiple objects.
+currently im leaning towards rewriting clientserver.py in pizco. the multiobject branch seems
+unfinished, repeating functionality and was made against an old version. The file isnt long,
+keeping intact some of the pizco functionality like 'instantiate' could require more investigation
+and not sure if worth it. (at least for a start i could drop it). The things touching the io loop
+are a bit arcane, maybe the gevent fork can help.
+
+zerorpc doesnt have any remote attributes. Other libraries seem to be even worse off, requiring
+various declarations and stuff. One thing zerorpc has is streaming generators.
+
+http://morepypy.blogspot.cz/2014/11/tornado-without-gil-on-pypy-stm.html
+http://nanomsg.org/
+
+http://zeromq.github.io/pyzmq/eventloop.html
+http://www.tornadoweb.org/en/stable/ioloop.html
+https://github.com/zeromq/pyzmq/blob/master/zmq/eventloop/minitornado/ioloop.py
+https://github.com/hgrecco/pizco/pull/22
+
+debugging the rpc server code under tornado io loop: give up trying to make it propagate exceptions,
+get a scriptable debugger (unlike pycharms..)
+
+http://nbviewer.ipython.org/gist/ChrisBeaumont/5758381/descriptor_writeup.ipynb
+http://stackoverflow.com/a/26096355
+http://www.tornadoweb.org/en/stable/guide/coroutines.html
+
+"""can a client be a server at the same time? question of event loops integration i think
+a not so neat but okay alternative for the distributed event handling:
+make the nonlocal client frames in keybindings.py stubs that raise an error
+catch and proceed to emit a signal with that event on the server (implemented in pizco in one of the forks/branches?)
+then all clients try it again? or more organized, at the moment its just root and menu,
+ so 'all' would work, if there will be multiple editor clients, we can have 'last active editor'
+...?.?.?"""
+
+
+
+"""
+general ways that rpcing complicates things;
+
+have to do more effort at proper mvc-y eventing, This would in some form be
+necessary for best performance anyway (keeping track of dirtiness at various levels.
+But the split between the server and client part of frames isnt nice..
+
+proxying elements: wont be a performance hit, if it will, it can be easily stubbed
+proxy_this() and deproxy() have to be in places tho
+
+"""
+
+
+
+
+	# lets try setting a reasonable rpc timeout on the proxy
+	#and wrapping everything in a try except catching the timeout?
+	#also, i will be adressing the server objects explicitly
+	#instead of instantiating the client frames with references to the server counterparts
+	#this way it will be easier to have it survive a reconnect/server restart..
+
+
+

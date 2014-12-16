@@ -21,7 +21,7 @@ import json
 from fuzzywuzzy import fuzz
 from pizco import Signal
 
-from notifyinglist import NotifyingList
+from lemon_utils.notifyinglist import NotifyingList
 
 from lemon_utils.lemon_six import iteritems, iterkeys
 
@@ -40,7 +40,7 @@ from tags import *
 
 import lemon_colors as colors
 from keys import *
-from lemon_utils.utils import flatten, odict, evil
+from lemon_utils.utils import flatten, odict, Evil
 from lemon_utils.dotdict import Dotdict
 from lemon_args import args
 from lemon_utils.lemon_logging import log, warn

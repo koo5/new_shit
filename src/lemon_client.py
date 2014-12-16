@@ -5,7 +5,6 @@
 with input event replay functionality for debugging"""
 
 import sys
-import pickle
 
 from lemon_utils.lemon_logging import log
 import rpcing_frames
@@ -35,7 +34,7 @@ def visibleframes():
 
 class KeypressEvent(object):
 	"""a frontend-agnostic keypress event"""
-	def __init__(self, all, uni, key, mod, frontend):
+	def __init__(self, all, uni, key, mod):
 		"""
 		:param all:an array of keys states as provided by SDL_GetKeyState. used for funky sideways cursor moving
 		:param uni:unicode value
@@ -48,7 +47,6 @@ class KeypressEvent(object):
 		self.mod = mod
 		self.all = all
 		self.type = KEYDOWN
-		self.frontend = frontend
 
 		if args.webos:
 			#a hack for my Pre3:
@@ -123,10 +121,3 @@ else:
 	allframes = sidebars + [logframe, editor]
 
 
-"""can a client be a server at the same time? question of event loops integration i think
-a not so neat but okay alternative for the distributed event handling:
-make the nonlocal client frames in keybindings.py stubs that raise an error
-catch and proceed to emit a signal with that event on the server (implemented in pizco in one of the forks/branches?)
-then all clients try it again? or more organized, at the moment its just root and menu,
- so 'all' would work, if there will be multiple editor clients, we can have 'last active editor'
-...?.?.?"""

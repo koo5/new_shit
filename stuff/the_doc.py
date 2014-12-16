@@ -854,3 +854,46 @@ what is the additional work tht a structured editor has to do? user interaction 
 
 
 https://github.com/buildinspace/peru
+
+gui/widgets
+https://mail.mozilla.org/pipermail/firefox-dev/2014-December/002510.html
+
+
+
+
+
+language inspirations
+https://www.firebase.com/blog/2014-08-21-blaze-security-language.html
+http://latentflip.com/imperative-vs-declarative/
+https://github.com/kivy/kivy/wiki/Data-driven-variables-with-kivy-properties
+http://elm-lang.org/blog/announce/0.14.elm
+
+
+
+
+
+
+aop view
+http://loup-vaillant.fr/articles/classes-as-syntactic-sugar
+
+
+
+
+productivity,python
+	https://plugins.jetbrains.com/?pycharm
+	https://wiki.python.org/moin/DevelopmentTools
+
+	threading/logging
+		http://www.aminus.net/wiki/PyConquer
+		https://github.com/vinta/awesome-python#logging
+
+	http://ceronman.com/2013/03/12/a-powerful-unused-feature-of-python-function-annotations/
+
+
+not sure about these, gizmos
+	https://characteristic.readthedocs.org/en/stable/
+	https://pypi.python.org/pypi/hypothesis/
+
+
+distributed gui with erlang: nopenopenope?
+	https://github.com/massemanet/gtknode

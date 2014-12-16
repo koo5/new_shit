@@ -1,4 +1,4 @@
-[submodule "fuzzywuzzy"]
+[submodule "fuzzywuzzy_git"]
 	path = fuzzywuzzy_git
 	url = https://github.com/seatgeek/fuzzywuzzy.git
 [submodule "pygame_cffi"]
@@ -7,3 +7,6 @@
 [submodule "pizco_git"]
 	path = pizco_git
 	url = https://github.com/koo5/pizco.git
+[submodule "logpy_git"]
+	path = logpy_git
+	url = https://github.com/logpy/logpy.git

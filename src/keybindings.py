@@ -1,17 +1,8 @@
-
-"""here we count on the fact that each client frame has been assigned to an
-attribute of the server module. to do this with rpcing,
-clients or client frames will have to act as servers too, with the messaging
-loop integrated with the gui loop"""
-
-#maybe when we have multiple editor frames,
-#we will want to just pass the event on to perhaps the previously focused frame
-#for now im trying having all top level handlers in one file here
-
-#todo:look into FRP
+import keys
 
 import lemon_client as client
 from server_side import server
+import replay
 
 def change_font_size(x):
 	"""dummy"""
@@ -19,20 +10,23 @@ def change_font_size(x):
 
 def keypress(e):
 	k = e.key
+	CTRL = KMOD_CTRL & event.mod
 
-#with CTRL
-
-	ctrl = KMOD_CTRL & event.mod
+	if k == K_ESCAPE:
+		if not replay.are_we_replaying():
+			bye()
 
 	if k == K_F1:
-		cycle_sidebar()
+		client.cycle_sidebar()
+	elif k == K_F2:
+		replay.do_replay()
 	elif ctrl and event.uni == '=':
 		change_font_size(1)
 	elif ctrl and event.uni == '-':
 		change_font_size(-1)
 
 
-	if KMOD_CTRL & e.mod:
+	if CTRL:
 		if k == K_LEFT:
 			editor.prev_elem()
 		elif k == K_RIGHT:
@@ -93,3 +87,16 @@ def keypress(e):
 			return menu.accept()
 		else:
 			return False
+
+
+
+"""here we count on the fact that each client frame has been assigned to an
+attribute of the server module. to do this with rpcing,
+clients or client frames will have to act as servers too, with the messaging
+loop integrated with the gui loop"""
+
+#maybe when we have multiple editor frames,
+#we will want to just pass the event on to perhaps the previously focused frame
+#for now im trying having all top level handlers in one file here
+
+#todo:look into FRP
