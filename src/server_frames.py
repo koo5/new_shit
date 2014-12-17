@@ -1,5 +1,6 @@
 from types import GeneratorType
 from itertools import *
+#from types import NoneType
 
 from pizco import Signal
 

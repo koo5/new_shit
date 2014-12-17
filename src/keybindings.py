@@ -20,9 +20,9 @@ def keypress(e):
 		client.cycle_sidebar()
 	elif k == K_F2:
 		replay.do_replay()
-	elif CTRL and event.uni == '=':
+	elif CTRL and e.uni == '=':
 		change_font_size(1)
-	elif CTRL and event.uni == '-':
+	elif CTRL and e.uni == '-':
 		change_font_size(-1)
 
 
@@ -65,16 +65,16 @@ def keypress(e):
 			editor.toggle_arrows()
 		elif k == K_UP:
 			editor.move_cursor_v(-1)
-			editor.and_sides(event)
+			editor.and_sides(e)
 		elif k == K_DOWN:
 			editor.move_cursor_v(+1)
-			editor.and_sides(event)
+			editor.and_sides(e)
 		elif k == K_LEFT:
 			editor.move_cursor_h(-1)
-			editor.and_updown(event)
+			editor.and_updown(e)
 		elif k == K_RIGHT:
 			editor.move_cursor_h(+1)
-			editor.and_updown(event)
+			editor.and_updown(e)
 		elif k == K_HOME:
 			editor.cursor_home()
 		elif k == K_END:

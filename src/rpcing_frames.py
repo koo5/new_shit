@@ -23,10 +23,10 @@ if SDL:
 				font_height * r,
 				font_height * (r + 1))
 
-	def xy2cr(xy):
+	def sdl_xy2cr(xy):
 		x,y = xy
-		c = x / font_width
-		r = y / font_height
+		c = x // font_width
+		r = y // font_height
 		return c, r
 
 
@@ -140,6 +140,7 @@ class ClientFrame(object):
 		# indent_tag, dedent_tag,
 		# dict with custom stuff
 		"""
+		s.zwes = {}
 		line = []
 		atts = []
 		char_index = 0
@@ -158,25 +159,28 @@ class ClientFrame(object):
 		def append(char):
 			line.append((char, dict(atts + [(char_index_att, char_index)])))
 
+		def current_cr():
+			return (len(line), lines_count)
+
 		for batch in batches:
 			for tag in batch:
 
-				if type(tag) == unicode:
+				if type(tag) == tuple: # an attribute tuple
+					atts.append(tag)
+
+				elif tag == end_tag:
+					atts.pop()
+
+				elif type(tag) == unicode:
 					for char in tag:
 						if char != "\n":
 							append(char)
 							char_index += 1
 						if len(line) == s.cols or char == "\n":
 							yield line
-							line.clear()
+							line = []
 							indent()
 							lines_count += 1
-
-				elif tag == end_tag:
-					atts.pop()
-
-				elif type(tag) == tuple: # an attribute tuple
-					atts.append(tag)
 
 				elif tag == indent_tag:
 					indentation += 1
@@ -185,8 +189,11 @@ class ClientFrame(object):
 					indentation -= 1
 					assert indentation >= 0
 
+				elif tag == zero_width_element_tag:
+					s.zwes[current_cr()] = dict(atts)
+
 				elif type(tag) == dict:
-					s.arrows.append((len(line), lines_count, tag['arrow']))
+					s.arrows.append(current_cr() + (tag['arrow'],))
 
 				else:
 					raise Exception("is %s a tag?, %s" % (repr(tag)))
@@ -244,13 +251,13 @@ class ClientFrame(object):
 
 
 class Editor(ClientFrame):
-	def __init__(self):
+	def __init__(s):
 		super().__init__(server.editor)
-		self.cursor_c = self.cursor_r = 0
-		self.completed_arrows = []
+		s.cursor_c = s.cursor_r = 0
+		s.completed_arrows = []
 		if SDL:
-			self.cursor_blinking_phase = True
-			self.arrows_visible = not args.noalpha
+			s.cursor_blinking_phase = True
+			s.arrows_visible = not args.noalpha
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]: s.move_cursor_h(-1)
@@ -274,28 +281,31 @@ class Editor(ClientFrame):
 
 
 	def update_atts_on_server(s):
-		s.counterpart.set_atts(s.atts)
+		s.counterpart.set_atts(s.atts_at_cursor or {})
 
+	def after_cursor_moved(s):
+		s.update_atts_on_server()
 
-	def move_cursor_h(s, x):
+	def _move_cursor_h(s, x):
 		"""returns True if it moved"""
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
-		if len(s._projected_lines) <= s.cursor_r or \
-						s.cursor_c > len(s._projected_lines[s.cursor_r]):
+		if len(s.lines.get()) <= s.cursor_r or \
+						s.cursor_c > len(s.lines.get()[s.cursor_r]):
 			s.move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
-			if s.move_cursor_v(-1):
-				s.cursor_c = len(s.lines[s.cursor_r])
+			if s._move_cursor_v(-1):
+				s.cursor_c = len(s.lines.get()[s.cursor_r])
 		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
-		if moved:
-			s.update_atts_on_server()
 		return moved
 
+	def move_cursor_h(s, count):
+		if s._move_cursor_h(count):
+			s.after_cursor_moved()
 
-	def move_cursor_v(s, count):
-		"""returns True if it moved. atm, screen bottom is unlimited"""
+	def _move_cursor_v(s, count):
+		"""returns True if it moved"""
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		r = s.cursor_r + count
 		sl = s.scroll_lines
@@ -310,40 +320,46 @@ class Editor(ClientFrame):
 		s.cursor_r = r
 		s.scroll_lines = sl
 		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
-		if moved:
-			s.update_atts_on_server()
 		return moved
 
+	def move_cursor_v(s, count):
+		if s._move_cursor_v(count):
+			s.after_cursor_moved()
 
 	def prev_elem(s):
 		e = s.under_cursor
-		while s.move_cursor_h(-1):
+		while s._move_cursor_h(-1):
 			if e != s.under_cursor:
+				s.after_cursor_moved()
 				break
 
 	def next_elem(s):
 		e = s.under_cursor
-		while s.move_cursor_h(1):
+		while s._move_cursor_h(1):
 			if e != s.under_cursor:
+				s.after_cursor_moved()
 				break
 
 	def cursor_home(s):
-		if len(s.lines) > s.cursor_r:
+		if len(s.lines) > s.cursor_r: # dont try to home beyond the end of file
 			if s.cursor_c != 0:
 				s.cursor_c = 0
 			else:
 				s.cursor_c = s.first_nonblank()
+			s.after_cursor_moved()
 
 	def cursor_end(s):
-		if len(s.lines) > s.cursor_r:
+		if len(s.lines.get()) > s.cursor_r:
 			s.cursor_c = len(s.lines[s.cursor_r])
+			s.after_cursor_moved()
 
 	def cursor_top(s):
 		s.cursor_r = 0
+		s.after_cursor_moved()
 
 	def cursor_bottom(s):
 		log("hmpf")
-
+		s.after_cursor_moved()
 
 	def after_project(s):
 		s.do_post_render_move_cursor()
@@ -444,36 +460,37 @@ class Editor(ClientFrame):
 	def do_post_render_move_cursor(s):
 		where = s.counterpart.root.post_render_move_caret
 		if isinstance(where, int): # by this many chars
+			log("moving cursor by %s chars", where)
 			s.move_cursor_h(where)
 		else: #to a node, lets indicate it with a tuple hmmm
 			where = where[0]
-			log("moving cursor to node " +str(where))
+			log("moving cursor to %s", where)
 			s.cursor_c, s.cursor_r = s.find_element(where)
+			s.after_cursor_moved()
 		s.counterpart.root.post_render_move_caret = 0
 
 
 	@property
 	def atts_at_cursor(self):
 		try:
-			return self.lines[self.cursor_r][self.cursor_c][1]
+			return self.lines.get()[self.cursor_r][self.cursor_c][1]
 		except IndexError:
 			return None
 
 
 	@property
 	def atts(s):
-		#for now, if the cursor isnt strictly on a char that was rendered, we return None
-
 		#lets try moving the cursor to see if theres a char to the cursors left
-		if s.move_cursor_h(-1):
-			left = s.atts_at_cursor()
-			s.move_cursor_h(1) # and move it back
+		if s._move_cursor_h(-1):
+			left = s.atts_at_cursor
+			s._move_cursor_h(1) # undo the test move
 		else:
 			left = None
 
-		right = s.atts_at_cursor()
+		right = s.atts_at_cursor
+		middle = s.zwes.get((s.cursor_c, s.cursor_r))
 
-		return left, right
+		return left, middle, right
 
 	def keypress_on_element(event):
 		#event.cursor = (s.cursor_c, s.cursor_r)

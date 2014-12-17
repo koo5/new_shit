@@ -121,7 +121,7 @@ lemon_client.KeypressEvent.__repr__ = pygame_keypressevent__repr__
 def keypress(e):
 	reset_cursor_blink_timer()
 	keybindings.keypress(e)
-	render()
+#	render()
 	draw()
 
 def mousedown(e):
@@ -138,7 +138,7 @@ def mousedown(e):
 				e.pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
 				f.sdl_mousedown(e)
 				break
-	render()
+#	render()
 	draw()
 
 
@@ -166,14 +166,14 @@ def process_event(event):
 		replay.pickle_event(e)
 
 	elif event.type == pygame.MOUSEBUTTONDOWN:
-		e = lemon.MousedownEvent(event)
+		e = lemon_client.MousedownEvent(event)
 		handle_input(e)
 		replay.pickle_event(e)
 
 	elif event.type == pygame.VIDEORESIZE:
 		replay.pickle_event(('resize', event.size))
 		resize(event.size)
-		render()
+#		render()
 		draw()
 
 	elif event.type == pygame.ACTIVEEVENT:

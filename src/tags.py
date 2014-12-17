@@ -24,6 +24,7 @@ node_att  = 0
 color_att = 1
 char_index_att = 2
 
+
 def TextTag(text):
 	return text
 
@@ -36,15 +37,17 @@ def AttTag(k,v):
 
 end_tag = 0
 def EndTag():
-	return 0
+	return end_tag
 
 indent_tag = 1
 def IndentTag():
-	return 1
+	return indent_tag
 
 dedent_tag = 2
 def DedentTag():
-	return 2
+	return dedent_tag
+
+zero_width_element_tag = 3
 
 def ArrowTag(target):
 	return {"arrow": proxy_this(target)}
