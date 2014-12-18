@@ -193,6 +193,7 @@ def process_event(event):
 
 def draw():
 	for f in lemon_client.visibleframes():
+		log("drawing %s",f)
 		f.draw()
 	pygame.display.flip()
 #all frames are in one window, so avoid signaling each about redrawing,

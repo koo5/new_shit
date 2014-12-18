@@ -17,16 +17,18 @@ import widgets
 from tags import *
 from lemon_utils.lemon_logging import log
 import graph
-from tags import proxy_this
+
 
 
 import elements_keybindings
 
 
 
-def batch_up(it, n=100):
+def batch(it, n=100):
 	m = n - 1
-	while True:
+	while True: #islice wont throw an ExhaustedIterator exception when its source is exhausted
+		# so we peek one element with next(), then chain it to the isliced rest. next throws
+		# when the source is exhausted, thus ending this function
 		yield chain([next(it)], islice(it, 0, m))
 
 
@@ -69,7 +71,7 @@ class ServerFrame(object):
 		s.on_change.fire()
 
 	def collect_tags(s):
-		return batch_up(_collect_tags(s, s.tags()))
+		return batch(_collect_tags(s, s.tags()))
 
 
 
@@ -100,6 +102,7 @@ class Editor(ServerFrame):
 
 	def set_atts(editor, atts):
 		assert type(atts) == dict
+		log("setting atts under cursor:%s",atts)
 		editor.atts = atts
 
 	def run_active_program(editor):
@@ -136,7 +139,7 @@ def handle_keypress(event):
 	for side in [1,0,2]: #middle, left, right
 		atts = e.orig_atts[side]
 		if atts != None:
-			elem = deproxy(atts[node_att])
+			elem = atts[node_att]
 			h = find_handler(left_handlers, event)
 			if h:
 				return elem, fire(elem, h, event)
@@ -169,9 +172,10 @@ class Menu(ServerFrame):
 		s.editor = editor
 		s.valid_only = False
 		s.items = []
+		s.sel = 0
 
 	def tags(s):
-		yield ColorTag("fg")
+		yield [ColorTag("fg"), "menu:\n"]
 		for i in s.generate_items():
 			yield [ElementTag(i)]
 		yield EndTag()
@@ -191,6 +195,30 @@ class Menu(ServerFrame):
 	def toggle_valid(s):
 		s.valid_only = not s.valid_only
 		s.signal_change()
+
+
+
+	def menu_dump(s):
+		e = s.element = s.root.under_cursor
+		atts = s.root.atts
+		if e != None:
+			e.menu(atts, True)
+
+
+	def accept(self):
+		if len(self.items_on_screen) > self.sel:
+			if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
+				self.sel = 0
+				self.scroll_lines = 0
+				return True
+
+
+	def move(self, y):
+		self.sel += y
+		self.clamp_sel()
+
+
+
 
 
 menu = Menu()
@@ -286,8 +314,8 @@ logframe = Log()
 
 
 
-def element_click(proxied_element):
-	return deproxy(proxied_element).on_mouse_press(e)
+def element_click(element):
+	return element.on_mouse_press(e)
 
 
 

@@ -1,8 +1,10 @@
+from lemon_platform import SDL, CURSES
 from keys import *
 import lemon_client as client
-from lemon_client import editor, menu
+from lemon_client import editor, menu, bye
 from server_side import server
 import replay
+
 
 def change_font_size(x):
 	"""dummy"""
@@ -10,24 +12,14 @@ def change_font_size(x):
 
 def keypress(e):
 	k = e.key
-	CTRL = KMOD_CTRL & e.mod
+	if KMOD_CTRL & e.mod:
 
-	if k == K_ESCAPE:
-		if not replay.are_we_replaying():
-			bye()
+		if e.uni == '=':
+			change_font_size(1)
+		elif e.uni == '-':
+			change_font_size(-1)
 
-	if k == K_F1:
-		client.cycle_sidebar()
-	elif k == K_F2:
-		replay.do_replay()
-	elif CTRL and e.uni == '=':
-		change_font_size(1)
-	elif CTRL and e.uni == '-':
-		change_font_size(-1)
-
-
-	if CTRL:
-		if k == K_LEFT:
+		elif k == K_LEFT:
 			editor.prev_elem()
 		elif k == K_RIGHT:
 			editor.next_elem()
@@ -35,34 +27,37 @@ def keypress(e):
 			editor.cursor_top()
 		elif k == K_END:
 			editor.cursor_bottom()
+
 		elif k == K_f:
 			editor.dump_to_file()
 		elif k == K_q:
 			server.bye()
+		elif e.key == K_m:
+			server.menu.menu_dump()
 
 
-		elif SDL:
-			if e.key == K_UP:
-				sidebar.move(-1)
-			elif e.key == K_DOWN:
-				sidebar.move(1)
-			else:
-				return False
+		elif SDL and e.key == K_UP:
+			sidebar.move(-1)
+		elif SDL and e.key == K_DOWN:
+			sidebar.move(1)
+
+		elif CURSES and e.key == K_INSERT: # todo: find better keybindings for curses
+			sidebar.move(-1)
+		elif CURSES and e.key == K_DELETE:
+			sidebar.move(1)
+		else:
+			return False
 
 
-		elif CURSES:
-			if e.key == K_INSERT: # todo: find better keybindings for curses
-				sidebar.move(-1)
-			elif e.key == K_DELETE:
-				sidebar.move(1)
-			else:
-				return False
 
-# with no modifier keys
-
-	else:
-		if k == K_F8:
+	else: # with no modifier keys
+		if k == K_F1:
+			client.cycle_sidebar()
+		elif k == K_F2:
+			replay.do_replay()
+		elif k == K_F8:
 			editor.toggle_arrows()
+
 		elif k == K_UP:
 			editor.move_cursor_v(-1)
 			editor.and_sides(e)
@@ -83,7 +78,11 @@ def keypress(e):
 			editor.move_cursor_v(-10)
 		elif k == K_PAGEDOWN:
 			editor.move_cursor_v(10)
-		if e.uni == ' ':
+
+		elif k == K_ESCAPE:
+			if not replay.we_are_replaying:
+				bye()
+		elif e.uni == ' ':
 			return menu.accept()
 		else:
 			return False
@@ -100,3 +99,7 @@ loop integrated with the gui loop"""
 #for now im trying having all top level handlers in one file here
 
 #todo:look into FRP
+
+#curses enter: http://lists.gnu.org/archive/html/bug-ncurses/2011-01/msg00011.html
+
+

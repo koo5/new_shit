@@ -2,7 +2,7 @@ from weakref import WeakValueDictionary
 from lemon_utils.utils import Evil
 
 
-
+""" this will be the responsibility of pizco
 proxied = WeakValueDictionary()
 key_counter = 0
 # distributed computing is fun.
@@ -18,7 +18,7 @@ def proxy_this(v):
 		key_counter += 1
 	proxied[key_counter] = v
 	return key_counter
-
+"""
 
 node_att  = 0
 color_att = 1
@@ -29,11 +29,12 @@ def TextTag(text):
 	return text
 
 def AttTag(k,v):
+	"""
 	if isinstance(v, Element): # or any nonbasic value
 		proxykey = proxy_this(v)
 		return (k, proxykey)
-	else:
-		return (k,v)
+	else:"""
+	return (k,v)
 
 end_tag = 0
 def EndTag():
@@ -50,7 +51,7 @@ def DedentTag():
 zero_width_element_tag = 3
 
 def ArrowTag(target):
-	return {"arrow": proxy_this(target)}
+	return {"arrow": target}
 
 
 

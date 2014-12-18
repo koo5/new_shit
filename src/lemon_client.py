@@ -28,6 +28,7 @@ is_first_event = True # debug replay is cleared if first event isnt an F2 keypre
 def cycle_sidebar():
 	global sidebar
 	sidebar = sidebars[sidebars.index(sidebar) + 1]
+	log("sidebar:%s", sidebar)
 
 def visibleframes():
 	return [sidebar, logframe, editor]

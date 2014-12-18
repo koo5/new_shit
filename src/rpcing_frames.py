@@ -1,3 +1,5 @@
+from math import atan2, cos, sin
+
 from lemon_platform import SDL, CURSES
 from lemon_colors import color, colors
 from lemon_utils.lemon_logging import log
@@ -246,8 +248,6 @@ class ClientFrame(object):
 		s.click_cr(e)
 
 
-	if SDL:
-		draw = sdl_draw
 
 
 class Editor(ClientFrame):
@@ -290,13 +290,13 @@ class Editor(ClientFrame):
 		"""returns True if it moved"""
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
-		if len(s.lines.get()) <= s.cursor_r or \
-						s.cursor_c > len(s.lines.get()[s.cursor_r]):
+		if len(s.lines) <= s.cursor_r or \
+						s.cursor_c > len(s.lines[s.cursor_r]):
 			s.move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
 			if s._move_cursor_v(-1):
-				s.cursor_c = len(s.lines.get()[s.cursor_r])
+				s.cursor_c = len(s.lines[s.cursor_r])
 		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 		return moved
 
@@ -349,7 +349,7 @@ class Editor(ClientFrame):
 			s.after_cursor_moved()
 
 	def cursor_end(s):
-		if len(s.lines.get()) > s.cursor_r:
+		if len(s.lines) > s.cursor_r:
 			s.cursor_c = len(s.lines[s.cursor_r])
 			s.after_cursor_moved()
 
@@ -414,8 +414,8 @@ class Editor(ClientFrame):
 
 	def find_element(s, e):
 		"""return coordinates of element"""
-		assert(isinstance(e, int)),  e
-		for r,line in enumerate(s.lines.get()):
+		#assert(isinstance(e, int)),  e
+		for r,line in enumerate(s.lines):
 			for c,char in enumerate(line):
 				if char[1][node_att] == e:
 					return c, r
@@ -431,12 +431,9 @@ class Editor(ClientFrame):
 			a = atan2(y-y2, x-x2)
 			angle = 0.1
 			length = 40
-			arrow_side(s, length, a+angle, x2,y2, surface)
-			arrow_side(s, length, a-angle, x2,y2, surface)
+			sdl_arrow_side(length, a+angle, x2,y2, surface)
+			sdl_arrow_side(length, a-angle, x2,y2, surface)
 
-	def arrow_side(s, length,a,x2,y2, surface):
-		x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
-		pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
 
 	def draw_cursor(self, surf):
 		if self.cursor_blink_phase:
@@ -473,7 +470,7 @@ class Editor(ClientFrame):
 	@property
 	def atts_at_cursor(self):
 		try:
-			return self.lines.get()[self.cursor_r][self.cursor_c][1]
+			return self.lines[self.cursor_r][self.cursor_c][1]
 		except IndexError:
 			return None
 
@@ -499,6 +496,10 @@ class Editor(ClientFrame):
 		server.on_keypress(event)
 
 
+def sdl_arrow_side(length,a,x2,y2, surface):
+	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
+	pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
+
 
 class StaticInfoFrame(ClientFrame):
 	def __init__(s, counterpart):
@@ -517,37 +518,9 @@ def draw(s, surface):
 
 
 class Menu(ClientFrame):
-	def __init__(s, root):
-		super(Menu, s).__init__(server.menu)
-
-	def on_keypress(self, e):
-		if platform.frontend == platform.sdl and e.mod & KMOD_CTRL:
-			if e.key == K_UP:
-				self.move(-1)
-				return True
-			elif e.key == K_DOWN:
-				self.move(1)
-				return True
-			elif e.key == K_m:
-				self.menu_dump()
-				return True
-		elif platform.frontend == platform.curses:
-			if e.key == K_INSERT:
-				self.move(-1)
-				return True
-			elif e.key == K_DELETE:
-				self.move(1)
-				return True
-			
-		#if e.key == K_SPACE:
-		if e.uni == ' ':
-			return self.accept()
-
-	def menu_dump(s):
-		e = s.element = s.root.under_cursor
-		atts = s.root.atts
-		if e != None:
-			e.menu(atts, True)
+	def __init__(s, editor):
+		super().__init__(server.menu)
+		s.editor = editor
 
 
 	def click(s,e):
@@ -556,22 +529,6 @@ class Menu(ClientFrame):
 				s.sel = s.items_on_screen.index(i)
 				s.accept()
 				break
-
-	def accept(self):
-		if len(self.items_on_screen) > self.sel:
-			if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
-				self.sel = 0
-				self.scroll_lines = 0
-				return True
-
-
-	def move(self, y):
-		self.sel += y
-		self.clamp_sel()
-
-	def toggle_valid(s):
-		s.valid_only = not s.valid_only
-
 
 	def menu_generate_rects(s):
 		s.rects = dict()

@@ -4,6 +4,7 @@ from lemon_utils.lemon_logging import log
 
 # debug replay is cleared if first event isnt an F2 keypress so we need to track if this is the first event after program start
 is_first_input_event = True
+we_are_replaying = False
 
 def pickle_event(e):
 	global is_first_input_event
@@ -24,16 +25,15 @@ def clear_replay():
 
 
 def do_replay(ff):
-	global fast_forward
+	global we_are_replaying
 	try:
 		with open("replay.p", "rb") as f:
 			log("replaying...")
-			if ff:
-				fast_forward = True #ok, not much of a speedup. todo:dirtiness
+			we_are_replaying = True
 			while 1:
 				try:
 					e = pickle.load(f)
-					log(str(e))
+					log(e)
 					if e.type == KEYDOWN:
 						keypress(e)
 					elif e.type == MOUSEBUTTONDOWN:
@@ -41,13 +41,12 @@ def do_replay(ff):
 					else:
 						raise Exception("unexpected event type:", e)
 					render()
-					if not fast_forward:
-						draw()
+					draw()
 
 				except EOFError:
 					break
 
-			fast_forward = False
+			we_are_replaying = False
 
 	except IOError as e:
 		log("couldnt open replay.p",e)

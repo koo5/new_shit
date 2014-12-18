@@ -15,6 +15,7 @@ http://zeromq.github.io/pyzmq/eventloop.html
 http://www.tornadoweb.org/en/stable/ioloop.html
 https://github.com/zeromq/pyzmq/blob/master/zmq/eventloop/minitornado/ioloop.py
 https://github.com/hgrecco/pizco/pull/22
+http://twistedmatrix.com/documents/13.0.0/core/howto/threading.html
 
 debugging the rpc server code under tornado io loop: give up trying to make it propagate exceptions,
 get a scriptable debugger (unlike pycharms..)
@@ -56,3 +57,7 @@ proxy_this() and deproxy() have to be in places tho
 
 
 
+required features of the pizco fork:
+no separate remoteattribute: Proxy has a path - a list of attribute names,
+and handles all accesssess. 
+boxing: 

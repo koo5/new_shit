@@ -1086,7 +1086,7 @@ class List(ListPersistenceStuff, Collapsible):
 	def index_of_item_under_cursor(self, event):
 		li = event.any_atts.get('list_item')
 		if li:
-			if deproxy(li[0]) == self:
+			if li[0] == self:
 				return li[1]
 
 	def have_item_under_cursor(s, e):
@@ -2255,7 +2255,7 @@ class ParserBase(Node):
 
 		li = event.any_atts.get('list_item')
 		if li:
-			if deproxy(li[0]) == self:
+			if li[0] == self:
 				return li[1]
 
 
@@ -2267,7 +2267,7 @@ class ParserBase(Node):
 		if a:
 			i = a.get(item_att)
 			if i:
-				return deproxy(i[0]) == s and s.items[i[1]]
+				return i[0] == s and s.items[i[1]]
 
 
 	def k_backspace(s):
@@ -2489,7 +2489,7 @@ class ParserBase(Node):
 			if isinstance(fch, Syntaxed):
 				fch = s.first_child(fch)
 				#...
-			s.root.delayed_cursor_move = (proxy_this(fch),)
+			s.root.delayed_cursor_move = (fch,)
 		#todo
 		#elif isinstance(node, FunctionCall):
 		#	if len(node.args) > 0:
@@ -2502,7 +2502,7 @@ class ParserBase(Node):
 				#this would be also useful above
 		elif isinstance(node, List):
 			if len(node.items) > 0:
-				s.root.delayed_cursor_move = (proxy_this(node.items[0]),)
+				s.root.delayed_cursor_move = (node.items[0],)
 		#todo etc. make the cursor move naturally
 
 	def menu(self, atts, debug = False):
