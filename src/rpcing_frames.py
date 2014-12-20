@@ -44,18 +44,18 @@ class ClientFrame(object):
 		s.tags = Cache(s.counterpart.collect_tags)
 		s.lines = Cache(lambda: s.project_tags(s.tags.get()))
 		if args.rpc:
-			s.hook_into_onchange_event()
+			s.hook_onto_counterpart_draw_signal()
 
-	def maybe_redraw(s):
-		if s.counterpart.must_recollect():
-			s.force_redraw()
+	def resize(s, cols, rows):
+		s.cols, s.rows = cols, rows
+		s.lines.dirty = True
 
-	def force_redraw(s):
-		s.tags.dirty = True
-		s.draw() #this is defined in the frontend
+	def maybe_draw(s):
+		if s.counterpart.get_changed_and_clean() or s.lines.dirty:
+			s.draw()
 
-	def hook_into_onchange_event(s):
-		s.counterpart.on_change.connect(s.maybe_redraw)
+	def hook_onto_counterpart_draw_signal(s):
+		s.counterpart.draw_signal.connect(s.maybe_draw)
 
 	def scroll(s,l):
 		s.scroll_lines -= l
@@ -255,9 +255,22 @@ class Editor(ClientFrame):
 		super().__init__(server.editor)
 		s.cursor_c = s.cursor_r = 0
 		s.completed_arrows = []
+		s.zwes = 666
 		if SDL:
-			s.cursor_blinking_phase = True
+			s._cursor_blink_phase = True
 			s.arrows_visible = not args.noalpha
+
+	if SDL:
+		@property
+		def cursor_blink_phase(s):
+			return s._cursor_blink_phase
+		@cursor_blink_phase.setter
+		# O B E Y T H E B O I L E R P L A T E
+		def cursor_blink_phase(s, v):
+			if s._cursor_blink_phase != v:
+				s._cursor_blink_phase = v
+				s.must_redraw = True
+
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]: s.move_cursor_h(-1)
@@ -281,7 +294,7 @@ class Editor(ClientFrame):
 
 
 	def update_atts_on_server(s):
-		s.counterpart.set_atts(s.atts_at_cursor or {})
+		s.counterpart.set_atts(s.atts_triple or {})
 
 	def after_cursor_moved(s):
 		s.update_atts_on_server()
@@ -366,7 +379,7 @@ class Editor(ClientFrame):
 		s.update_atts_on_server()
 		s.complete_arrows(s.arrows)
 
-		if __debug__:
+		if False:#__debug__:
 			for l in self.lines:
 				assert(isinstance(l, list))
 				for i in l:
@@ -476,7 +489,7 @@ class Editor(ClientFrame):
 
 
 	@property
-	def atts(s):
+	def atts_triple(s):
 		#lets try moving the cursor to see if theres a char to the cursors left
 		if s._move_cursor_h(-1):
 			left = s.atts_at_cursor
@@ -488,13 +501,13 @@ class Editor(ClientFrame):
 		middle = s.zwes.get((s.cursor_c, s.cursor_r))
 
 		return left, middle, right
-
+	"""
 	def keypress_on_element(event):
 		#event.cursor = (s.cursor_c, s.cursor_r)
 		event.atts = self.atts
 
 		server.on_keypress(event)
-
+	"""
 
 def sdl_arrow_side(length,a,x2,y2, surface):
 	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)

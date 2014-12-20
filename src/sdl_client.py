@@ -85,6 +85,7 @@ def resize(size):
 	rpcing_frames.sdl_screen_surface = screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
 	resize_frames()
+	draw()
 replay.resize = resize
 
 def resize_frames():
@@ -174,7 +175,6 @@ def process_event(event):
 		replay.pickle_event(('resize', event.size))
 		resize(event.size)
 #		render()
-		draw()
 
 	elif event.type == pygame.ACTIVEEVENT:
 		if event.gain:
@@ -182,7 +182,7 @@ def process_event(event):
 		else:
 			pygame.time.set_timer(pygame.USEREVENT + 1, 0)#disable the timer
 			editor.cursor_blink_phase = False
-		draw()
+		redraw()
 
 	elif event.type == pygame.QUIT:
 		pygame.display.iconify()
@@ -191,14 +191,16 @@ def process_event(event):
 
 
 
-def draw():
+def redraw():
 	for f in lemon_client.visibleframes():
-		log("drawing %s",f)
-		f.draw()
+		log("maybe_redrawing %s on the client window request",f)
+		f.maybe_draw()
 	pygame.display.flip()
+#lemon_client.draw = redraw
 #all frames are in one window, so avoid signaling each about redrawing,
-#instead, hook into "aggregate" server.on_change
-server.on_change.connect(draw)
+#hook into "aggregate" server.on_change instead
+if not args.rpc:
+	server.on_change.connect(redraw)
 
 
 
@@ -267,10 +269,6 @@ def main():
 	change_font_size()
 
 	initial_resize()
-
-	resize_frames()
-	keybindings.change_font_size = user_change_font_size
-	lemon_client.draw = draw
 
 	lemon_client.start()
 	#render()

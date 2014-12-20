@@ -115,11 +115,13 @@ else:
 	            menu]#,
 	            #frames.NodeInfo(root)]
 	            #frames.ContextInfo(root)]#carry on...
-	sidebars.append(sidebars[0])#a sentinel for easy cycling:)
 
+	allframes = sidebars + [logframe, editor]
+
+	sidebars.append(sidebars[0])#add a sentinel for easy cycling:)
 	sidebar = sidebars[0] # currently active sidebar
 
 
-	allframes = sidebars + [logframe, editor]
+
 
 

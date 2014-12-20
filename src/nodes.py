@@ -1424,7 +1424,6 @@ class Root(Dict):
 		## but before re-rendering, it might move it beyond the end of file
 		self.indent_length = 4 #not really used but would be nice to have it variable
 		self.changed = True
-		self.ast_changed = True
 
 	def render(self):
 		#there has to be some default color for everything, the rendering routine looks for it..

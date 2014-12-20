@@ -1,8 +1,4 @@
 
-from __future__ import unicode_literals
-
-from lemon_utils.lemon_six import unicode
-
 try:
 	from collections import OrderedDict as odict
 except:#be compatible with older python (2.4?)
@@ -29,12 +25,7 @@ def flatten(g):
 	i dont actually know how to visitor pattern."""
 	return list(flatten_gen(g))
 
-def test_flatten():
-	i = [3,[4,5],[[6,[7],8]]]
-	o = flatten(i)
-	assert o == [3,4,5,6,7,8], o
 
-test_flatten()
 
 class Evil(object):
 	"""this is an Evil default object. if you ran into it, you made a wrong turn somewhere"""
@@ -43,3 +34,10 @@ class Evil(object):
 		s.note = note
 	def __repr__(s):
 		return str(s.note)
+
+def batch(it, n=100):
+	m = n - 1
+	while True: #islice wont throw an ExhaustedIterator exception when its source is exhausted
+		# so we peek one element with next(), then chain it to the isliced rest. next throws
+		# when the source is exhausted, thus ending this function
+		yield chain([next(it)], islice(it, 0, m))

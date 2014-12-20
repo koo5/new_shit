@@ -11,6 +11,13 @@ def change_font_size(x):
 	pass
 
 def keypress(e):
+	if global_key(e):
+		server.global_handled()
+	else:
+		server.element_keypress(e):
+
+
+def global_key(e):
 	k = e.key
 	if KMOD_CTRL & e.mod:
 
@@ -47,7 +54,7 @@ def keypress(e):
 			sidebar.move(1)
 		else:
 			return False
-
+		return True
 
 
 	else: # with no modifier keys
@@ -86,7 +93,7 @@ def keypress(e):
 			return menu.accept()
 		else:
 			return False
-
+		return True
 
 
 """here we count on the fact that each client frame has been assigned to an

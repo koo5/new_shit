@@ -1,65 +1,22 @@
 from types import GeneratorType
 from itertools import *
 #from types import NoneType
-
+from collections import namedtuple
 from pizco import Signal
-
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
-from lemon_utils.utils import Evil
+from lemon_utils.utils import Evil, batch
 from lemon_colors import color, colors
+from lemon_utils.lemon_logging import log
 
 import nodes
+from tags import *
 from element import Element
 from menu_items import InfoItem
 import widgets
-from tags import *
-from lemon_utils.lemon_logging import log
-import graph
-
-
-
 import elements_keybindings
-
-
-
-def batch(it, n=100):
-	m = n - 1
-	while True: #islice wont throw an ExhaustedIterator exception when its source is exhausted
-		# so we peek one element with next(), then chain it to the isliced rest. next throws
-		# when the source is exhausted, thus ending this function
-		yield chain([next(it)], islice(it, 0, m))
-
-
-def _collect_tags(elem, tags):
-	for tag in tags:
-		if type(tag) in (GeneratorType, list):
-			for i in _collect_tags(elem, tag):
-				yield i
-
-		elif type(tag) == TextTag:
-			yield tag.text
-
-		elif type(tag) == ChildTag:
-			e = elem.ch[tag.name]
-			for i in _collect_tags(e, e.tags()):
-				yield i
-
-		elif type(tag) == MemberTag:
-			e = elem.__dict__[tag.name] #get the element as an attribute #i think this should be getattr, but it seems to work
-			for i in _collect_tags(e, e.tags()):
-				yield i
-
-		elif type(tag) == ElementTag:
-			e = tag.element
-			for i in _collect_tags(e, e.tags()):
-				yield i
-
-		else:
-			yield tag
-
-
+import graph
 
 
 class ServerFrame(object):
@@ -73,6 +30,9 @@ class ServerFrame(object):
 	def collect_tags(s):
 		return batch(_collect_tags(s, s.tags()))
 
+	@property
+	def changed(s):
+		return s.
 
 
 
@@ -84,6 +44,12 @@ class Editor(ServerFrame):
 		self.root = nodes.make_root()
 		self.root.fix_parents()
 		self.atts = {}
+
+	def must_recollect(s):
+		if s.root.changed:
+			s.root.changed = False
+			return True
+
 
 	@property
 	def element_under_cursor(s):
@@ -107,23 +73,36 @@ class Editor(ServerFrame):
 
 	def run_active_program(editor):
 		editor.root['some program'].run()
-		editor.signal_change()
 
 	def run_line(editor):
 		editor.atts[node_att].module.run_line(editor.atts[node_att])
-		editor.signal_change()
 
 	def clear(editor):
 		editor.root['some program'].clear()
-		editor.signal_change()
 
 	def	dump_root_to_file(editor):
 		pass
 
+	@property
+	def changed(s):
+		return s.root.changed
+
+	def get_changed_and_clean(s):
+		if s.changed:
+			s.root.changed = False
+			return True
+
+def event_handled():
+	for f in editor, logframe, menu:
+		if f.changed:
+			f.on_change.fire()
+	for f in editor, logframe, menu:
+		if f.changed:
+			f.draw_signal.fire()
 
 
 def element_keypress(event):
-	event.orig_atts = namedtuple('atts', 'left middle right')(event.atts)
+	event.atts = namedtuple('attributes', 'left middle right')(editor.atts)
 
 	r = handle_keypress(event)
 
@@ -132,7 +111,10 @@ def element_keypress(event):
 		if handler_result:
 			module = elem.module
 			if module:
-				event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
+				#event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
+				log('history.append(event)')
+
+		event_handled()
 
 
 def handle_keypress(event):
@@ -170,9 +152,27 @@ class Menu(ServerFrame):
 	def __init__(s):
 		super(Menu, s).__init__()
 		s.editor = editor
+		editor.on_change.connect(s.on_editor_change)
 		s.valid_only = False
 		s.items = []
 		s.sel = 0
+
+	def on_editor_change(s):
+		log('recalculating...')
+		#talk to nodes, marpa and fuzzywuzzy
+
+	def marpa_callback(s):
+		s._changed = True
+		s.on_change.fire()
+		s.draw_signal.fire()
+
+	@property
+	def changed(s):
+		return s._changed
+	def get_changed_and_clean(s):
+		if s.changed:
+			s._changed = False
+			return True
 
 	def tags(s):
 		yield [ColorTag("fg"), "menu:\n"]
@@ -216,8 +216,6 @@ class Menu(ServerFrame):
 	def move(self, y):
 		self.sel += y
 		self.clamp_sel()
-
-
 
 
 
@@ -302,13 +300,18 @@ class Log(ServerFrame):
 		super(Log, s).__init__()
 		s.items = []
 		s.on_add = Signal(1)
+		s._dirty = True
 
 	def add(s, msg):
 		#timestamp, topics, text = msg
 		#if type(text) != unicode:
 		s.items.append(str(msg))
 		print(str(msg))
-		s.on_add.emit(msg)
+		s.on_add.emit(msg) #
+		s._dirty = True
+
+	def is_dirty(s):
+		return s._dirty
 
 logframe = Log()
 
@@ -357,4 +360,35 @@ def load(name):
 
 on_change = Signal()
 
-print(list(menu.collect_tags()))
+log(list(menu.collect_tags()))
+
+
+
+def _collect_tags(elem, tags):
+	for tag in tags:
+		if type(tag) in (GeneratorType, list):
+			for i in _collect_tags(elem, tag):
+				yield i
+
+		elif type(tag) == TextTag:
+			yield tag.text
+
+		elif type(tag) == ChildTag:
+			e = elem.ch[tag.name]
+			for i in _collect_tags(e, e.tags()):
+				yield i
+
+		elif type(tag) == MemberTag:
+			e = elem.__dict__[tag.name] #get the element as an attribute #i think this should be getattr, but it seems to work
+			for i in _collect_tags(e, e.tags()):
+				yield i
+
+		elif type(tag) == ElementTag:
+			e = tag.element
+			for i in _collect_tags(e, e.tags()):
+				yield i
+
+		else:
+			yield tag
+
+
