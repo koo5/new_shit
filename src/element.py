@@ -8,10 +8,10 @@ import tags
 from tags import *
 from lemon_utils.utils import Evil
 
+CHANGED = 1
 
 class Element():
 	"""an object that can be rendered, a common base for widgets and nodes"""
-	CHANGED = 1
 	help = []
 
 	keys_help_items = None
@@ -45,7 +45,6 @@ class Element():
 			s._parent = v
 
 	parent = property(get_parent, set_parent)
-
 
 
 	#after calling lock(), you cant set nonexisting attributes
@@ -96,13 +95,6 @@ class Element():
 		return []
 
 	def generate_keys_help_items(s):
-		help = []
-		for c in s.__class__.mro():
-			if c == Element:
-				break #dont go further up to pyglets EventDispatcher
-			if "keys" in c.__dict__:
-				help += c.keys
-
 		from menu_items import InfoItem
 		s.keys_help_items = [InfoItem(x) for x in help]
 

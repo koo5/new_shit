@@ -35,6 +35,10 @@ class Evil(object):
 	def __repr__(s):
 		return str(s.note)
 
+
+from itertools import *
+
+
 def batch(it, n=100):
 	m = n - 1
 	while True: #islice wont throw an ExhaustedIterator exception when its source is exhausted

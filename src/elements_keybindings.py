@@ -6,6 +6,9 @@ from tags import *
 import nodes as n
 import widgets as w
 
+from element import CHANGED
+from nodes import AST_CHANGED
+
 from lemon_utils.utils import odict
 
 """ an event comes with two lists of attributes, one for the char(cell) that was on the left
@@ -23,8 +26,6 @@ UNICODE = -1
 class H(collections.namedtuple("Handler", 'mods key sidedness')):
 	def __new__(cls, mods, key, sidedness=None):
 		return tuple.__new__(cls, (mods, key, sidedness))
-
-#condition function?
 
 """
 widgets.py
@@ -64,7 +65,7 @@ w.Text.keys = {H((), K_BACKSPACE, LEFT): w.Text.k_backspace,
 
 def press(self, e):
 	self.on_press.emit(self)
-	return s.CHANGED
+	return CHANGED
 
 w.Button.press = press
 
@@ -98,8 +99,8 @@ n.Syntaxed.keys = n.Node.keys.updated({
     H(KMOD_CTRL, K_COMMA ): n.Syntaxed.next_syntax})
 
 
-def delete_item_check(s):
-	return None != self.item_index(e)
+def delete_item_check(s, atts):
+	return None != s.item_index(atts)
 
 def delete_item(s):
 	ii = self.item_index(e)
@@ -120,7 +121,7 @@ def run_line(self, e):
 	result = self.items[index].eval()
 	result.parent = self
 	self.items.insert(index + 1, result)
-	return s.CHANGED
+	return CHANGED
 
 print(n.Statements.__bases__[-1])
 n.Statements.keys = n.Statements.__bases__[-1].keys.updated(
@@ -133,18 +134,36 @@ n.Module.keys = n.Module.__bases__[-1].keys.update({
 	H(KMOD_CTRL, K_BACKSLASH ): n.Module.run})
 
 
+def check_backspace(atts):
+	a = atts[0]
+	if a:
+		i = a.get(item_att)
+		if i:
+			return i[0] == s and s.items[i[1]]
+
+def k_backspace(s):
+	s.root.delayed_cursor_move -= 1
+	s.on_edit.emit(s)
+	return CHANGED
+
+
+"""
+analogically with delete,
+both items will know not to handle it, so parser gets it,
+so it must have a handler defined for between, or a checker, and
+based on item_att delete(or deconstruct) the node
+if Parser is empty: check succeeds only for UNICODE (on body), creates Text
+"""
+
+
+def k_delete(s):
+	s.on_edit.emit(s)
+	return CHANGED
+
+
+
 n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.updated({
-	H((), K_BACKSPACE, LEFT): (n.ParserBase.check_backspace, n.ParserBase.k_backspace),
-	H((), K_DELETE, LEFT): (n.ParserBase.check_backspace, n.ParserBase.k_delete)
+	H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
+	H((), K_DELETE, LEFT): k_delete
 	})
-
-
-
-
-
-
-#i guess this goes in Editor...
-
-
-
 

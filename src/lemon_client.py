@@ -1,14 +1,11 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""(sdl/curses)-agnostic frontend stuff,
-with input event replay functionality for debugging"""
+"""(sdl/curses)-agnostic frontend stuff"""
 
 import sys
 
 from lemon_utils.lemon_logging import log
 import rpcing_frames
-import lemon_colors as colors
 from keys import *
 from lemon_args import args
 import lemon_utils.lemon_logging
@@ -18,20 +15,6 @@ lemon_utils.lemon_logging.do_topics = args.debug
 if args.debug_objgraph:
 	import objgraph, gc
 
-
-
-sidebar = None # the frame that is currently displayed in the sidebar
-is_first_event = True # debug replay is cleared if first event isnt an F2 keypress so we need to track if this is the first event after program start
-
-
-#F1
-def cycle_sidebar():
-	global sidebar
-	sidebar = sidebars[sidebars.index(sidebar) + 1]
-	log("sidebar:%s", sidebar)
-
-def visibleframes():
-	return [sidebar, logframe, editor]
 
 class KeypressEvent(object):
 	"""a frontend-agnostic keypress event"""
@@ -61,6 +44,8 @@ class KeypressEvent(object):
 				if self.key == K_g:
 					self.key = K_RIGHT
 
+		self.mods = set([x for x in [KMOD_CTRL, KMOD_ALT] if mod & x])
+
 	def __repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
 			(self.key, self.uni, bin(self.mod)))
@@ -73,55 +58,48 @@ class MousedownEvent(object):
 		s.type = e.type
 
 
-def start():
-	#server.after_start()
+class Client():
+	def __init__(s):
+		if args.rpc:
+			"""select which frames we want to display"""
+			raise Exception('not finished')
+			if args.intro:
+				frames = [rpcing_frames.StaticInfoFrame(server.intro)]
+			elif args.editor:
+				frames = [rpcing_frames.editor]
+			else:
+				raise Exception("rpc but no frame? try --root or --menu")
 
-	colors.cache(args)
+		else:
 
-	if args.replay:
-		do_replay(False)
+			s.editor = rpcing_frames.Editor()
+			s.logframe = rpcing_frames.Log()
+			s.menu = rpcing_frames.Menu(s.editor)
 
-def bye():
-	log("deading")
-	sys.exit()
+			s.sidebars = [#frames.Intro(root),
+			            #frames.GlobalKeys(root),
+			            s.menu]#,
+			            #frames.NodeInfo(root)]
+			            #frames.ContextInfo(root)]#carry on...
 
+			s.allframes = s.sidebars + [s.logframe, s.editor]
 
-def setup():
-	#if args.rpc:
-	#	lemon_logger.debug_out = client_debug_out
-	#else: logging goes thru the log frame
-	pass
+			s.sidebars.append(s.sidebars[0])#add a sentinel for easy cycling:)
+			s.sidebar = s.sidebars[0] # currently active sidebar
 
-#if args.log:
-#	frame = rpcing_frames.Log()
-if args.rpc:
-	"""select which frames we want to display"""
-	raise Exception('not finished')
-	if args.intro:
-		frames = [rpcing_frames.StaticInfoFrame(server.intro)]
-	elif args.editor:
-		frames = [rpcing_frames.editor]
-	else:
-		raise Exception("rpc but no frame? try --root or --menu")
-
-else:
-
-	editor = rpcing_frames.Editor()
-	logframe = rpcing_frames.Log()
-	menu = rpcing_frames.Menu(editor)
-
-	sidebars = [#frames.Intro(root),
-	            #frames.GlobalKeys(root),
-	            menu]#,
-	            #frames.NodeInfo(root)]
-	            #frames.ContextInfo(root)]#carry on...
-
-	allframes = sidebars + [logframe, editor]
-
-	sidebars.append(sidebars[0])#add a sentinel for easy cycling:)
-	sidebar = sidebars[0] # currently active sidebar
+	def bye(s):
+		log("deading")
+		sys.exit()
 
 
+	def after_start(s):
+		if args.replay:
+			do_replay(False)
 
 
+	def cycle_sidebar(s):
+		s.sidebar = s.sidebars[s.sidebars.index(s.sidebar) + 1]
+		log("sidebar:%s", s.sidebar)
 
+	def visibleframes(s):
+		return [s.sidebar, s.logframe, s.editor]

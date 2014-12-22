@@ -6,7 +6,7 @@ from lemon_utils.lemon_logging import log
 is_first_input_event = True
 we_are_replaying = False
 
-def pickle_event(e):
+def add(e):
 	global is_first_input_event
 	if is_first_input_event:
 		clear_replay()

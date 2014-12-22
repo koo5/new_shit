@@ -64,7 +64,7 @@ else:
 
 
 # endregion
-
+AST_CHANGED = 2
 # region utils
 
 #b is for staging the builtins module and referencing builtin nodes from python code
@@ -1083,8 +1083,8 @@ class List(ListPersistenceStuff, Collapsible):
 	def slots(s):
 		return [s.item_type]
 
-	def index_of_item_under_cursor(self, event):
-		li = event.any_atts.get('list_item')
+	def index_of_item_under_cursor(self, atts):
+		li = atts.any.get('list_item') # well, this should check all sides..uhh
 		if li:
 			if li[0] == self:
 				return li[1]
@@ -1480,11 +1480,11 @@ class Module(Syntaxed):
 
 	def reload(s):
 		log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
-		return s.CHANGED
+		return CHANGED
 
 	def run(s):
 		log(s.run())
-		return s.CHANGED
+		return CHANGED
 
 
 	def save(self):
@@ -1500,7 +1500,7 @@ class Module(Syntaxed):
 		#except Exception as e:
 		#	log(e)
 		#	raise e
-		return s.CHANGED
+		return CHANGED
 
 
 # endregion
@@ -2232,21 +2232,19 @@ class ParserBase(Node):
 				if isinstance(i, type) and isinstance(items[index+1], type):
 					return index
 
-		Text=widgets.Text
-
 		while True:
-			index = find_same_type_pair(inp, Text)
+			index = find_same_type_pair(inp, widgets.Text)
 			if index == None: break
-			inp[index] = Text(inp[index].value + inp[index+1].value)
+			inp[index] = widgets.Text(inp[index].value + inp[index+1].value)
 			del inp[index+1]
 
 		while True:
 			index = find_same_type_pair(inp, Node)
 			if index == None: break
-			inp.insert(index+1, Text())
+			inp.insert(index+1, widgets.Text())
 
-		if type(inp[0]) != Text: inp.insert(0, Text())
-		if type(inp[-1]) != Text: inp.append(Text())
+		if type(inp[0]) != Text: inp.insert(0, widgets.Text())
+		if type(inp[-1]) != Text: inp.append(widgets.Text())
 
 		return inp
 
@@ -2260,35 +2258,6 @@ class ParserBase(Node):
 
 
 	"""if there is a node followed by text and backspace is pressed between"""
-
-	def check_backspace(atts):
-		a = atts[0]
-		if a:
-			i = a.get(item_att)
-			if i:
-				return i[0] == s and s.items[i[1]]
-
-
-	def k_backspace(s):
-		s.root.delayed_cursor_move -= 1
-		s.on_edit.emit(s)
-		return s.CHANGED
-
-
-	"""
-	/analogically with delete,
-	both will know not to handle it so parser gets it,
-	so it must have a handler defined for between, or a checker, and
-	based on item_att delete(deconstruct) the node
-
-	empty: check succeeds only for UNICODE (on body), creates Text
-
-	"""
-
-
-	def k_delete(s):
-		s.on_edit.emit(s)
-		return s.CHANGED
 
 
 

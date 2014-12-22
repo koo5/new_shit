@@ -10,7 +10,6 @@ from math import *
 from lemon_utils.lemon_six import iteritems
 from lemon_utils.utils import Evil
 from lemon_utils.lemon_logging import log, info
-from lemon_colors import colors, color
 
 
 import lemon_args
@@ -25,8 +24,7 @@ if hasattr(sys, 'pypy_version_info'):
 import pygame
 if hasattr(pygame, 'cffi'):
 	print("yep, loaded pygame_cffi")
-from pygame import display, image
-from pygame import draw, Rect
+from pygame import display, image, Rect
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
 
@@ -35,36 +33,14 @@ lemon_platform.SDL = True
 
 
 import lemon_client, rpcing_frames
-from lemon_client import logframe, editor, allframes, visibleframes, sidebars
-from server_side import server
 import keybindings
 import replay
-
-
-
-for f in allframes:
-	f.rect = pygame.Rect((6,6),(6,6))
-
-
-"""
-def render():
-	root.render()
-	lemon.sidebar.render()
-	logframe.render()
-	#log("boing")
-	if isinstance(lemon.sidebar, frames.Menu):
-		menu_generate_rects(lemon.sidebar)
-"""
-
 
 
 def reset_cursor_blink_timer():
 	if not args.dontblink:
 		pygame.time.set_timer(pygame.USEREVENT + 1, 1600)
-	editor.cursor_blink_phase = True
-
-
-
+	c.editor.cursor_blink_phase = True
 
 def user_change_font_size(by = 0):
 	change_font_size(by)
@@ -85,31 +61,31 @@ def resize(size):
 	rpcing_frames.sdl_screen_surface = screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
 	resize_frames()
-	draw()
+	redraw(666)
 replay.resize = resize
 
 def resize_frames():
-		logframe.rect.height = log_height = args.log_height * font_height
-		logframe.rect.width = screen_width
-		logframe.rect.topleft = (0, screen_height - log_height)
+		c.logframe.rect = Rect (
+			0, screen_height - args.log_height,
+			screen_width, args.log_height * font_height)
 
-		editor.rect.topleft = (0,0)
-		editor.rect.width = screen_width // 3 * 2
-		editor.rect.height = screen_height - log_height
+		c.editor.rect = Rect(0,0,
+			screen_width // 3 * 2,
+			screen_height - args.log_height)
 
-		sidebar_rect = Rect((editor.rect.w, 0),(0,0))
-		sidebar_rect.width = screen_width - editor.rect.width
-		sidebar_rect.height = editor.rect.height
-		for frame in sidebars:
+		sidebar_rect = Rect(c.editor.rect.w, 0,
+		    screen_width - c.editor.rect.width,
+			c.editor.rect.height)
+
+		for frame in c.sidebars:
 			frame.rect = sidebar_rect
 
-		for f in allframes:
+		for f in c.allframes:
 			f.cols = f.rect.width // font_width
 			f.rows = f.rect.height // font_height
 			log((f, f.cols, f.rows))
 
 		log("resized frames")
-
 
 
 def pygame_keypressevent__repr__(self):
@@ -122,8 +98,7 @@ lemon_client.KeypressEvent.__repr__ = pygame_keypressevent__repr__
 def keypress(e):
 	reset_cursor_blink_timer()
 	keybindings.keypress(e)
-#	render()
-	draw()
+
 
 def mousedown(e):
 	reset_cursor_blink_timer()
@@ -134,13 +109,11 @@ def mousedown(e):
 			if e.button == 4: user_change_font_size(1)
 			if e.button == 5: user_change_font_size(-1)
 	else:
-		for f in lemon_client.visibleframes():
+		for f in c.visibleframes():
 			if f.rect.collidepoint(e.pos):
 				e.pos = (e.pos[0] - f.rect.x, e.pos[1] - f.rect.y)
 				f.sdl_mousedown(e)
 				break
-#	render()
-	draw()
 
 
 
@@ -153,26 +126,26 @@ def handle_input(event):
 		mousedown(event)
 		return True
 
+
 def process_event(event):
 	if event.type == pygame.USEREVENT:
 		pass # we woke up python to poll for SIGINT
 
 	elif event.type == pygame.USEREVENT + 1:
-		editor.cursor_blink_phase = not editor.cursor_blink_phase
-		draw()
+		c.editor.cursor_blink_phase = not c.editor.cursor_blink_phase
 
 	elif event.type == pygame.KEYDOWN:
 		e = lemon_client.KeypressEvent(pygame.key.get_pressed(), event.unicode, event.key, event.mod)
 		handle_input(e)
-		replay.pickle_event(e)
+		replay.add(e)
 
 	elif event.type == pygame.MOUSEBUTTONDOWN:
 		e = lemon_client.MousedownEvent(event)
 		handle_input(e)
-		replay.pickle_event(e)
+		replay.add(e)
 
 	elif event.type == pygame.VIDEORESIZE:
-		replay.pickle_event(('resize', event.size))
+		replay.add(('resize', event.size))
 		resize(event.size)
 #		render()
 
@@ -181,8 +154,8 @@ def process_event(event):
 			reset_cursor_blink_timer()
 		else:
 			pygame.time.set_timer(pygame.USEREVENT + 1, 0)#disable the timer
-			editor.cursor_blink_phase = False
-		redraw()
+			c.editor.cursor_blink_phase = False
+		redraw(666)
 
 	elif event.type == pygame.QUIT:
 		pygame.display.iconify()
@@ -191,8 +164,8 @@ def process_event(event):
 
 
 
-def redraw():
-	for f in lemon_client.visibleframes():
+def redraw(self):
+	for f in c.visibleframes():
 		log("maybe_redrawing %s on the client window request",f)
 		f.maybe_draw()
 	pygame.display.flip()
@@ -200,17 +173,7 @@ def redraw():
 #all frames are in one window, so avoid signaling each about redrawing,
 #hook into "aggregate" server.on_change instead
 if not args.rpc:
-	server.on_change.connect(redraw)
-
-
-
-
-
-
-
-
-
-
+	rpcing_frames.ClientFrame.redraw = redraw
 
 
 def loop():
@@ -253,8 +216,7 @@ def fix_keyboard():
 
 
 def main():
-	lemon_client.setup()
-
+	global c
 	pygame.display.init()
 	pygame.font.init()
 	display.set_caption('lemon operating language')
@@ -268,10 +230,14 @@ def main():
 
 	change_font_size()
 
+	c = lemon_client.Client()
+	keybindings.c = c
+	#for f in c.allframes:
+	#	f.rect = pygame.Rect((6,6),(6,6))
+
 	initial_resize()
 
-	lemon_client.start()
-	#render()
+	c.after_start()
 
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 	reset_cursor_blink_timer()

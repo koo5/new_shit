@@ -1,8 +1,6 @@
 from lemon_platform import SDL, CURSES
 from keys import *
-import lemon_client as client
-from lemon_client import editor, menu, bye
-from server_side import server
+from server_side import server as s
 import replay
 
 
@@ -11,10 +9,8 @@ def change_font_size(x):
 	pass
 
 def keypress(e):
-	if global_key(e):
-		server.global_handled()
-	else:
-		server.element_keypress(e):
+	if not global_key(e):
+		s.editor.keypress(e)
 
 
 def global_key(e):
@@ -27,31 +23,31 @@ def global_key(e):
 			change_font_size(-1)
 
 		elif k == K_LEFT:
-			editor.prev_elem()
+			c.editor.prev_elem()
 		elif k == K_RIGHT:
-			editor.next_elem()
+			c.editor.next_elem()
 		elif k == K_HOME:
-			editor.cursor_top()
+			c.editor.cursor_top()
 		elif k == K_END:
-			editor.cursor_bottom()
+			c.editor.cursor_bottom()
 
 		elif k == K_f:
-			editor.dump_to_file()
+			c.editor.dump_to_file()
 		elif k == K_q:
-			server.bye()
+			s.bye()
 		elif e.key == K_m:
-			server.menu.menu_dump()
+			s.menu.menu_dump()
 
 
 		elif SDL and e.key == K_UP:
-			sidebar.move(-1)
+			c.sidebar.move(-1)
 		elif SDL and e.key == K_DOWN:
-			sidebar.move(1)
+			c.sidebar.move(1)
 
 		elif CURSES and e.key == K_INSERT: # todo: find better keybindings for curses
-			sidebar.move(-1)
+			c.sidebar.move(-1)
 		elif CURSES and e.key == K_DELETE:
-			sidebar.move(1)
+			c.sidebar.move(1)
 		else:
 			return False
 		return True
@@ -59,38 +55,38 @@ def global_key(e):
 
 	else: # with no modifier keys
 		if k == K_F1:
-			client.cycle_sidebar()
+			c.cycle_sidebar()
 		elif k == K_F2:
 			replay.do_replay()
 		elif k == K_F8:
-			editor.toggle_arrows()
+			c.editor.toggle_arrows()
 
 		elif k == K_UP:
-			editor.move_cursor_v(-1)
-			editor.and_sides(e)
+			c.editor.move_cursor_v(-1)
+			c.editor.and_sides(e)
 		elif k == K_DOWN:
-			editor.move_cursor_v(+1)
-			editor.and_sides(e)
+			c.editor.move_cursor_v(+1)
+			c.editor.and_sides(e)
 		elif k == K_LEFT:
-			editor.move_cursor_h(-1)
-			editor.and_updown(e)
+			c.editor.move_cursor_h(-1)
+			c.editor.and_updown(e)
 		elif k == K_RIGHT:
-			editor.move_cursor_h(+1)
-			editor.and_updown(e)
+			c.editor.move_cursor_h(+1)
+			c.editor.and_updown(e)
 		elif k == K_HOME:
-			editor.cursor_home()
+			c.editor.cursor_home()
 		elif k == K_END:
-			editor.cursor_end()
+			c.editor.cursor_end()
 		elif k == K_PAGEUP:
-			editor.move_cursor_v(-10)
+			c.editor.move_cursor_v(-10)
 		elif k == K_PAGEDOWN:
-			editor.move_cursor_v(10)
+			c.editor.move_cursor_v(10)
 
 		elif k == K_ESCAPE:
 			if not replay.we_are_replaying:
-				bye()
+				c.bye()
 		elif e.uni == ' ':
-			return menu.accept()
+			return s.menu.accept()
 		else:
 			return False
 		return True

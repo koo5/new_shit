@@ -1,5 +1,4 @@
 from types import GeneratorType
-from itertools import *
 #from types import NoneType
 from collections import namedtuple
 from pizco import Signal
@@ -9,6 +8,7 @@ from lemon_args import args
 from lemon_utils.utils import Evil, batch
 from lemon_colors import color, colors
 from lemon_utils.lemon_logging import log
+from lemon_utils.dotdict import Dotdict
 
 import nodes
 from tags import *
@@ -18,23 +18,20 @@ import widgets
 import elements_keybindings
 import graph
 
+class Atts(object):
+	def __init__(s, a):
+		#s.by_priority = [a['middle'], a['left'], a['right']]
+		s.middle, s.left, s.right = a['middle'], a['left'], a['right']
+		s.any = s.middle or s.left or s.right or {}
+		# umm we could make a key to cycle the any if needed
 
 class ServerFrame(object):
-	"""base class for the server halves of frames"""
+	"""base class for the server parts of frames"""
 	def __init__(s):
-		s.on_change = Signal(0)
-
-	def signal_change(s):
-		s.on_change.fire()
+		s.draw_signal = Signal(0)
 
 	def collect_tags(s):
 		return batch(_collect_tags(s, s.tags()))
-
-	@property
-	def changed(s):
-		return s.
-
-
 
 
 class Editor(ServerFrame):
@@ -43,22 +40,22 @@ class Editor(ServerFrame):
 
 		self.root = nodes.make_root()
 		self.root.fix_parents()
-		self.atts = {}
+		self.atts = Atts(dict(left={},right={},middle={}))
+		self.on_serverside_change = Signal(1)
+
+	def signal_change(s, force=False):
+		if force or s.root.changed or s.root.ast_changed:
+			s.on_serverside_change.emit(s.root.ast_changed)
+		s.draw_signal.emit()
 
 	def must_recollect(s):
-		if s.root.changed:
-			s.root.changed = False
+		if s.root.changed or s.root.ast_changed:
+			s.root.changed = s.root.ast_changed = False
 			return True
-
 
 	@property
 	def element_under_cursor(s):
-		"""we shouldnt need this if atts are in event, but it makes it possible
-		to call things like run_line without passing it the event too.
-		Ofc, this has to be kept updated from the client
-		"""
-		return s.atts.get(node_att)
-
+		return s.atts.any.get(node_att)
 
 	def tags(s):
 		return s.root.tags()
@@ -67,81 +64,68 @@ class Editor(ServerFrame):
 		return editor.root.delayed_cursor_move
 
 	def set_atts(editor, atts):
-		assert type(atts) == dict
-		log("setting atts under cursor:%s",atts)
-		editor.atts = atts
+		log("setting atts under cursor to %s",atts)
+		editor.atts = Atts(atts)
+		editor.signal_change(True)
 
 	def run_active_program(editor):
 		editor.root['some program'].run()
+		editor.signal_change()
 
 	def run_line(editor):
-		editor.atts[node_att].module.run_line(editor.atts[node_att])
+		editor.atts.any[node_att].module.run_line(editor.atts.any[node_att])
+		editor.signal_change()
 
 	def clear(editor):
 		editor.root['some program'].clear()
+		editor.signal_change()
 
 	def	dump_root_to_file(editor):
 		pass
 
-	@property
-	def changed(s):
-		return s.root.changed
+	def keypress(s, event):
+		event.atts = editor.atts
 
-	def get_changed_and_clean(s):
-		if s.changed:
-			s.root.changed = False
-			return True
+		r = handle_keypress(event)
 
-def event_handled():
-	for f in editor, logframe, menu:
-		if f.changed:
-			f.on_change.fire()
-	for f in editor, logframe, menu:
-		if f.changed:
-			f.draw_signal.fire()
+		if r:
+			elem, handler_result = r
+			if handler_result:
+				module = elem.module
+				if module:
+					#event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
+					log('history.append(%s)',event)
+
+			s.signal_change()
 
 
-def element_keypress(event):
-	event.atts = namedtuple('attributes', 'left middle right')(editor.atts)
-
-	r = handle_keypress(event)
-
-	if r:
-		elem, handler_result = r
-		if handler_result:
-			module = elem.module
-			if module:
-				#event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
-				log('history.append(event)')
-
-		event_handled()
+def potential_handlers(atts):
+	for sidedness, atts in [(None, atts.middle),
+	             (elements_keybindings.LEFT, atts.left),
+	             (elements_keybindings.RIGHT, atts.right)]:
+		if atts != None:
+			elem = atts.get(node_att)
+			if elem:
+				for handler, v in iteritems(elem.keys):
+					if	handler.sidedness in (None. sidedness):
+						if type(v) == tuple:
+							checker, handler = v
+						else:
+							checker, handler = None, v
+						if not checker or checker(a):
+							yield elem, handler
 
 
 def handle_keypress(event):
-	for side in [1,0,2]: #middle, left, right
-		atts = e.orig_atts[side]
-		if atts != None:
-			elem = atts[node_att]
-			h = find_handler(left_handlers, event)
-			if h:
-				return elem, fire(elem, h, event)
-
-
-def find_handler(handlers, e):
-	for h in handlers:
-		if matches(h, e):
-			return (h, e)
-
-
-def fire(elem, handler, event):
-	if h.side != BOTH:
-		if h.side != LEFT:
-			event = copy(event)
-			event.left = None
-		if h.side != RITE:
-			event = copy(event)
-			event.right = None
-	return handler.func(elem, event)
+	for elem, handler, func in potential_handlers(event.atts):
+		if event.mods == set(handler.mods) and (
+			event.key == handler.key or
+			event.key in handler.key):
+				event.left, event.middle, event.right = (
+					event.atts.left if event.atts.left.get(att_node) == elem else None,
+					event.atts.middle if event.atts.middle.get(att_node) == elem else None,
+					event.atts.right if event.atts.right.get(att_node) == elem else None)
+				return elem, func(event)
 
 
 
@@ -152,27 +136,27 @@ class Menu(ServerFrame):
 	def __init__(s):
 		super(Menu, s).__init__()
 		s.editor = editor
-		editor.on_change.connect(s.on_editor_change)
+		editor.on_serverside_change.connect(s.on_editor_change)
 		s.valid_only = False
+		s._changed = True
 		s.items = []
 		s.sel = 0
 
-	def on_editor_change(s):
-		log('recalculating...')
-		#talk to nodes, marpa and fuzzywuzzy
+	def must_recollect(s):
+		if s._changed:
+			s._changed = False
+			return True
+
+	def on_editor_change(self, ast):
+		if ast:
+			log('recalculate grammar...')
+		log("possibly check against cached atts/text, then call marpa")
+		self._changed = True
 
 	def marpa_callback(s):
 		s._changed = True
 		s.on_change.fire()
 		s.draw_signal.fire()
-
-	@property
-	def changed(s):
-		return s._changed
-	def get_changed_and_clean(s):
-		if s.changed:
-			s._changed = False
-			return True
 
 	def tags(s):
 		yield [ColorTag("fg"), "menu:\n"]
@@ -302,6 +286,12 @@ class Log(ServerFrame):
 		s.on_add = Signal(1)
 		s._dirty = True
 
+
+	def must_recollect(s):
+		if s._dirty:
+			s._dirty = False
+			return True
+
 	def add(s, msg):
 		#timestamp, topics, text = msg
 		#if type(text) != unicode:
@@ -354,14 +344,6 @@ def load(name):
 	nodes.b_lemon_load_file(editor.root, name)
 	editor.render()
 	try_move_cursor(root.root['loaded program'])
-
-
-
-
-on_change = Signal()
-
-log(list(menu.collect_tags()))
-
 
 
 def _collect_tags(elem, tags):

@@ -38,24 +38,29 @@ class ClientFrame(object):
 	def __init__(s, counterpart):
 		super().__init__()
 		s.arrows = []
+		s.must_redraw = True
 		s.scroll_lines = 0
 		s.indent_width = 4
 		s.counterpart = counterpart
 		s.tags = Cache(s.counterpart.collect_tags)
 		s.lines = Cache(lambda: s.project_tags(s.tags.get()))
-		if args.rpc:
-			s.hook_onto_counterpart_draw_signal()
+		s.counterpart.draw_signal.connect(s.redraw)
 
 	def resize(s, cols, rows):
 		s.cols, s.rows = cols, rows
 		s.lines.dirty = True
 
-	def maybe_draw(s):
-		if s.counterpart.get_changed_and_clean() or s.lines.dirty:
-			s.draw()
+	def redraw(self):
+		"""non-rpcing client overrides this with a
+		function that maybe_draws all frames in the window at once"""
+		Xself.maybe_draw()
 
-	def hook_onto_counterpart_draw_signal(s):
-		s.counterpart.draw_signal.connect(s.maybe_draw)
+	def maybe_draw(s):
+		must_recollect = s.counterpart.must_recollect()
+		if must_recollect or s.lines.dirty or s.must_redraw or not args.rpc:
+			log("drawing, %s.must_recollect = %s, s.lines.dirty = %s, s.s.must_redraw = %s", s.counterpart, must_recollect, s.lines.dirty, s.must_redraw)
+			s.draw()
+			s.must_redraw = False
 
 	def scroll(s,l):
 		s.scroll_lines -= l
@@ -264,8 +269,8 @@ class Editor(ClientFrame):
 		@property
 		def cursor_blink_phase(s):
 			return s._cursor_blink_phase
-		@cursor_blink_phase.setter
 		# O B E Y T H E B O I L E R P L A T E
+		@cursor_blink_phase.setter
 		def cursor_blink_phase(s, v):
 			if s._cursor_blink_phase != v:
 				s._cursor_blink_phase = v
@@ -294,10 +299,13 @@ class Editor(ClientFrame):
 
 
 	def update_atts_on_server(s):
-		s.counterpart.set_atts(s.atts_triple or {})
+		s.counterpart.set_atts(s.atts_triple)
 
 	def after_cursor_moved(s):
+		log("cursor pos: %s %s",s.cursor_c, s.cursor_r)
+		s.must_redraw = True
 		s.update_atts_on_server()
+
 
 	def _move_cursor_h(s, x):
 		"""returns True if it moved"""
@@ -500,7 +508,7 @@ class Editor(ClientFrame):
 		right = s.atts_at_cursor
 		middle = s.zwes.get((s.cursor_c, s.cursor_r))
 
-		return left, middle, right
+		return dict(left=left, middle=middle, right=right)
 	"""
 	def keypress_on_element(event):
 		#event.cursor = (s.cursor_c, s.cursor_r)

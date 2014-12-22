@@ -14,8 +14,8 @@ class Dotdict(object):
 	https://docs.python.org/3/library/collections.html#collections.namedtuple
 
 	"""
-	def __init__(s):#todo:, seq=None, **kwargs):
-		object.__setattr__(s, "_dict", dict())
+	def __init__(s, seq=[], **kwargs):
+		object.__setattr__(s, "_dict", dict(seq, **kwargs))
 		object.__setattr__(s, "_locked", False)
 	def _lock(s):
 		object.__setattr__(s, "_locked", True)

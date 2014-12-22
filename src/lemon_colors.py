@@ -2,6 +2,7 @@
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_logging import info,log
+from lemon_args import args
 
 
 try:
@@ -32,10 +33,7 @@ default_colors = {
     "eval results":(150,150,150)
 	}
 
-colors = Dotdict()
-#colors._dict = dict(default_colors) #fix Dotdict..but not needed..
-
-def cache(args):
+def cache():
 	global colors, invert, mono
 	invert = args.invert
 	mono = args.mono
@@ -62,3 +60,6 @@ def color(c):
 		return modify(c)
 
 #class colors?
+
+colors = Dotdict()
+cache()
