@@ -9,7 +9,7 @@ from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import unicode
 from tags import TextTag, ColorTag, EndTag, MemberTag, node_att, char_index_att
 from keys import *
-
+from lemon_colors import colors
 
 
 class Widget(Element):
@@ -24,7 +24,7 @@ class Text(Widget):
 	def __init__(self, parent, text):
 		super().__init__(parent)
 		self.on_edit = Signal(1)
-		self.color = (150,150,255,255)
+		self.color = colors.widget_color
 		assert isinstance(text, unicode)
 		self.text = text
 
@@ -49,7 +49,7 @@ class Button(Widget):
 		super().__init__(parent)
 		self.on_press = Signal(1)
 		self.on_text = Signal(1)
-		self.color = (255,150,150,255)
+		self.color = colors.button
 		self.text = text
 
 	def on_mouse_press(self, button):
@@ -68,7 +68,7 @@ class Number(Widget):
 		self.plus_button = Button(self, "+")
 		for b in (self.plus_button, self.minus_button):
 			b.brackets = ('[',']')
-			b.brackets_color = b.color = "number buttons"
+			b.brackets_color = b.color = colors.number_buttons
 		self.minus_button.on_press.connect(self.on_widget_click)
 		self.minus_button.on_text. connect(self.on_widget_text)
 		self.plus_button. on_press.connect(self.on_widget_click)
@@ -129,7 +129,7 @@ class NState(Widget):
 		self.value = value
 		assert(0 <= value < len(texts))
 		self.texts = texts
-		self.color = "fg"
+		self.color = colors.fg
 
 	def render(self):
 		return [ColorTag(self.color), TextTag(self.text), EndTag()]
@@ -158,7 +158,7 @@ class Toggle(Widget):
 		self.on_change = Signal(1)
 		self.value = value
 		self.texts = texts
-		self.color = "fg"
+		self.color = colors.fg
 	def render(self):
 		return [ColorTag(self.color), TextTag(self.text), EndTag()]
 	@property

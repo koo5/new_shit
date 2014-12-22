@@ -6,7 +6,7 @@ from pizco import Signal
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
 from lemon_utils.utils import Evil, batch
-from lemon_colors import color, colors
+from lemon_colors import colors
 from lemon_utils.lemon_logging import log
 from lemon_utils.dotdict import Dotdict
 
@@ -159,7 +159,7 @@ class Menu(ServerFrame):
 		s.draw_signal.fire()
 
 	def tags(s):
-		yield [ColorTag("fg"), "menu:\n"]
+		yield [ColorTag(colors.fg), "menu:\n"]
 		for i in s.generate_items():
 			yield [ElementTag(i)]
 		yield EndTag()

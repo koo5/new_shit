@@ -59,8 +59,7 @@ def NewlineTag(Tag):
 	return "\n"
 
 def ColorTag(value):
-	"""making things more uniform, this is no longer a class but a function returning an AttTag"""
-	return ("color", value)
+	return (color_att, value)
 
 
 

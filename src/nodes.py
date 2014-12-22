@@ -38,7 +38,7 @@ import tags
 from tags import *
 
 
-import lemon_colors as colors
+from lemon_colors import colors
 from keys import *
 from lemon_utils.utils import flatten, odict, Evil
 from lemon_utils.dotdict import Dotdict
@@ -563,7 +563,7 @@ class Node(NodePersistenceStuff, element.Element):
 		nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
 		nodecls have a set of functions for instantiating the values, and those need some cleanup"""
 		super().__init__()
-		self.brackets_color = "node brackets rainbow"
+		self.brackets_color = colors.node_brackets
 		self.runtime = Dotdict() #various runtime data herded into one place
 		self.clear_runtime_dict()
 		self.isconst = False
@@ -588,6 +588,7 @@ class Node(NodePersistenceStuff, element.Element):
 	def register_class_symbol(cls):
 		pass
 
+	"""
 	def make_rainbow(s):
 		try:#hacky rainbow depending on the colors module
 			c = colors.color("node brackets")
@@ -609,7 +610,7 @@ class Node(NodePersistenceStuff, element.Element):
 	@brackets_color.setter
 	def brackets_color(s, c):
 		s._brackets_color = c
-	
+
 	@property
 	def number_of_ancestors(s):
 		r = 0
@@ -621,6 +622,7 @@ class Node(NodePersistenceStuff, element.Element):
 		except AttributeError: #crude, huh?
 			pass
 		return r
+	"""
 
 	def clear_runtime_dict(s):
 		s.runtime._dict.clear()
@@ -735,7 +737,7 @@ class Node(NodePersistenceStuff, element.Element):
 		if "value" in elem.runtime._dict \
 				and "evaluated" in elem.runtime._dict \
 				and not isinstance(elem.parent, Parser): #dont show evaluation results of compiler's direct children
-			yield [ColorTag('eval results'), TextTag("->")]
+			yield [ColorTag(colors.eval_results), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
 				yield [TextTag(str(len(v.items))), TextTag(" values:"), ElementTag(v)]
@@ -1375,7 +1377,7 @@ class Text(WidgetedValue):
 	def __init__(self, value="", debug_note=""):
 		super(Text, self).__init__()
 		self.widget = widgets.Text(self, value)
-		self.brackets_color = "text brackets"
+		self.brackets_color = colors.text_brackets
 		self.brackets = ('[',']')
 		self.debug_note = debug_note
 
@@ -1427,7 +1429,7 @@ class Root(Dict):
 
 	def render(self):
 		#there has to be some default color for everything, the rendering routine looks for it..
-		return [ColorTag("fg")] + self.render_items() + [EndTag()]
+		return [ColorTag(colors.fg)] + self.render_items() + [EndTag()]
 
 	def delete_child(self, child):
 		log("I'm sorry Dave, I'm afraid I can't do that.")
@@ -2178,7 +2180,7 @@ class ParserBase(Node):
 		self.items = NotifyingList()
 		self.decl = None
 		self.on_edit = Signal()
-		self.brackets_color = "compiler brackets"
+		self.brackets_color = colors.compiler_brackets
 		self.brackets = ('{', '}')
 		self.reregister = False
 
@@ -2508,7 +2510,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		return s.parent.slots[s.slot]
 
 	def empty_render(s):
-		return [ColorTag("compiler hint"), TextTag('('+s.type.name+')'), EndTag()]
+		return [ColorTag(colors.compiler_hint), TextTag('('+s.type.name+')'), EndTag()]
 
 	@property
 	def parsed(self):
@@ -2710,7 +2712,7 @@ class ParserMenuItem(MenuItem):
 		value.parent = self
 		self.scores = Dotdict()
 		if score != 0:  self.scores._ = score
-		self.brackets_color = (0,255,255)
+		self.brackets_color = colors.parser_menu_item_brackets
 
 	@property
 	def score(s):
@@ -2718,7 +2720,7 @@ class ParserMenuItem(MenuItem):
 		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
 
 	def tags(self):
-		return [MemberTag('value'), ColorTag("menu item extra info"), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
+		return [MemberTag('value'), ColorTag(colors.menu_item_extra_info), " - "+str(self.value.__class__.__name__)+' ('+str(self.score)+')', EndTag()]
 
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
@@ -2727,7 +2729,8 @@ class DefaultParserMenuItem(MenuItem):
 	def __init__(self, text):
 		super(DefaultParserMenuItem, self).__init__()
 		self.text = text
-		self.brackets_color = (0,0,255)
+		self.brackets_color = colors.default_parser_menu_item_brackets
+
 
 	def tags(self):
 		return [TextTag(self.text)]
@@ -3448,7 +3451,7 @@ build_in(SyntaxedNodecl(ShellCommand,
 class FilesystemPath(Syntaxed):
 	def __init__(self, children):
 		self.status = widgets.Text(self, "(status)")
-		self.status.color = "compiler hint"
+		self.status.color = colors.compiler_hint
 		super(FilesystemPath, self).__init__(children)
 
 	def _eval(s):

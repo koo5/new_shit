@@ -21,9 +21,13 @@ os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 if hasattr(sys, 'pypy_version_info'):
 	print ("trying to load pygame_cffi, adding pygame_cffi to sys.path")
 	sys.path.append("pygame_cffi")
-import pygame
-if hasattr(pygame, 'cffi'):
-	print("yep, loaded pygame_cffi")
+try:
+	import pygame
+	if hasattr(pygame, 'cffi'):
+		print("yep, loaded pygame_cffi")
+except:
+	sys.path.remove("pygame_cffi")
+	import pygame
 from pygame import display, image, Rect
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 

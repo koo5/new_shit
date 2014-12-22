@@ -7,6 +7,7 @@ from lemon_utils.lemon_logging import log
 import tags
 from tags import *
 from lemon_utils.utils import Evil
+from lemon_colors import colors
 
 CHANGED = 1
 
@@ -17,8 +18,8 @@ class Element():
 	keys_help_items = None
 	def __init__(self):
 		super().__init__()
-		self._parent = Evil('666:Evil _parent placeholder')
-		self.brackets_color = (200,200,200)
+		self._parent = Evil('_parent')
+		self.brackets_color = colors.element_brackets
 		self.brackets = ('<','>')
 		self._render_lines = {}
 

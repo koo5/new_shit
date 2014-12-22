@@ -425,7 +425,22 @@ def the_doc():
 				maybe also emacs
 			"""),
 			
-			Chapter("profiling", """
+			Chapter("
+
+
+
+
+
+##profiling", """
+#PY3:
+pip3 install --user pyprof2calltree
+apt-get install kcachegrind
+python3 -m cProfile -o ooo src/sdl_client.py
+~/.local/bin/pyprof2calltree -o oooo -i ooo
+kcachegrind oooo
+
+
+
 some useful commands:
 python -m cProfile -s cumulative  new_shit.py
 

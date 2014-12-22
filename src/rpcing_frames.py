@@ -1,12 +1,12 @@
 from math import atan2, cos, sin
 
 from lemon_platform import SDL, CURSES
-from lemon_colors import color, colors
 from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
 from lemon_utils.utils import Evil
 from lemon_utils.cache import Cache
+from lemon_colors import colors
 
 import graph
 import nodes
@@ -88,21 +88,27 @@ class ClientFrame(object):
 	elif CURSES: draw = curses_draw
 
 	def sdl_draw_lines(self, surf, highlight=None, transparent=False, just_bg=False):
-		bg_cached = color("bg")
+
+		bg_cached = colors.bg
+		highlighted_bg_cached = colors.highlighted_bg
+
 		for row, line in enumerate(self.lines.get()):
 			for col, char in enumerate(line):
+
 				x = font_width * col
 				y = font_height * row
-				bg = color("highlighted bg" if (
-					'node' in char[1] and
-					char[1]['node'] == highlight and
-					not args.eightbit) else "bg")
+
+				if char[1].get(node_att) == highlight and not args.eightbit:
+					bg = highlighted_bg_cached
+				else:
+					bg = bg_cached
+
 				if just_bg:
 					if bg != bg_cached:
 						pygame.draw.rect(surf,bg,(x,y,font_width,font_height))
-				#	sur = font.render(' ',0,(0,0,0),bg)#guess i could just make a rectangle
+
 				else:
-					fg = color(char[1]['color'])
+					fg = char[1][color_att]
 					if transparent:
 						sur = font.render(char[0],1,fg)
 					else:
@@ -448,7 +454,7 @@ class Editor(ClientFrame):
 			s.complete_arrows()
 		for ((c,r),(c2,r2)) in s.completed_arrows:
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
-			pygame.draw.line(surface, color("arrow"), (int(x),int(y)),(int(x2),int(y2)))
+			pygame.draw.line(surface, colors.arrow, (int(x),int(y)),(int(x2),int(y2)))
 			a = atan2(y-y2, x-x2)
 			angle = 0.1
 			length = 40
@@ -519,7 +525,7 @@ class Editor(ClientFrame):
 
 def sdl_arrow_side(length,a,x2,y2, surface):
 	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
-	pygame.draw.line(surface, color("arrow"), x1y1,(int(x2),int(y2)))
+	pygame.draw.line(surface, colors.arrow, x1y1,(int(x2),int(y2)))
 
 
 class StaticInfoFrame(ClientFrame):

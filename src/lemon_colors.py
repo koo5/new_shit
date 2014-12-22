@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_utils.dotdict import Dotdict
@@ -13,53 +14,46 @@ except ImportError as e:
 	info("%s, ...but nevermind", e)
 
 
-default_colors = {
-	"info item text": (224,224,224),
-	"bg": (0,0,0),
-	"highlighted bg":(40,0,0),
-	"arrow":(150,150,111),
-	"fg": (255,255,255),
-	"cursor": (155,255,255),
-	"info item visibility toggle":(100,100,100),
-	"menu_rect_selected":(255,255,255),
-	"menu_rect":(0,0,255),
-	"help":(255,255,0),
-	"compiler hint":(100,100,100),
-	"text brackets":(0,255,0),
-	"compiler brackets":(255,255,0),
-	"node brackets":(250,150,150),
-	"number buttons":(80,80,255),
-	"menu item extra info":(0,200,0),
-    "eval results":(150,150,150)
-	}
+class ColorsSettings():
+	def __init__(s):
+		s.info_item_text = (224,224,224)
+		s.bg = (0,0,0)
+		s.highlighted_bg = (40,0,0)
+		s.arrow = (150,150,111)
+		s.fg = (255,255,255)
+		s.cursor = (155,255,255)
+		s.info_item_visibility_toggle = (100,100,100)
+		s.menu_rect_selected = (255,255,255)
+		s.menu_rect = (0,0,255)
+		s.help = (255,255,0)
+		s.compiler_hint = (100,100,100)
+		s.text_brackets = (0,255,0)
+		s.compiler_brackets = (255,255,0)
+		s.node_brackets = (250,150,150)
+		s.number_buttons = (80,80,255)
+		s.menu_item_extra_info = (0,200,0)
+		s.eval_results = (150,150,150)
+		s.parser_menu_item_brackets = (0,255,255)
+		s.default_parser_menu_item_brackets  = (0,0,255)
+		s.element_brackets = (200,200,200)
+		s.widget_color = (150,150,255)
+		s.button = (255,150,150)
 
 def cache():
-	global colors, invert, mono
+	global invert, mono
 	invert = args.invert
 	mono = args.mono
-	colors._dict.update(dict([(k, modify(v)) for k,v in iteritems(default_colors)]))
+	for k,v in iteritems(default_colors.__dict__):
+		colors.__dict__[k] = modify(v)
 
 def modify(c, max=255):
-	if mono and c != (0,0,0):#||(0,0,0,0)
+	if mono and c != (0,0,0):
 		c = (255,255,255)
 	if invert:
 		c = (max - c[0], max - c[1], max - c[2])
 	assert(isinstance(c, tuple))
 	return c
 
-
-def color(c):
-	"""return an rgb tuple by name, modified by display filters(mono,invert) and ready for use"""
-	if isinstance(c, unicode):
-		try:
-			return colors[c]
-		except KeyError:
-			raise Exception("i dont know color '%s'" % str(c))
-	else:
-		#log(c)
-		return modify(c)
-
-#class colors?
-
-colors = Dotdict()
+default_colors = ColorsSettings()
+colors = ColorsSettings()
 cache()
