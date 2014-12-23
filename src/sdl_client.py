@@ -33,10 +33,13 @@ import pygame
 from pygame import display, image, Rect, time
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
-from pygame import freetype
-freetype.init(cache_size=1024)
 display.init()
-
+if args.freetype:
+	from pygame import freetype
+	freetype.init(cache_size=1024)
+else:
+	import pygame.font
+	pygame.font.init()
 
 import lemon_platform
 lemon_platform.SDL = True
@@ -61,11 +64,16 @@ keybindings.change_font_size = user_change_font_size
 def change_font_size(by = 0):
 	global font, font_width, font_height
 	args.font_size += by
-	rpcing_frames.font = font = freetype.SysFont('monospace', args.font_size)
-	font.origin = True
-	_, _, font_width, font_height = font.get_rect("X")
-	font_height += 3
-	rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height
+	if args.freetype:
+		rpcing_frames.font = font = freetype.SysFont('monospace', args.font_size)
+		font.origin = True
+		_, _, font_width, font_height = font.get_rect("X")
+		font_height += 3
+		rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height
+	else:
+		rpcing_frames.font = font = pygame.font.SysFont('monospace', args.font_size)
+		rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height = font.size("X")
+
 
 def resize(size):
 	global screen_surface, screen_width, screen_height

@@ -38,6 +38,11 @@ parser.add_argument('--menu', action='store_true')
 parser.add_argument('--intro', action='store_true')
 parser.add_argument('--profile', action='store_true')
 
+parser.add_argument('--freetype', dest='freetype', action='store_true')
+parser.add_argument('--no-freetype', dest='freetype', action='store_false')
+parser.set_defaults(freetype=True)
+
+
 
 args = parser.parse_args([]) # dummy for testing
 

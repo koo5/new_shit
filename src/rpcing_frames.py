@@ -109,10 +109,18 @@ class ClientFrame(object):
 
 				if not just_bg:
 					fg = char[1][color_att]
-					if transparent:
-						font.render_to(surf, (x,y), char[0],fg)
+					if args.freetype:
+						if transparent:
+							font.render_to(surf, (x,y), char[0], fg)
+						else:
+							font.render_to(surf, (x,y), char[0], fg, bg)
+
 					else:
-						font.render_to(surf, (x,y), char[0], fg, bg)
+						if transparent:
+							sur = font.render(char[0],1,fg)
+						else:
+							sur = font.render(char[0],1,fg,bg)
+						surf.blit(sur,(x,y))
 
 
 	def curses_draw_lines(s, win):
