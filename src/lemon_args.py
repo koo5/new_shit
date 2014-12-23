@@ -36,6 +36,8 @@ parser.add_argument('--rpc', action='store_true')
 parser.add_argument('--root', action='store_true')
 parser.add_argument('--menu', action='store_true')
 parser.add_argument('--intro', action='store_true')
+parser.add_argument('--profile', action='store_true')
+
 
 args = parser.parse_args([]) # dummy for testing
 

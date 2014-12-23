@@ -88,7 +88,10 @@ class Client():
 			s.sidebar = s.sidebars[0] # currently active sidebar
 
 	def bye(s):
-		log("deading")
+		log("deading pygame..")
+		import pygame
+		pygame.quit()
+		log("exit")
 		sys.exit()
 
 

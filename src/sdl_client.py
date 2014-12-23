@@ -18,18 +18,24 @@ from lemon_args import args
 
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
-if hasattr(sys, 'pypy_version_info'):
+if False:#hasattr(sys, 'pypy_version_info'):
 	print ("trying to load pygame_cffi, adding pygame_cffi to sys.path")
-	sys.path.append("pygame_cffi")
-try:
-	import pygame
-	if hasattr(pygame, 'cffi'):
-		print("yep, loaded pygame_cffi")
-except:
-	sys.path.remove("pygame_cffi")
-	import pygame
-from pygame import display, image, Rect
+	try:
+		sys.path.append("pygame_cffi")
+		import pygame
+		if hasattr(pygame, 'cffi'):
+			print("yep, loaded pygame_cffi")
+	except:
+		sys.path.remove("pygame_cffi")
+
+import pygame
+
+from pygame import display, image, Rect, time
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
+
+from pygame import freetype
+freetype.init(cache_size=1024)
+display.init()
 
 
 import lemon_platform
@@ -55,9 +61,11 @@ keybindings.change_font_size = user_change_font_size
 def change_font_size(by = 0):
 	global font, font_width, font_height
 	args.font_size += by
-	rpcing_frames.font = font = pygame.font.SysFont('monospace', args.font_size)
-	rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height = font.size("X")
-
+	rpcing_frames.font = font = freetype.SysFont('monospace', args.font_size)
+	font.origin = True
+	_, _, font_width, font_height = font.get_rect("X")
+	font_height += 3
+	rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
@@ -219,10 +227,13 @@ def fix_keyboard():
 	pygame.key.set_repeat(repeat_delay, 1000//repeat_rate)
 
 
+def mainloop():
+	while True:
+		loop()
+
+
 def main():
 	global c
-	pygame.display.init()
-	pygame.font.init()
 	display.set_caption('lemon operating language')
 	try:
 		icon = image.load('icon32x32.png')
@@ -246,16 +257,19 @@ def main():
 	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
 	reset_cursor_blink_timer()
 
-	while True:
-		try:
-			loop()
+	try:
+		if args.profile:
+			import cProfile
+			cProfile.run('mainloop()', filename="lemon.profile")
+		else:
+			mainloop()
 	#	except KeyboardInterrupt() as e:
 	#		pygame.display.iconify()
 	#		raise e
-		except Exception as e:
-			#log(e),pass
-			pygame.display.iconify()
-			raise
+	except Exception as e:
+		#log(e),pass
+		pygame.display.iconify()
+		raise
 
 if __name__ == "__main__":
 	main()

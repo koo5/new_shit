@@ -98,22 +98,21 @@ class ClientFrame(object):
 				x = font_width * col
 				y = font_height * row
 
-				if char[1].get(node_att) == highlight and not args.eightbit:
+				hi = highlight and char[1].get(node_att) == highlight and not args.eightbit
+
+				if hi:
 					bg = highlighted_bg_cached
+					if just_bg:
+						pygame.draw.rect(surf,bg,(x,y,font_width,font_height))
 				else:
 					bg = bg_cached
 
-				if just_bg:
-					if bg != bg_cached:
-						pygame.draw.rect(surf,bg,(x,y,font_width,font_height))
-
-				else:
+				if not just_bg:
 					fg = char[1][color_att]
 					if transparent:
-						sur = font.render(char[0],1,fg)
+						font.render_to(surf, (x,y), char[0],fg)
 					else:
-						sur = font.render(char[0],1,fg,bg)
-					surf.blit(sur,(x,y))
+						font.render_to(surf, (x,y), char[0], fg, bg)
 
 
 	def curses_draw_lines(s, win):

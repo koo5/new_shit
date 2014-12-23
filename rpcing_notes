@@ -61,3 +61,10 @@ required features of the pizco fork:
 no separate remoteattribute: Proxy has a path - a list of attribute names,
 and handles all accesssess. 
 boxing: 
+
+
+
+or..actually..zerorpc?
+no attribute access -> what must be wrapped in functions?
+signals?
+boxing: where, how?
