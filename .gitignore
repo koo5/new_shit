@@ -2,7 +2,8 @@
 *.pyc
 *.pyo
 .idea
-replay.p
+replay.pickle
+lemon.profile
 .#*
 curses_log
 cython/*pyx
