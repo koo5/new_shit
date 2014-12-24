@@ -3,44 +3,35 @@
 """
 
 this file defines the AST classes of the language and everything around it.
-we also build up the builtins module along the way
-
+we also build up the builtins module along the way.
 the philosophy of this codebase is "constant surprise". it keeps you alert.
-
 "kids" and "children" mean the same.
 sometimes i use "s" instead of "self".
-"ch" is children of syntaxed
+"ch" is children of syntaxed.
+good luck.
 
 """
 
 # region imports
 
 import json
-
+from types import SimpleNamespace
 
 from fuzzywuzzy import fuzz
 from pizco import Signal
 
+from lemon_utils.lemon_six import iteritems, iterkeys
 from lemon_utils.notifyinglist import NotifyingList
 
-from lemon_utils.lemon_six import iteritems, iterkeys
-
-import lemon_platform as platform
-#BRY = platform.frontend == platform.brython
-
-
-
 import element
-from element import Element
 from menu_items import MenuItem
 import widgets
 import tags
 from tags import *
 
-
 from lemon_colors import colors
 from keys import *
-from lemon_utils.utils import flatten, odict, Evil
+from lemon_utils.utils import flatten, odict, Evil, uniq
 from lemon_utils.dotdict import Dotdict
 from lemon_args import args
 from lemon_utils.lemon_logging import log, warn
@@ -65,28 +56,28 @@ else:
 
 # endregion
 AST_CHANGED = 2
-# region utils
 
 #b is for staging the builtins module and referencing builtin nodes from python code
-b = odict()
+b = SimpleNamespace()
 
 def build_in(node, name=None):
-	#modifies b
+	"""adds node to b"""
 	if isinstance(node, list):
 		[build_in(node) for node in node]
 	else:
 		if name == False or isinstance(node, Text):
-			key = node
+			key = node # we wont need to reference this node, so any useless key
 		elif name == None:
 			key = node.name
 		else:
 			key = name
 		assert node
 		assert key,  key
-		assert key not in b,  repr(key) + " already in builtins:" + repr(node)
-		b[key] = node
+		assert key not in b.__dict__,  repr(key) + " already in builtins:" + repr(node)
+		b.__dict__[key] = node
 	return node
 
+# region utils
 
 def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase, ParametricNodecl))
@@ -167,14 +158,6 @@ class Children(Dotdict):
 def parse(raw): #just text now, list_of_texts_and_nodes later
 
 	tokens = m.raw2tokens(raw)
-
-
-def uniq(lst):
-   r = []
-   for i in lst:
-       if i not in r:
-           r.append(i)
-   return r
 
 m = MarpaClient()
 
@@ -549,12 +532,10 @@ class WidgetedValuePersistenceStuff(object):
 # region basic node classes
 
 class Node(NodePersistenceStuff, element.Element):
-	"""a node is more than an element, its a standalone unit.
+	"""a node is more than an element,
 	nodes can added, cut'n'pasted around, evaluated etc.
-	every node class has a corresponding decl object
+	every node class has a corresponding decl object...almost
 	"""
-	AST_CHANGED = 2
-	help = None
 
 	def __init__(self):
 		"""	__init__ usually takes children or value as arguments.
@@ -571,6 +552,7 @@ class Node(NodePersistenceStuff, element.Element):
 		self.forget_symbols()
 
 	def forget_symbols(s):
+		"""clear marpa symbol ids"""
 		s._symbol  = None
 
 	@property
@@ -630,7 +612,7 @@ class Node(NodePersistenceStuff, element.Element):
 	def set_parent(s, v):
 		assert v or isinstance(s, Root),  s
 		super(Node, s).set_parent(v)
-		if "value" in s.runtime._dict: #messy
+		if "value" in s.runtime._dict: #crap
 			s.runtime.value.parent = s.parent
 
 	#overriding properties has to be done like this
@@ -642,7 +624,7 @@ class Node(NodePersistenceStuff, element.Element):
 		return s
 
 	def scope(self):
-		"""what does this node see?..poc"""
+		"""lexical scope, what does this node see?"""
 		r = []
 
 		if isinstance(self.parent, List):
@@ -658,11 +640,11 @@ class Node(NodePersistenceStuff, element.Element):
 
 	@property
 	def nodecls(s):
-		return [i for i in s.scope() if isinstance(i, NodeclBase)] # danger:just NodeclBase? what about EnumType?
+		return [i for i in s.scope() if isinstance(i, NodeclBase)] #crap:just NodeclBase? what about EnumType?
 
 	@property
 	def vardecls_in_scope(self):
-		"""what variable declarations does this node see?..poc"""
+		"""what variable declarations does this node see?"""
 		r = []
 
 		#if isinstance(self.parent, List):
@@ -677,13 +659,13 @@ class Node(NodePersistenceStuff, element.Element):
 		return r
 
 	def eval(self):
-		"call _eval, save result to s.runtime"
+		"call _eval(), save result to self.runtime"
 		r = self._eval()
 		assert isinstance(r, Node),  str(self) + "._eval() is borked"
 
-		#if self.isconst:
+		#if self.isconst: # todo:figure out how const would propagate (to compiler)
 		#	self.runtime.value.set(r)
-			#log("const" + str(self)) todo:figure out how const would propagate (to compiler)
+			#log("const" + str(self))
 		#else:
 		#	self.runtime.value.append(r)
 		self.append_value(r)
@@ -709,7 +691,7 @@ class Node(NodePersistenceStuff, element.Element):
 			if self.parent != None:
 				return self.parent.module()
 			else:
-				log (self, "has no parent")
+				log ("%s has no parent", self)
 				return None
 
 	@classmethod
@@ -721,15 +703,15 @@ class Node(NodePersistenceStuff, element.Element):
 		return r
 
 	def to_python_str(self):
-		return str(self)
-		#danger: uni
+		return unicode(self)
 
 	@property
 	def vardecls(s):
+		"""what variables does this node declare"""
 		return []
 
 	def tags(elem):
-
+		"""called from Element.render..i think"""
 		yield [AttTag(node_att, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
 		yield [elem.render(), ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
 
@@ -750,47 +732,50 @@ class Node(NodePersistenceStuff, element.Element):
 
 	#i dont get any visitors here, nor should my code
 	def flatten(self):
-		r = self._flatten()
-		#assert is_flat(r), (self, r)
-		#return r
-		return flatten(r)
-
+		"""return yourself and all your children/items as a list
+		#crap: decls arent included in flatten(?)
+		"""
+		return flatten(self._flatten())
 
 	def _flatten(self):
+		"per-class implementation of flattening"
 		if not isinstance(self, (WidgetedValue, EnumVal, Ref, SyntaxedNodecl, FunctionCallNodecl,
 			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, VarRef)): #all childless nodes
 			warn(str(self)+ " flattens to self")
 		return [self]
 
 	def palette(self, scope, text, node):
+		"create menu items"
 		return []
 
 	def __repr__(s):
 		r = object.__repr__(s)
 		try:
 			r += "("+s.name+")"
-		except:
+		except: # no name
 			pass
 		return r
 
 	@property
 	def ddecl(s):
+		"""decl dereferenced to the actual value, thru refs/definitions.."""
 		return deref_decl(s.decl)#i have no idea what im doing
 
 	def eq_by_value_and_python_class(a, b):
+		"""like comparing by type and value, but crappier"""
 		a,b = a.parsed, b.parsed
 		if a.__class__ != b.__class__:
 			return False
 		return a.eq_by_value(b)
 
 	def delete_child(self, child):
-		log("not implemented")
+		log("not implemented, go delete someone else's children")
 
 
 class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
-	Syntaxed has some named children, kept in ch.
-	their types are in slots.
+	Syntaxed has some named children, kept in self.ch.
+	their types are in self.slots.
 	syntax is a list of Tags, and it can contain ChildTag
 	"""
 	def __init__(self, children):
@@ -1926,58 +1911,6 @@ class Union(Syntaxed):
 
 # endregion
 
-# region builtins
-#here we start putting stuff into b, which is then made into the builtins module
-build_in(Text(
-"""We start by declaring the existence of some types (decls).
-Once declared, we can reference them from lemon objects.
-Internally, each declaration is a Nodecl object.
-The type name is usually a lowercased
-name of the python class that implements it."""))
-
-build_in(TypeNodecl(), 'type')  #..so you can say that your function returns a type, or something
-build_in(VarRefNodecl(), 'varref')
-
-log(Nodecl(Number).name)
-assert Nodecl(Number).name
-
-build_in([Nodecl(x) for x in [Number, Text, Statements, Banana, Bananas]])
-
-build_in([
-
-SyntaxedNodecl(SyntacticCategory,
-			   [TextTag("syntactic category:"), ChildTag("name")],
-			   {'name': 'text'}),
-SyntaxedNodecl(WorksAs,
-			   [ChildTag("sub"), TextTag("works as"), ChildTag("sup")],
-			   {'sub': 'type', 'sup': 'type'}),
-SyntaxedNodecl(Definition,
-			   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
-			   {'name': 'text', 'type': 'type'}),
-
-SyntacticCategory({'name': Text("anything")}),
-SyntacticCategory({'name': Text("statement")}),
-SyntacticCategory({'name': Text("expression")})
-])
-
-build_in(WorksAs.b("statement", "anything"), False)
-build_in(WorksAs.b("expression", "statement"), False)
-build_in(WorksAs.b("number", "expression"), False)
-build_in(WorksAs.b("text", "expression"), False)
-
-build_in(
-ParametricNodecl(List,
-				 [TextTag("list of"), ChildTag("itemtype")],
-				 {'itemtype': b['type']}),'list')
-build_in(
-ParametricNodecl(Dict,
-				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
-				 {'keytype': b['type'], 'valtype': b['type']}), 'dict')
-
-build_in(WorksAs.b("list", "expression"), False)
-build_in(WorksAs.b("dict", "expression"), False)
-
-
 class ListOfAnything(ParametricType):
 
 	def palette(self, scope, text, node):
@@ -1989,49 +1922,10 @@ class ListOfAnything(ParametricType):
 	def works_as(self, type):
 		return True
 
-#build_in(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
-
-build_in(SyntaxedNodecl(EnumType,
-			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
-			   {'name': 'text',
-			   'options': list_of('text')}))
-
-#Definition({'name': Text("bool"), 'type': EnumType({
-#	'name': Text("bool"),
-#	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
-build_in(EnumType({'name': Text("bool"),
-	'options':b['enumtype'].instance_slots["options"].inst_fresh()}), 'bool')
-
-b['bool'].ch.options.items = [Text('false'), Text('true')]
-lemon_false, lemon_true = EnumVal(b['bool'], 0), EnumVal(b['bool'], 1)
-
-#Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
-
-build_in([
-SyntaxedNodecl(Module,
-			   ["module", ChildTag("name"), 'from', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
-			   {'statements': b['statements'],
-			    'name': b['text'],
-			    'file': b['text']
-			    }),
-
-Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})}),
-
-SyntaxedNodecl(Union,
-			   [TextTag("union of"), ChildTag("items")],
-			   {'items': b['list'].make_type({'itemtype': b['type']})})]) #todo:should use the definition above instead
-b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
-
-
-
-
 class UntypedVar(Syntaxed):
 	def __init__(self, children):
 		super(UntypedVar, self).__init__(children)
 
-build_in(SyntaxedNodecl(UntypedVar,
-			   [ChildTag("name")],
-			   {'name': 'text'}))
 
 class For(Syntaxed):
 	def __init__(self, children):
@@ -2055,16 +1949,6 @@ class For(Syntaxed):
 
 		return NoValue()
 
-build_in(SyntaxedNodecl(For,
-			   [TextTag("for"), ChildTag("item"), ("in"), ChildTag("items"),
-			        ":\n", ChildTag("body")],
-			   {'item': b['untypedvar'],
-			    'items': Exp(
-				    b['list'].make_type({
-				        'itemtype': Ref(b['type'])#?
-				    })),
-			   'body': b['statements']}))
-
 class VarlessFor(Syntaxed):
 	def __init__(self, children):
 		self.it = b['untypedvar'].inst_fresh()
@@ -2083,12 +1967,6 @@ class VarlessFor(Syntaxed):
 			s.ch.body.run()
 		return NoValue()
 
-build_in(SyntaxedNodecl(VarlessFor,
-			   [TextTag("for"), ChildTag("items"),
-			        ":\n", ChildTag("body")],
-			   {'items': Exp(list_of('type')),
-			   'body': b['statements']}))
-
 
 class If(Syntaxed):
 	def __init__(self, children):
@@ -2106,16 +1984,8 @@ class If(Syntaxed):
 			log("condition false")
 			return NoValue()
 
-build_in(SyntaxedNodecl(If,
-			[
-				[TextTag("if"), ChildTag("condition"), ":\n", ChildTag("statements")],
-
-			],
-			{'condition': Exp(b['bool']),
-			'statements': b['statements']}))
-
 class Else(Syntaxed):
-	"""a dangling else"""
+	"""a dangling else...dang!"""
 	def __init__(self, children):
 		super(Else, self).__init__(children)
 
@@ -2143,18 +2013,6 @@ class Else(Syntaxed):
 			#log(repr(c.runtime.value.val.pyval))
 			#return NoValue()
 			return a.runtime.value.val
-
-build_in(SyntaxedNodecl(Else,
-			[
-				[TextTag("else:"), ":\n", ChildTag("statements")],
-
-			],
-			{'statements': b['statements']}))
-
-
-"""...notes: formatting: we can speculate that we will get to having a multiline parser,
-and that will allow for a more freestyle formatting...
-"""
 
 
 """
@@ -2741,7 +2599,6 @@ class DefaultParserMenuItem(MenuItem):
 
 """
 # todo function arguments:
-# untyped argument,
 # todo optional types
 # todo: show and hide argument names. syntaxed?
 """
@@ -2760,9 +2617,6 @@ class TypedParameter(FunctionParameterBase):
 	def type(s):
 		return s.ch.type.parsed
 
-build_in(SyntaxedNodecl(TypedParameter,
-			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
-			   {'name': 'text', 'type': 'type'}))
 
 class UnevaluatedParameter(FunctionParameterBase):
 	"""this argument will be passed to the called function as is, without evaluation"""
@@ -2771,31 +2625,6 @@ class UnevaluatedParameter(FunctionParameterBase):
 	@property
 	def type(s):
 		return s.ch.argument.type
-
-builtin_unevaluatedparameter = build_in(SyntaxedNodecl(UnevaluatedParameter,
-			   [TextTag("unevaluated"), ChildTag("argument")],
-			   {'argument': 'typedparameter'}))
-
-
-
-#lets define a function signature type
-tmp = b['union'].inst_fresh()
-tmp.ch["items"].add(Ref(b['text']))
-tmp.ch["items"].add(Ref(b['typedparameter']))
-tmp.ch["items"].add(Ref(builtin_unevaluatedparameter))
-build_in(Definition({'name': Text('function signature node'), 'type': tmp}))
-tmp = b['list'].make_type({'itemtype': Ref(b['function signature node'])})
-build_in(Definition({'name': Text('function signature list'), 'type':tmp}))
-#todo:refactor
-#and a custom node syntax type
-tmp = b['union'].inst_fresh()
-tmp.ch["items"].add(Ref(b['text']))
-tmp.ch["items"].add(Ref(b['type']))
-build_in(Definition({'name': Text('custom syntax'), 'type': tmp}))
-tmp = b['list'].make_type({'itemtype': Ref(b['custom syntax'])})
-build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
-
-
 
 
 class FunctionDefinitionBase(Syntaxed):
@@ -2962,12 +2791,6 @@ class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionB
 			self.params[k].append_value(v.copy())
 
 
-build_in(SyntaxedNodecl(FunctionDefinition,
-			   [TextTag("deffun:"), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
-				{'sig': b['function signature list'],
-				 'body': b['statements']}))
-
-
 """
 class PassedFunctionCall(Syntaxed):
 	def __init__(self, definition):
@@ -3029,14 +2852,6 @@ class BuiltinFunctionDecl(FunctionDefinitionBase):
 		)
 
 
-#user cant instantiate it, but we make a decl anyway,
-#because we need to display it, its in builtins,
-#its just like a normal function, FunctionCall can
-#find it there..
-build_in(SyntaxedNodecl(BuiltinFunctionDecl,
-			   [TextTag("builtin function"), ChildTag("name"), TextTag(":"), ChildTag("sig")],
-				{'sig': b['function signature list'],
-				 'name': b['text']}))
 
 
 class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
@@ -3093,32 +2908,6 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 	#def palette(self, scope, text, node):
 	#	return []
 
-
-build_in(SyntaxedNodecl(BuiltinPythonFunctionDecl,
-		[
-		TextTag("builtin python function"), ChildTag("name"),
-		TextTag("with signature"), ChildTag("sig"),
-		TextTag("return type"), ChildTag("ret")
-		],
-		{
-		'sig': b['function signature list'],
-		"ret": b['type'],
-		'name': b['text']
-		}))
-
-#lets keep 'print' a BuiltinFunctionDecl until we have type conversions as first-class functions in lemon,
-#then it can be just a python library call printing strictly strings and we can dump the to_python_str (?)
-
-def b_print(args):
-	o = args['expression'].to_python_str()
-	#print o
-	log(o)
-	return NoValue()
-
-BuiltinFunctionDecl.create(
-	"print",
-	b_print,
-	[ Text("print"), TypedParameter({'name': Text("expression"), 'type': Ref(b['expression'])})])
 
 
 class FunctionCall(FunctionCallPersistenceStuff, Node):
@@ -3195,195 +2984,7 @@ class FunctionCallNodecl(NodeclBase):
 #		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
 #		return [ParserMenuItem(FunctionCall(x)) for x in decls]
 
-build_in(FunctionCallNodecl(), 'call')
-build_in(WorksAs.b("call", "expression"), False)
 
-
-
-
-
-def num_arg(name = "number"):
-	return TypedParameter({'name':Text(name), 'type':Ref(b['number'])})
-
-def text_arg():
-	return TypedParameter({'name':Text("text"), 'type':Ref(b['text'])})
-
-def num_list():
-	return  b["list"].make_type({'itemtype': Ref(b['number'])})
-
-def num_list_arg():
-	return TypedParameter({'name':Text("list of numbers"), 'type':num_list()})
-
-
-
-def pfn(function, signature, return_type = int, **kwargs):
-	"""helper function to add a builtin python function"""
-	if return_type == int:
-		return_type = Ref(b['number'])
-	elif return_type == bool:
-		return_type = Ref(b['bool'])
-	elif return_type == None:
-		return_type = Ref(b['void'])
-
-	if 'note' in kwargs:
-		note = kwargs['note']
-	else:
-		note = ""
-
-	if 'name' in kwargs:
-		name = kwargs['name']
-	else:
-		name = function.__name__
-
-	BuiltinPythonFunctionDecl.create(
-		function,
-		signature,
-		return_type,
-		name,
-		note)
-# endregion
-
-def add_operators():
-	#we'll place this somewhere else, but later i guess, splitting this
-	#file into some reasonable modules would still create complications
-	import operator as op
-
-	pfn(op.floordiv, [num_arg('A'), Text("//"), num_arg('B')])
-	pfn(op.truediv,  [num_arg('A'), Text("/"), num_arg('B')])
-	
-	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
-	pfn(op.add, [num_arg('A'), Text("+"), num_arg('B')])
-
-	pfn(op.eq,  [num_arg('A'), Text("=="),num_arg('B')], bool)
-	pfn(op.ge,  [num_arg('A'), Text(">="),num_arg('B')], bool)
-	pfn(op.gt,  [num_arg('A'), Text(">"), num_arg('B')], bool)
-	pfn(op.le,  [num_arg('A'), Text("<="),num_arg('B')], bool)
-	pfn(op.lt,  [num_arg('A'), Text("<"), num_arg('B')], bool)
-	pfn(op.mod, [num_arg('A'), Text("%"), num_arg('B')])
-	pfn(op.mul, [num_arg('A'), Text("*"), num_arg('B')])
-	pfn(op.neg, [Text("-"), num_arg()])
-	pfn(op.sub, [num_arg('A'), Text("-"), num_arg('B')])
-
-	#import math
-
-	def b_squared(arg):
-		return arg * arg
-	pfn(b_squared, [num_arg(), Text("squared")], name = "squared")
-
-	def b_list_squared(arg):
-		return [b_squared(i) for i in arg]
-	pfn(b_list_squared, [num_list_arg(), Text(", squared")], num_list(), name = "list squared")
-
-	pfn(sum, [Text("the sum of"), num_list_arg()], name = "summed")
-
-	def b_range(min, max):
-		return list(range(min, max + 1))
-	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
-		num_list(), name = "range", note="inclusive")
-add_operators()
-
-# region regexes
-"""
-we got drunk and wanted to implement regex input. i will hide this in its own module asap.
-"""
-#regex is list of chunks
-#chunk is matcher + quantifier | followed-by
-#matcher is:
-#chars
-#range
-#or
-"""
-SyntacticCategory({'name': Text("chunk of regex")})
-SyntacticCategory({'name': Text("regex quantifier")})
-SyntacticCategory({'name': Text("regex matcher")})
-#WorksAs.b("expression", "statement")
-
-class Regex(Syntaxed):
-	pass
-
-SyntaxedNodecl(Regex,
-	[ChildTag('chunks')],
-	{'chunks': b["list"].make_type({'itemtype': Ref(b['chunk of regex'])})})
-
-class RegexFollowedBy(Syntaxed):
-	pass
-SyntaxedNodecl(RegexFollowedBy,
-	["followed by"],
-	{})
-
-class QuantifiedChunk(Syntaxed):
-	 pass
-SyntaxedNodecl(QuantifiedChunk,
-	[ChildTag("quantifier"), ChildTag("matcher")],
-	{"quantifier": b['regex quantifier'],
-	"matcher": b['regex matcher']})
-
-class UnquantifiedChunk(Syntaxed):
-	pass
-SyntaxedNodecl(UnquantifiedChunk,
-	[ChildTag("matcher")],
-	{"matcher": b['regex matcher']})
-
-#i skew the grammar a bit so it will be easier to construct things in the stupid gui#kay
-#normally i think it would be defined #hmm nvm
-
-class RegexZeroOrMore(Syntaxed):
-	pass
-SyntaxedNodecl(RegexZeroOrMore,
-	['zero or more'],{})
-
-class RegexChars(Syntaxed):
-	pass
-SyntaxedNodecl(RegexChars,
-	[ChildTag("text")],
-	{'text': b['text']})
-class RegexRange(Syntaxed):
-	pass
-SyntaxedNodecl(RegexRange,
-	['[', ChildTag("text"), ']'],
-	{'text': b['text']})
-
-
-
-def b_match(regex, text):
-	import re
-	#...
-
-BuiltinPythonFunctionDecl.create(
-	b_match, 
-	[
-	Text('number of matches of'),
-	TypedParameter({'name': Text('regex'), 'type':Ref(b['regex'])}),
-	Text('with'), 
-	TypedParameter({'name': Text('text'), 'type':Ref(b['text'])})],
-	Ref(b['number']), #i should add bools and more complex types........
-	"match",
-	"regex")
-"""
-
-"""
-Quantifiers
-'a?' : 'a' 0 or 1 times
-'a*' : 'a' 0 or more times
-'a+' : 'a' 1 or more times
-'a{9}': 2 'a's
-'a{2, 9}': between 2 and 9 'a's
-'a{2,}' : 2 or more 'a's
-'a{,5}' : up to 5 'a's
-
-Ranges:
-'[a]': 'a'
-'[a-z]': anything within the letters 'a' to 'z'
-'[0-9]': same, but with numbers
-'(a)' : 'a'#group?yes#ok no groups for us for now
-'(a|b|c)': 'a' or 'b' or 'c'#i think this should be kept, because i think it
-is the only way to match a quantity of alternations#i see
-'a|b' : 'a' or 'b' (without group)
-'^a' : 'a' at start of string
-'a$' : 'a' at end of string
-
-Tah-dah!#you really like typing.
-"""
 
 # endregion
 
@@ -3406,7 +3007,6 @@ class Annotation(Node):
 
 	def render(s):
 		return [ArrowTag(s.target), TextTag(s.text)]
-
 
 
 class Clock(Node):
@@ -3533,7 +3133,8 @@ def make_root():
 	r = Root()
 
 	r["intro"] = new_module()
-	r["intro"].ch.statements.items = [Text("""
+	r["intro"].ch.statements.items = [
+		Text("""
 
 Welcome to lemon! Press F1 to cycle the sidebar!
 the interface of lemon is currently implemented like this:
@@ -3543,10 +3144,11 @@ hold some code or other stuff in a Statements object. This is a text literal ins
 
 Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
 ctrl-d will delete something. Inserting of nodes happens in the Parser node."""),
-#it looks like this:"""),
-#Parser(b['number']), todo:ParserWithType
-Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
-Text("todo: smarter menu, better parser, save/load, a real language, fancy projections...;)")]
+		#it looks like this:"""),
+		#Parser(b['number']), todo:ParserWithType
+		Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
+		Text("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
+	]
 
 	
 	r["intro"].ch.statements.view_mode=0
@@ -3603,61 +3205,12 @@ Text("todo: smarter menu, better parser, save/load, a real language, fancy proje
 	return r
 
 
-# region unipycation
 """
-
-#import uni
-
-
-def ph_to_lemon(x):
-	return iter([to_lemon(x)])
-
-
-if __name__ == "__main__":
-	print "testing.."
-	e = uni.Engine("""
-
-"""
-
-do(1, A) :-
-	python:to_lemon(3, A).
-%	python:print(A).
-
-"""
-""", globals())
-
-	print [x for x in e.db.do.iter(1, None)]
-"""
-
-# endregion
-
-"""
-#todo: totally custom node:
-we have unevaluated arguments, so a function body can be thought of as a rule for
-evaluating the node. there could be other rules: display, debugging..?..
-
-modules: how to declare imports, how to denote in menu items that a function is
-from some module..
-ipython parallel/pyrex/something distributedness
-dbpedia node
-curses, js(brython seems nice) frontends
-
 decide if declarative nodes like SyntacticCategory and Definition should have
 the name as a child node...it doesnt seem to make for a clear reading
 
-serialization...in progress
-save/load functions
-lemon console node to run them from
-
-
 #todo: node syntax is a list of ..
 #node children types is a list of ..
-
-#danger: decls arent included in flatten
-
-todo:pip search hjson
-#todo:xiki style terminal, standard terminal. Both favoring UserCommands
-#first user command: commit all and push;)
 
 todo:rename FunctionDefinition to Defun, FunctionCall to Call, maybe remove "Stuff"s
 """
@@ -3684,21 +3237,314 @@ class Serialized(Syntaxed):
 		log("voila:%s"%new)
 		self.parent.replace_child(self, new)
 
-build_in(SyntaxedNodecl(Serialized,
-			   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
-			   {'last_rendering': b['text'],
-			    'serialization':dict_from_to('text', 'anything')}))
-
-
-
-
 
 
 class CustomNodeDef(Syntaxed):
 	pass
 
+build_in(SyntaxedNodecl(Serialized,
+			   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
+			   {'last_rendering': b['text'],
+			    'serialization':dict_from_to('text', 'anything')}))
+
 build_in(SyntaxedNodecl(CustomNodeDef,
 			   ["define node with syntax:", ChildTag("syntax")],
 			   {'syntax': b['custom syntax list']}))
 # endregion
-#todo: why isnt b a Dotdict?
+
+
+
+# region builtins
+#here we start putting stuff into b, which is then made into the builtins modules
+
+build_in(Nodecl(Statements))
+
+build_in(Text(
+"""We start by declaring the existence of some types (decls).
+Once declared, we can reference them from lemon objects.
+Internally, each declaration is a Nodecl object.
+The type name is usually a lowercased
+name of the python class that implements it."""))
+
+build_in(TypeNodecl(), 'type')
+build_in(VarRefNodecl(), 'varref')
+
+build_in([Nodecl(x) for x in [Number, Text, Banana, Bananas]])
+
+build_in([
+
+SyntaxedNodecl(SyntacticCategory,
+			   [TextTag("syntactic category:"), ChildTag("name")],
+			   {'name': 'text'}),
+SyntaxedNodecl(WorksAs,
+			   [ChildTag("sub"), TextTag("works as"), ChildTag("sup")],
+			   {'sub': 'type', 'sup': 'type'}),
+SyntaxedNodecl(Definition,
+			   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
+			   {'name': 'text', 'type': 'type'}),
+
+SyntacticCategory({'name': Text("anything")}),
+SyntacticCategory({'name': Text("statement")}),
+SyntacticCategory({'name': Text("expression")})
+])
+
+build_in(WorksAs.b("statement", "anything"), False)
+build_in(WorksAs.b("expression", "statement"), False)
+build_in(WorksAs.b("number", "expression"), False)
+build_in(WorksAs.b("text", "expression"), False)
+
+build_in(
+ParametricNodecl(List,
+				 [TextTag("list of"), ChildTag("itemtype")],
+				 {'itemtype': b['type']}),'list')
+build_in(
+ParametricNodecl(Dict,
+				 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
+				 {'keytype': b['type'], 'valtype': b['type']}), 'dict')
+
+build_in(WorksAs.b("list", "expression"), False)
+build_in(WorksAs.b("dict", "expression"), False)
+
+
+
+
+
+
+
+#build_in(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
+
+build_in(SyntaxedNodecl(EnumType,
+			   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
+			   {'name': 'text',
+			   'options': list_of('text')}))
+
+#Definition({'name': Text("bool"), 'type': EnumType({
+#	'name': Text("bool"),
+#	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
+build_in(EnumType({'name': Text("bool"),
+	'options':b['enumtype'].instance_slots["options"].inst_fresh()}), 'bool')
+
+b['bool'].ch.options.items = [Text('false'), Text('true')]
+lemon_false, lemon_true = EnumVal(b['bool'], 0), EnumVal(b['bool'], 1)
+
+#Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
+
+build_in([
+SyntaxedNodecl(Module,
+			   ["module", ChildTag("name"), 'from', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
+			   {'statements': b['statements'],
+			    'name': b['text'],
+			    'file': b['text']
+			    }),
+
+Definition({'name': Text("list of types"), 'type': b['list'].make_type({'itemtype': Ref(b['type'])})}),
+
+SyntaxedNodecl(Union,
+			   [TextTag("union of"), ChildTag("items")],
+			   {'items': b['list'].make_type({'itemtype': b['type']})})]) #todo:should use the definition above instead
+b['union'].notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
+
+
+build_in(SyntaxedNodecl(UntypedVar,
+			   [ChildTag("name")],
+			   {'name': 'text'}))
+
+build_in(SyntaxedNodecl(For,
+			   [TextTag("for"), ChildTag("item"), ("in"), ChildTag("items"),
+			        ":\n", ChildTag("body")],
+			   {'item': b['untypedvar'],
+			    'items': Exp(
+				    b['list'].make_type({
+				        'itemtype': Ref(b['type'])#?
+				    })),
+			   'body': b['statements']}))
+
+
+build_in(SyntaxedNodecl(VarlessFor,
+			   [TextTag("for"), ChildTag("items"),
+			        ":\n", ChildTag("body")],
+			   {'items': Exp(list_of('type')),
+			   'body': b['statements']}))
+
+
+build_in(SyntaxedNodecl(If,
+			[
+				[TextTag("if"), ChildTag("condition"), ":\n", ChildTag("statements")],
+
+			],
+			{'condition': Exp(b['bool']),
+			'statements': b['statements']}))
+
+build_in(SyntaxedNodecl(Else,
+			[
+				[TextTag("else:"), ":\n", ChildTag("statements")],
+
+			],
+			{'statements': b['statements']}))
+
+
+"""...notes: formatting: we can speculate that we will get to having a multiline parser,
+and that will allow for a more freestyle formatting...
+"""
+
+build_in(SyntaxedNodecl(TypedParameter,
+			   [ChildTag("name"), TextTag("-"), ChildTag("type")],
+			   {'name': 'text', 'type': 'type'}))
+
+
+builtin_unevaluatedparameter = build_in(SyntaxedNodecl(UnevaluatedParameter,
+			   [TextTag("unevaluated"), ChildTag("argument")],
+			   {'argument': 'typedparameter'}))
+
+
+
+#lets define a function signature type
+tmp = b['union'].inst_fresh()
+tmp.ch["items"].add(Ref(b['text']))
+tmp.ch["items"].add(Ref(b['typedparameter']))
+tmp.ch["items"].add(Ref(builtin_unevaluatedparameter))
+build_in(Definition({'name': Text('function signature node'), 'type': tmp}))
+tmp = b['list'].make_type({'itemtype': Ref(b['function signature node'])})
+build_in(Definition({'name': Text('function signature list'), 'type':tmp}))
+#todo:refactor
+#and a custom node syntax type
+tmp = b['union'].inst_fresh()
+tmp.ch["items"].add(Ref(b['text']))
+tmp.ch["items"].add(Ref(b['type']))
+build_in(Definition({'name': Text('custom syntax'), 'type': tmp}))
+tmp = b['list'].make_type({'itemtype': Ref(b['custom syntax'])})
+build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
+
+
+
+build_in(SyntaxedNodecl(FunctionDefinition,
+			   [TextTag("deffun:"), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
+				{'sig': b['function signature list'],
+				 'body': b['statements']}))
+
+#user cant instantiate it, but we make a decl anyway,
+#because we need to display it, its in builtins,
+#its just like a normal function, FunctionCall can
+#find it there..
+build_in(SyntaxedNodecl(BuiltinFunctionDecl,
+			   [TextTag("builtin function"), ChildTag("name"), TextTag(":"), ChildTag("sig")],
+				{'sig': b['function signature list'],
+				 'name': b['text']}))
+
+
+
+build_in(SyntaxedNodecl(BuiltinPythonFunctionDecl,
+		[
+		TextTag("builtin python function"), ChildTag("name"),
+		TextTag("with signature"), ChildTag("sig"),
+		TextTag("return type"), ChildTag("ret")
+		],
+		{
+		'sig': b['function signature list'],
+		"ret": b['type'],
+		'name': b['text']
+		}))
+
+
+#lets keep 'print' a BuiltinFunctionDecl until we have type conversions as first-class functions in lemon,
+#then it can be just a python library call printing strictly strings and we can dump the to_python_str (?)
+
+def b_print(args):
+	o = args['expression'].to_python_str()
+	#print o
+	log(o)
+	return NoValue()
+
+BuiltinFunctionDecl.create(
+	"print",
+	b_print,
+	[ Text("print"), TypedParameter({'name': Text("expression"), 'type': Ref(b['expression'])})])
+
+
+
+build_in(FunctionCallNodecl(), 'call')
+build_in(WorksAs.b("call", "expression"), False)
+
+
+
+
+
+def num_arg(name = "number"):
+	return TypedParameter({'name':Text(name), 'type':Ref(b['number'])})
+
+def text_arg():
+	return TypedParameter({'name':Text("text"), 'type':Ref(b['text'])})
+
+def num_list():
+	return  b["list"].make_type({'itemtype': Ref(b['number'])})
+
+def num_list_arg():
+	return TypedParameter({'name':Text("list of numbers"), 'type':num_list()})
+
+
+
+def pfn(function, signature, return_type = int, **kwargs):
+	"""helper function to add a builtin python function"""
+	if return_type == int:
+		return_type = Ref(b['number'])
+	elif return_type == bool:
+		return_type = Ref(b['bool'])
+	elif return_type == None:
+		return_type = Ref(b['void'])
+
+	if 'note' in kwargs:
+		note = kwargs['note']
+	else:
+		note = ""
+
+	if 'name' in kwargs:
+		name = kwargs['name']
+	else:
+		name = function.__name__
+
+	BuiltinPythonFunctionDecl.create(
+		function,
+		signature,
+		return_type,
+		name,
+		note)
+# endregion
+
+def add_operators():
+	#we'll place this somewhere else, but later i guess, splitting this
+	#file into some reasonable modules would still create complications
+	import operator as op
+
+	pfn(op.floordiv, [num_arg('A'), Text("//"), num_arg('B')])
+	pfn(op.truediv,  [num_arg('A'), Text("/"), num_arg('B')])
+
+	pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
+	pfn(op.add, [num_arg('A'), Text("+"), num_arg('B')])
+
+	pfn(op.eq,  [num_arg('A'), Text("=="),num_arg('B')], bool)
+	pfn(op.ge,  [num_arg('A'), Text(">="),num_arg('B')], bool)
+	pfn(op.gt,  [num_arg('A'), Text(">"), num_arg('B')], bool)
+	pfn(op.le,  [num_arg('A'), Text("<="),num_arg('B')], bool)
+	pfn(op.lt,  [num_arg('A'), Text("<"), num_arg('B')], bool)
+	pfn(op.mod, [num_arg('A'), Text("%"), num_arg('B')])
+	pfn(op.mul, [num_arg('A'), Text("*"), num_arg('B')])
+	pfn(op.neg, [Text("-"), num_arg()])
+	pfn(op.sub, [num_arg('A'), Text("-"), num_arg('B')])
+
+	#import math
+
+	def b_squared(arg):
+		return arg * arg
+	pfn(b_squared, [num_arg(), Text("squared")], name = "squared")
+
+	def b_list_squared(arg):
+		return [b_squared(i) for i in arg]
+	pfn(b_list_squared, [num_list_arg(), Text(", squared")], num_list(), name = "list squared")
+
+	pfn(sum, [Text("the sum of"), num_list_arg()], name = "summed")
+
+	def b_range(min, max):
+		return list(range(min, max + 1))
+	pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
+		num_list(), name = "range", note="inclusive")
+add_operators()

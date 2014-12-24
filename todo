@@ -28,6 +28,10 @@ split Ref and TypeRef
 
 
 continue work on user-defined syntax, at this point, functions serve that role, completely?
+
+we have unevaluated arguments, so a function body can be thought of as a rule for
+evaluating the node. there could be other rules: display, debugging..?..
+
 streamline things. what are
 *elementary nodes - text, number, ..,? how can we formalize their definition in terms of a nodecl(?) and python code?
 *nodes that define a language? nodecl, worksas, definition, syntacticcategory, exp.. syntax definition node..
@@ -49,7 +53,6 @@ appends <x> to <y>
 create actions module, handle everything thru Action objects, try undo/redo
 
 
-change b into a dotdict
 
 optimize rendering of scrolled frames
 
@@ -63,4 +66,13 @@ frames:
 #status / action log window <- with keypresses too
 #toolbar (toolbar.py)
 #settings, the doc?
+
+
+
+modules: how to declare imports, how to denote in menu items that a function is
+from some module..
+dbpedia node
+todo:pip search hjson
+#todo:xiki style terminal, standard terminal. Both favoring UserCommands
+#first user command: commit all and push;)
 

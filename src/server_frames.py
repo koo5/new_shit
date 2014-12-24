@@ -151,7 +151,7 @@ class Menu(ServerFrame):
 		if ast:
 			log('recalculate grammar...')
 		log("possibly check against cached atts/text, then call marpa")
-		self._changed = True
+		#self._changed = True
 
 	def marpa_callback(s):
 		s._changed = True

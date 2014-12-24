@@ -45,3 +45,12 @@ def batch(it, n=100):
 		# so we peek one element with next(), then chain it to the isliced rest. next throws
 		# when the source is exhausted, thus ending this function
 		yield chain([next(it)], islice(it, 0, m))
+
+
+def uniq(lst):
+   r = []
+   for i in lst:
+       if i not in r:
+           r.append(i)
+   return r
+
