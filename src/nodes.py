@@ -251,7 +251,7 @@ class NodePersistenceStuff(object):
 	def serialize(s):
 		#assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
 		return odict(
-			s.serialize_decl()).updated(s._serialize())
+			s.serialize_decl()).updated_with(s._serialize())
 
 	def serialize_decl(s):
 		if s.decl:
@@ -263,7 +263,7 @@ class NodePersistenceStuff(object):
 	def unresolvize(s):
 		return odict(
 			resolve = True,
-			name = s.name).updated(s.serialize_decl())
+			name = s.name).updated_with(s.serialize_decl())
 
 	def _serialize(s):
 		return {}
@@ -794,7 +794,11 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		kids = {}
 		for k, v in iteritems(slots):
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
-			if deref_decl(v).instance_class.easily_instantiable:
+			try:
+				easily_instantiable = deref_decl(v).instance_class.easily_instantiable
+			except:
+				easily_instantiable = False
+			if easily_instantiable:
 				a = v.inst_fresh()
 #			elif isinstance(v, ParametricType):
 #				a = v.inst_fresh()
@@ -995,14 +999,15 @@ class List(ListPersistenceStuff, Collapsible):
 	def slots(s):
 		return [s.item_type]
 
-	def index_of_item_under_cursor(self, atts):
-		li = atts.any.get('list_item') # well, this should check all sides..uhh
-		if li:
-			if li[0] == self:
-				return li[1]
+	def item_index(self, atts):
+		for atts in [atts.middle, atts.left, atts.right]:
+			li = atts.get('list_item')
+			if li:
+				if li[0] == self:
+					return li[1]
 
-	def have_item_under_cursor(s, e):
-		return s.index_of_item_under_cursor(e) != None
+	def have_item_under_cursor(s, atts):
+		return s.item_index(atts) != None
 
 	def _eval(self):
 		r = List()
@@ -3063,6 +3068,7 @@ def make_root():
 	r = Root()
 
 	build_in_editor_structure_nodes()
+#	build_in_lemon_language()
 
 	r["intro"] = new_module()
 	r["intro"].ch.statements.items = [

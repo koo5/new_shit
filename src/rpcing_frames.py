@@ -91,14 +91,14 @@ class ClientFrame(object):
 
 		bg_cached = colors.bg
 		highlighted_bg_cached = colors.highlighted_bg
+		freetype_off = 1 if args.freetype else 0
 
 		for row, line in enumerate(self.lines.get()):
+			y = font_height * (row + freetype_off)
 			for col, char in enumerate(line):
-
 				x = font_width * col
-				y = font_height * row
 
-				hi = highlight and char[1].get(node_att) == highlight and not args.eightbit
+				hi = highlight and char[1].get(node_att) == highlight
 
 				if hi:
 					bg = highlighted_bg_cached
@@ -291,12 +291,20 @@ class Editor(ClientFrame):
 
 
 	def and_sides(s,e):
-		if e.all[K_LEFT]: s.move_cursor_h(-1)
-		if e.all[K_RIGHT]: s.move_cursor_h(1)
+		if e.all[K_LEFT]:
+			log('diagonal')
+			s.move_cursor_h(-1)
+		if e.all[K_RIGHT]:
+			log('diagonal')
+			s.move_cursor_h(1)
 
 	def and_updown(s,event):
-		if event.all[K_UP]: s.move_cursor_v(-1)
-		if event.all[K_DOWN]: s.move_cursor_v(1)
+		if event.all[K_UP]:
+			log('diagonal')
+			s.move_cursor_v(-1)
+		if event.all[K_DOWN]:
+			log('diagonal')
+			s.move_cursor_v(1)
 
 	@property
 	def under_cursor(self):
@@ -315,7 +323,7 @@ class Editor(ClientFrame):
 		s.counterpart.set_atts(s.atts_triple)
 
 	def after_cursor_moved(s):
-		log("cursor pos: %s %s",s.cursor_c, s.cursor_r)
+		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
 		s.must_redraw = True
 		s.update_atts_on_server()
 
@@ -326,7 +334,7 @@ class Editor(ClientFrame):
 		s.cursor_c += x
 		if len(s.lines) <= s.cursor_r or \
 						s.cursor_c > len(s.lines[s.cursor_r]):
-			s.move_cursor_v(x)
+			s._move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
 			if s._move_cursor_v(-1):
@@ -357,6 +365,7 @@ class Editor(ClientFrame):
 		return moved
 
 	def move_cursor_v(s, count):
+		log("move_cursor_v %s",count)
 		if s._move_cursor_v(count):
 			s.after_cursor_moved()
 
@@ -413,12 +422,14 @@ class Editor(ClientFrame):
 
 
 	def sdl_draw_stuff(s, surf):
+		highlight = s.under_cursor if not args.eightbit else None
+
 		if s.arrows_visible:
-			s.sdl_draw_lines(surf, highlight=s.under_cursor,
+			s.sdl_draw_lines(surf, highlight,
 			                 transparent=True)
 			s.sdl_draw_arrows(surf)
 		else:
-			s.sdl_draw_lines(surf, s.under_cursor, False)
+			s.sdl_draw_lines(surf, highlight, False)
 		s.draw_cursor(surf)
 
 	""" def sdl_draw_stuff(s, surf):

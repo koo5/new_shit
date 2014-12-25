@@ -14,7 +14,7 @@ def add(e):
 		try:
 			pickle.dump(e, f)
 		except pickle.PicklingError as error:
-			log(error, ", are you profiling?")
+			log("%s, are you profiling? (%s)", error, e)
 	is_first_input_event = False
 
 def clear_replay():

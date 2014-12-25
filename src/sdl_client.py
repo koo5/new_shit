@@ -58,6 +58,7 @@ def reset_cursor_blink_timer():
 def user_change_font_size(by = 0):
 	change_font_size(by)
 	resize_frames()
+	redraw(666)
 keybindings.change_font_size = user_change_font_size
 
 
@@ -67,8 +68,8 @@ def change_font_size(by = 0):
 	if args.freetype:
 		rpcing_frames.font = font = freetype.SysFont('monospace', args.font_size)
 		font.origin = True
-		_, _, font_width, font_height = font.get_rect("X")
-		font_height += 3
+		_, _, font_width, _ = font.get_rect("X")
+		font_height = font.get_sized_glyph_height()
 		rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height
 	else:
 		rpcing_frames.font = font = pygame.font.SysFont('monospace', args.font_size)
@@ -262,7 +263,11 @@ def main():
 
 	c.after_start()
 
-	pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
+	if args.no_timers:
+		args.dontblink = True
+	else:
+		pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
+
 	reset_cursor_blink_timer()
 
 	try:

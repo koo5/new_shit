@@ -100,26 +100,36 @@ class Editor(ServerFrame):
 
 
 def potential_handlers(atts):
+	"""return every handler for the element in atts, whose checker passess.
+	mods and key are irrelevant, we arent dealing with any particular event
+
+	its counterintuitive that we first list all potential handlers(running their checker)
+	and only then look for a match of mod and key
+	"""
 	for sidedness, atts in [(None, atts.middle),
 	             (elements_keybindings.LEFT, atts.left),
 	             (elements_keybindings.RIGHT, atts.right)]:
 		if atts != None:
 			elem = atts.get(node_att)
 			if elem:
+				log((elem, elem.keys))
 				for handler, v in iteritems(elem.keys):
-					if	handler.sidedness in (None. sidedness):
+					#log((handler, v, elem, elem.keys))
+					if	handler.sidedness in (None, sidedness):
 						if type(v) == tuple:
-							checker, handler = v
+							checker, func = v
 						else:
-							checker, handler = None, v
-						if not checker or checker(a):
-							yield elem, handler
+							checker, func = None, v
+						if not checker or checker(elem,atts):
+							yield elem, handler, func
 
 
 def handle_keypress(event):
 	for elem, handler, func in potential_handlers(event.atts):
+		log(handler)
 		if event.mods == set(handler.mods) and (
 			event.key == handler.key or
+			type(handler.key) == tuple and
 			event.key in handler.key):
 				event.left, event.middle, event.right = (
 					event.atts.left if event.atts.left.get(att_node) == elem else None,

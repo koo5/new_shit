@@ -25,6 +25,8 @@ UNICODE = -1
 
 class H(collections.namedtuple("Handler", 'mods key sidedness')):
 	def __new__(cls, mods, key, sidedness=None):
+		if type(mods) != tuple:
+			mods = (mods, )
 		return tuple.__new__(cls, (mods, key, sidedness))
 
 """
@@ -94,13 +96,13 @@ n.Node.keys = odict({
 })
 
 
-n.Syntaxed.keys = n.Node.keys.updated({
+n.Syntaxed.keys = n.Node.keys.plus({
 	H(KMOD_CTRL, K_PERIOD): n.Syntaxed.prev_syntax,
     H(KMOD_CTRL, K_COMMA ): n.Syntaxed.next_syntax})
 
 
 def delete_item_check(s, atts):
-	return None != s.item_index(atts)
+	return s.have_item_under_cursor(atts)
 
 def delete_item(s):
 	ii = self.item_index(e)
@@ -112,7 +114,7 @@ def newline(s):
 	self.newline(item_index)
 	return CHANGED
 
-n.List.keys = n.List.__bases__[-1].keys.updated(
+n.List.keys = n.List.__bases__[-1].keys.plus(
 	{   H((KMOD_CTRL),  K_DELETE): (delete_item_check, delete_item),
 		H((),           K_RETURN): newline})
 
@@ -124,11 +126,11 @@ def run_line(self, e):
 	return CHANGED
 
 print(n.Statements.__bases__[-1])
-n.Statements.keys = n.Statements.__bases__[-1].keys.updated(
+n.Statements.keys = n.Statements.__bases__[-1].keys.plus(
 	{H(KMOD_CTRL, K_RETURN): (n.Statements.have_item_under_cursor, run_line)})
 
 
-n.Module.keys = n.Module.__bases__[-1].keys.update({
+n.Module.keys = n.Module.__bases__[-1].keys.plus({
 	H(KMOD_CTRL, K_s): n.Module.save,
 	H(KMOD_CTRL, K_r): n.Module.reload,
 	H(KMOD_CTRL, K_BACKSLASH ): n.Module.run})
@@ -162,7 +164,7 @@ def k_delete(s):
 
 
 
-n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.updated({
+n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.plus({
 	H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
 	H((), K_DELETE, LEFT): k_delete
 	})

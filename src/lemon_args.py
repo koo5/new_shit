@@ -37,6 +37,8 @@ parser.add_argument('--root', action='store_true')
 parser.add_argument('--menu', action='store_true')
 parser.add_argument('--intro', action='store_true')
 parser.add_argument('--profile', action='store_true')
+parser.add_argument('--no-timers', action='store_true')
+
 
 parser.add_argument('--freetype', dest='freetype', action='store_true')
 parser.add_argument('--no-freetype', dest='freetype', action='store_false')
