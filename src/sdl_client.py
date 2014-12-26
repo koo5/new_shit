@@ -285,4 +285,9 @@ def main():
 		raise
 
 if __name__ == "__main__":
-	main()
+	try:
+		main()
+	finally:
+		if args.freetype:
+			log("prepare for the segfault..")
+

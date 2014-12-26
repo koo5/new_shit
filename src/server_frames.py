@@ -1,5 +1,4 @@
 from types import GeneratorType
-#from types import NoneType
 from collections import namedtuple
 from pizco import Signal
 
@@ -84,7 +83,14 @@ class Editor(ServerFrame):
 		pass
 
 	def keypress(s, event):
-		event.atts = editor.atts
+		"""
+		event handling is in its second iteration. i introduced the left/middle/right
+		system and checkers, there will be undo/redo, context-sensitive action list.
+		this is a rewrite building on previous experience,
+		but the actual implementation is hackish, as i only have it figured out conceptually,
+		not down to the code level
+		"""
+		event.trip = editor.atts
 
 		r = handle_keypress(event)
 
@@ -99,16 +105,16 @@ class Editor(ServerFrame):
 			s.signal_change()
 
 
-def potential_handlers(atts):
+def potential_handlers(trip):
 	"""return every handler for the element in atts, whose checker passess.
 	mods and key are irrelevant, we arent dealing with any particular event
 
 	its counterintuitive that we first list all potential handlers(running their checker)
 	and only then look for a match of mod and key
 	"""
-	for sidedness, atts in [(None, atts.middle),
-	             (elements_keybindings.LEFT, atts.left),
-	             (elements_keybindings.RIGHT, atts.right)]:
+	for sidedness, atts in [(None, trip.middle),
+	             (elements_keybindings.LEFT, trip.left),
+	             (elements_keybindings.RIGHT, trip.right)]:
 		if atts != None:
 			elem = atts.get(node_att)
 			if elem:
@@ -125,17 +131,17 @@ def potential_handlers(atts):
 
 
 def handle_keypress(event):
-	for elem, handler, func in potential_handlers(event.atts):
+	for elem, handler, func in potential_handlers(event.trip):
 		log(handler)
 		if event.mods == set(handler.mods) and (
 			event.key == handler.key or
 			type(handler.key) == tuple and
 			event.key in handler.key):
 				event.left, event.middle, event.right = (
-					event.atts.left if event.atts.left.get(att_node) == elem else None,
-					event.atts.middle if event.atts.middle.get(att_node) == elem else None,
-					event.atts.right if event.atts.right.get(att_node) == elem else None)
-				return elem, func(event)
+					event.trip.left   if event.trip.left and event.trip.left.get(node_att) == elem else None,
+					event.trip.middle if event.trip.middle and event.trip.middle.get(node_att) == elem else None,
+					event.trip.right  if event.trip.right and event.trip.right.get(node_att) == elem else None)
+				return elem, func(elem, event)
 
 
 
@@ -151,6 +157,7 @@ class Menu(ServerFrame):
 		s._changed = True
 		s.items = []
 		s.sel = 0
+		nodes.m = s.marpa = RpcingMarpa(args.graph_grammar or args.log_parsing)
 
 	def must_recollect(s):
 		if s._changed:
@@ -160,6 +167,10 @@ class Menu(ServerFrame):
 	def on_editor_change(self, ast):
 		if ast:
 			log('recalculate grammar...')
+			s.marpa.
+
+
+
 		log("possibly check against cached atts/text, then call marpa")
 		#self._changed = True
 

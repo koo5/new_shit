@@ -102,16 +102,17 @@ n.Syntaxed.keys = n.Node.keys.plus({
 
 
 def delete_item_check(s, atts):
-	return s.have_item_under_cursor(atts)
+	return s.item_index(atts) != None
 
 def delete_item(s):
 	ii = self.item_index(e)
 	del self.items[ii]
 	return CHANGED
 
-def newline(s):
-	item_index = self.item_index(e)
-	self.newline(item_index)
+def newline(s, atts):
+	assert type(atts) == dict
+	item_index = s.item_index(atts)
+	s.newline(item_index)
 	return CHANGED
 
 n.List.keys = n.List.__bases__[-1].keys.plus(
@@ -127,7 +128,7 @@ def run_line(self, e):
 
 print(n.Statements.__bases__[-1])
 n.Statements.keys = n.Statements.__bases__[-1].keys.plus(
-	{H(KMOD_CTRL, K_RETURN): (n.Statements.have_item_under_cursor, run_line)})
+	{H(KMOD_CTRL, K_RETURN): (lambda s, atts: s.item_index(atts) != None, run_line)})
 
 
 n.Module.keys = n.Module.__bases__[-1].keys.plus({
@@ -137,11 +138,9 @@ n.Module.keys = n.Module.__bases__[-1].keys.plus({
 
 
 def check_backspace(atts):
-	a = atts[0]
-	if a:
-		i = a.get(item_att)
-		if i:
-			return i[0] == s and s.items[i[1]]
+	i = a.get(item_att)
+	if i:
+		return i[0] == s and s.items[i[1]]
 
 def k_backspace(s):
 	s.root.delayed_cursor_move -= 1

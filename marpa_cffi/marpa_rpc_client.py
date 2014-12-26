@@ -3,7 +3,6 @@
 import operator
 import types
 
-
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues
 
@@ -17,7 +16,6 @@ class MarpaClient(object):
 		s.syms = {}
 		s.known_chars = {}
 		s.rules = {}
-		s.named_symbol('known_char')
 
 	def named_symbol(s,name):
 		"""create a symbol and save it in syms with the name as key"""
@@ -103,3 +101,66 @@ class MarpaClient(object):
 			if not s.g.symbol_is_accessible(i[1]):
 				raise Exception("inaccessible: %s (%s)"%i)
 
+
+	#---------
+
+
+	def parse(raw):
+		#just text now, list_of_texts_and_nodes later
+		tokens = m.raw2tokens(raw)
+
+	def setup_grammar(root,scope):
+		assert scope == uniq(scope)
+
+		for i in root.flatten():
+			i.forget_symbols()
+
+		if args.graph_grammar:
+			graphing_wrapper.start()
+			graphing_wrapper.symid2name = m.symbol2name
+
+		m.named_symbol('start')
+		m.set_start_symbol(m.syms.start)
+		m.named_symbol('nonspecial_char')
+		m.named_symbol('known_char')
+
+		m.named_symbol('maybe_spaces')
+		m.sequence('maybe_spaces', m.syms.maybe_spaces, m.known_char(' '), action=ignore, min=0)
+
+		for i in scope:
+			#the property is accessed here, forcing the registering of the nodes grammars
+			sym = i.symbol
+			if sym != None:
+				if args.log_parsing:
+					log(sym)
+					rulename = 'start is %s' % m.symbol2name(sym)
+				else:
+					rulename = ""
+				m.rule(rulename , m.syms.start, sym)
+				#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
+
+		if args.graph_grammar:
+			graphing_wrapper.generate_gv()
+			graphing_wrapper.stop()
+
+		if args.log_parsing:
+			log(m.syms_sorted_by_values)
+			log(m.rules)
+
+	def precompute(s):
+
+		s.server.precompute({
+			'num_syms':len(s.syms),
+
+
+		m.g.precompute()
+
+		m.check_accessibility()
+
+
+
+
+
+	"""
+	<jeffreykegler> By the way, a Marpa parser within a Marpa parser is a strategy pioneered by Andrew Rodland (hobbs) and it is the way that the SLIF does its lexing -- the SLIF lexes by repeatedly creating Marpa subgrammars, getting the lexeme, and throwing away the subgrammar.
+	"""

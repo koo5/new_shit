@@ -1000,14 +1000,10 @@ class List(ListPersistenceStuff, Collapsible):
 		return [s.item_type]
 
 	def item_index(self, atts):
-		for atts in [atts.middle, atts.left, atts.right]:
-			li = atts.get('list_item')
-			if li:
-				if li[0] == self:
-					return li[1]
-
-	def have_item_under_cursor(s, atts):
-		return s.item_index(atts) != None
+		#for atts in [atts.middle, atts.left, atts.right]:
+		li = atts.get('list_item')
+		if li and li[0] == self:
+			return li[1]
 
 	def _eval(self):
 		r = List()

@@ -67,12 +67,6 @@ class ClientFrame(object):
 		if s.scroll_lines < 0:
 			s.scroll_lines = 0
 
-	def try_move_cursor(s, n):
-		l = s.find(n)
-		if l:
-			s.cursor_c, s.cursor_r = l
-
-
 	def curses_draw(s):
 		s.curses_win.clear()
 		s.curses_draw_stuff()
@@ -489,6 +483,8 @@ class Editor(ClientFrame):
 
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible
+		s.must_redraw = True
+		s.redraw()
 
 	def	dump_to_file(s):
 		f = open("dump.txt", "w")
@@ -500,14 +496,14 @@ class Editor(ClientFrame):
 
 
 	def do_post_render_move_cursor(s):
-		where = s.counterpart.root.post_render_move_caret
-		if isinstance(where, int): # by this many chars
+		move = s.counterpart.root.post_render_move_caret
+		if isinstance(move, int): # by this many chars
 			log("moving cursor by %s chars", where)
-			s.move_cursor_h(where)
+			s.move_cursor_h(move)
 		else: #to a node, lets indicate it with a tuple hmmm
-			where = where[0]
-			log("moving cursor to %s", where)
-			s.cursor_c, s.cursor_r = s.find_element(where)
+			node = move[0]
+			log("moving cursor to %s", node)
+			s.cursor_c, s.cursor_r = s.find_element(node)
 			s.after_cursor_moved()
 		s.counterpart.root.post_render_move_caret = 0
 

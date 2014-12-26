@@ -1,14 +1,9 @@
 
 
-from pizco import Server
-
-
-# region marpa
 
 import marpa_cffi
 marpa = marpa_cffi.try_loading_marpa()
 if marpa == True:
-	from marpa_cffi.marpa_rpc_client import *
 	import marpa_cffi.marpa_codes
 	import marpa_cffi.graphing_wrapper as graphing_wrapper
 else:
@@ -22,76 +17,16 @@ else:
 
 
 
-def parse(raw): #just text now, list_of_texts_and_nodes later
-
-	tokens = m.raw2tokens(raw)
-
-m = MarpaClient()
-
-
-def setup_grammar(root,scope):
-	global m
-
-	assert scope == uniq(scope)
-
-	for i in root.flatten():
-		i.forget_symbols()
-
-	m = HigherMarpa(args.graph_grammar or args.log_parsing)
-
-	if args.graph_grammar:
-		graphing_wrapper.start()
-		graphing_wrapper.symid2name = m.symbol2name
-
-	m.named_symbol('start')
-	m.named_symbol('nonspecial_char')
-	m.named_symbol('known_char')
-
-	m.named_symbol('maybe_spaces')
-	m.sequence('maybe_spaces', m.syms.maybe_spaces, m.known_char(' '), action=ignore, min=0)
-
-	for i in scope:
-		#the property is accessed here, forcing the registering of the nodes grammars
-		sym = i.symbol
-		if sym != None:
-			if args.log_parsing:
-				log(sym)
-				rulename = 'start is %s' % m.symbol2name(sym)
-			else:
-				rulename = ""
-			m.rule(rulename , m.syms.start, sym)
-			#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
-
-	if args.graph_grammar:
-		graphing_wrapper.generate_gv()
-		graphing_wrapper.stop()
-
-	m.set_start_symbol(m.syms.start)
-
-	if args.log_parsing:
-		log(m.syms_sorted_by_values)
-		log(m.rules)
-
-	m.g.precompute()
-
-	m.check_accessibility()
-
-
-# endregion
-
-
-
-class RpcServer(object):
+class RpcServer():
 
 
 	def precompute(s, inp):
 		inp = dotdict(inp)
-
 		s.g = Grammar()
 
 		"""
 		keys of inp:
-			num_symbols: how many symbols to allocate
+			num_syms: how many symbols to allocate
 
 
 
