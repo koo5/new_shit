@@ -2016,34 +2016,38 @@ class ParserBase(Node):
 			ensure there is a Text at the beginning and at the end
 		"""
 
+		#find adjacent items of same type
 		def find_same_type_pair(items, type):
 			for index, i in enumerate(items[:-1]):
 				if isinstance(i, type) and isinstance(items[index+1], type):
 					return index
 
+		#find adjacent Texts and join them
 		while True:
 			index = find_same_type_pair(inp, widgets.Text)
 			if index == None: break
 			inp[index] = widgets.Text(inp[index].value + inp[index+1].value)
 			del inp[index+1]
 
+		#find adjacent Nodes and put an empty Text between
 		while True:
 			index = find_same_type_pair(inp, Node)
 			if index == None: break
 			inp.insert(index+1, widgets.Text())
 
-		if type(inp[0]) != Text: inp.insert(0, widgets.Text())
-		if type(inp[-1]) != Text: inp.append(widgets.Text())
-
-		return inp
-
+		#ensure Text at beginning and end
+		if type(inp[0]) != widgets.Text: inp.insert(0, widgets.Text())
+		if type(inp[-1]) != widgets.Text: inp.append(widgets.Text())
 
 
+
+
+	"""
 		li = event.any_atts.get('list_item')
 		if li:
 			if li[0] == self:
 				return li[1]
-
+	"""
 
 
 	"""if there is a node followed by text and backspace is pressed between"""
@@ -2262,9 +2266,6 @@ class ParserBase(Node):
 				s.root.delayed_cursor_move = (node.items[0],)
 		#todo etc. make the cursor move naturally
 
-	def menu(self, atts, debug = False):
-		return self.menu_for_item(self.mine(atts), debug)
-
 	def delete_child(s, child):
 		log("del")
 		del s.items[s.items.index(child)]
@@ -2408,15 +2409,16 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 		return r
 
+	def create_palette(self, atts):
+		return self.palette_for_item(self.my_item(atts))
 
-
-	def menu_for_item(self, i=0, debug = False):
+	def palette_for_item(self, i=0, debug = False):
 
 		if i == None:
 			if len(self.items) == 0:
 				text = ""
 			else:
-				return []#this shouldnt happen
+				assert False
 		else:
 			if isinstance(self.items[i], Node):
 				text = ""
@@ -2425,40 +2427,24 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 		scope = self.scope()
 
-		menu = []
+		menu = flatten([x.palette(scope, text, self) for x in scope])
 
-		if text != "":
-			menu += self.parse(scope)
 
-		log("%s parser results:%s"%(len(menu), [i.value for i in menu]))
-
-		menu += flatten([x.palette(scope, text, self) for x in scope])
-
-		#slot type is Nodecl or Definition or AbstractType or ParametrizedType
-		#first lets search for things in scope that are already of that type
-		#for i in menu:
-		#	if i.value.decl.eq(type):
-		#		v.score += 1
-
-		type = self.type
-		if isinstance(type, Exp):
-			type = type.type
-			exp = True
-		else:
-			exp = False
-
+	def score_palette(items, text, type):
 		matchf = fuzz.token_set_ratio#partial_ratio
 
-		for item in menu:
+		if isinstance(type, Exp):
+			type = type.type
+
+		def score_item(item):
 			v = item.value
 			try:
 				item.scores.name = matchf(v.name, text), v.name #0-100
-			except Exception as e:
-				#print e
+			except AttributeError as e:
+				# no name
 				pass
 
 			item.scores.declname = 3*matchf(v.decl.name, text), v.decl.name #0-100
-
 
 			if item.value.decl.works_as(type):
 				item.scores.worksas = 200
@@ -2477,15 +2463,13 @@ class Parser(ParserPersistenceStuff, ParserBase):
 			texttags = " ".join(texts)
 			item.scores.texttags = matchf(texttags, text), texttags
 
+		map(score_item, items)
 
-		menu.sort(key=lambda i: i.score)
+		menu.sort(key=lambda i: -i.score)
 
-		if debug:
-			log('MENU FOR:',text,"type:",self.type)
-			[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
-
-		menu.append(DefaultParserMenuItem(text))
-		menu.reverse()#umm...
+		#if debug:
+		#	log('MENU FOR:',text,"type:",self.type)
+		#	[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
 
 		return menu
 

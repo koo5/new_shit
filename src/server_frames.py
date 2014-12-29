@@ -155,9 +155,10 @@ class Menu(ServerFrame):
 		editor.on_serverside_change.connect(s.on_editor_change)
 		s.valid_only = False
 		s._changed = True
+		s.parser_node = None
 		s.items = []
 		s.sel = 0
-		nodes.m = s.marpa = RpcingMarpa(args.graph_grammar or args.log_parsing)
+		nodes.m = s.marpa = ThreadedMarpa(args.graph_grammar or args.log_parsing)
 
 	def must_recollect(s):
 		if s._changed:
@@ -166,8 +167,43 @@ class Menu(ServerFrame):
 
 	def on_editor_change(self, ast):
 		if ast:
-			log('recalculate grammar...')
-			s.marpa.
+			self.prepare_grammar()
+
+	def on_editor_element_change(s):
+		if s.parser_changed():
+			s.prepare_grammar()
+
+	def parser_changed(s):
+		e = s.editor.element_under_cursor
+		for i in e.ancestors:
+			if isinstance(i, nodes.Parser):
+				if i != s.parser_node:
+					s.parser_node = e
+					return True
+
+	def prepare_grammar(s):
+		s.marpa.input.clear()
+		s.marpa.collect_grammar(s.editor.root, s.editor.element_under_cursor)
+		s.marpa.queue_precomputation()
+
+	def on_thread_message(s):
+		m = s.marpa.output.get()
+		if m.message == 'precomputed':
+			if m.for_node == s.parser_node:
+				s.marpa.queue_parsing(s.parser_items2tokens(s.parser_node.items))
+		elif m.message == 'parsed':
+				s.parse_results = m.results
+
+
+	def parser_items2tokens(s, items):
+		r = []
+		for i in items:
+			if type(i) == unicode:
+				r.extend(s.string2tokens(i))
+			else:
+				r.append(i.symbol)
+
+
 
 
 
@@ -194,8 +230,14 @@ class Menu(ServerFrame):
 					s.items.append(i)
 					yield i
 
-	def accept(menu, idx):
-		return menu.element.menu_item_selected(menu.items[idx], menu.root.atts)
+
+	def update_items(s):
+		s.items = (
+			[DefaultParserMenuItem(text)]+
+			[s.parse_results]+
+			[s.sorted_palette])
+
+
 
 	def toggle_valid(s):
 		s.valid_only = not s.valid_only
@@ -210,6 +252,8 @@ class Menu(ServerFrame):
 			e.menu(atts, True)
 
 
+	def accept(menu, idx):
+		return menu.element.menu_item_selected(menu.items[idx], menu.root.atts)
 	def accept(self):
 		if len(self.items_on_screen) > self.sel:
 			if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):

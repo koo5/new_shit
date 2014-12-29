@@ -27,8 +27,8 @@ from __future__ import print_function
 from .marpa_cffi import *
 from .marpa_misc import *
 
-config = ffi.new("Marpa_Config*")
-lib.marpa_c_init(config)
+marpa_config = ffi.new("Marpa_Config*")
+lib.marpa_c_init(marpa_config)
 #Always succeeds.
 
 
@@ -42,7 +42,7 @@ from lemon_utils.lemon_logging import topic,topic2,log
 
 class Grammar(object):
 	def __init__(s):
-		s.g = ffi.gc(lib.marpa_g_new(config), lib.marpa_g_unref)
+		s.g = ffi.gc(lib.marpa_g_new(marpa_config), lib.marpa_g_unref)
 		s.check_config_error()
 		assert lib.marpa_g_force_valued(s.g) >= 0
 		s.check_config_error()
@@ -50,7 +50,7 @@ class Grammar(object):
 	
 	def check_config_error(s):
 		msg = ffi.new("char **")
-		assert lib.marpa_c_error(config, msg) == lib.MARPA_ERR_NONE,  mss
+		assert lib.marpa_c_error(marpa_config, msg) == lib.MARPA_ERR_NONE,  msg
 
 	def check_int(s, result):
 		if result == -2:
@@ -201,7 +201,7 @@ class Valuator(object):
 
 
 #aand a little test, same as in test0.py for now
-def test1():
+def _test1():
 	#based on the example at the end of https://metacpan.org/pod/Marpa::R2::Advanced::Thin
 	class SimpleNamespace:
 		def __init__(self, pairs):
@@ -326,7 +326,7 @@ def do_steps(tree, tokens, rules):
 				print ("wat, %s?"%r)
 	print ("tada:"+str(stack[0]))
 if __name__ == "__main__":
-	test1()
+	_test1()
 
 # http://scipy-lectures.github.io/advanced/debugging/#debugging-segmentation-faults-using-gdb
 # http://fpaste.scsys.co.uk/451285 -  typical marpa C calls

@@ -1,43 +1,67 @@
-"""rpcing client. alternatively, it could just thread"""
-
 import operator
 import types
+
+from pygame import threads
+threads.init()
 
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues
 
-from .marpa_misc import *
 
 
-class MarpaClient(object):
+import marpa_cffi
+marpa = marpa_cffi.try_loading_marpa()
+if marpa == True:
+	import marpa_cffi.marpa_codes
+	import marpa_cffi.graphing_wrapper as graphing_wrapper
+	from marpa_cffi.marpa import *
+	from marpa_cffi.marpa_misc import *
+else:
+	log(marpa)
+	log('no marpa, no parsing!')
+	if not args.lame:
+		log("install libmarpa or run with --lame")
+		raise marpa
+	else:
+		marpa = False
+
+
+
+
+
+
+class ThreadedMarpa(object):
 	def __init__(s, debug=True):
 		s.debug = debug
 		s.named_syms = Dotdict()
-		s.syms = {}
+		if debug:
+			s.syms = []
+		s.num_syms = 0
 		s.known_chars = {}
-		s.rules = {}
+		s.rules = []
+		#---
+		s.t = MarpaThread()
+		s.t.start()
+		s.cancel = False
 
 	def named_symbol(s,name):
 		"""create a symbol and save it in syms with the name as key"""
-		if s.debug:
-			if name in s.named_syms._dict:
-				raise Exception("%s already in named_syms"%name)
+		if name in s.named_syms._dict:
+			raise Exception("%s already in named_syms"%name)
 		r = s.named_syms[name] = s.symbol(name)
 		return r
 
 	def symbol(s,debug_name):
 		if s.debug:
-			pyid = len(s.syms)
-			s.syms[pyid] = (debug_name)
-		else:
-			raise Exception("#todo, just use a counter")
-		return pyid
+			s.syms.append(debug_name)
+		s.num_syms += 1
+		return s.num_syms - 1
 
-	def symbol2name(s,symid):
+	def symbol2debug_name(s,symid):
 		assert s.debug
 		return s.syms[symid]
 
-	def rule2name(s,r):
+	def rule2debug_name(s,r):
 		assert s.debug
 		return s.rules[r]
 
@@ -74,16 +98,13 @@ class MarpaClient(object):
 		s.rule(string+'_is_known_string', lhs, rhs, join)
 		return lhs
 
-	def set_start_symbol(s,start):
-		s._start_symbol = start
-
-	def raw2tokens(s,raw):
+	def string2tokens(s,raw):
 		"""return a list with known chars substituted with their corresponding symbol ids"""
 		tokens = []
 		for i, char in enumerate(raw):
-			if char in s.known_chars:
+			try:
 				symid=s.known_chars[char]
-			else:
+			except IndexError:
 				symid=s.syms.nonspecial_char
 			tokens.append(symid)
 		return tokens
@@ -109,21 +130,16 @@ class MarpaClient(object):
 		#just text now, list_of_texts_and_nodes later
 		tokens = m.raw2tokens(raw)
 
-	def setup_grammar(root,scope):
+	def collect_grammar(root,scope):
 		assert scope == uniq(scope)
 
 		for i in root.flatten():
 			i.forget_symbols()
 
-		if args.graph_grammar:
-			graphing_wrapper.start()
-			graphing_wrapper.symid2name = m.symbol2name
-
 		m.named_symbol('start')
 		m.set_start_symbol(m.syms.start)
 		m.named_symbol('nonspecial_char')
 		m.named_symbol('known_char')
-
 		m.named_symbol('maybe_spaces')
 		m.sequence('maybe_spaces', m.syms.maybe_spaces, m.known_char(' '), action=ignore, min=0)
 
@@ -139,23 +155,157 @@ class MarpaClient(object):
 				m.rule(rulename , m.syms.start, sym)
 				#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
 
-		if args.graph_grammar:
-			graphing_wrapper.generate_gv()
-			graphing_wrapper.stop()
+	def queue_precomputation(s):
+		s.t.input.put(Dotdict(
+			task = 'feed',
+			num_syms = s.num_syms,
+			rules = s.rules[:]))
 
-		if args.log_parsing:
-			log(m.syms_sorted_by_values)
-			log(m.rules)
+	class MarpaThread(threads.Thread):
+		def __init__(s):
+			super().__init__()
+			s.input = Queue()
 
-	def precompute(s):
+		def run(s):
+			"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4
+			imho unbased requirement that all operations are done in one thread..so
+			lets make a litte event loop here"""
+			while True:
+				inp = s.input.get()
+				if inp.task == 'feed':
+					s.feed(inp)
+				elif inp.task = 'parse':
+					s.output.put(Dotdict(message = 'parsed', results = list(s.parse(inp.tokens))))
 
-		s.server.precompute({
-			'num_syms':len(s.syms),
+
+	def feed(s, inp):
+		s.g = Grammar()
+		# this calls symbol_new() repeatedly inp.num_syms times, and gathers the
+		# results in a list # this is too smart. also, todo: make symbol_new throw exceptions
+		s.c_syms = list(starmap(g.symbol_new(), ((), inp.num_syms)))
+		s.c_rules = []
+		for rule in inp.rules:
+			if rule[0]: # its a sequence
+				_, _, lhs, rhs, action, sep, min, prop = rule
+				s.c_rules.append(s.g.sequence_new(lhs, rhs, sep, min, prop))
+			else:
+				_, _, lhs, rhs, _ = rule
+				s.c_rules.append(s.g.rule_new(lhs, rhs))
+		s.g.precompute()
+		#check_accessibility()
+		s.output.put(Dotdict(message = 'precomputed', for_node = inp.for_node))
 
 
-		m.g.precompute()
+	def parse(s, tokens):
 
-		m.check_accessibility()
+		r = Recce(s.g)
+		r.start_input()
+
+		for i, sym in enumerate(tokens):
+			#if args.log_parsing:
+			#	log ("input:symid:%s name:%s raw:%s"%(sym, m.symbol2name(sym),raw[i]))
+			#assert type(sym) == symbol_int
+			r.alternative(s.c_syms[sym], i+1)
+			r.earleme_complete()
+
+		#token value 0 has special meaning(unvalued),
+		# so lets i+1 over there and prepend a dummy
+		tokens.insert(0,'dummy')
+
+		latest_earley_set_ID = r.latest_earley_set()
+		log ('latest_earley_set_ID=%s'%latest_earley_set_ID)
+
+		try:
+			b = Bocage(r, latest_earley_set_ID)
+		except:
+			return # no parse
+
+		o = Order(b)
+		tree = Tree(o)
+
+		for _ in tree.nxt():
+			r=do_steps(tree, tokens, raw)
+			yield r
+
+	def do_steps(tree, tokens, raw):
+		stack = defaultdict((lambda:evil('default stack item, what the beep')))
+		stack2= defaultdict((lambda:evil('default stack2 item, what the beep')))
+		v = Valuator(tree)
+		babble = False
+
+		while True:
+			s = v.step()
+			if babble:
+				log  ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
+				log ("step:%s"%codes.steps2[s])
+			if s == lib.MARPA_STEP_INACTIVE:
+				break
+
+			elif s == lib.MARPA_STEP_TOKEN:
+
+				pos = v.v.t_token_value - 1
+				sym = symbol_int(v.v.t_token_id)
+
+				assert v.v.t_result == v.v.t_arg_n
+
+				char = raw[pos]
+				where = v.v.t_result
+				if babble:
+					log ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
+				stack[where] = stack2[where] = char
+
+			elif s == lib.MARPA_STEP_RULE:
+				r = v.v.t_rule_id
+				#print ("rule id:%s"%r)
+				if babble:
+					log ("rule:"+rule2name(r))
+				arg0 = v.v.t_arg_0
+				argn = v.v.t_arg_n
+
+				#args = [stack[i] for i in range(arg0, argn+1)]
+				#stack[arg0] = (rule2name(r), args)
+
+
+				actions = m.actions[r]
+
+
+				val = [stack2[i] for i in range(arg0, argn+1)]
+
+				if args.log_parsing:
+					debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
+
+				try:
+					for action in actions:
+						val = action(val)
+						if args.log_parsing:
+							debug_log += '->'+repr(val)
+				finally:
+					if args.log_parsing:
+						log(debug_log)
+
+				stack2[arg0] = val
+
+			elif s == lib.MARPA_STEP_NULLING_SYMBOL:
+				stack2[v.v.t_result] = "nulled"
+			elif s == lib.MARPA_STEP_INACTIVE:
+				log("MARPA_STEP_INACTIVE:i'm done")
+			elif s == lib.MARPA_STEP_INITIAL:
+				log("MARPA_STEP_INITIAL:stating...")
+			else:
+				log(marpa_cffi.marpa_codes.steps[s])
+
+		v.unref()#promise me not to use it from now on
+		#print "tada:"+str(stack[0])
+	#	print ("tada:"+json.dumps(stack[0], indent=2))
+		#log ("tada:"+json.dumps(stack2[0], indent=2))
+		res = stack2[0] # in position 0 is final result
+		log ("tada:"+repr(res))
+		return res
+
+
+
+
+
 
 
 
@@ -164,3 +314,15 @@ class MarpaClient(object):
 	"""
 	<jeffreykegler> By the way, a Marpa parser within a Marpa parser is a strategy pioneered by Andrew Rodland (hobbs) and it is the way that the SLIF does its lexing -- the SLIF lexes by repeatedly creating Marpa subgrammars, getting the lexeme, and throwing away the subgrammar.
 	"""
+
+		if args.graph_grammar:
+			graphing_wrapper.start()
+			graphing_wrapper.symid2name = m.symbol2name
+
+		if args.graph_grammar:
+			graphing_wrapper.generate_gv()
+			graphing_wrapper.stop()
+
+		if args.log_parsing:
+			log(m.syms_sorted_by_values)
+			log(m.rules)
