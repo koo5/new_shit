@@ -639,24 +639,20 @@ class Node(NodePersistenceStuff, element.Element):
 		return []
 
 	def tags(elem):
-		"""called from Element.render..i think"""
-		yield [AttTag(node_att, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
-		yield [elem.render(), ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag()]
-
+		"""called from Element.render"""
+		yield super().tags()
 		#results of eval
 		if "value" in elem.runtime._dict \
 				and "evaluated" in elem.runtime._dict \
-				and not isinstance(elem.parent, Parser): #dont show evaluation results of compiler's direct children
-			yield [ColorTag(colors.eval_results), TextTag("->")]
+				and not isinstance(elem.parent, Parser): #dont show evaluation results of parser's direct children
+			yield [AttTag(node_att, elem), ColorTag(colors.eval_results), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
 				yield [TextTag(str(len(v.items))), TextTag(" values:"), ElementTag(v)]
 			else:
 				for i in v.items:
 					yield ElementTag(i)
-			yield [TextTag(":"), EndTag()]
-
-		yield EndTag()
+			yield [TextTag(":"), EndTag(),EndTag()]
 
 	#i dont get any visitors here, nor should my code
 	def flatten(self):
@@ -874,8 +870,7 @@ class Collapsible(Node):
 		if self.view_mode > 0:
 			if self.view_mode == 2:
 				yield TextTag("\n")
-			for i in self.render_items():
-				yield i
+			yield self.render_items()
 		yield [DedentTag()]
 
 	@classmethod

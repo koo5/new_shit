@@ -1,8 +1,8 @@
 import operator
 import types
+from queue import Queue
 
-from pygame import threads
-threads.init()
+import threading
 
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues
@@ -161,21 +161,22 @@ class ThreadedMarpa(object):
 			num_syms = s.num_syms,
 			rules = s.rules[:]))
 
-	class MarpaThread(threads.Thread):
-		def __init__(s):
-			super().__init__()
-			s.input = Queue()
 
-		def run(s):
-			"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4
-			imho unbased requirement that all operations are done in one thread..so
-			lets make a litte event loop here"""
-			while True:
-				inp = s.input.get()
-				if inp.task == 'feed':
-					s.feed(inp)
-				elif inp.task = 'parse':
-					s.output.put(Dotdict(message = 'parsed', results = list(s.parse(inp.tokens))))
+class MarpaThread(threading.Thread):
+	def __init__(s):
+		super().__init__(daemon=True)
+		s.input = Queue()
+
+	def run(s):
+		"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4
+		imho unbased requirement that all operations are done in one thread..so
+		lets make a litte event loop here"""
+		while True:
+			inp = s.input.get()
+			if inp.task == 'feed':
+				s.feed(inp)
+			elif inp.task == 'parse':
+				s.output.put(Dotdict(message = 'parsed', results = list(s.parse(inp.tokens))))
 
 
 	def feed(s, inp):
@@ -314,7 +315,7 @@ class ThreadedMarpa(object):
 	"""
 	<jeffreykegler> By the way, a Marpa parser within a Marpa parser is a strategy pioneered by Andrew Rodland (hobbs) and it is the way that the SLIF does its lexing -- the SLIF lexes by repeatedly creating Marpa subgrammars, getting the lexeme, and throwing away the subgrammar.
 	"""
-
+"""
 		if args.graph_grammar:
 			graphing_wrapper.start()
 			graphing_wrapper.symid2name = m.symbol2name
@@ -326,3 +327,4 @@ class ThreadedMarpa(object):
 		if args.log_parsing:
 			log(m.syms_sorted_by_values)
 			log(m.rules)
+"""

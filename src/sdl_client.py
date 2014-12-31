@@ -15,6 +15,7 @@ from lemon_utils.lemon_logging import log, info
 import lemon_args
 lemon_args.parse_args()
 from lemon_args import args
+from frontend_events import *
 
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
@@ -113,7 +114,7 @@ def pygame_keypressevent__repr__(self):
 		#a better repr that translates keys to key names
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
 			(pygame.key.name(self.key), self.uni, bin(self.mod)))
-lemon_client.KeypressEvent.__repr__ = pygame_keypressevent__repr__
+KeypressEvent.__repr__ = pygame_keypressevent__repr__
 
 
 def keypress(e):
@@ -137,16 +138,32 @@ def mousedown(e):
 				break
 
 
-
-def handle_input(event):
-	if event.type == pygame.KEYDOWN:
+def dispatch_input_event(event):
+	if type(event) == KeypressEvent:
 		keypress(event)
 		return True
 
-	elif event.type == pygame.MOUSEBUTTONDOWN:
+	elif type(event) == MousedownEvent:
 		mousedown(event)
 		return True
 
+	elif type(event) == ResizeEvent:
+		resize(event.size)
+		return True
+
+	else:
+		raise Exception("unexpected event type:", event)
+
+def _(e):
+	dispatch_input_event(e)
+	#draw()
+replay.replay_input_event = _
+
+def handle(e):
+	try:
+		dispatch_input_event(e)
+	finally:
+		replay.add(e)
 
 def process_event(event):
 	if event.type == pygame.USEREVENT:
@@ -156,19 +173,13 @@ def process_event(event):
 		c.editor.cursor_blink_phase = not c.editor.cursor_blink_phase
 
 	elif event.type == pygame.KEYDOWN:
-		e = lemon_client.KeypressEvent(pygame.key.get_pressed(), event.unicode, event.key, event.mod)
-		handle_input(e)
-		replay.add(e)
+		handle(KeypressEvent(pygame.key.get_pressed(), event.unicode, event.key, event.mod))
 
 	elif event.type == pygame.MOUSEBUTTONDOWN:
-		e = lemon_client.MousedownEvent(event)
-		handle_input(e)
-		replay.add(e)
+		handle(MousedownEvent(event))
 
 	elif event.type == pygame.VIDEORESIZE:
-		replay.add(('resize', event.size))
-		resize(event.size)
-#		render()
+		handle(ResizeEvent(event.size))
 
 	elif event.type == pygame.ACTIVEEVENT:
 		if event.gain:
@@ -187,7 +198,7 @@ def process_event(event):
 
 def redraw(self):
 	for f in c.visibleframes():
-		log("maybe_redrawing %s on the client window request",f)
+		#log("maybe_redrawing %s on the client window request",f)
 		f.maybe_draw()
 	pygame.display.flip()
 #lemon_client.draw = redraw

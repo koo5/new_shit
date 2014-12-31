@@ -58,7 +58,7 @@ class ClientFrame(object):
 	def maybe_draw(s):
 		must_recollect = s.counterpart.must_recollect()
 		if must_recollect or s.lines.dirty or s.must_redraw or not args.rpc:
-			log("drawing, %s.must_recollect = %s, s.lines.dirty = %s, s.s.must_redraw = %s", s.counterpart, must_recollect, s.lines.dirty, s.must_redraw)
+			#log("drawing, %s.must_recollect = %s, s.lines.dirty = %s, s.s.must_redraw = %s", s.counterpart, must_recollect, s.lines.dirty, s.must_redraw)
 			s.draw()
 			s.must_redraw = False
 

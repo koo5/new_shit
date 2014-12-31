@@ -14,8 +14,6 @@ CHANGED = 1
 class Element():
 	"""an object that can be rendered, a common base for widgets and nodes"""
 	help = []
-
-	keys_help_items = None
 	def __init__(self):
 		super().__init__()
 		self._parent = Evil('_parent')
@@ -67,13 +65,10 @@ class Element():
 		log('default handler')
 		return False
 
-	def tags(self):
-		#this needs to be refactored in with Node.tags
-		r = [tags.AttTag(node_att, self)] + self.render() + [tags.ColorTag(self.brackets_color), tags.TextTag(self.brackets[1]), tags.EndTag()] + [tags.EndTag()]
+	def tags(elem):
+		yield [AttTag(node_att, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
+		yield [elem.render(), ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag(), EndTag()]
 
-		assert( isinstance(r, list))
-		return r
-		
 	@property
 	def root(self):
 		if self.parent != None:

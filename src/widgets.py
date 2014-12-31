@@ -138,13 +138,6 @@ class NState(Widget):
 	def text(self):
 		return self.texts[self.value]
 
-	def toggle(self):
-		self.value = self.value + 1
-		if self.value == len(self.texts):
-			self.value = 0
-		self.on_change.emit(self)
-		return CHANGED
-
 	def on_mouse_press(self, button):
 		return self.toggle()
 

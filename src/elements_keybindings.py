@@ -53,25 +53,35 @@ def k_unicode(s, e):
 		atts = e.right
 	if not atts: # we may want to have zero width elements later
 		atts = e.between
-
 	pos = atts[char_index_att]
 	s.text = s.text[:(pos-1)] + e.uni + s.text[(pos-1):]
 	return s.after_edit(e.uni)
 w.Text.k_unicode = k_unicode
-
 
 w.Text.keys = {H((), K_BACKSPACE, LEFT): w.Text.k_backspace,
 			   H((), K_DELETE, RIGHT): w.Text.k_delete,
 			   H((), UNICODE): w.Text.k_unicode}
 
 
+
+
 def press(self, e):
 	self.on_press.emit(self)
 	return CHANGED
-
 w.Button.press = press
 
 w.Button.keys = {H((), (K_RETURN, K_SPACE)): w.Button.press}
+
+
+
+
+def toggle(self, e):
+	self.value = self.value + 1
+	if self.value == len(self.texts):
+		self.value = 0
+	log(self.value)
+	self.on_change.emit(self)
+w.NState.toggle = toggle
 
 w.NState.keys = {H((), (K_RETURN, K_SPACE)): w.NState.toggle}
 
@@ -109,15 +119,14 @@ def delete_item(s):
 	del self.items[ii]
 	return CHANGED
 
-def newline(s, atts):
-	assert type(atts) == dict
-	item_index = s.item_index(atts)
+def newline(s, e):
+	item_index = s.item_index(e.atts)
 	s.newline(item_index)
 	return CHANGED
 
 n.List.keys = n.List.__bases__[-1].keys.plus(
 	{   H((KMOD_CTRL),  K_DELETE): (delete_item_check, delete_item),
-		H((),           K_RETURN): newline})
+		H((),           K_RETURN): (lambda s, atts: s.item_index(atts) != None, newline)})
 
 def run_line(self, e):
 	index = self.index_of_item_under_cursor(e)
@@ -137,7 +146,7 @@ n.Module.keys = n.Module.__bases__[-1].keys.plus({
 	H(KMOD_CTRL, K_BACKSLASH ): n.Module.run})
 
 
-def check_backspace(atts):
+def check_backspace(s, atts):
 	i = a.get(item_att)
 	if i:
 		return i[0] == s and s.items[i[1]]

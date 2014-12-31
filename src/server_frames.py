@@ -1,5 +1,7 @@
 from types import GeneratorType
 from collections import namedtuple
+from pprint import pformat as pp
+
 from pizco import Signal
 
 from lemon_utils.lemon_six import iteritems, unicode
@@ -16,6 +18,8 @@ from menu_items import InfoItem
 import widgets
 import elements_keybindings
 import graph
+
+from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 
 class Atts(object):
 	def __init__(s, a):
@@ -105,6 +109,23 @@ class Editor(ServerFrame):
 			s.signal_change()
 
 
+def handle_keypress(event):
+	ph = potential_handlers(event.trip)
+	log(pp(ph))
+	for elem, handler, func in ph:
+		log("matching with %s..", handler)
+		if event.mods == set(handler.mods) and (
+			event.key == handler.key or (type(handler.key) == tuple and	event.key in handler.key)):
+				event.left, event.middle, event.right = (
+					event.trip.left   if event.trip.left and event.trip.left.get(node_att) == elem else None,
+					event.trip.middle if event.trip.middle and event.trip.middle.get(node_att) == elem else None,
+					event.trip.right  if event.trip.right and event.trip.right.get(node_att) == elem else None)
+				event.atts = event.left or event.middle or event.right
+				log("match:%s.%s",elem,func)
+				return elem, func(elem, event)
+
+
+
 def potential_handlers(trip):
 	"""return every handler for the element in atts, whose checker passess.
 	mods and key are irrelevant, we arent dealing with any particular event
@@ -128,21 +149,6 @@ def potential_handlers(trip):
 							checker, func = None, v
 						if not checker or checker(elem,atts):
 							yield elem, handler, func
-
-
-def handle_keypress(event):
-	for elem, handler, func in potential_handlers(event.trip):
-		log(handler)
-		if event.mods == set(handler.mods) and (
-			event.key == handler.key or
-			type(handler.key) == tuple and
-			event.key in handler.key):
-				event.left, event.middle, event.right = (
-					event.trip.left   if event.trip.left and event.trip.left.get(node_att) == elem else None,
-					event.trip.middle if event.trip.middle and event.trip.middle.get(node_att) == elem else None,
-					event.trip.right  if event.trip.right and event.trip.right.get(node_att) == elem else None)
-				return elem, func(elem, event)
-
 
 
 editor = Editor()
@@ -255,6 +261,7 @@ class Menu(ServerFrame):
 	def accept(menu, idx):
 		return menu.element.menu_item_selected(menu.items[idx], menu.root.atts)
 	def accept(self):
+		return False
 		if len(self.items_on_screen) > self.sel:
 			if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
 				self.sel = 0

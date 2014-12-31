@@ -35,7 +35,7 @@ lib.marpa_c_init(marpa_config)
 
 #a wee bit of dependency on something in the lemon repo, feel free to use it or
 #cut it out...we have to ..somehow..i have to learn to use the python logging module
-from lemon_utils.lemon_logging import topic,topic2,log
+from lemon_utils.lemon_logging import log
 
 
 
@@ -126,7 +126,7 @@ class Recce(object):
 		lib.marpa_r_unref(s.r)
 	def start_input(s):
 		s.g.check_int(lib.marpa_r_start_input(s.r))
-	@topic2
+
 	def alternative(s, sym, val, length=1):
 		assert type(sym) == symbol_int
 		assert type(val) == int
@@ -136,7 +136,7 @@ class Recce(object):
 		if r != lib.MARPA_ERR_NONE:
 			log_error(r)
 
-	topic2
+
 	def earleme_complete(s):
 		s.g.check_int(lib.marpa_r_earleme_complete(s.r))
 	def latest_earley_set(s):

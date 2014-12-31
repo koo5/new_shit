@@ -1,19 +1,28 @@
-from __future__ import unicode_literals
-from __future__ import print_function
-import traceback, logging
-from inspect import *
-from time import time
-import logging
+#import traceback,
+#from inspect import *
+#from time import time
 import sys
+import logging
+from pprint import pformat as pp
 
 logger = logging.Logger('lemon')
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler(sys.stderr)
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
-ch.setFormatter(logging.Formatter(
-	'%(asctime)s %(module)s:%(lineno)d : %(message)s', '%H:%M:%S'))
 
+f = logging.Formatter(
+	'%(asctime)s %(module)s:%(lineno)d : %(message)s', '%H:%M:%S')
+"""
+class PrettyPrintingFormatter(logging.Formatter):
+	def formatMessage(self, record):
+		print (record.__dict__)
+		record.args = tuple([pp(i) for i in record.args])
+		return self._style.format(record)
+
+f = PrettyPrintingFormatter()
+"""
+ch.setFormatter(f)
 log = logger.debug
 warn = logger.warning
 info = logger.info
