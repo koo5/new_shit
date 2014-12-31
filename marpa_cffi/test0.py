@@ -43,7 +43,7 @@ class Grammar(object):
 	
 	def check_config_error(s):
 		msg = ffi.new("char **")
-		assert lib.marpa_c_error(config, msg) == lib.MARPA_ERR_NONE,  mss
+		assert lib.marpa_c_error(config, msg) == lib.MARPA_ERR_NONE,  msg
 
 	def check_int(s, result):
 		if result == -2:
