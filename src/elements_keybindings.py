@@ -10,6 +10,7 @@ from element import CHANGED
 from nodes import AST_CHANGED
 
 from lemon_utils.utils import odict
+from lemon_utils.lemon_logging import log
 
 """ an event comes with two lists of attributes, one for the char(cell) that was on the left
 of the cursor and one for the right. If either side doesnt belong to the element whose handler
@@ -84,6 +85,15 @@ def toggle(self, e):
 w.NState.toggle = toggle
 
 w.NState.keys = {H((), (K_RETURN, K_SPACE)): w.NState.toggle}
+
+
+
+
+def toggle(self):
+	self.value = not self.value
+	self.on_change.emit(self)
+w.Toggle.keys = {H((), (K_RETURN, K_SPACE)): w.Toggle.toggle}
+
 
 
 

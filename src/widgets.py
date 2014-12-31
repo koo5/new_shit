@@ -157,13 +157,5 @@ class Toggle(Widget):
 	@property
 	def text(self):
 		return self.texts[0] if self.value else self.texts[1]
-	def toggle(self):
-		self.value = not self.value
-		self.on_change.emit(self)
 	def on_mouse_press(self, button):
 		self.toggle()
-	keys = ["return, space: toggle"]
-	def on_keypress(self, e):
-		if e.key == K_RETURN or e.key == K_SPACE:
-			self.toggle()
-			return CHANGED
