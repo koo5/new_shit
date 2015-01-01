@@ -57,6 +57,8 @@ class ClientFrame(object):
 
 	def maybe_draw(s):
 		must_recollect = s.counterpart.must_recollect()
+		if must_recollect:
+			s.tags.dirty = s.lines.dirty = True
 		if must_recollect or s.lines.dirty or s.must_redraw or not args.rpc:
 			#log("drawing, %s.must_recollect = %s, s.lines.dirty = %s, s.s.must_redraw = %s", s.counterpart, must_recollect, s.lines.dirty, s.must_redraw)
 			s.draw()
@@ -72,6 +74,8 @@ class ClientFrame(object):
 		s.curses_draw_stuff()
 
 	def sdl_draw(self):
+		if self.rect.h == 0 or self.rect.w == 0:
+			return
 		surface = pygame.Surface((self.rect.w, self.rect.h), 0)
 		if colors.bg != (0,0,0):
 			surface.fill(colors.bg)
@@ -160,6 +164,7 @@ class ClientFrame(object):
 		char_index = 0
 		indentation = 0
 		lines_count = 0
+		editable = False
 
 		def indent():
 			numspaces = indentation * s.indent_width
@@ -171,10 +176,16 @@ class ClientFrame(object):
 				#"squashes" it, the last attributes (on top) overwrite the ones below
 
 		def append(char):
-			line.append((char, dict(atts + [(char_index_att, char_index)])))
+			line.append((char, atts_dict()))
 
 		def current_cr():
 			return (len(line), lines_count)
+
+		def add_zwe():
+			s.zwes[current_cr()] = atts_dict()
+
+		def atts_dict():
+			return dict(atts + [(char_index_att, char_index)])
 
 		for batch in batches:
 			for tag in batch:
@@ -187,6 +198,8 @@ class ClientFrame(object):
 
 				elif type(tag) == unicode:
 					for char in tag:
+						if editable:
+							add_zwe()
 						if char != "\n":
 							append(char)
 							char_index += 1
@@ -196,6 +209,7 @@ class ClientFrame(object):
 							indent()
 							lines_count += 1
 
+
 				elif tag == indent_tag:
 					indentation += 1
 
@@ -203,8 +217,14 @@ class ClientFrame(object):
 					indentation -= 1
 					assert indentation >= 0
 
-				elif tag == zero_width_element_tag:
-					s.zwes[current_cr()] = dict(atts)
+				#elif tag == zero_width_element_tag:
+
+				elif tag == editable_start_tag:
+					editable = True
+					char_index = 0
+				elif tag == editable_end_tag:
+					editable = False
+					add_zwe()
 
 				elif type(tag) == dict:
 					s.arrows.append(current_cr() + (tag['arrow'],))

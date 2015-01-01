@@ -14,7 +14,7 @@ is_first_input_event = True
 
 def add(e):
 	global is_first_input_event, _ignored
-	log((is_first_input_event, _ignored))
+	#log((is_first_input_event, _ignored))
 	if is_first_input_event and not _ignored:
 		clear_replay()
 	with open(replay_file, "ab") as f:

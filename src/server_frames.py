@@ -17,7 +17,7 @@ from element import Element
 from menu_items import InfoItem
 import widgets
 import elements_keybindings
-import graph
+import keys
 
 from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 
@@ -49,12 +49,16 @@ class Editor(ServerFrame):
 	def signal_change(s, force=False):
 		if force or s.root.changed or s.root.ast_changed:
 			s.on_serverside_change.emit(s.root.ast_changed)
+		log("s.draw_signal.emit()")
 		s.draw_signal.emit()
 
 	def must_recollect(s):
+		log('must_recollect(%s)', s)
 		if s.root.changed or s.root.ast_changed:
 			s.root.changed = s.root.ast_changed = False
+			log("true")
 			return True
+		log("false")
 
 	@property
 	def element_under_cursor(s):
@@ -67,7 +71,7 @@ class Editor(ServerFrame):
 		return editor.root.delayed_cursor_move
 
 	def set_atts(editor, atts):
-		log("setting atts under cursor to %s",atts)
+		log("setting atts under cursor to %s",pp(atts))
 		editor.atts = Atts(atts)
 		editor.signal_change(True)
 
@@ -100,27 +104,29 @@ class Editor(ServerFrame):
 
 		if r:
 			elem, handler_result = r
-			if handler_result:
-				module = elem.module
-				if module:
+			#if handler_result:
+				#module = elem.module
+				#if module:
 					#event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
-					log('history.append(%s)',event)
-
+					#log('history.append(%s)..',event)
+			s.root.changed = True
 			s.signal_change()
 
 
 def handle_keypress(event):
 	ph = potential_handlers(event.trip)
-	log(pp(ph))
+#	log(pp(list(ph)))
+	log(event)
 	for elem, handler, func in ph:
 		log("matching with %s..", handler)
-		if event.mods == set(handler.mods) and (
-			event.key == handler.key or (type(handler.key) == tuple and	event.key in handler.key)):
+		if (event.mods == set(handler.mods) and (
+			event.key == handler.key or (type(handler.key) == tuple and	event.key in handler.key)) or
+		    (event.uni and handler.key == elements_keybindings.UNICODE and event.key not in (keys.K_ESCAPE, ))):
 				event.left, event.middle, event.right = (
 					event.trip.left   if event.trip.left and event.trip.left.get(node_att) == elem else None,
 					event.trip.middle if event.trip.middle and event.trip.middle.get(node_att) == elem else None,
 					event.trip.right  if event.trip.right and event.trip.right.get(node_att) == elem else None)
-				event.atts = event.left or event.middle or event.right
+				event.atts = event.middle or event.left or event.right
 				log("match:%s.%s",elem,func)
 				return elem, func(elem, event)
 

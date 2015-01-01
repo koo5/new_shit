@@ -1310,8 +1310,8 @@ class Text(WidgetedValue):
 	def from_parse(cls, args):
 		return cls(args[1])
 
-	def render(self):
-		return self.widget.render()
+	#def render(self):
+	#	return self.widget.render()
 
 	def _eval(self):
 		return Text(self.pyval)

@@ -1,24 +1,7 @@
-from weakref import WeakValueDictionary
-from lemon_utils.utils import Evil
+#from weakref import WeakValueDictionary
+#from lemon_utils.utils import Evil
+from lemon_utils.lemon_six import unicode
 
-
-""" this will be the responsibility of pizco
-proxied = WeakValueDictionary()
-key_counter = 0
-# distributed computing is fun.
-# lets work with the theoretical possibiliy that the counter
-# will overflow (makes me feel a bit easier than a runaway bignum)
-# the point is that we want to be sure what object the client is talking about.
-# ids can repeat. This doesnt save the clients from sending events while their data is
-# outdated, but at least it cant seem they reference a different object than they mean.
-#
-def proxy_this(v):
-	global key_counter
-	while key_counter in proxied:
-		key_counter += 1
-	proxied[key_counter] = v
-	return key_counter
-"""
 
 node_att  = 0
 color_att = 1
@@ -26,6 +9,7 @@ char_index_att = 2
 
 
 def TextTag(text):
+	assert isinstance(text, unicode)
 	return text
 
 def AttTag(k,v):
@@ -48,12 +32,14 @@ dedent_tag = 2
 def DedentTag():
 	return dedent_tag
 
-zero_width_element_tag = 3
+editable_start_tag = 3
+editable_end_tag = 4
+
 
 def ArrowTag(target):
 	return {"arrow": target}
 
-
+editable_end_tag = 4
 
 def NewlineTag(Tag):
 	return "\n"

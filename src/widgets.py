@@ -4,10 +4,10 @@
 
 from pizco import Signal
 
-from element import Element
+from element import Element, CHANGED
 from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import unicode
-from tags import TextTag, ColorTag, EndTag, MemberTag, node_att, char_index_att
+from tags import *
 from keys import *
 from lemon_colors import colors
 
@@ -27,9 +27,10 @@ class Text(Widget):
 		self.color = colors.widget_color
 		assert isinstance(text, unicode)
 		self.text = text
+		self.brackets = ['','']
 
 	def render(self):
-		return [TextTag(self.text)]
+		return [editable_start_tag, TextTag(self.text), editable_end_tag]
 
 	@property
 	def value(self):
@@ -41,7 +42,7 @@ class Text(Widget):
 	def after_edit(s, move):
 		s.root.delayed_cursor_move += len(move)
 		s.on_edit.emit(s)
-		return s.CHANGED
+		return CHANGED
 
 
 class Button(Widget):

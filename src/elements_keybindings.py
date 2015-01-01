@@ -47,15 +47,9 @@ def k_delete(s, e):
 w.Text.k_delete = k_delete
 
 def k_unicode(s, e):
-	if e.key == K_ESCAPE:
-		return False
-	atts = e.left
-	if not atts:
-		atts = e.right
-	if not atts: # we may want to have zero width elements later
-		atts = e.between
+	atts = e.atts
 	pos = atts[char_index_att]
-	s.text = s.text[:(pos-1)] + e.uni + s.text[(pos-1):]
+	s.text = s.text[:pos] + e.uni + s.text[pos:]
 	return s.after_edit(e.uni)
 w.Text.k_unicode = k_unicode
 
@@ -92,7 +86,7 @@ w.NState.keys = {H((), (K_RETURN, K_SPACE)): w.NState.toggle}
 def toggle(self):
 	self.value = not self.value
 	self.on_change.emit(self)
-w.Toggle.keys = {H((), (K_RETURN, K_SPACE)): w.Toggle.toggle}
+w.Toggle.keys = {H((), (K_RETURN, K_SPACE)): toggle}
 
 
 
