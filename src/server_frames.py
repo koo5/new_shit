@@ -62,7 +62,7 @@ class Editor(ServerFrame):
 
 	@property
 	def element_under_cursor(s):
-		return s.atts.any.get(node_att)
+		return s.atts.any.get(Att.elem)
 
 	def tags(s):
 		return s.root.tags()
@@ -80,7 +80,7 @@ class Editor(ServerFrame):
 		editor.signal_change()
 
 	def run_line(editor):
-		editor.atts.any[node_att].module.run_line(editor.atts.any[node_att])
+		editor.atts.any[Att.elem].module.run_line(editor.atts.any[Att.elem])
 		editor.signal_change()
 
 	def clear(editor):
@@ -123,9 +123,9 @@ def handle_keypress(event):
 			event.key == handler.key or (type(handler.key) == tuple and	event.key in handler.key)) or
 		    (event.uni and handler.key == elements_keybindings.UNICODE and event.key not in (keys.K_ESCAPE, ))):
 				event.left, event.middle, event.right = (
-					event.trip.left   if event.trip.left and event.trip.left.get(node_att) == elem else None,
-					event.trip.middle if event.trip.middle and event.trip.middle.get(node_att) == elem else None,
-					event.trip.right  if event.trip.right and event.trip.right.get(node_att) == elem else None)
+					event.trip.left   if event.trip.left and event.trip.left.get(Att.elem) == elem else None,
+					event.trip.middle if event.trip.middle and event.trip.middle.get(Att.elem) == elem else None,
+					event.trip.right  if event.trip.right and event.trip.right.get(Att.elem) == elem else None)
 				event.atts = event.middle or event.left or event.right
 				log("match:%s.%s",elem,func)
 				return elem, func(elem, event)
@@ -143,7 +143,7 @@ def potential_handlers(trip):
 	             (elements_keybindings.LEFT, trip.left),
 	             (elements_keybindings.RIGHT, trip.right)]:
 		if atts != None:
-			elem = atts.get(node_att)
+			elem = atts.get(Att.elem)
 			if elem:
 				log((elem, elem.keys))
 				for handler, v in iteritems(elem.keys):

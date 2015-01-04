@@ -645,7 +645,7 @@ class Node(NodePersistenceStuff, element.Element):
 		if "value" in elem.runtime._dict \
 				and "evaluated" in elem.runtime._dict \
 				and not isinstance(elem.parent, Parser): #dont show evaluation results of parser's direct children
-			yield [AttTag(node_att, elem), ColorTag(colors.eval_results), TextTag("->")]
+			yield [AttTag(Att.elem, elem), ColorTag(colors.eval_results), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
 				yield [TextTag(str(len(v.items))), TextTag(" values:"), ElementTag(v)]

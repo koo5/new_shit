@@ -1,12 +1,16 @@
 #from weakref import WeakValueDictionary
 #from lemon_utils.utils import Evil
+
+from enum import Enum, unique
+
 from lemon_utils.lemon_six import unicode
 
-
-node_att  = 0
-color_att = 1
-char_index_att = 2
-
+@unique
+class Att(Enum):
+	elem  = 0
+	color = 1
+	char_index = 2
+	item_index = 3
 
 def TextTag(text):
 	assert isinstance(text, unicode)
@@ -45,7 +49,7 @@ def NewlineTag(Tag):
 	return "\n"
 
 def ColorTag(value):
-	return (color_att, value)
+	return (Att.color, value)
 
 
 

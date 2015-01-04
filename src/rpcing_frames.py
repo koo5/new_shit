@@ -96,7 +96,7 @@ class ClientFrame(object):
 			for col, char in enumerate(line):
 				x = font_width * col
 
-				hi = highlight and char[1].get(node_att) == highlight
+				hi = highlight and char[1].get(Att.elem) == highlight
 
 				if hi:
 					bg = highlighted_bg_cached
@@ -106,7 +106,7 @@ class ClientFrame(object):
 					bg = bg_cached
 
 				if not just_bg:
-					fg = char[1][color_att]
+					fg = char[1][Att.color]
 					if args.freetype:
 						if transparent:
 							font.render_to(surf, (x,y), char[0], fg)
@@ -138,7 +138,7 @@ class ClientFrame(object):
 		for col, char in enumerate(line):
 			mode = 0
 			try:
-				if char[1][node_att] == s.highlight:
+				if char[1][Att.elem] == s.highlight:
 					mode = c.A_BOLD + c.A_REVERSE
 			except:	pass
 			try:
@@ -185,7 +185,7 @@ class ClientFrame(object):
 			s.zwes[current_cr()] = atts_dict()
 
 		def atts_dict():
-			return dict(atts + [(char_index_att, char_index)])
+			return dict(atts + [(Att.char_index, char_index)])
 
 		for batch in batches:
 			for tag in batch:
@@ -237,10 +237,10 @@ class ClientFrame(object):
 		def test():
 			#we would have to set cols somehow
 			project_tags([[
-				(color_att, (0,0,0)),
+				(Att.color, (0,0,0)),
 				"hey",
 				"how does this work\n\n",
-				(node_att, 333),
+				(Att.elem, 333),
 				"wut wut",
 				pop_tag,
 			    indent_tag,
@@ -431,8 +431,8 @@ class Editor(ClientFrame):
 					assert(isinstance(i[0], unicode))
 					assert(len(i[0]) == 1)
 					assert(isinstance(i[1], dict))
-					assert(node_att in i[1])
-					assert(char_index_att in i[1])
+					assert(Att.elem in i[1])
+					assert(Att.char_index in i[1])
 
 
 	def sdl_draw_stuff(s, surf):
@@ -476,7 +476,7 @@ class Editor(ClientFrame):
 		#assert(isinstance(e, int)),  e
 		for r,line in enumerate(s.lines):
 			for c,char in enumerate(line):
-				if char[1][node_att] == e:
+				if char[1][Att.elem] == e:
 					return c, r
 
 

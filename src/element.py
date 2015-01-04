@@ -66,7 +66,7 @@ class Element():
 		return False
 
 	def tags(elem):
-		yield [AttTag(node_att, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
+		yield [AttTag(Att.elem, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
 		yield [elem.render(), ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag(), EndTag()]
 
 	@property

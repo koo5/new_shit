@@ -48,7 +48,7 @@ w.Text.k_delete = k_delete
 
 def k_unicode(s, e):
 	atts = e.atts
-	pos = atts[char_index_att]
+	pos = atts[Att.char_index]
 	s.text = s.text[:pos] + e.uni + s.text[pos:]
 	return s.after_edit(e.uni)
 w.Text.k_unicode = k_unicode
@@ -151,9 +151,9 @@ n.Module.keys = n.Module.__bases__[-1].keys.plus({
 
 
 def check_backspace(s, atts):
-	i = a.get(item_att)
-	if i:
-		return i[0] == s and s.items[i[1]]
+	i = atts.get(Att)
+	if i != None:
+		return i[0] == s# and s.items[i[1]]
 
 def k_backspace(s):
 	s.root.delayed_cursor_move -= 1
@@ -177,7 +177,7 @@ def k_delete(s):
 
 
 n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.plus({
-	H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
-	H((), K_DELETE, LEFT): k_delete
+	#H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
+	#H((), K_DELETE, LEFT): k_delete
 	})
 
