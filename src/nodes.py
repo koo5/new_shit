@@ -1960,6 +1960,7 @@ class ParserBase(Node):
 	def __init__(self):
 		super(ParserBase, self).__init__()
 		self.items = NotifyingList()
+		self.items.append(widgets.Text(self))
 		self.decl = None
 		self.on_edit = Signal()
 		self.brackets_color = colors.compiler_brackets
@@ -1997,9 +1998,9 @@ class ParserBase(Node):
 
 	def add(self, item):
 		self.items.append(item)
-		assert isinstance(item, (unicode, Node) ), repr(item)
-		if isinstance(item, Node):
-			item.parent = self
+		assert isinstance(item, (widgets.Text, Node) ), repr(item)
+		#if isinstance(item, Node):
+		item.parent = self
 
 
 	def even_out(inp):
@@ -2053,7 +2054,7 @@ class ParserBase(Node):
 		if len(self.items) == 0: # no items, show the gray type hint
 			return self.empty_render()
 
-		r = [AttTag("compiler body", self)]
+		yield (Att.item_index
 		for i, item in enumerate(self.items):
 			r += [AttTag("compiler item", i)]
 			if isinstance(item, unicode):
