@@ -36,6 +36,8 @@ from lemon_utils.dotdict import Dotdict
 from lemon_args import args
 from lemon_utils.lemon_logging import log, warn
 
+from marpa_cffi.marpa_misc import * # actions
+
 tags.asselement = element # for assertions
 
 # endregion
@@ -1960,7 +1962,7 @@ class ParserBase(Node):
 	def __init__(self):
 		super(ParserBase, self).__init__()
 		self.items = NotifyingList()
-		self.items.append(widgets.Text(self))
+		self.items.append(widgets.Text(self,"x"))
 		self.decl = None
 		self.on_edit = Signal()
 		self.brackets_color = colors.compiler_brackets
@@ -2054,63 +2056,14 @@ class ParserBase(Node):
 		if len(self.items) == 0: # no items, show the gray type hint
 			return self.empty_render()
 
-		yield (Att.item_index
+		r = []
 		for i, item in enumerate(self.items):
-			r += [AttTag("compiler item", i)]
-			if isinstance(item, unicode):
-				for j, c in enumerate(item):
-					r += [AttTag("compiler item char", j), TextTag(c), EndTag()]
-			else:
-				r += [ElementTag(item)]
-			r += [EndTag()]
-		r += [EndTag()]
+			yield [
+				AttTag(Att.item_index, (self, i)),
+				ElementTag(item),
+				EndTag()]
+
 		return r
-
-	#keys = ["text editing",
-	#		"ctrl del: delete item"]
-
-	"""
-	def on_keypress(s, e):
-
-		if not e.mod & KMOD_CTRL:
-			assert s.root.post_render_move_caret == 0
-
-			if e.uni and e.key not in [K_ESCAPE, K_RETURN]:
-
-				items = s.items
-				atts = e.atts
-
-				if len(items) != 0:
-					#it's Parser's closing bracket
-					if not "compiler body" in atts or s != atts["compiler body"]:
-						if isinstance(items[-1], Node): #is my last item a node?
-							items.append("")
-						#in either case
-						return s.edit_text(len(items) - 1, len(items[-1]), e)
-					else:
-						ci = atts["compiler item"]
-						if "opening bracket" in atts:
-							if ci == 0 or isinstance(items[ci-1], Node):
-								items.insert(ci, "")
-								return s.edit_text(ci,0,e)
-							else:
-								return s.edit_text(ci - 1, len(items[ci-1]), e)
-						else:
-							if isinstance(items[ci], Node):
-								#its an event passed up from a child
-								return False
-							else:
-								#we are in the middle of text
-								return s.edit_text(ci, atts["compiler item char"], e)
-					#there is never a closing bracket, the child handles it
-				else: # no items in me
-					s.items.append("")
-					#snap cursor to the beginning of Parser
-					s.root.post_render_move_caret -= atts['char_index']
-					return s.edit_text(0, 0, e)
-
-		return super(Parser, s).on_keypress(e)
-	"""
 	"""
 	@topic ("type tree")
 	def type_tree(s, type, scope, indent=0):
@@ -3069,7 +3022,7 @@ ctrl-d will delete something. Inserting of nodes happens in the Parser node.""")
 	#r.add(("lesh", Lesh()))
 	r["some program"] = B.module.inst_fresh()
 	r["some program"].ch.statements.newline()
-	r['some program'].ch.statements.items[1].add("12")
+	#r['some program'].ch.statements.items[1].add("12")
 	#r["lemon console"] =b['module'].inst_fresh()
 	r["loaded program"] = Text("placeholder 01")
 

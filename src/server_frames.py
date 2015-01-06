@@ -118,10 +118,10 @@ def handle_keypress(event):
 #	log(pp(list(ph)))
 	log(event)
 	for elem, handler, func in ph:
-		log("matching with %s..", handler)
+		#log("matching with %s..", handler)
 		if (event.mods == set(handler.mods) and (
 			event.key == handler.key or (type(handler.key) == tuple and	event.key in handler.key)) or
-		    (event.uni and handler.key == elements_keybindings.UNICODE and event.key not in (keys.K_ESCAPE, ))):
+		    (event.uni and handler.key == elements_keybindings.UNICODE and event.key not in (keys.K_ESCAPE, keys.K_BACKSPACE))):
 				event.left, event.middle, event.right = (
 					event.trip.left   if event.trip.left and event.trip.left.get(Att.elem) == elem else None,
 					event.trip.middle if event.trip.middle and event.trip.middle.get(Att.elem) == elem else None,
@@ -145,7 +145,7 @@ def potential_handlers(trip):
 		if atts != None:
 			elem = atts.get(Att.elem)
 			if elem:
-				log((elem, elem.keys))
+				#log((elem, elem.keys))
 				for handler, v in iteritems(elem.keys):
 					#log((handler, v, elem, elem.keys))
 					if	handler.sidedness in (None, sidedness):
@@ -178,7 +178,7 @@ class Menu(ServerFrame):
 			return True
 
 	def on_editor_change(self, ast):
-		if ast:
+	#	if ast:
 			self.prepare_grammar()
 
 	def on_editor_element_change(s):
@@ -194,9 +194,13 @@ class Menu(ServerFrame):
 					return True
 
 	def prepare_grammar(s):
-		s.marpa.input.clear()
-		s.marpa.collect_grammar(s.editor.root, s.editor.element_under_cursor)
-		s.marpa.queue_precomputation()
+		#s.marpa.t.input.clear()
+
+		for i in s.editor.root.flatten():
+			i.forget_symbols() # todo:start using visitors
+
+		s.marpa.collect_grammar(s.editor.element_under_cursor.scope())
+		s.marpa.queue_precomputation(666)
 
 	def on_thread_message(s):
 		m = s.marpa.output.get()

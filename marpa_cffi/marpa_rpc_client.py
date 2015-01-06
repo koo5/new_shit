@@ -1,13 +1,13 @@
 import operator
 import types
 from queue import Queue
-
 import threading
+from itertools import starmap, repeat
 
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues
-
-
+from lemon_utils.utils import uniq
+from lemon_args import args
 
 import marpa_cffi
 marpa = marpa_cffi.try_loading_marpa()
@@ -33,9 +33,9 @@ else:
 class ThreadedMarpa(object):
 	def __init__(s, debug=True):
 		s.debug = debug
-		s.named_syms = Dotdict()
+		s.syms = Dotdict()
 		if debug:
-			s.syms = []
+			s.debug_sym_names = []
 		s.num_syms = 0
 		s.known_chars = {}
 		s.rules = []
@@ -46,20 +46,21 @@ class ThreadedMarpa(object):
 
 	def named_symbol(s,name):
 		"""create a symbol and save it in syms with the name as key"""
-		if name in s.named_syms._dict:
+		if name in s.syms._dict:
 			raise Exception("%s already in named_syms"%name)
-		r = s.named_syms[name] = s.symbol(name)
+		r = s.syms[name] = s.symbol(name)
 		return r
 
 	def symbol(s,debug_name):
 		if s.debug:
-			s.syms.append(debug_name)
+			s.debug_sym_names.append(debug_name)
+		r = symbol_int(s.num_syms) # starting with 0
 		s.num_syms += 1
-		return s.num_syms - 1
+		return r
 
 	def symbol2debug_name(s,symid):
 		assert s.debug
-		return s.syms[symid]
+		return s.debug_sym_names[symid]
 
 	def rule2debug_name(s,r):
 		assert s.debug
@@ -74,7 +75,7 @@ class ThreadedMarpa(object):
 			for i in rhs:
 				assert type(i) == symbol_int
 			assert type(debug_name) == unicode
-			assert type(action) == types.FunctionType
+			assert type(action) in (types.FunctionType, types.MethodType)
 
 		s.rules.append((False, debug_name, lhs, rhs, action))
 
@@ -86,10 +87,12 @@ class ThreadedMarpa(object):
 
 	def known_char(s, char):
 		"""create a symbol for a single char"""
-		if char not in s.known_chars:
+		try:
+			return s.known_chars[char]
+		except KeyError:
 			r = s.known_chars[char] = s.symbol(char)
 			s.rule(char+"_is_known_char", s.syms.known_char, r)
-		return r
+			return r
 
 	def known_string(s, string):
 		"""create a symbol for a string"""
@@ -105,7 +108,7 @@ class ThreadedMarpa(object):
 			try:
 				symid=s.known_chars[char]
 			except IndexError:
-				symid=s.syms.nonspecial_char
+				symid=s.debug_sym_names.nonspecial_char
 			tokens.append(symid)
 		return tokens
 
@@ -115,10 +118,10 @@ class ThreadedMarpa(object):
 
 	@property
 	def syms_sorted_by_values(s):
-		return s.sorted_by_values(s.syms)
+		return s.sorted_by_values(s.debug_sym_names)
 
 	def check_accessibility(s):
-		for i in s.syms._dict.items():
+		for i in s.debug_sym_names._dict.items():
 			if not s.g.symbol_is_accessible(i[1]):
 				raise Exception("inaccessible: %s (%s)"%i)
 
@@ -130,18 +133,15 @@ class ThreadedMarpa(object):
 		#just text now, list_of_texts_and_nodes later
 		tokens = m.raw2tokens(raw)
 
-	def collect_grammar(root,scope):
+	def collect_grammar(s,scope:list):
 		assert scope == uniq(scope)
 
-		for i in root.flatten():
-			i.forget_symbols()
-
-		m.named_symbol('start')
-		m.set_start_symbol(m.syms.start)
-		m.named_symbol('nonspecial_char')
-		m.named_symbol('known_char')
-		m.named_symbol('maybe_spaces')
-		m.sequence('maybe_spaces', m.syms.maybe_spaces, m.known_char(' '), action=ignore, min=0)
+		s.named_symbol('start')
+		#s.set_start_symbol(s.syms.start)
+		s.named_symbol('nonspecial_char')
+		s.named_symbol('known_char')
+		s.named_symbol('maybe_spaces')
+		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
 
 		for i in scope:
 			#the property is accessed here, forcing the registering of the nodes grammars
@@ -149,23 +149,32 @@ class ThreadedMarpa(object):
 			if sym != None:
 				if args.log_parsing:
 					log(sym)
-					rulename = 'start is %s' % m.symbol2name(sym)
+					rulename = 'start is %s' % s.symbol2name(sym)
 				else:
 					rulename = ""
-				m.rule(rulename , m.syms.start, sym)
+				s.rule(rulename , s.syms.start, sym)
 				#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
 
-	def queue_precomputation(s):
+	def queue_precomputation(s, for_node):
 		s.t.input.put(Dotdict(
 			task = 'feed',
 			num_syms = s.num_syms,
-			rules = s.rules[:]))
+			rules = s.rules[:],
+			for_node = for_node,
+			start=s.syms.start))
 
+
+class LoggedQueue(Queue):
+	def put(s, x):
+		log(x)
+		super().put(x)
 
 class MarpaThread(threading.Thread):
 	def __init__(s):
 		super().__init__(daemon=True)
-		s.input = Queue()
+		s.input = LoggedQueue()
+		s.output = LoggedQueue()
+
 
 	def run(s):
 		"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4
@@ -183,7 +192,9 @@ class MarpaThread(threading.Thread):
 		s.g = Grammar()
 		# this calls symbol_new() repeatedly inp.num_syms times, and gathers the
 		# results in a list # this is too smart. also, todo: make symbol_new throw exceptions
-		s.c_syms = list(starmap(g.symbol_new(), ((), inp.num_syms)))
+		s.c_syms = list(starmap(s.g.symbol_new, repeat(tuple(), inp.num_syms)))
+		log('s.c_syms:%s',s.c_syms)
+		s.g.start_symbol_set(s.c_syms[inp.start])
 		s.c_rules = []
 		for rule in inp.rules:
 			if rule[0]: # its a sequence
@@ -192,6 +203,7 @@ class MarpaThread(threading.Thread):
 			else:
 				_, _, lhs, rhs, _ = rule
 				s.c_rules.append(s.g.rule_new(lhs, rhs))
+
 		s.g.precompute()
 		#check_accessibility()
 		s.output.put(Dotdict(message = 'precomputed', for_node = inp.for_node))

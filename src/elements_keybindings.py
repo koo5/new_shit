@@ -174,10 +174,18 @@ def k_delete(s):
 	s.on_edit.emit(s)
 	return CHANGED
 
+def k_unicode(s, e):
+	atts = e.atts
+	log("adding first item")
+	s.items.append(w.Text(s, e.uni))
 
 
 n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.plus({
 	#H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
 	#H((), K_DELETE, LEFT): k_delete
+	H((), UNICODE): k_unicode
+
 	})
+
+
 
