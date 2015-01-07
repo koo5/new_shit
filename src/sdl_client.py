@@ -7,6 +7,9 @@ import subprocess
 from math import *
 
 
+from pizco import Signal
+
+
 from lemon_utils.lemon_six import iteritems
 from lemon_utils.utils import Evil
 from lemon_utils.lemon_logging import log, info
@@ -28,11 +31,10 @@ if False:#hasattr(sys, 'pypy_version_info'):
 			print("yep, loaded pygame_cffi")
 	except:
 		sys.path.remove("pygame_cffi")
-
 import pygame
-
 from pygame import display, image, Rect, time
 flags = pygame.RESIZABLE|pygame.DOUBLEBUF
+
 
 display.init()
 if args.freetype:
@@ -42,6 +44,7 @@ else:
 	import pygame.font
 	pygame.font.init()
 
+
 import lemon_platform
 lemon_platform.SDL = True
 
@@ -49,6 +52,8 @@ lemon_platform.SDL = True
 import lemon_client, rpcing_frames
 import keybindings
 import replay
+
+
 
 
 def reset_cursor_blink_timer():
@@ -165,12 +170,20 @@ def handle(e):
 	finally:
 		replay.add(e)
 
+def send_thread_message():
+	pygame.event.post(pygame.event.Event(pygame.USEREVENT + 2))
+
+thread_message_signal = Signal(0)
+
 def process_event(event):
 	if event.type == pygame.USEREVENT:
 		pass # we woke up python to poll for SIGINT
 
 	elif event.type == pygame.USEREVENT + 1:
 		c.editor.cursor_blink_phase = not c.editor.cursor_blink_phase
+
+	elif event.type == pygame.USEREVENT + 2:
+		thread_message_signal . emit ()
 
 	elif event.type == pygame.KEYDOWN:
 		handle(KeypressEvent(pygame.key.get_pressed(), event.unicode, event.key, event.mod))
@@ -265,7 +278,7 @@ def main():
 
 	change_font_size()
 
-	c = lemon_client.Client()
+	c = lemon_client.Client(thread_message_signal, send_thread_message)
 	keybindings.c = c
 	#for f in c.allframes:
 	#	f.rect = pygame.Rect((6,6),(6,6))

@@ -21,6 +21,8 @@ import keys
 
 from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 
+
+
 class Atts(object):
 	def __init__(s, a):
 		#s.by_priority = [a['middle'], a['left'], a['right']]
@@ -157,9 +159,6 @@ def potential_handlers(trip):
 							yield elem, handler, func
 
 
-editor = Editor()
-
-
 class Menu(ServerFrame):
 	def __init__(s):
 		super(Menu, s).__init__()
@@ -170,7 +169,8 @@ class Menu(ServerFrame):
 		s.parser_node = None
 		s.items = []
 		s.sel = 0
-		nodes.m = s.marpa = ThreadedMarpa(args.graph_grammar or args.log_parsing)
+		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
+		thread_message_signal.connect(s.on_thread_message)
 
 	def must_recollect(s):
 		if s._changed:
@@ -200,22 +200,22 @@ class Menu(ServerFrame):
 			i.forget_symbols() # todo:start using visitors
 
 		s.marpa.collect_grammar(s.editor.element_under_cursor.scope())
-		s.marpa.queue_precomputation(666)
+		s.marpa.enqueue_precomputation(666)
 
-	def on_thread_message(s):
-		m = s.marpa.output.get()
+	def on_thread_message(self):
+		m = self.marpa.t.output.get()
 		if m.message == 'precomputed':
-			if m.for_node == s.parser_node:
-				s.marpa.queue_parsing(s.parser_items2tokens(s.parser_node.items))
+			#if m.for_node == self.parser_node:
+				self.marpa.enqueue_parsing(self.parser_items2tokens(self.parser_node.items))
 		elif m.message == 'parsed':
-				s.parse_results = m.results
+				self.parse_results = m.results
 
 
 	def parser_items2tokens(s, items):
 		r = []
 		for i in items:
-			if type(i) == unicode:
-				r.extend(s.string2tokens(i))
+			if isinstance(i, widgets.Text):
+				r.extend(s.string2tokens(i.text))
 			else:
 				r.append(i.symbol)
 
@@ -283,9 +283,6 @@ class Menu(ServerFrame):
 		self.sel += y
 		self.clamp_sel()
 
-
-
-menu = Menu()
 
 
 
@@ -358,8 +355,6 @@ class Intro(StaticInfoFrame):
 			#"(in gray) is the expected type",
 		    "see intro.txt for hopefully more info"]
 
-intro = Intro()
-
 
 class Log(ServerFrame):
 	def __init__(s):
@@ -385,16 +380,24 @@ class Log(ServerFrame):
 	def is_dirty(s):
 		return s._dirty
 
-logframe = Log()
+
+def init(thread_message_signal_, send_thread_message_):
+	global thread_message_signal, send_thread_message, logframe, intro, editor, menu
+	thread_message_signal, send_thread_message = thread_message_signal_, send_thread_message_
+
+	logframe = Log()
+
+	intro = Intro()
+
+	editor = Editor()
+
+	menu = Menu()
+
 
 
 
 def element_click(element):
 	return element.on_mouse_press(e)
-
-
-
-
 
 
 def after_start():

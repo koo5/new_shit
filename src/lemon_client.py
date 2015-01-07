@@ -17,7 +17,7 @@ if args.debug_objgraph:
 
 
 class Client():
-	def __init__(s):
+	def __init__(s, thread_message_signal, send_thread_message):
 		if args.rpc:
 			"""select which frames we want to display"""
 			raise Exception('not finished')
@@ -29,6 +29,7 @@ class Client():
 				raise Exception("rpc but no frame? try --root or --menu")
 
 		else:
+			rpcing_frames.server.init(thread_message_signal, send_thread_message)
 
 			s.editor = rpcing_frames.Editor()
 			s.logframe = rpcing_frames.Log()

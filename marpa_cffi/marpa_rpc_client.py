@@ -31,18 +31,22 @@ else:
 
 
 class ThreadedMarpa(object):
-	def __init__(s, debug=True):
+	def __init__(s ,send_thread_message, debug=True):
 		s.debug = debug
-		s.syms = Dotdict()
-		if debug:
+		s.clear()
+		#---
+		s.t = MarpaThread(send_thread_message)
+		s.t.start()
+		s.cancel = False
+
+	def clear(s):
+		if s.debug:
 			s.debug_sym_names = []
+		s.syms = Dotdict()
 		s.num_syms = 0
 		s.known_chars = {}
 		s.rules = []
-		#---
-		s.t = MarpaThread()
-		s.t.start()
-		s.cancel = False
+
 
 	def named_symbol(s,name):
 		"""create a symbol and save it in syms with the name as key"""
@@ -126,16 +130,13 @@ class ThreadedMarpa(object):
 				raise Exception("inaccessible: %s (%s)"%i)
 
 
+
 	#---------
 
 
-	def parse(raw):
-		#just text now, list_of_texts_and_nodes later
-		tokens = m.raw2tokens(raw)
-
 	def collect_grammar(s,scope:list):
 		assert scope == uniq(scope)
-
+		s.clear()
 		s.named_symbol('start')
 		#s.set_start_symbol(s.syms.start)
 		s.named_symbol('nonspecial_char')
@@ -155,7 +156,7 @@ class ThreadedMarpa(object):
 				s.rule(rulename , s.syms.start, sym)
 				#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
 
-	def queue_precomputation(s, for_node):
+	def enqueue_precomputation(s, for_node):
 		s.t.input.put(Dotdict(
 			task = 'feed',
 			num_syms = s.num_syms,
@@ -163,6 +164,8 @@ class ThreadedMarpa(object):
 			for_node = for_node,
 			start=s.syms.start))
 
+	def enqueue_parsing(s, tokens):
+		s.t.input.put(Dotdict(tokens = tokens))
 
 class LoggedQueue(Queue):
 	def put(s, x):
@@ -170,11 +173,15 @@ class LoggedQueue(Queue):
 		super().put(x)
 
 class MarpaThread(threading.Thread):
-	def __init__(s):
+	def __init__(s, send_thread_message):
 		super().__init__(daemon=True)
 		s.input = LoggedQueue()
 		s.output = LoggedQueue()
+		s.send_thread_message = send_thread_message
 
+	def send(s, msg):
+		s.output.put(msg)
+		s.send_thread_message()
 
 	def run(s):
 		"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4
@@ -185,7 +192,7 @@ class MarpaThread(threading.Thread):
 			if inp.task == 'feed':
 				s.feed(inp)
 			elif inp.task == 'parse':
-				s.output.put(Dotdict(message = 'parsed', results = list(s.parse(inp.tokens))))
+				s.send(Dotdict(message = 'parsed', results = list(s.parse(inp.tokens))))
 
 
 	def feed(s, inp):
@@ -206,7 +213,7 @@ class MarpaThread(threading.Thread):
 
 		s.g.precompute()
 		#check_accessibility()
-		s.output.put(Dotdict(message = 'precomputed', for_node = inp.for_node))
+		s.send(Dotdict(message = 'precomputed', for_node = inp.for_node))
 
 
 	def parse(s, tokens):
