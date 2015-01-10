@@ -3,6 +3,7 @@ import types
 from queue import Queue
 import threading
 from itertools import starmap, repeat
+from pprint import pformat as pp
 
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues
@@ -111,8 +112,8 @@ class ThreadedMarpa(object):
 		for i, char in enumerate(raw):
 			try:
 				symid=s.known_chars[char]
-			except IndexError:
-				symid=s.debug_sym_names.nonspecial_char
+			except KeyError:
+				symid=s.syms.nonspecial_char
 			tokens.append(symid)
 		return tokens
 
@@ -164,12 +165,16 @@ class ThreadedMarpa(object):
 			for_node = for_node,
 			start=s.syms.start))
 
-	def enqueue_parsing(s, tokens):
-		s.t.input.put(Dotdict(tokens = tokens))
+	def enqueue_parsing(s, tr):
+		s.t.input.put(Dotdict(
+			task = 'parse',
+			tokens = tr[0],
+			raw = tr[1],
+			rules = s.rules[:]))
 
 class LoggedQueue(Queue):
 	def put(s, x):
-		log(x)
+		log(pp(x))
 		super().put(x)
 
 class MarpaThread(threading.Thread):
@@ -192,7 +197,7 @@ class MarpaThread(threading.Thread):
 			if inp.task == 'feed':
 				s.feed(inp)
 			elif inp.task == 'parse':
-				s.send(Dotdict(message = 'parsed', results = list(s.parse(inp.tokens))))
+				s.send(Dotdict(message = 'parsed', results = list(s.parse(inp.tokens, inp.raw, inp.rules))))
 
 
 	def feed(s, inp):
@@ -216,7 +221,7 @@ class MarpaThread(threading.Thread):
 		s.send(Dotdict(message = 'precomputed', for_node = inp.for_node))
 
 
-	def parse(s, tokens):
+	def parse(s, tokens, raw, rules):
 
 		r = Recce(s.g)
 		r.start_input()
@@ -244,12 +249,13 @@ class MarpaThread(threading.Thread):
 		tree = Tree(o)
 
 		for _ in tree.nxt():
-			r=do_steps(tree, tokens, raw)
+			r=s.do_steps(tree, tokens, raw, rules)
 			yield r
 
-	def do_steps(tree, tokens, raw):
+	def do_steps(s, tree, tokens, raw, rules):
 		stack = defaultdict((lambda:evil('default stack item, what the beep')))
 		stack2= defaultdict((lambda:evil('default stack2 item, what the beep')))
+
 		v = Valuator(tree)
 		babble = False
 
@@ -285,8 +291,8 @@ class MarpaThread(threading.Thread):
 				#args = [stack[i] for i in range(arg0, argn+1)]
 				#stack[arg0] = (rule2name(r), args)
 
-
-				actions = m.actions[r]
+				log(rules[r])
+				actions = rules[r][4]
 
 
 				val = [stack2[i] for i in range(arg0, argn+1)]
@@ -295,6 +301,9 @@ class MarpaThread(threading.Thread):
 					debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
 
 				try:
+					if type(actions) != tuple:
+						actions = (actions, )
+						
 					for action in actions:
 						val = action(val)
 						if args.log_parsing:
@@ -310,7 +319,7 @@ class MarpaThread(threading.Thread):
 			elif s == lib.MARPA_STEP_INACTIVE:
 				log("MARPA_STEP_INACTIVE:i'm done")
 			elif s == lib.MARPA_STEP_INITIAL:
-				log("MARPA_STEP_INITIAL:stating...")
+				log("MARPA_STEP_INITIAL:starting...")
 			else:
 				log(marpa_cffi.marpa_codes.steps[s])
 

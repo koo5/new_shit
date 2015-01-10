@@ -161,7 +161,6 @@ def dispatch_input_event(event):
 
 def _(e):
 	dispatch_input_event(e)
-	#draw()
 replay.replay_input_event = _
 
 def handle(e):

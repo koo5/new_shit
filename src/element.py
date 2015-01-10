@@ -109,6 +109,12 @@ class Element():
 	def long__repr__(s):
 		return object.__repr__(s)
 
+	@property
+	def ancestors(s):
+		if s.parent:
+			return [s.parent] + s.parent.ancestors
+		else:
+			return []
 
 
 

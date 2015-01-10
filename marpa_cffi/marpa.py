@@ -178,7 +178,7 @@ class Valuator(object):
 		s.v = s.g.check_null(lib.marpa_v_new(tree.t))
 		log(s.v)
 	def __del__(s):
-		if not s.unreffed:
+		if s.v != None:
 			s.unref()
 	def unref(s):
 		lib.marpa_v_unref(s.v)
@@ -257,12 +257,12 @@ def _test1():
 	tree = Tree(o)
 	import gc
 	for i in tree.nxt():
-		do_steps(tree, tokens, rules)
+		_do_steps(tree, tokens, rules)
 		gc.collect() # force unrefing of the valuator and stuff
 
 from collections import defaultdict
 
-def do_steps(tree, tokens, rules):
+def _do_steps(tree, tokens, rules):
 	stack = defaultdict((lambda:666))
 	v = Valuator(tree)
 

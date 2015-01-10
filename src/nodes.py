@@ -1350,12 +1350,8 @@ class Root(Dict):
 	#	recursively check parents?
 
 	def scope(self):
-		#we_should_never_get_here()
+		we_should_never_get_here()
 		#crude, but for now..
-		#if self != self.root["builtins"]:
-		return self.root["builtins"].ch.statements.parsed
-		#else:
-		#	return [] #nothing above but Root
 
 
 class Module(Syntaxed):
@@ -1412,6 +1408,13 @@ class Module(Syntaxed):
 		#	log(e)
 		#	raise e
 		return CHANGED
+
+	def scope(self):
+
+		if self != self.root["builtins"]:
+			return self.root["builtins"].ch.statements.parsed
+		else:
+			return [] #nothing above but Root
 
 
 # endregion
@@ -2258,7 +2261,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 			i0 = self.items[0]
 			if isinstance(i0, Node):
 				r = i0
-			else: #string
+			else: #widgets.Text
 				#demodemodemo
 				type = self.type
 				if isinstance(self.type, Exp):
@@ -2266,6 +2269,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 				if isinstance(type, Ref):
 					type = type.target
 
+				i0 = i0.text
 #				if type == b['number']:
 				if Number.match(i0):
 					r = Number(i0)

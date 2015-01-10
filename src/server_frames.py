@@ -179,7 +179,9 @@ class Menu(ServerFrame):
 
 	def on_editor_change(self, ast):
 	#	if ast:
-			self.prepare_grammar()
+		if self.parser_changed():
+			if self.parser_node:
+				self.prepare_grammar()
 
 	def on_editor_element_change(s):
 		if s.parser_changed():
@@ -190,7 +192,7 @@ class Menu(ServerFrame):
 		for i in e.ancestors:
 			if isinstance(i, nodes.Parser):
 				if i != s.parser_node:
-					s.parser_node = e
+					s.parser_node = i
 					return True
 
 	def prepare_grammar(s):
@@ -199,7 +201,7 @@ class Menu(ServerFrame):
 		for i in s.editor.root.flatten():
 			i.forget_symbols() # todo:start using visitors
 
-		s.marpa.collect_grammar(s.editor.element_under_cursor.scope())
+		s.marpa.collect_grammar(s.parser_node.scope())
 		s.marpa.enqueue_precomputation(666)
 
 	def on_thread_message(self):
@@ -212,13 +214,15 @@ class Menu(ServerFrame):
 
 
 	def parser_items2tokens(s, items):
-		r = []
+		symbols, text = [], ""
 		for i in items:
 			if isinstance(i, widgets.Text):
-				r.extend(s.string2tokens(i.text))
+				symbols.extend(s.marpa.string2tokens(i.text))
+				text += i.text
 			else:
-				r.append(i.symbol)
-
+				symbols.append(i.symbol)
+				text += "X"
+		return symbols, text
 
 
 
@@ -251,7 +255,7 @@ class Menu(ServerFrame):
 		s.items = (
 			[DefaultParserMenuItem(text)]+
 			[s.parse_results]+
-			[s.sorted_palette])
+			[s.sorted_palette]) 
 
 
 
