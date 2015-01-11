@@ -1336,6 +1336,14 @@ class Root(Dict):
 		self.indent_length = 4 #not really used but would be nice to have it variable
 		self.changed = True
 
+	@property
+	def delayed_cursor_move(s):
+		return s._delayed_cursor_move
+	@delayed_cursor_move.setter
+	def delayed_cursor_move(s, x):
+		log ("setting delayed_cursor_move to %s"%(x,))
+		s._delayed_cursor_move = x
+
 	def render(self):
 		#there has to be some default color for everything, the rendering routine looks for it..
 		return [ColorTag(colors.fg)] + self.render_items() + [EndTag()]
@@ -3001,7 +3009,7 @@ def make_root():
 	r = Root()
 
 	build_in_editor_structure_nodes()
-#	build_in_lemon_language()
+	build_in_lemon_language()
 
 	r["intro"] = new_module()
 	r["intro"].ch.statements.items = [

@@ -80,7 +80,7 @@ class ThreadedMarpa(object):
 			for i in rhs:
 				assert type(i) == symbol_int
 			assert type(debug_name) == unicode
-			assert type(action) in (types.FunctionType, types.MethodType)
+			assert type(action) in (tuple, types.FunctionType, types.MethodType)
 
 		s.rules.append((False, debug_name, lhs, rhs, action))
 
@@ -174,7 +174,8 @@ class ThreadedMarpa(object):
 
 class LoggedQueue(Queue):
 	def put(s, x):
-		log(pp(x))
+		if args.log_parsing:
+			log(pp(x))
 		super().put(x)
 
 class MarpaThread(threading.Thread):
@@ -205,7 +206,8 @@ class MarpaThread(threading.Thread):
 		# this calls symbol_new() repeatedly inp.num_syms times, and gathers the
 		# results in a list # this is too smart. also, todo: make symbol_new throw exceptions
 		s.c_syms = list(starmap(s.g.symbol_new, repeat(tuple(), inp.num_syms)))
-		log('s.c_syms:%s',s.c_syms)
+		if args.log_parsing:
+			log('s.c_syms:%s',s.c_syms)
 		s.g.start_symbol_set(s.c_syms[inp.start])
 		s.c_rules = []
 		for rule in inp.rules:
@@ -238,7 +240,11 @@ class MarpaThread(threading.Thread):
 		tokens.insert(0,'dummy')
 
 		latest_earley_set_ID = r.latest_earley_set()
-		log ('latest_earley_set_ID=%s'%latest_earley_set_ID)
+		if args.log_parsing:
+			log ('latest_earley_set_ID=%s'%latest_earley_set_ID)
+
+		if latest_earley_set_ID == 0:
+			return
 
 		try:
 			b = Bocage(r, latest_earley_set_ID)
@@ -291,13 +297,14 @@ class MarpaThread(threading.Thread):
 				#args = [stack[i] for i in range(arg0, argn+1)]
 				#stack[arg0] = (rule2name(r), args)
 
-				log(rules[r])
+				if babble:
+					log(rules[r])
 				actions = rules[r][4]
 
 
 				val = [stack2[i] for i in range(arg0, argn+1)]
 
-				if args.log_parsing:
+				if babble:
 					debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
 
 				try:
@@ -306,10 +313,10 @@ class MarpaThread(threading.Thread):
 
 					for action in actions:
 						val = action(val)
-						if args.log_parsing:
+						if babble:
 							debug_log += '->'+repr(val)
 				finally:
-					if args.log_parsing:
+					if babble:
 						log(debug_log)
 
 				stack2[arg0] = val
@@ -317,18 +324,22 @@ class MarpaThread(threading.Thread):
 			elif s == lib.MARPA_STEP_NULLING_SYMBOL:
 				stack2[v.v.t_result] = "nulled"
 			elif s == lib.MARPA_STEP_INACTIVE:
-				log("MARPA_STEP_INACTIVE:i'm done")
+				if args.log_parsing:
+					log("MARPA_STEP_INACTIVE:i'm done")
 			elif s == lib.MARPA_STEP_INITIAL:
-				log("MARPA_STEP_INITIAL:starting...")
+				if args.log_parsing:
+					log("MARPA_STEP_INITIAL:starting...")
 			else:
-				log(marpa_cffi.marpa_codes.steps[s])
+				if args.log_parsing:
+					log(marpa_cffi.marpa_codes.steps[s])
 
 		v.unref()#promise me not to use it from now on
 		#print "tada:"+str(stack[0])
 	#	print ("tada:"+json.dumps(stack[0], indent=2))
 		#log ("tada:"+json.dumps(stack2[0], indent=2))
 		res = stack2[0] # in position 0 is final result
-		log ("tada:"+repr(res))
+		if args.log_parsing:
+			log ("tada:"+repr(res))
 		return res
 
 

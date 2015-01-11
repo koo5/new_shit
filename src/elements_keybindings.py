@@ -36,7 +36,7 @@ widgets.py
 
 def k_backspace (s, e):
 	pos = e.left[Att.char_index]
-	self.text = self.text[0:pos-2] + self.text[pos-1:]
+	s.text = s.text[0:pos] + s.text[pos+1:]
 	return s.after_edit(-1)
 w.Text.k_backspace = k_backspace
 
@@ -50,7 +50,7 @@ def k_unicode(s, e):
 	atts = e.atts
 	pos = atts[Att.char_index]
 	s.text = s.text[:pos] + e.uni + s.text[pos:]
-	return s.after_edit(e.uni)
+	return s.after_edit(len(e.uni))
 w.Text.k_unicode = k_unicode
 
 w.Text.keys = {H((), K_BACKSPACE, LEFT): w.Text.k_backspace,

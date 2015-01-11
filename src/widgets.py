@@ -40,7 +40,7 @@ class Text(Widget):
 		self.text = v
 
 	def after_edit(s, move):
-		s.root.delayed_cursor_move += len(move)
+		s.root.delayed_cursor_move += move
 		s.on_edit.emit(s)
 		return CHANGED
 

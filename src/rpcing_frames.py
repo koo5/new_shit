@@ -89,12 +89,10 @@ class ClientFrame(object):
 
 		bg_cached = colors.bg
 		highlighted_bg_cached = colors.highlighted_bg
-		freetype_off = 1 if args.freetype else 0
+		freetype_offset = 1 if args.freetype else 0
 
 		for row, line in enumerate(self.lines.get()):
-			#if isinstance(self, Menu):
-			#	log(line)
-			y = font_height * (row + freetype_off)
+			y = font_height * (row + freetype_offset)
 			for col, char in enumerate(line):
 				x = font_width * col
 
@@ -189,7 +187,12 @@ class ClientFrame(object):
 		def atts_dict():
 			return dict(atts + [(Att.char_index, char_index)])
 
+		#if isinstance(s, Menu):
+		#	log(list(batches))
 		for batch in batches:
+			#if isinstance(s, Menu):
+			#	log(list(batch))
+
 			for tag in batch:
 
 				if type(tag) == tuple: # an attribute tuple
@@ -233,6 +236,8 @@ class ClientFrame(object):
 
 				else:
 					raise Exception("is %s a tag?, %s" % (repr(tag)))
+
+		yield line
 
 
 		"""

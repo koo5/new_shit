@@ -120,10 +120,10 @@ def handle_keypress(event):
 #	log(pp(list(ph)))
 	log(event)
 	for elem, handler, func in ph:
-		#log("matching with %s..", handler)
+		log("matching with %s..", handler)
 		if (event.mods == set(handler.mods) and (
 			event.key == handler.key or (type(handler.key) == tuple and	event.key in handler.key)) or
-		    (event.uni and handler.key == elements_keybindings.UNICODE and event.key not in (keys.K_ESCAPE, keys.K_BACKSPACE))):
+		    (event.uni and handler.key == elements_keybindings.UNICODE and event.key not in (keys.K_ESCAPE, keys.K_BACKSPACE, keys.K_DELETE))):
 				event.left, event.middle, event.right = (
 					event.trip.left   if event.trip.left and event.trip.left.get(Att.elem) == elem else None,
 					event.trip.middle if event.trip.middle and event.trip.middle.get(Att.elem) == elem else None,
@@ -179,10 +179,10 @@ class Menu(ServerFrame):
 			return True
 
 	def on_editor_change(self, ast):
-	#	if ast:
-		if self.parser_changed():
-			if self.parser_node:
-				self.prepare_grammar()
+		#welp, changes tracking is tbd..
+		x = self.parser_changed()
+		if self.parser_node:
+			self.prepare_grammar()
 
 	def on_editor_element_change(s):
 		if s.parser_changed():
@@ -195,6 +195,9 @@ class Menu(ServerFrame):
 				if i != s.parser_node:
 					s.parser_node = i
 					return True
+				else:
+					return False
+
 
 	def prepare_grammar(s):
 		#s.marpa.t.input.clear()
@@ -238,10 +241,10 @@ class Menu(ServerFrame):
 
 	def tags(s):
 		yield [ColorTag(colors.fg), "menu:(%s items)\n"%len(s.parse_results)]
-		yield "xxx"
 		for i in s.parse_results:
-			yield [ElementTag(i)]
+			yield [ElementTag(i), "\n"]
 		yield ["---", EndTag()]
+
 
 	"""
 	def generate_items(s):
