@@ -47,6 +47,7 @@ class Editor(ServerFrame):
 		self.root.fix_parents()
 		self.atts = Atts(dict(left={},right={},middle={}))
 		self.on_serverside_change = Signal(1)
+		self.on_atts_change = Signal(0)
 
 	def signal_change(s, force=False):
 		if force or s.root.changed or s.root.ast_changed:
@@ -75,7 +76,8 @@ class Editor(ServerFrame):
 	def set_atts(editor, atts):
 		log("setting atts under cursor to %s",pp(atts))
 		editor.atts = Atts(atts)
-		editor.signal_change(True)
+		editor.on_atts_change.emit()
+		editor.draw_signal.emit()
 
 	def run_active_program(editor):
 		editor.root['some program'].run()
@@ -164,6 +166,7 @@ class Menu(ServerFrame):
 		super(Menu, s).__init__()
 		s.editor = editor
 		editor.on_serverside_change.connect(s.on_editor_change)
+		editor.on_atts_change.connect(s.on_editor_element_change)
 		s.valid_only = False
 		s._changed = True
 		s.parser_node = None
@@ -184,9 +187,9 @@ class Menu(ServerFrame):
 		if self.parser_node:
 			self.prepare_grammar()
 
-	def on_editor_element_change(s):
-		if s.parser_changed():
-			s.prepare_grammar()
+	def on_editor_element_change(self):
+		if self.parser_changed():
+			self.prepare_grammar()
 
 	def parser_changed(s):
 		e = s.editor.element_under_cursor
@@ -201,7 +204,7 @@ class Menu(ServerFrame):
 
 	def prepare_grammar(s):
 		#s.marpa.t.input.clear()
-
+		log("prepare grammar..")
 		for i in s.editor.root.flatten():
 			i.forget_symbols() # todo:start using visitors
 

@@ -45,6 +45,7 @@ AST_CHANGED = 2
 
 #b is for staging the builtins module and referencing builtin nodes from python code
 B = Dotdict()
+B._dict = odict()
 
 def build_in(node, name=None):
 	"""adds node to b"""

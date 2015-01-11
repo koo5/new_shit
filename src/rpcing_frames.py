@@ -43,8 +43,12 @@ class ClientFrame(object):
 		s.indent_width = 4
 		s.counterpart = counterpart
 		s.tags = Cache(s.counterpart.collect_tags)
-		s.lines = Cache(lambda: s.project_tags(s.tags.get()))
+		s.lines = Cache(s.project)
 		s.counterpart.draw_signal.connect(s.redraw)
+
+	def project(s):
+		s.completed_arrows = None
+		return s.project_tags(s.tags.get())
 
 	def resize(s, cols, rows):
 		s.cols, s.rows = cols, rows
@@ -119,7 +123,9 @@ class ClientFrame(object):
 						else:
 							sur = font.render(char[0],1,fg,bg)
 						surf.blit(sur,(x,y))
-
+			#log('%s,%s'%(row, self.rows))
+			if row == self.rows:
+				break
 
 	def curses_draw_lines(s, win):
 		for row, line in enumerate(s.lines):
@@ -293,7 +299,6 @@ class Editor(ClientFrame):
 	def __init__(s):
 		super().__init__(server.editor)
 		s.cursor_c = s.cursor_r = 0
-		s.completed_arrows = []
 		s.zwes = 666
 		if SDL:
 			s._cursor_blink_phase = True
@@ -469,10 +474,8 @@ class Editor(ClientFrame):
 		s.curses_draw_lines(win)
 
 	def complete_arrows(s):
-		if not s.arrows_visible:
-			s.arrows = []
-		else:
-			s.completed_arrows = []
+		s.completed_arrows = []
+		if s.arrows_visible:
 			for a in s.arrows:
 				target = s.find_element(a[2])
 				if target:
@@ -489,7 +492,7 @@ class Editor(ClientFrame):
 
 	def sdl_draw_arrows(s, surface):
 		#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen pointing to that same target, to avoid making it unreadable
-		if not len(s.completed_arrows):
+		if s.completed_arrows == None:
 			s.complete_arrows()
 		for ((c,r),(c2,r2)) in s.completed_arrows:
 			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)

@@ -5,8 +5,8 @@ from enum import Enum, unique
 
 from lemon_utils.lemon_six import unicode
 
-@unique
-class Att(Enum):
+#@unique
+class Att():#Enum):
 	elem  = 0
 	color = 1
 	char_index = 2
