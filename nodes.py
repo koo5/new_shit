@@ -28,7 +28,7 @@ and the whole language is very..umm..not well-founded...for now. improvements we
 
 from __future__ import unicode_literals
 
-from lemon_utils.lemon_six import iteritems, iterkeys, PY2
+from lemon_utils.lemon_six import itervalues, iteritems, iterkeys, PY2, str_and_uni
 import lemon_platform as platform
 
 BRY = platform.frontend == platform.brython
@@ -53,6 +53,7 @@ from keys import *
 from lemon_utils.utils import flatten, odict, evil
 from lemon_utils.dotdict import dotdict
 from lemon_args import args
+from lemon_utils.lemon_logger import log, topic, topic2
 
 tags.asselement = element
 
@@ -285,7 +286,7 @@ def uniq(x):
            r.append(i)
    return r
 
-m = HigherMarpa() # just to confuse pycharm less, will be overwritten in setup_grammar
+#m = HigherMarpa() # just to confuse pycharm less, will be overwritten in setup_grammar
 
 @topic ('setup_grammar')
 def setup_grammar(root,scope):
