@@ -171,6 +171,7 @@ class Menu(ServerFrame):
 		s.sel = 0
 		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
+		s.parse_results = []
 
 	def must_recollect(s):
 		if s._changed:
@@ -211,6 +212,7 @@ class Menu(ServerFrame):
 				self.marpa.enqueue_parsing(self.parser_items2tokens(self.parser_node.items))
 		elif m.message == 'parsed':
 				self.parse_results = m.results
+				self.signal_change()
 
 
 	def parser_items2tokens(s, items):
@@ -230,17 +232,18 @@ class Menu(ServerFrame):
 		log("possibly check against cached atts/text, then call marpa")
 		#self._changed = True
 
-	def marpa_callback(s):
+	def signal_change(s):
 		s._changed = True
-		s.on_change.fire()
-		s.draw_signal.fire()
+		s.draw_signal.emit()
 
 	def tags(s):
-		yield [ColorTag(colors.fg), "menu:\n"]
-		for i in s.generate_items():
+		yield [ColorTag(colors.fg), "menu:(%s items)\n"%len(s.parse_results)]
+		yield "xxx"
+		for i in s.parse_results:
 			yield [ElementTag(i)]
-		yield EndTag()
+		yield ["---", EndTag()]
 
+	"""
 	def generate_items(s):
 		s.items = []
 		e = s.element = s.editor.element_under_cursor
@@ -249,7 +252,7 @@ class Menu(ServerFrame):
 				if not s.valid_only or i.valid: # move this check to nodes...or..lets have it in both places!
 					s.items.append(i)
 					yield i
-
+	"""
 
 	def update_items(s):
 		s.items = (

@@ -35,13 +35,13 @@ widgets.py
 """
 
 def k_backspace (s, e):
-	pos = e.left[body_pos_att]
+	pos = e.left[Att.char_index]
 	self.text = self.text[0:pos-2] + self.text[pos-1:]
 	return s.after_edit(-1)
 w.Text.k_backspace = k_backspace
 
 def k_delete(s, e):
-	pos = e.right[body_pos_att]
+	pos = e.right[Att.char_index]
 	s.text = s.text[0:(pos-1)] + s.text[pos:]
 	return s.after_edit(0)
 w.Text.k_delete = k_delete

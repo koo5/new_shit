@@ -5,6 +5,8 @@
 import os, sys
 import subprocess
 from math import *
+from pprint import pformat as pp
+from copy import copy
 
 
 from pizco import Signal
@@ -159,14 +161,14 @@ def dispatch_input_event(event):
 	else:
 		raise Exception("unexpected event type:", event)
 
-def _(e):
-	dispatch_input_event(e)
-replay.replay_input_event = _
+replay.replay_input_event = dispatch_input_event
 
 def handle(e):
 	try:
-		dispatch_input_event(e)
+		#it gets messed up so i make a throwaway copy and pickle the original
+		dispatch_input_event(copy(e))
 	finally:
+		#log(pp(e))
 		replay.add(e)
 
 def send_thread_message():

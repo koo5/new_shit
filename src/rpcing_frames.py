@@ -57,8 +57,8 @@ class ClientFrame(object):
 
 	def maybe_draw(s):
 		must_recollect = s.counterpart.must_recollect()
-		if must_recollect:
-			s.tags.dirty = s.lines.dirty = True
+		#if must_recollect:
+		s.tags.dirty = s.lines.dirty = True
 		if must_recollect or s.lines.dirty or s.must_redraw or not args.rpc:
 			#log("drawing, %s.must_recollect = %s, s.lines.dirty = %s, s.s.must_redraw = %s", s.counterpart, must_recollect, s.lines.dirty, s.must_redraw)
 			s.draw()
@@ -92,6 +92,8 @@ class ClientFrame(object):
 		freetype_off = 1 if args.freetype else 0
 
 		for row, line in enumerate(self.lines.get()):
+			#if isinstance(self, Menu):
+			#	log(line)
 			y = font_height * (row + freetype_off)
 			for col, char in enumerate(line):
 				x = font_width * col
@@ -617,6 +619,9 @@ class Menu(ClientFrame):
 
 
 	def sdl_draw_stuff(s, surface):
+		log("drawing menu lines")
+		#for i in s.tags.get():
+		#	log(list(i))
 		s.sdl_draw_lines(surface)
 		#s.sdl_draw_rects(surface)
 

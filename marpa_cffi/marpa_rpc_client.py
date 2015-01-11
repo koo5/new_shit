@@ -303,7 +303,7 @@ class MarpaThread(threading.Thread):
 				try:
 					if type(actions) != tuple:
 						actions = (actions, )
-						
+
 					for action in actions:
 						val = action(val)
 						if args.log_parsing:
