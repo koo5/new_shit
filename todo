@@ -1,3 +1,4 @@
+removed support for non-freetype font, added font levels, broke arrows, added --line-spacing parameter, --fisheye
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 

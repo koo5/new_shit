@@ -39,12 +39,8 @@ flags = pygame.RESIZABLE|pygame.DOUBLEBUF
 
 
 display.init()
-if args.freetype:
-	from pygame import freetype
-	freetype.init(cache_size=1024)
-else:
-	import pygame.font
-	pygame.font.init()
+from pygame import freetype
+freetype.init(cache_size=1024)
 
 
 import lemon_platform
@@ -70,19 +66,25 @@ def user_change_font_size(by = 0):
 keybindings.change_font_size = user_change_font_size
 
 
-def change_font_size(by = 0):
-	global font, font_width, font_height
-	args.font_size += by
-	if args.freetype:
-		rpcing_frames.font = font = freetype.SysFont('monospace', args.font_size)
-		font.origin = True
-		_, _, font_width, _ = font.get_rect("X")
-		font_height = font.get_sized_glyph_height()
-		rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height
-	else:
-		rpcing_frames.font = font = pygame.font.SysFont('monospace', args.font_size)
-		rpcing_frames.font_width, rpcing_frames.font_height = font_width, font_height = font.size("X")
+fonts = {}
+font_size_multiplier = 10
+#freetype only
+def get_font(modifier):
+	size = (modifier * font_size_multiplier) + args.font_size
+	if size not in fonts:
+		fonts[size] = make_font(size)
+	return fonts[size]
+rpcing_frames.get_font = get_font
 
+def make_font(size):
+	font = freetype.SysFont('monospace', size)
+	font.origin = True
+	_, _, w, _ = font.get_rect("X")
+	h = font.get_sized_glyph_height()
+	return font, w, h
+
+def change_font_size(by = 0):
+	args.font_size += by
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
@@ -96,11 +98,11 @@ replay.resize = resize
 def resize_frames():
 		c.logframe.rect = Rect (
 			0, screen_height - args.log_height,
-			screen_width, args.log_height * font_height)
+			screen_width, args.log_height * get_font(0)[2]) # log frame uses default font
 
 		c.editor.rect = Rect(0,0,
 			screen_width // 3 * 2,
-			screen_height - args.log_height)
+			screen_height - c.logframe.rect.height)
 
 		sidebar_rect = Rect(c.editor.rect.w, 0,
 		    screen_width - c.editor.rect.width,
@@ -108,11 +110,6 @@ def resize_frames():
 
 		for frame in c.sidebars:
 			frame.rect = sidebar_rect
-
-		for f in c.allframes:
-			f.cols = f.rect.width // font_width
-			f.rows = f.rect.height // font_height
-			log((f, f.cols, f.rows))
 
 		log("resized frames")
 
@@ -310,9 +307,4 @@ def main():
 		raise
 
 if __name__ == "__main__":
-	try:
-		main()
-	finally:
-		if args.freetype:
-			log("prepare for the segfault..")
-
+	main()

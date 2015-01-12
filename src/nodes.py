@@ -892,10 +892,10 @@ class Dict(Collapsible):
 	def render_items(self):
 		r = []
 		for key, item in iteritems(self.items):
-			r += [ElementTag(key), TextTag(":")]#, IndentTag(), NewlineTag()]
+			r += ['\n'] # this *could* be a Dict one day, but its only used for Root now
+			r += [{'font_level':1}, ElementTag(key), TextTag(":")]#, IndentTag(), NewlineTag()]
 			r += [ElementTag(item)]
 			#r += [DedentTag(), NewlineTag()]
-			r += ['\n']
 		return r
 
 	def find(s, key):

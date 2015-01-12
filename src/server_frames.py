@@ -196,13 +196,15 @@ class Menu(ServerFrame):
 
 	def parser_changed(s):
 		e = s.editor.element_under_cursor
-		for i in e.ancestors:
-			if isinstance(i, nodes.Parser):
-				if i != s.parser_node:
-					s.parser_node = i
-					return True
-				else:
-					return False
+		if e:
+			for i in e.ancestors:
+				if isinstance(i, nodes.Parser):
+					e = i
+					break
+			e = None
+		if e and e != s.parser_node:
+			s.parser_node = e
+			return True
 
 
 	def prepare_grammar(s):

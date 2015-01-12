@@ -20,18 +20,6 @@ from server_side import server
 if SDL:
 	import pygame
 
-	def sdl_cursor_xy(c,r):
-		return (font_width * c,
-				font_height * r,
-				font_height * (r + 1))
-
-	def sdl_xy2cr(xy):
-		x,y = xy
-		c = x // font_width
-		r = y // font_height
-		return c, r
-
-
 
 class ClientFrame(object):
 
@@ -46,13 +34,23 @@ class ClientFrame(object):
 		s.lines = Cache(s.project)
 		s.counterpart.draw_signal.connect(s.redraw)
 
+
+	#frames with default font have it easy
+	@property
+	def cols(s):
+		return s.rect.width // get_font(0)[1]
+	@property
+	def rows(s):
+		return s.rect.width // get_font(0)[1]
+
+
 	def project(s):
 		s.completed_arrows = None
 		return s.project_tags(s.tags.get())
 
-	def resize(s, cols, rows):
-		s.cols, s.rows = cols, rows
-		s.lines.dirty = True
+	#def resize(s, cols, rows):
+	#	s.cols, s.rows = cols, rows
+	#	s.lines.dirty = True
 
 	def redraw(self):
 		"""non-rpcing client overrides this with a
@@ -93,39 +91,45 @@ class ClientFrame(object):
 
 		bg_cached = colors.bg
 		highlighted_bg_cached = colors.highlighted_bg
-		freetype_offset = 1 if args.freetype else 0
 
-		for row, line in enumerate(self.lines.get()):
-			y = font_height * (row + freetype_offset)
+		y = 0
+
+		for row, (font, line) in enumerate(self.lines.get()):
+			fisheye = args.fisheye and type(self) == Editor and row == self.cursor_r
+			if fisheye:
+				y += args.line_spacing
+				font = get_font(1)
+
+			y += font[2]
+
 			for col, char in enumerate(line):
-				x = font_width * col
+				x = font[1] * col
 
 				hi = highlight and char[1].get(Att.elem) == highlight
 
 				if hi:
 					bg = highlighted_bg_cached
 					if just_bg:
-						pygame.draw.rect(surf,bg,(x,y,font_width,font_height))
+						pygame.draw.rect(surf,bg,(x,y,font[1],font[2]))
 				else:
 					bg = bg_cached
 
 				if not just_bg:
 					fg = char[1][Att.color]
-					if args.freetype:
-						if transparent:
-							font.render_to(surf, (x,y), char[0], fg)
-						else:
-							font.render_to(surf, (x,y), char[0], fg, bg)
-
+					if transparent:
+						font[0].render_to(surf, (x,y), char[0], fg)
 					else:
-						if transparent:
-							sur = font.render(char[0],1,fg)
-						else:
-							sur = font.render(char[0],1,fg,bg)
-						surf.blit(sur,(x,y))
+						font[0].render_to(surf, (x,y), char[0], fg, bg)
+
 			#log('%s,%s'%(row, self.rows))
 			if row == self.rows:
 				break
+
+			y += args.line_spacing
+
+			if fisheye:
+				y += args.line_spacing
+
 
 	def curses_draw_lines(s, win):
 		for row, line in enumerate(s.lines):
@@ -171,10 +175,16 @@ class ClientFrame(object):
 		indentation = 0
 		lines_count = 0
 		editable = False
+		font = line_cols = Evil()
+
+		def switch_font(level = 0):
+			nonlocal font, line_cols
+			font = get_font(level)
+			line_cols = s.rect.width // font[1]
 
 		def indent():
 			numspaces = indentation * s.indent_width
-			spaceleft = s.cols - len(line)
+			spaceleft = line_cols - len(line)
 			to_go = min(spaceleft, numspaces)
 			for i in range(to_go):
 				append(' ')
@@ -193,8 +203,8 @@ class ClientFrame(object):
 		def atts_dict():
 			return dict(atts + [(Att.char_index, char_index)])
 
-		#if isinstance(s, Menu):
-		#	log(list(batches))
+		switch_font()
+
 		for batch in batches:
 			#if isinstance(s, Menu):
 			#	log(list(batch))
@@ -214,9 +224,11 @@ class ClientFrame(object):
 						if char != "\n":
 							append(char)
 							char_index += 1
-						if len(line) == s.cols or char == "\n":
-							yield line
+						if len(line) == line_cols or char == "\n":
+							yield font, line
 							line = []
+							if char == "\n":
+								switch_font()#back to default
 							indent()
 							lines_count += 1
 
@@ -238,12 +250,18 @@ class ClientFrame(object):
 					add_zwe()
 
 				elif type(tag) == dict:
-					s.arrows.append(current_cr() + (tag['arrow'],))
+					if 'arrow' in tag:
+						s.arrows.append(current_cr() + (tag['arrow'],))
+					elif 'font_level' in tag:
+						switch_font(tag['font_level'])
+						#log("font_level:%s"%tag['font_level'])
+					else:
+						wat
 
 				else:
 					raise Exception("is %s a tag?, %s" % (repr(tag)))
 
-		yield line
+		yield font, line
 
 
 		"""
@@ -302,7 +320,7 @@ class Editor(ClientFrame):
 		s.zwes = 666
 		if SDL:
 			s._cursor_blink_phase = True
-			s.arrows_visible = not args.noalpha
+			s.arrows_visible = not args.noalpha and args.arrows
 
 	if SDL:
 		@property
@@ -315,6 +333,25 @@ class Editor(ClientFrame):
 				s._cursor_blink_phase = v
 				s.must_redraw = True
 
+	def sdl_cursor_xy(s,c,r):
+		font, _ = s.lines[r]
+		font_width = font[1]
+		x = font_width * c
+
+		y = 0
+		for row, (font, line) in enumerate(s.lines):
+			fh = font[2]
+			if row == r:
+				return (x, y, y + fh)
+			else:
+				y += fh + args.line_spacing
+
+
+	def sdl_xy2cr(xy):
+		x,y = xy
+		c = x // font_width
+		r = y // font_height
+		return c, r
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]:
@@ -359,12 +396,12 @@ class Editor(ClientFrame):
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
 		if len(s.lines) <= s.cursor_r or \
-						s.cursor_c > len(s.lines[s.cursor_r]):
+						s.cursor_c > len(s.lines[s.cursor_r][1]):
 			s._move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
 			if s._move_cursor_v(-1):
-				s.cursor_c = len(s.lines[s.cursor_r])
+				s.cursor_c = len(s.lines[s.cursor_r][1])
 		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 		return moved
 
@@ -484,7 +521,7 @@ class Editor(ClientFrame):
 	def find_element(s, e):
 		"""return coordinates of element"""
 		#assert(isinstance(e, int)),  e
-		for r,line in enumerate(s.lines):
+		for r,(_, line) in enumerate(s.lines):
 			for c,char in enumerate(line):
 				if char[1][Att.elem] == e:
 					return c, r
@@ -506,7 +543,7 @@ class Editor(ClientFrame):
 
 	def draw_cursor(self, surf):
 		if self.cursor_blink_phase:
-			x, y, y2 = sdl_cursor_xy(self.cursor_c, self.cursor_r)
+			x, y, y2 = self.sdl_cursor_xy(self.cursor_c, self.cursor_r)
 			pygame.draw.rect(surf, colors.cursor, (x, y, 1, y2 - y,))
 
 
@@ -541,7 +578,7 @@ class Editor(ClientFrame):
 	@property
 	def atts_at_cursor(self):
 		try:
-			return self.lines[self.cursor_r][self.cursor_c][1]
+			return self.lines[self.cursor_r][1][self.cursor_c][1]
 		except IndexError:
 			return None
 
