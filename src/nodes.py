@@ -36,7 +36,7 @@ from lemon_utils.dotdict import Dotdict
 from lemon_args import args
 from lemon_utils.lemon_logging import log, warn
 
-from marpa_cffi.marpa_misc import * # actions
+from marpa_cffi.marpa_misc import * # valuator actions
 
 tags.asselement = element # for assertions
 
@@ -2090,50 +2090,6 @@ class ParserBase(Node):
 
 				s.type_tree(i, scope, indent + 1)
 	"""
-
-	def on_keypress(s, e):
-
-		if e.mod & KMOD_CTRL:
-			if e.key == K_t:
-				s.type_tree(s.type, s.scope())
-				return True
-			if e.key == K_RETURN:
-
-
-				return True
-			else:
-				return super(ParserBase, s).on_keypress(e)
-
-		if e.key == K_ESCAPE:
-			return False
-		if e.key == K_RETURN:
-			return False
-		if (not e.uni) and not e.key in [K_BACKSPACE]: #backspace and something else comes with some unicode
-			return False
-
-		assert s.root.delayed_cursor_move == 0
-
-		items = s.items
-		atts = e.atts
-		i = s.mine(atts)
-		log("mine:",i)
-
-		if i == None:
-			items.append("")
-			#snap cursor to the beginning of Parser
-			s.root.delayed_cursor_move -= atts['char_index'] -1
-			return s.edit_text(0, 0, e)
-		elif isinstance(items[i], unicode):
-			if "compiler item char" in atts:
-				ch = atts["compiler item char"]
-			else:
-				ch = len(items[i])
-			return s.edit_text(i, ch, e)
-		elif isinstance(items[i], Node):
-			items.insert(i, "")
-			assert isinstance(items[i], unicode), (items, i)
-			return s.edit_text(i, 0, e)
-
 
 	def mine(s, atts):
 		"""

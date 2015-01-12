@@ -643,6 +643,8 @@ class Menu(ClientFrame):
 			pygame.draw.rect(surface, c, r, 1)
 
 
+	def move(s, x):
+		s.counterpart.move(x)
 
 
 def collidepoint(r, pos):

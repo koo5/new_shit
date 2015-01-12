@@ -12,6 +12,7 @@ def keypress(e):
 	if not global_key(e):
 		s.editor.keypress(e)
 
+#we should declarativize this too, just like element_keybindings
 
 def global_key(e):
 	k = e.key

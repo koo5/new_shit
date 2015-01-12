@@ -178,6 +178,7 @@ def k_unicode(s, e):
 	atts = e.atts
 	log("adding first item")
 	s.items.append(w.Text(s, e.uni))
+	#s.root.delayed_cursor_move -= atts['char_index'] -1
 
 
 n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.plus({

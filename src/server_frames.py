@@ -6,7 +6,7 @@ from pizco import Signal
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
-from lemon_utils.utils import Evil, batch
+from lemon_utils.utils import Evil, batch, clamp
 from lemon_colors import colors
 from lemon_utils.lemon_logging import log
 from lemon_utils.dotdict import Dotdict
@@ -170,11 +170,14 @@ class Menu(ServerFrame):
 		s.valid_only = False
 		s._changed = True
 		s.parser_node = None
-		s.items = []
 		s.sel = 0
 		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
+
+	@property
+	def items(s):
+		return s.parse_results
 
 	def must_recollect(s):
 		if s._changed:
@@ -281,22 +284,16 @@ class Menu(ServerFrame):
 			e.menu(atts, True)
 
 
-	def accept(menu, idx):
-		return menu.element.menu_item_selected(menu.items[idx], menu.root.atts)
 	def accept(self):
-		return False
-		if len(self.items_on_screen) > self.sel:
-			if self.element.menu_item_selected(self.items_on_screen[self.sel], self.root.atts):
+
+			if s.parser_node.menu_item_selected(s.items[s.sel], s.root.atts):
 				self.sel = 0
 				self.scroll_lines = 0
 				return True
 
 
-	def move(self, y):
-		self.sel += y
-		self.clamp_sel()
-
-
+	def move(s, y):
+		s.sel = clamp(s.sel + y, 0, len(s.items))
 
 
 
