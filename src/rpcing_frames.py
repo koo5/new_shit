@@ -20,6 +20,21 @@ from server_side import server
 if SDL:
 	import pygame
 
+"""
+class Line():
+	__slots__ = ['font', 'chars']
+	def __init__(s, font, chars):
+		s.font = font
+		s.chars = chars
+		assert type(font) == Font
+
+class Font():
+	__slots__ = ['font', 'width', 'height']
+	def __init__(s, font, width, height):
+		s.font = font
+		s.width = width
+		s.height = height
+"""
 
 class ClientFrame(object):
 
@@ -283,8 +298,8 @@ class ClientFrame(object):
 	def under_cr(self, cr):
 		c,r = cr
 		try:
-			return self.lines[r][c][1][node_tag]
-		except:
+			return self.lines[r][1][c][1][Att.elem]
+		except (IndexError, KeyError):
 			return None
 
 	def click_cr(s,e):
@@ -307,8 +322,35 @@ class ClientFrame(object):
 
 
 	def sdl_mousedown(s,e):
-		e.cr = sdl_xy2cr(e.pos) #mouse xy to column, row
-		s.click_cr(e)
+		if e.button == 4:
+			s.scroll(-1)
+		elif e.button == 5:
+			s.scroll(1)
+		else:
+			e.cr = s.sdl_xy2cr(e.pos) #mouse xy to column, row
+			s.click_cr(e)
+
+
+	def sdl_cursor_xy(s,c,r):
+		font, _ = s.lines[r]
+		font_width = font[1]
+		x = font_width * c
+
+		y = 0
+		for row, (font, line) in enumerate(s.lines):
+			fh = font[2]
+			if row == r:
+				return (x, y, y + fh)
+			else:
+				y += fh + args.line_spacing
+
+
+	def sdl_xy2cr(s, xy):
+		x,y = xy
+		for row, (font, line) in enumerate(s.lines):
+			y -= font[2] + args.line_spacing
+			if row <= 0:
+				return (x//font[1], row)
 
 
 
@@ -332,26 +374,6 @@ class Editor(ClientFrame):
 			if s._cursor_blink_phase != v:
 				s._cursor_blink_phase = v
 				s.must_redraw = True
-
-	def sdl_cursor_xy(s,c,r):
-		font, _ = s.lines[r]
-		font_width = font[1]
-		x = font_width * c
-
-		y = 0
-		for row, (font, line) in enumerate(s.lines):
-			fh = font[2]
-			if row == r:
-				return (x, y, y + fh)
-			else:
-				y += fh + args.line_spacing
-
-
-	def sdl_xy2cr(xy):
-		x,y = xy
-		c = x // font_width
-		r = y // font_height
-		return c, r
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]:
@@ -456,7 +478,7 @@ class Editor(ClientFrame):
 
 	def cursor_end(s):
 		if len(s.lines) > s.cursor_r:
-			s.cursor_c = len(s.lines[s.cursor_r])
+			s.cursor_c = len(s.lines[s.cursor_r][1])
 			s.after_cursor_moved()
 
 	def cursor_top(s):

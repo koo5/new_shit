@@ -151,7 +151,7 @@ class ThreadedMarpa(object):
 			if sym != None:
 				if args.log_parsing:
 					log(sym)
-					rulename = 'start is %s' % s.symbol2name(sym)
+					rulename = 'start is %s' % s.symbol2debug_name(sym)
 				else:
 					rulename = ""
 				s.rule(rulename , s.syms.start, sym)

@@ -880,8 +880,9 @@ class Collapsible(Node):
 	def fresh(cls, decl):
 		#log("decl="+repr(decl))
 		r = cls()
-		r.decl = decl
-		assert(decl)
+		if decl:
+			r.decl = decl
+		assert(r.decl)
 		return r
 
 class Dict(Collapsible):
@@ -969,6 +970,29 @@ class List(ListPersistenceStuff, Collapsible):
 	def __init__(self):
 		super(List, self).__init__()
 		self.items = []
+		self.decl = Ref(B.anything)
+
+	@classmethod
+	def register_class_symbol(cls):
+		log("registering list grammar")
+		optionally_elements = m.symbol('optionally_elements')
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char(','), 0)
+		r = m.symbol('list literal')
+		opening =  m.known_char('[')
+		closing =  m.known_char(']')
+		m.rule('list literal', r, [opening, optionally_elements, closing], cls.from_parse)
+		return r
+
+	@classmethod
+	def from_parse(cls, x):
+		log('from_parse:%s',x)
+		assert x[0] == '['
+		assert x[2] == ']'
+		assert type(x[1]) == list
+		r = List()
+		r.items = x[1][::2]
+		r.view_mode = r.vm_multiline
+		return r
 
 	def render_items(self):
 		#we will have to work towards having this kind of syntax
@@ -1046,7 +1070,6 @@ class List(ListPersistenceStuff, Collapsible):
 
 	def newline_with(self, node):
 		self.newline.add(node)
-
 
 	@property
 	def item_type(self):
@@ -3056,8 +3079,6 @@ todo:rename FunctionDefinition to Defun, FunctionCall to Call, maybe remove "Stu
 
 
 
-# region builtins
-#here we start putting stuff into B, which is then made into the builtins modules
 def build_in_editor_structure_nodes():
 
 	build_in(Nodecl(Text))
@@ -3099,6 +3120,7 @@ def build_in_lemon_language():
 
 	build_in([Nodecl(x) for x in [Number, Banana, Bananas]])
 
+	build_in(Nodecl(List), "list_literal")
 
 	build_in([
 
@@ -3406,4 +3428,3 @@ def build_in_lemon_language():
 	build_in(SyntaxedNodecl(CustomNodeDef,
 				   ["define node with syntax:", ChildTag("syntax")],
 				   {'syntax': B.custom_syntax_list}))
-# endregion

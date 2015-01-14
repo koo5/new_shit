@@ -1,7 +1,7 @@
 #from weakref import WeakValueDictionary
 #from lemon_utils.utils import Evil
 
-from enum import Enum, unique
+#from enum import Enum, unique
 
 from lemon_utils.lemon_six import unicode
 
@@ -17,11 +17,6 @@ def TextTag(text):
 	return text
 
 def AttTag(k,v):
-	"""
-	if isinstance(v, Element): # or any nonbasic value
-		proxykey = proxy_this(v)
-		return (k, proxykey)
-	else:"""
 	return (k,v)
 
 end_tag = 0

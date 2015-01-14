@@ -166,7 +166,7 @@ class Menu(ServerFrame):
 		super(Menu, s).__init__()
 		s.editor = editor
 		editor.on_serverside_change.connect(s.on_editor_change)
-		editor.on_atts_change.connect(s.on_editor_element_change)
+		editor.on_atts_change.connect(s.on_editor_atts_change)
 		s.valid_only = False
 		s._changed = True
 		s.parser_node = None
@@ -186,22 +186,25 @@ class Menu(ServerFrame):
 
 	def on_editor_change(self, ast):
 		#welp, changes tracking is tbd..
-		x = self.parser_changed()
+		_ = self.parser_changed()
 		if self.parser_node:
 			self.prepare_grammar()
 
-	def on_editor_element_change(self):
+	def on_editor_atts_change(self):
 		if self.parser_changed():
 			self.prepare_grammar()
 
 	def parser_changed(s):
-		e = s.editor.element_under_cursor
-		if e:
-			for i in e.ancestors:
+
+		def relevant_parser(e):
+			if not e:
+				return None
+			for i in [e] + e.ancestors:
 				if isinstance(i, nodes.Parser):
-					e = i
-					break
-			e = None
+					return i
+
+		e = relevant_parser(s.editor.element_under_cursor)
+
 		if e and e != s.parser_node:
 			s.parser_node = e
 			return True
