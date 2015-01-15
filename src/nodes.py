@@ -1193,6 +1193,20 @@ class Statements(List):
 	#war
 
 
+"""
+class SortedView():
+	S_orig = 0
+	S_alpha_type_betically_with_flattened_classes?
+
+	@property
+	def source(s):
+		return (s.parent. #module
+				ch.statements.parsed.items)
+
+"""
+
+
+
 
 class NoValue(Node):
 	def __init__(self):
@@ -1386,10 +1400,13 @@ class Root(Dict):
 		#crude, but for now..
 
 
+
+
 class Module(Syntaxed):
-	"""module or program, really"""
-	def __init__(self, children):
-		super(Module, self).__init__(children)
+	"""module or program"""
+	def __init__(self, kids):
+		super(Module, self).__init__(kids)
+		#self.sortedview = SortableStatements(self)
 
 	def add(self, item):
 		self.ch.statements.add(item)
@@ -2480,7 +2497,6 @@ class UnevaluatedParameter(FunctionParameterBase):
 	def type(s):
 		return s.ch.argument.type
 
-
 class FunctionDefinitionBase(Syntaxed):
 
 	def __init__(self, children):
@@ -3150,10 +3166,6 @@ def build_in_lemon_language():
 
 
 
-
-
-
-
 	#build_in(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
 
 	build_in(SyntaxedNodecl(EnumType,
@@ -3256,6 +3268,10 @@ def build_in_lemon_language():
 	tmp = B.list.make_type({'itemtype': Ref(B.custom_syntax)})
 	build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
 
+
+
+	#tmp = b['list'].make_type({'itemtype': Ref(b['union of function signature item types'])})
+	#tmp = b['list'].make_type({'itemtype': Ref(b['union of custom syntax item types'])})
 
 
 	build_in(SyntaxedNodecl(FunctionDefinition,
@@ -3426,5 +3442,50 @@ def build_in_lemon_language():
 				    'serialization':dict_from_to('text', 'anything')}))
 
 	build_in(SyntaxedNodecl(CustomNodeDef,
-				   ["define node with syntax:", ChildTag("syntax")],
-				   {'syntax': B.custom_syntax_list}))
+				   ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
+				   {'name' : B.text,
+				   'syntax': B.custom_syntax_list}))
+	"""this gets us a node defining nodes, so it should have nodecl functionality"""
+
+
+
+
+
+"""
+class NodeSyntax(Syntaxed):
+	pass
+
+build_in(SyntaxedNodecl(NodeSyntax,
+			   ["node syntax:", ChildTag("syntax")],
+			   {'syntax': b['custom syntax list']}))
+"""
+
+
+
+
+"""
+
+
+class: based on customnode, one level,
+
+how to do views best?
+
+
+
+"""
+
+
+
+"""
+add python_env to Module?
+
+
+
+
+
+
+
+
+
+
+"""

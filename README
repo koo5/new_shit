@@ -9,6 +9,7 @@ talk to us in [irc://irc.freenode.net/lemonparty](irc://irc.freenode.net/lemonpa
 dependencies
 ===
 hard:
+python3.4
 fuzzywuzzy - for basic ordering of the menu
 pizco - at least for the Signal class
 
@@ -20,30 +21,26 @@ libmarpa is in latest ubuntu, but dunno what version and how that will play with
 optional:
 colors - for rainbowy brackets:)
 
-the ncurses frontend needs some finishing, need to come up with good key combinations and finish the translation table
-the pygame frontend requires pygame, obviously
+the ncurses frontend needs some finishing, need to come up with good key combinations and finish the translation table  
+the pygame frontend requires pygame, obviously  
 
-python:
-* i try to keep things more or less both 2 and 3 compatible
-* i had it working in python 2.5, but a long time ago
-* planning to move to python 3 when dependencies allow it
+apt-get install python3-pip  
+pip3 install --user fuzzywuzzy colors.py  
 
-on ubuntu:
-* apt-get install python-pygame python-pip
-* pip install --user fuzzywuzzy colors pizco
-(or without --user)
+get pizco with:  
+git submodule init; git submodule update  
 
 python3 pygame:
 https://packages.debian.org/experimental/python3-pygame
-http://pygame.org/wiki/CompileUbuntu?parent=Compilation#Python%203.x
+http://pygame.org/wiki/CompileUbuntu
 https://launchpad.net/~thopiekar/+archive/ubuntu/pygame
 
 
 running it
 ===
-if the latest commit doesnt run, git checkout HEAD^ until you find one that does:)
-fixme:run main_curses.py, main_sdl.py, or faster.sh (disables assertions)
+src/sdl_client.py
 
+if the latest commit doesnt run, git checkout HEAD^ until you find one that does:)
 
 
 getting started
@@ -54,7 +51,7 @@ Stop by in the irc channel. I can also take you on a tour in VNC.
 
 
 
-help wanted
+help wanted#update
 ===
 here are some (random and possibly outdated) things that i think would help lemon further, sometimes directly, sometimes by making it more
 accesible/interesting to other people. Some understanding of lemon is usually
@@ -99,7 +96,7 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 * get rid of the homebrew logging
 
 
-files
+files#fixme
 ===
 * main_sdl.py: the frontend, handles a window, events, drawing. run this one.
 * main_curses.py: proof-of-concept console frontend
