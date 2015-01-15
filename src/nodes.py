@@ -3,7 +3,6 @@
 """
 
 this file defines the AST classes of the language and everything around it.
-we also build up the builtins module along the way.
 the philosophy of this codebase is "constant surprise". it keeps you alert.
 "kids" and "children" mean the same.
 sometimes i use "s" instead of "self".
@@ -43,12 +42,12 @@ tags.asselement = element # for assertions
 # endregion
 AST_CHANGED = 2
 
-#b is for staging the builtins module and referencing builtin nodes from python code
+#B is for staging the builtins module and referencing builtin nodes from python code
 B = Dotdict()
 B._dict = odict()
 
 def build_in(node, name=None):
-	"""adds node to b"""
+	"""add node to B"""
 	if isinstance(node, list):
 		[build_in(node) for node in node]
 	else:
@@ -722,6 +721,11 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		# prevent setting new attributes
 		self.lock()
 
+	def register_class_symbol(cls):
+		r = m.symbol(cls.__name__)
+		#..
+
+
 	def fix_parents(self):
 		self._fix_parents(list(self.ch._dict.values()))
 
@@ -785,7 +789,6 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			self.syntax_index = len(self.syntaxes)-1
 		log("next syntax")
 		return CHANGED
-
 
 	@classmethod
 	def create_kids(cls, slots):
@@ -1703,18 +1706,6 @@ class SyntaxedNodecl(NodeclBase):
 			return s.inst_fresh()
 
 
-	"""
-	syntaxed match(items, nodes) :-
-
-	Text match(item, nodes) :-
-		isinstance(item, Text) and item.pyval.isnum() and
-
-	FunctionDefinition match(items, nodes
-		for s, i in zip(self.sig, items)
-			if isinstance(s, Text):
-				if isinstance(i, Text):
-					i.pyval
-	"""
 
 class ParametricTypeBase(Syntaxed):
 	pass
