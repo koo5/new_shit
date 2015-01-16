@@ -156,6 +156,8 @@ class ThreadedMarpa(object):
 					rulename = ""
 				s.rule(rulename , s.syms.start, sym)
 				#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
+				#wat? anyway, i will need logpy for this i think
+
 
 	def enqueue_precomputation(s, for_node):
 		s.t.input.put(Dotdict(

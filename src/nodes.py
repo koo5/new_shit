@@ -1480,6 +1480,25 @@ class Ref(RefPersistenceStuff, Node):
 	def __init__(self, target):
 		super(Ref, self).__init__()
 		self.target = target
+
+	@classmethod
+	def register_class_symbol(cls):
+		r = m.symbol('ref')
+
+		for i in m.scope:
+			if is_type(i):#todo: not just types but also functions and..?..
+				rendering = "*" + i.name
+				debug_name = "ref to"+str(i)
+				sym = m.symbol(debug_name)
+				m.rule(debug_name + "is a ref", r, sym)
+				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
+
+		return r
+
+	@classmethod
+	def from_parse(cls, x):
+		log(x)
+
 	def render(self):
 		return [TextTag('*'), ArrowTag(self.target), TextTag(self.name)]
 
@@ -3438,7 +3457,13 @@ def build_in_lemon_language():
 				   'syntax': B.custom_syntax_list}))
 	"""this gets us a node defining nodes, so it should have nodecl functionality"""
 
-
+	class After(Syntaxed):
+		pass
+	#how to best choose the syntax from within a parent node?
+	build_in(SyntaxedNodecl(After,
+	                        ['after', ChildTag('function'), ':\n', ChildTag('body')],
+		{'function': B.defun,
+		 'body': B.statements}))
 
 
 
