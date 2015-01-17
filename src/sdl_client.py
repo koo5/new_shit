@@ -85,6 +85,8 @@ def make_font(size):
 
 def change_font_size(by = 0):
 	args.font_size += by
+	if args.font_size < 1:
+		args.font_size = 1
 
 def resize(size):
 	global screen_surface, screen_width, screen_height

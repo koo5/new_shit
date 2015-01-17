@@ -87,12 +87,17 @@ def make_list(type_name= 'anything'):
 	return list_of(type_name).inst_fresh()
 
 def list_of(type_name):
-	"""a helper for creating a type"""
-	return B.list.make_type({'itemtype': Ref(B[type_name])})
+	"""create a list type"""
+	if type(type_name) == unicode:
+		t = B[type_name]
+	else:
+		t = type_name
+
+	return B.list.instantiate({'itemtype': Ref(t)})
 
 def dict_from_to(key, val):
 	"""a helper for creating a type"""
-	return B.dict.make_type({'keytype': Ref(B[key]), 'valtype': Ref(B[val])})
+	return B.dict.instantiate({'keytype': Ref(B[key]), 'valtype': Ref(B[val])})
 
 def make_dict(key_type_name, val_type_name):
 	return dict_from_to(key_type_name, val_type_name).inst_fresh()
@@ -721,20 +726,28 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		# prevent setting new attributes
 		self.lock()
 		#assert isinstance(self.ddecl, SyntaxedNodecl)
-	"""
+
 	@classmethod
 	def register_class_symbol(cls):
-		r = m.symbol(cls.__name__)
 		syms = []
-		for i in deref_decl(cls.decl).instance_syntaxes[0]:
-			if type(i) == unicode:
+		ddecl = deref_decl(cls.decl)
+		for i in ddecl.instance_syntaxes[0]:
+			if type(i) in (unicode, TextTag):
 				syms.append(m.known_string(i))
-			elif type(i) == Exp:
-				syms.append(B.anything.sym)
+			elif type(i) == ChildTag:
+				child_type = deref_decl(ddecl.instance_slots[i.name])
+				if type(child_type) == Exp:
+					x = B.anything.symbol
+				else:
+					x = child_type.symbol
+				assert x,  child_type
+				syms.append(x)
 			else:
-				syms.append(i.symbol)
-		m.rule(r, "", r, syms)
-	"""
+				panic()
+		assert len(syms) != 0
+		r = m.symbol(cls.__name__)
+		m.rule("", r, syms)
+		return r
 
 
 	def fix_parents(self):
@@ -778,7 +791,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			assert(isinstance(slots, dict))
 			for name, slot in iteritems(slots):
 				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricType, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
+				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
 	@property
 	def syntax(self):
@@ -1089,7 +1102,7 @@ class List(ListPersistenceStuff, Collapsible):
 	def item_type(self):
 		assert hasattr(self, "decl"),  "parent="+str(self.parent)+" contents="+str(self.items)
 		ddecl = self.ddecl
-		assert isinstance(ddecl, ParametricType), self
+		assert isinstance(ddecl, ParametricListType), self
 		r = self.ddecl.ch.itemtype
 		#log('item_type',r)
 		return r
@@ -1566,7 +1579,7 @@ class Exp(Node):
 
 class NodeclBase(Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
-	know their python class ("instance_class"), syntax and shit.
+	know their python class ("instance_class"), syntax and shit. Think types.
 	usually does something like instance_class.decl = self, so we can instantiate the
 	classes in code without going thru a corresponding nodecl.inst_fresh()"""
 	help = None
@@ -1738,39 +1751,27 @@ class SyntaxedNodecl(NodeclBase):
 
 
 class ParametricTypeBase(Syntaxed):
-	pass
-
-class ParametricType(ParametricTypeBase):
-	"""like..list of <type>, the <type> will be a child of this node.
-	 ParametricType is instantiated by ParametricNodecl """
-	def __init__(self, children, decl):
-		self.decl = decl
-		self.instance_class = self.decl.value_class
-		super(ParametricType, self).__init__(children)
-
-	@property
-	def slots(self):
-		return self.decl.type_slots
-
-	@property
-	def syntaxes(self):
-		return [self.decl.type_syntax]
-
 	def inst_fresh(self, decl=None):
-		"""create new List or Dict"""
-		if not decl:
+		r = self.instance_class()
+		if decl == None:
 			decl = self
-		return self.decl.value_class.fresh(Ref(decl))
-
-	@classmethod
-	def fresh(cls, decl):
-		"""create new parametric type"""
-		return cls(cls.create_kids(decl.type_slots), decl)
+		r.decl = Ref(decl)
+		return r
 
 	@property
 	def name(self):
-		return "parametric type (probably a <list of something> type)"
-		#todo: refsyntax?
+		return self.instance_class.__name__ + " type"
+
+	def long__repr__(s):
+		return object.__repr__(s) + "('"+str(s.ch)+"')"
+
+class ParametricDictType(ParametricTypeBase):
+	instance_class = Dict
+
+class ParametricListType(ParametricTypeBase):
+	instance_class = List
+
+
 	#@property
 	#def refsyntax(s):
 	#damn this is just all wrong. name should return something like "list of numbers"
@@ -1779,17 +1780,16 @@ class ParametricType(ParametricTypeBase):
 	#you cant render a different nodes syntax as your own
 	#make a new kind of tag for this?
 
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
-class ParametricNodecl(NodeclBase):
+class ParametricNodecl(SyntaxedNodecl):
 	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
 	only non Syntaxed types are parametric now(list and dict),
 	so this contains the type instance's syntax and slots (a bit confusing)"""
+	"""
 	def __init__(self, value_class, type_syntax, type_slots):
 		super(ParametricNodecl, self).__init__(ParametricType)
-		self.type_slots = type_slots
-		self.type_syntax = type_syntax
+		self.instance_slots = type_slots
+		self.instance_syntaxes = [type_syntax]
 		self.value_class = value_class
 
 	def make_type(self, kids):
@@ -1799,6 +1799,8 @@ class ParametricNodecl(NodeclBase):
 		return [ParserMenuItem(ParametricType.fresh(self))]
 	#def obvious_fresh(self):
 	#if there is only one possible node type to instantiate..
+	"""
+
 
 class EnumVal(Node):
 	def __init__(self, decl, value):
@@ -1907,7 +1909,7 @@ class Union(Syntaxed):
 		super(Union, self).__init__(children)
 
 # endregion
-
+"""
 class ListOfAnything(ParametricType):
 
 	def palette(self, scope, text, node):
@@ -1918,7 +1920,7 @@ class ListOfAnything(ParametricType):
 		return [ParserMenuItem(i)]
 	def works_as(self, type):
 		return True
-
+"""
 class UntypedVar(Syntaxed):
 	easily_instantiable = True
 	def __init__(self, children):
@@ -3121,7 +3123,7 @@ def build_in_editor_structure_nodes():
 	build_in(TypeNodecl(), 'type')
 
 	build_in(
-	ParametricNodecl(List,
+	ParametricNodecl(ParametricListType,
 					 [TextTag("list of"), ChildTag("itemtype")],
 					 {'itemtype': B.type}),'list')
 
@@ -3176,13 +3178,14 @@ def build_in_lemon_language():
 	build_in(WorksAs.b("number", "expression"), False)
 	build_in(WorksAs.b("text", "expression"), False)
 
+
 	build_in(
-	ParametricNodecl(Dict,
+	ParametricNodecl(ParametricDictType,
 					 [TextTag("dict from"), ChildTag("keytype"), TextTag("to"), ChildTag("valtype")],
 					 {'keytype': B.type, 'valtype': B.type}), 'dict')
 
 	build_in(WorksAs.b("list", "expression"), False)
-	build_in(WorksAs.b("dict", "expression"), False)
+	#build_in(WorksAs.b("dict", "expression"), False)
 
 
 
@@ -3207,12 +3210,11 @@ def build_in_lemon_language():
 	build_in(
 		Definition(
 			{'name': Text("list of types"),
-			 'type': B.list.make_type(
-				 {'itemtype': Ref(B.type)})}))
+			 'type': list_of(B.type)}))
 
 	build_in(SyntaxedNodecl(Union,
 				   [TextTag("union of"), ChildTag("items")],
-				   {'items': B.list.make_type({'itemtype': B.type})}))
+				   {'items': list_of(B.type)}))
 				   #todo:should use the definition above instead
 
 	B.union.notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
@@ -3227,9 +3229,8 @@ def build_in_lemon_language():
 				        ":\n", ChildTag("body")],
 				   {'item': B.untypedvar,
 				    'items': Exp(
-					    B.list.make_type({
-					        'itemtype': Ref(B.type)#?
-					    })),
+					    list_of(B.anything)#?
+					    ),
 				   'body': B.statements}))
 
 
@@ -3277,15 +3278,15 @@ def build_in_lemon_language():
 	tmp.ch["items"].add(Ref(B.typedparameter))
 	tmp.ch["items"].add(Ref(builtin_unevaluatedparameter))
 	build_in(Definition({'name': Text('function signature node'), 'type': tmp}))
-	tmp = B.list.make_type({'itemtype': Ref(B.function_signature_node)})
+	tmp = list_of(B.function_signature_node)
 	build_in(Definition({'name': Text('function signature list'), 'type':tmp}))
 	#todo:refactor
 	#and a custom node syntax type
 	tmp = B.union.inst_fresh()
 	tmp.ch["items"].add(Ref(B.text))
 	tmp.ch["items"].add(Ref(B.type))
-	build_in(Definition({'name': Text('custom syntax'), 'type': tmp}))
-	tmp = B.list.make_type({'itemtype': Ref(B.custom_syntax)})
+	build_in(Definition({'name': Text('custom syntax node'), 'type': tmp}))
+	tmp = list_of(B.custom_syntax_node)
 	build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
 
 
@@ -3353,7 +3354,7 @@ def build_in_lemon_language():
 		return TypedParameter({'name':Text("text"), 'type':Ref(B.text)})
 
 	def num_list():
-		return  B.list.make_type({'itemtype': Ref(B.number)})
+		return  list_of(B.number)
 
 	def num_list_arg():
 		return TypedParameter({'name':Text("list of numbers"), 'type':num_list()})
