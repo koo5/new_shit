@@ -138,6 +138,7 @@ class ThreadedMarpa(object):
 	def collect_grammar(s,scope:list):
 		assert scope == uniq(scope)
 		s.clear()
+		s.scope = scope
 		s.named_symbol('start')
 		#s.set_start_symbol(s.syms.start)
 		s.named_symbol('nonspecial_char')

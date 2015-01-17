@@ -720,10 +720,21 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		self.ch._lock()
 		# prevent setting new attributes
 		self.lock()
-
+		#assert isinstance(self.ddecl, SyntaxedNodecl)
+	"""
+	@classmethod
 	def register_class_symbol(cls):
 		r = m.symbol(cls.__name__)
-		#..
+		syms = []
+		for i in deref_decl(cls.decl).instance_syntaxes[0]:
+			if type(i) == unicode:
+				syms.append(m.known_string(i))
+			elif type(i) == Exp:
+				syms.append(B.anything.sym)
+			else:
+				syms.append(i.symbol)
+		m.rule(r, "", r, syms)
+	"""
 
 
 	def fix_parents(self):
@@ -1736,7 +1747,6 @@ class ParametricType(ParametricTypeBase):
 		self.decl = decl
 		self.instance_class = self.decl.value_class
 		super(ParametricType, self).__init__(children)
-
 
 	@property
 	def slots(self):
@@ -3457,14 +3467,19 @@ def build_in_lemon_language():
 				   'syntax': B.custom_syntax_list}))
 	"""this gets us a node defining nodes, so it should have nodecl functionality"""
 
+
+
+
+
 	class After(Syntaxed):
 		pass
 	#how to best choose the syntax from within a parent node?
+	"""
 	build_in(SyntaxedNodecl(After,
 	                        ['after', ChildTag('function'), ':\n', ChildTag('body')],
-		{'function': B.defun,
+		{'function': B.functionsignatureref,
 		 'body': B.statements}))
-
+	"""
 
 
 """
