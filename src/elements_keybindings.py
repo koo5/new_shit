@@ -139,7 +139,6 @@ def run_line(self, e):
 	self.items.insert(index + 1, result)
 	return CHANGED
 
-print(n.Statements.__bases__[-1])
 n.Statements.keys = n.Statements.__bases__[-1].keys.plus(
 	{H(KMOD_CTRL, K_RETURN): (lambda s, atts: s.item_index(atts) != None, run_line)})
 
@@ -160,16 +159,6 @@ def k_backspace(s):
 	s.on_edit.emit(s)
 	return CHANGED
 
-
-"""
-analogically with delete,
-both items will know not to handle it, so parser gets it,
-so it must have a handler defined for between, or a checker, and
-based on item_att delete(or deconstruct) the node
-if Parser is empty: check succeeds only for UNICODE (on body), creates Text
-"""
-
-
 def k_delete(s):
 	s.on_edit.emit(s)
 	return CHANGED
@@ -188,5 +177,11 @@ n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.plus({
 
 	})
 
-
+"""
+analogically with delete,
+both items will know not to handle it, so parser gets it,
+so it must have a handler defined for between, or a checker, and
+based on item_att delete(or deconstruct) the node
+if Parser is empty: check succeeds only for UNICODE (on body), creates Text
+"""
 

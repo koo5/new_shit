@@ -3,10 +3,11 @@ from collections import namedtuple
 from pprint import pformat as pp
 
 from pizco import Signal
+from fuzzywuzzy import fuzz
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
-from lemon_utils.utils import Evil, batch, clamp
+from lemon_utils.utils import Evil, batch, clamp, flatten
 from lemon_colors import colors
 from lemon_utils.lemon_logging import log
 from lemon_utils.dotdict import Dotdict
@@ -169,11 +170,13 @@ class Menu(ServerFrame):
 		editor.on_atts_change.connect(s.on_editor_atts_change)
 		s.valid_only = False
 		s._changed = True
-		s.parser_node = None
+		s.current_parser_node = None
 		s.sel = 0
 		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
+		s.sorted_palette = []
+		s.current_text = "yo"
 
 	@property
 	def items(s):
@@ -187,15 +190,14 @@ class Menu(ServerFrame):
 	def on_editor_change(self, ast):
 		#welp, changes tracking is tbd..
 		_ = self.parser_changed()
-		if self.parser_node:
-			self.prepare_grammar()
+		if self.current_parser_node:
+			self.update_menu()
 
 	def on_editor_atts_change(self):
 		if self.parser_changed():
-			self.prepare_grammar()
+			self.update_menu()
 
 	def parser_changed(s):
-
 		def relevant_parser(e):
 			if not e:
 				return None
@@ -205,56 +207,101 @@ class Menu(ServerFrame):
 
 		e = relevant_parser(s.editor.element_under_cursor)
 
-		if e and e != s.parser_node:
-			s.parser_node = e
+		if e and e != s.current_parser_node:
+			s.current_parser_node = e
 			return True
 
+	def update_menu(s):
+		scope = s.current_parser_node.scope()
+		s.update_current_text()
+		s.prepare_grammar(scope)
+		s.create_palette(scope, s.editor.atts, s.current_parser_node)
 
-	def prepare_grammar(s):
+	def prepare_grammar(s, scope):
 		#s.marpa.t.input.clear()
 		log("prepare grammar..")
 		for i in s.editor.root.flatten():
 			i.forget_symbols() # todo:start using visitors
-
-		s.marpa.collect_grammar(s.parser_node.scope())
+		s.marpa.collect_grammar(scope)
 		s.marpa.enqueue_precomputation(666)
 
 	def on_thread_message(self):
 		m = self.marpa.t.output.get()
 		if m.message == 'precomputed':
-			#if m.for_node == self.parser_node:
-				self.marpa.enqueue_parsing(self.parser_items2tokens(self.parser_node.items))
+			#if m.for_node == self.current_parser_node:
+				self.marpa.enqueue_parsing(self.parser_items2tokens(self.current_parser_node.items))
 		elif m.message == 'parsed':
 				self.parse_results = m.results
+				#	r.append(ParserMenuItem(i, 333))
 				self.signal_change()
 
+	@staticmethod
+	def parser_node_item(parser, atts):
+		try:
+			parser_node, item_index = atts.any[Att.item_index]
+		except KeyError:
+			return None
+		if parser == parser_node:
+			return item_index
 
-	def parser_items2tokens(s, items):
-		symbols, text = [], ""
-		for i in items:
-			if isinstance(i, widgets.Text):
-				symbols.extend(s.marpa.string2tokens(i.text))
-				text += i.text
+	def update_current_text(s):
+		parser = s.current_parser_node
+		i = s.parser_node_item(parser, s.editor.atts)
+
+		if i == None:
+			text = ""
+		else:
+			if isinstance(parser.items[i], nodes.Node):
+				text = ""
 			else:
-				symbols.append(i.symbol)
-				text += "X"
-		return symbols, text
+				text = parser.items[i].text
 
+		s.current_text = text
 
+	def create_palette(s, scope, atts, parser):
+		palette = flatten([x.palette(scope, s.current_text, parser) for x in scope])
+		s.sorted_palette = s.sort_palette(palette, s.current_text, s.current_parser_node.type)
 
+	@staticmethod
+	def sort_palette(items, text, decl):
+		matchf = fuzz.token_set_ratio#partial_ratio
 
-		log("possibly check against cached atts/text, then call marpa")
-		#self._changed = True
+		if isinstance(decl, nodes.Exp):
+			decl = decl.type
 
-	def signal_change(s):
-		s._changed = True
-		s.draw_signal.emit()
+		def score_item(item):
+			v = item.value
+			assert type(text) == unicode
+			try:
+				#assert type(v.name) == unicode,  v.name
+				item.scores.name = matchf(unicode(v.name), text, False), v.name #0-100
+			except AttributeError as e:
+				# no name
+				pass
 
-	def tags(s):
-		yield [ColorTag(colors.fg), "menu:(%s items)\n"%len(s.parse_results)]
-		for i in s.parse_results:
-			yield [ElementTag(i), "\n"]
-		yield ["---", EndTag()]
+			assert type(v.decl.name) == unicode
+			item.scores.declname = 3 * matchf(v.decl.name, text, False), v.decl.name #0-100
+
+			if item.value.decl.works_as(decl):
+				item.scores.worksas = 200
+			else:
+				item.invalid = True
+
+			#search thru syntaxes
+			#if isinstance(v, Syntaxed):
+			#	for i in v.syntax:
+			#   		if isinstance(i, t):
+			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
+			#search thru an actual rendering(including children)
+			tags =     v.render()
+			texts = [i for i in tags if type(i) == unicode]
+			#print texts
+			texttags = " ".join(texts)
+			item.scores.texttags = matchf(texttags, text), texttags
+			return item
+
+		return sorted(map(score_item, items), key=lambda i: -i.score)
+
 
 
 	"""
@@ -268,19 +315,34 @@ class Menu(ServerFrame):
 					yield i
 	"""
 
-	def update_items(s):
-		s.items = (
-			[DefaultParserMenuItem(text)]+
-			[s.parse_results]+
-			[s.sorted_palette]) 
+	@property
+	def items(s):
+		return [nodes.DefaultParserMenuItem(s.current_text)] + s.parse_results + s.sorted_palette
 
+	def parser_items2tokens(s, items):
+		symbols, text = [], ""
+		for i in items:
+			if isinstance(i, widgets.Text):
+				symbols.extend(s.marpa.string2tokens(i.text))
+				text += i.text
+			else:
+				symbols.append(i.symbol)
+				text += "X"
+		return symbols, text
 
+	def signal_change(s):
+		s._changed = True
+		s.draw_signal.emit()
+
+	def tags(s):
+		yield [ColorTag(colors.fg), "menu:(%s items)\n"%len(s.parse_results)]
+		for i in s.items:
+			yield [ElementTag(i), "\n"]
+		yield ["---", EndTag()]
 
 	def toggle_valid(s):
 		s.valid_only = not s.valid_only
 		s.signal_change()
-
-
 
 	def menu_dump(s):
 		e = s.element = s.root.under_cursor
@@ -291,7 +353,7 @@ class Menu(ServerFrame):
 
 	def accept(self):
 
-			if s.parser_node.menu_item_selected(s.items[s.sel], s.root.atts):
+			if s.current_parser_node.menu_item_selected(s.items[s.sel], s.root.atts):
 				self.sel = 0
 				self.scroll_lines = 0
 				return True

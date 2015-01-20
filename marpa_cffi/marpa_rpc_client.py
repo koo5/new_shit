@@ -156,8 +156,6 @@ class ThreadedMarpa(object):
 				else:
 					rulename = ""
 				s.rule(rulename , s.syms.start, sym)
-				#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
-				#wat? anyway, i will need logpy for this i think
 
 
 	def enqueue_precomputation(s, for_node):
@@ -348,15 +346,30 @@ class MarpaThread(threading.Thread):
 
 
 
+#maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
+#wat? anyway, i will need logpy for this i think
+"""maybe we want to only make the start_is_something rules
+when that something cant be reached from Statement thru WorksAs..
+lets just prune the duplicate results for now"""
+"""
+parse_result = list(parse_result)
+r2 = parse_result[:]
+nope = []
+for i,v in enumerate(parse_result):
+	for susp in parse_result:
+		if susp != v and v.eq_by_value(susp):
+			nope.append(v)
+parse_result = [i for i in parse_result if not i in nope]
+"""#i dont feel like implementing eq_by_value for everything now
 
 
 
 
 
 
-	"""
-	<jeffreykegler> By the way, a Marpa parser within a Marpa parser is a strategy pioneered by Andrew Rodland (hobbs) and it is the way that the SLIF does its lexing -- the SLIF lexes by repeatedly creating Marpa subgrammars, getting the lexeme, and throwing away the subgrammar.
-	"""
+"""
+<jeffreykegler> By the way, a Marpa parser within a Marpa parser is a strategy pioneered by Andrew Rodland (hobbs) and it is the way that the SLIF does its lexing -- the SLIF lexes by repeatedly creating Marpa subgrammars, getting the lexeme, and throwing away the subgrammar.
+"""
 """
 		if args.graph_grammar:
 			graphing_wrapper.start()

@@ -16,7 +16,6 @@ good luck.
 import json
 from types import SimpleNamespace
 
-from fuzzywuzzy import fuzz
 from pizco import Signal
 
 from lemon_utils.lemon_six import iteritems, iterkeys, itervalues, unicode
@@ -702,6 +701,12 @@ class Node(NodePersistenceStuff, element.Element):
 	def delete_child(self, child):
 		log("not implemented, go delete someone else's children")
 
+	@staticmethod
+	def match(v):
+		return False
+
+	def works_as(self, type):
+		return False
 
 class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
@@ -735,11 +740,13 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			if type(i) in (unicode, TextTag):
 				syms.append(m.known_string(i))
 			elif type(i) == ChildTag:
-				child_type = deref_decl(ddecl.instance_slots[i.name])
+				child_type = ddecl.instance_slots[i.name]
 				if type(child_type) == Exp:
 					x = B.anything.symbol
 				else:
-					x = child_type.symbol
+					x = deref_decl(child_type).symbol
+				if not x:
+					return None
 				assert x,  child_type
 				syms.append(x)
 			else:
@@ -1015,6 +1022,7 @@ class List(ListPersistenceStuff, Collapsible):
 		log('from_parse:%s',x)
 		assert x[0] == '['
 		assert x[2] == ']'
+		if x[1] == 'nulled': x[1] = []
 		assert type(x[1]) == list
 		r = List()
 		r.items = x[1][::2]
@@ -1182,10 +1190,6 @@ class Statements(List):
 	def item_type(self):
 		return B.statement
 
-	@staticmethod
-	def match(text):
-		return None
-
 	def render_items(self):
 		r = []
 		for item in self.items:
@@ -1254,9 +1258,6 @@ class Banana(Node):
 		return ["error:", TextTag(self.text)]
 	def to_python_str(self):
 		return "runtime error"
-	@staticmethod
-	def match(v):
-		return False
 
 class Bananas(Node):
 	help=["parsing error. your code is bananas."]
@@ -1272,9 +1273,6 @@ class Bananas(Node):
 		return "couldnt parse " + str(len(self.contents)) + " items:"+str(self.contents)
 	def _eval(s):
 		return Bananas(s.contents)
-	@staticmethod
-	def match(v):
-		return False
 
 class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 	"""basic one-widget value"""
@@ -1339,12 +1337,8 @@ class Number(WidgetedValue):
 
 	@staticmethod
 	def match(text):
-		"return score"
-		#log("matching "+str(text) +" with Number")
 		if text.isdigit():
-			#log("successs")
-			return 300
-		#log("nope")
+			return True
 
 class Text(WidgetedValue):
 	easily_instantiable = True
@@ -1383,9 +1377,6 @@ class Text(WidgetedValue):
 	def _eval(self):
 		return Text(self.pyval)
 
-	@staticmethod
-	def match(text):
-		return 100
 
 
 class Root(Dict):
@@ -1723,7 +1714,7 @@ class Nodecl(NodeclBase):
 		m = i.match(text)
 		if m:
 			value = i(text)
-			score = m
+			score = 300
 		else:
 			value = i()
 			score = 0
@@ -1829,12 +1820,6 @@ class EnumVal(Node):
 
 	def _eval(self):
 		return EnumVal(self.decl, self.value)
-
-	#@staticmethod
-	#def match(text):
-	#	"return score"
-	#	if text.isdigit():
-	#		return 300
 
 class EnumType(ParametricTypeBase):
 	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
@@ -2024,13 +2009,43 @@ class Filter(Syntaxed):
 
 # region parser
 
+def even_out(items):
+	"""
+	after each change, we go thru items:
+		input is a list of Texts and Nodes
+		if there are two Texts next to each other, concat them
+		if there are two Nodes next to each other, put a Text between them
+		ensure there is a Text at the beginning and at the end
+	"""
+
+	#find adjacent items of same type
+	def find_same_type_pair(items, type):
+		for index, i in enumerate(items[:-1]):
+			if isinstance(i, type) and isinstance(items[index+1], type):
+				return index
+
+	#find adjacent Texts and join them
+	while True:
+		index = find_same_type_pair(items, widgets.Text)
+		if index == None: break
+		items[index] = widgets.Text(items[index].value + items[index+1].value)
+		del items[index+1]
+
+	#find adjacent Nodes and put an empty Text between
+	while True:
+		index = find_same_type_pair(items, Node)
+		if index == None: break
+		items.insert(index+1, widgets.Text())
+
+	#ensure Text at beginning and end
+	if type(items[0]) != widgets.Text: items.insert(0, widgets.Text())
+	if type(items[-1]) != widgets.Text: items.append(widgets.Text())
+
+
 class ParserBase(Node):
 
 	"""
-	Parser node
-
-	todo:hack it so that the first node, when a second node is added, is set as the
-	leftmost child of the second node..or maybe not..dunno
+	{Parser node}
 	"""
 
 	def __init__(self):
@@ -2055,7 +2070,6 @@ class ParserBase(Node):
 	def items_changed(s):
 		#s.root.rerender = s.reparse = True
 		pass
-
 		#hmm,,...
 
 	def __getitem__(self, i):
@@ -2078,128 +2092,15 @@ class ParserBase(Node):
 		#if isinstance(item, Node):
 		item.parent = self
 
-
-	def even_out(inp):
-		"""
-		after each change, we go thru items:
-			input is a list of Texts and Nodes
-			if there are two Texts next to each other, concat them
-			if there are two Nodes next to each other, put a Text between them
-			ensure there is a Text at the beginning and at the end
-		"""
-
-		#find adjacent items of same type
-		def find_same_type_pair(items, type):
-			for index, i in enumerate(items[:-1]):
-				if isinstance(i, type) and isinstance(items[index+1], type):
-					return index
-
-		#find adjacent Texts and join them
-		while True:
-			index = find_same_type_pair(inp, widgets.Text)
-			if index == None: break
-			inp[index] = widgets.Text(inp[index].value + inp[index+1].value)
-			del inp[index+1]
-
-		#find adjacent Nodes and put an empty Text between
-		while True:
-			index = find_same_type_pair(inp, Node)
-			if index == None: break
-			inp.insert(index+1, widgets.Text())
-
-		#ensure Text at beginning and end
-		if type(inp[0]) != widgets.Text: inp.insert(0, widgets.Text())
-		if type(inp[-1]) != widgets.Text: inp.append(widgets.Text())
-
-
-
-
-	"""
-		li = event.any_atts.get('list_item')
-		if li:
-			if li[0] == self:
-				return li[1]
-	"""
-
-
-	"""if there is a node followed by text and backspace is pressed between"""
-
-
-
 	def render(self):
 		if len(self.items) == 0: # no items, show the gray type hint
 			return self.empty_render()
 
-		r = []
 		for i, item in enumerate(self.items):
 			yield [
 				AttTag(Att.item_index, (self, i)),
 				ElementTag(item),
 				EndTag()]
-
-		return r
-	"""
-	@topic ("type tree")
-	def type_tree(s, type, scope, indent=0):
-		log(" "*indent, type)
-		for i in scope:
-			if is_decl(i):
-				for j in scope:
-					if isinstance(j, WorksAs):
-						if j.ch.sup == i:
-							type_tree(i, scope, indent+1)
-
-
-				s.type_tree(i, scope, indent + 1)
-	"""
-
-	def mine(s, atts):
-		"""
-		atts are the attributs of the char under cursor,
-		passed to us with an event. figure out if and which of our items
-		is under cursor
-		"""
-
-		if len(s.items) == 0:
-			return None # no items in me
-
-		if "compiler body" in atts and atts["compiler body"] == s:
-			ci = atts["compiler item"]
-			log("compiler item", ci)
-			if "opening bracket" in atts:
-				if ci == 0:
-					return 0
-				else:
-					return ci - 1
-			else:
-				return ci
-		else:
-			#we should only get an event if cursor is on us, so this can only
-			#be our closing bracket, all the rest is covered by "compiler body".
-			return len(s.items)-1 #first from end
-			#mm ok so this returns the first item from end, and that seems right
-			#and if thats a node, we start a new string before it..hmm
-			#i think we should return a tuple when the cursor is between two
-			#items and deal with that in on_keypress
-
-
-	"""
-	def mine(self, atts):
-		#doesnt this need changes after the rewrite?
-		if "compiler body" in atts and self == atts["compiler body"]:
-			#if "compiler item" in atts and atts["compiler item"] in self.items:
-			return atts["compiler item"]
-		elif len(self.items) != 0 and atts["node"] == self:
-			#cursor is on the closing bracket of Parser
-			return len(self.items) - 1
-		#else None
-	"""
-	
-	"""todo:write tests and debug this monstrosity.
-	#especially typing at the end of Parser, after a node, puts text in wrong place
-	i know it wont be quite what we
-	want anyway, but its a start and can be played around with.
-	then think about text with metadata or something."""
 
 	def menu_item_selected(s, item, atts=None):
 		char_index = 0
@@ -2254,27 +2155,23 @@ class ParserBase(Node):
 		s.fix_parents()
 
 class Parser(ParserPersistenceStuff, ParserBase):
-	"""the awkward input node AKA the Beast.
-	im thinking about rewriting the items into nodes again.
-	 this time with smarter cursor movement.
-	"""
 	def __init__(self, slot):
 		super(Parser, self).__init__()
 		self.slot = slot
 
+	@property
+	def type(s):
+		return s.parent.slots[s.slot]
+
 	def copy(s):
 		r = Parser(s.slot)
 		for i in s.items:
-			if isinstance(i, unicode):
+			if isinstance(i, unicode666):
 				x = i
 			else:
 				x = i.copy()
 			r.add(x)
 		return r
-
-	@property
-	def type(s):
-		return s.parent.slots[s.slot]
 
 	def empty_render(s):
 		return [ColorTag(colors.compiler_hint), TextTag('('+s.type.name+')'), EndTag()]
@@ -2300,14 +2197,11 @@ class Parser(ParserPersistenceStuff, ParserBase):
 #				if type == b['number']:
 				if Number.match(i0):
 					r = Number(i0)
-						#log("parsed it to Number")
 
 				if type == B.text:
 					r = Text(i0)
 
-
 		r.parent = self
-		#log(self.items, "=>", r)
 		return r
 
 	def _eval(self):
@@ -2330,12 +2224,10 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		self.runtime = i.runtime
 		return self.runtime.value.val
 	"""
-
 	#todo: make previous item the first child of the inserted item if applicable
 	def menu_item_selected_for_child(self, item, child_index, atts):
-		if isinstance(item, (LeshMenuItem)):
-			return False#hack
-		assert isinstance(item, (ParserMenuItem, DefaultParserMenuItem))
+		#if isinstance(item, (LeshMenuItem)):
+		#	return False#hack
 		if isinstance(item, ParserMenuItem):
 			node = item.value
 			if child_index != None:
@@ -2349,109 +2241,6 @@ class Parser(ParserPersistenceStuff, ParserBase):
 			return False
 		else:
 			raise Exception("whats that shit, cowboy?")
-
-
-	def parse(s, scope):
-		if not marpa:
-			return []
-		if len(s.items) != 1:
-			return []
-		it = s.items[0]
-		if isinstance(it, Node):
-			return []
-
-		log("SETUP GRAMMA")
-		setup_grammar(s.root, scope)
-		raw = it
-
-		r = []
-
-		parse_result = parse(it)
-		if parse_result  == None:
-			return []
-
-		"""maybe we want to only make the start_is_something rules
-		when that something cant be reached from Statement thru WorksAs..
-		lets just prune the duplicate results for now"""
-		"""
-		parse_result = list(parse_result)
-		r2 = parse_result[:]
-		nope = []
-		for i,v in enumerate(parse_result):
-			for susp in parse_result:
-				if susp != v and v.eq_by_value(susp):
-					nope.append(v)
-		parse_result = [i for i in parse_result if not i in nope]
-		"""#i dont feel like implementing eq_by_value for everything now
-
-		for i in parse_result:
-			r.append(ParserMenuItem(i, 333))
-
-		return r
-
-	def create_palette(self, atts):
-		return self.palette_for_item(self.my_item(atts))
-
-	def palette_for_item(self, i=0, debug = False):
-
-		if i == None:
-			if len(self.items) == 0:
-				text = ""
-			else:
-				assert False
-		else:
-			if isinstance(self.items[i], Node):
-				text = ""
-			else:
-				text = self.items[i]
-
-		scope = self.scope()
-
-		menu = flatten([x.palette(scope, text, self) for x in scope])
-
-
-	def score_palette(items, text, type):
-		matchf = fuzz.token_set_ratio#partial_ratio
-
-		if isinstance(type, Exp):
-			type = type.type
-
-		def score_item(item):
-			v = item.value
-			try:
-				item.scores.name = matchf(v.name, text), v.name #0-100
-			except AttributeError as e:
-				# no name
-				pass
-
-			item.scores.declname = 3*matchf(v.decl.name, text), v.decl.name #0-100
-
-			if item.value.decl.works_as(type):
-				item.scores.worksas = 200
-			else:
-				item.invalid = True
-
-			#search thru syntaxes
-			#if isinstance(v, Syntaxed):
-			#	for i in v.syntax:
-			#   		if isinstance(i, t):
-			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
-			#search thru an actual rendering(including children)
-			tags =     v.render()
-			texts = [i.text for i in tags if isinstance(i, TextTag)]
-			#print texts
-			texttags = " ".join(texts)
-			item.scores.texttags = matchf(texttags, text), texttags
-
-		map(score_item, items)
-
-		menu.sort(key=lambda i: -i.score)
-
-		#if debug:
-		#	log('MENU FOR:',text,"type:",self.type)
-		#	[log(str(i.value.__class__.__name__) + str(i.scores._dict)) for i in menu]
-
-		return menu
 
 	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
@@ -2550,7 +2339,7 @@ class FunctionDefinitionBase(Syntaxed):
 		m.rule("call is "+debugname, B.call.symbol, s._symbol)
 
 	def marpa_create_call(s, args):
-		'takes an array of argument nodes, presumably'
+		'valuator action, takes an array of argument nodes, presumably'
 		for i in args:
 			if i != None: # a separator
 				assert isinstance(i, (unicode, Node)),  i
@@ -2609,7 +2398,6 @@ class FunctionDefinitionBase(Syntaxed):
 		return rr
 
 	@property
-
 	def vardecls(s):
 		log(s.params)
 		r = [i if isinstance(i, TypedParameter) else i.ch.argument for i in itervalues(s.params)]
