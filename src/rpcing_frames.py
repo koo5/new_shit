@@ -133,9 +133,9 @@ class ClientFrame(object):
 				if not just_bg:
 					fg = char[1][Att.color]
 					if transparent:
-						font[0].render_to(surf, (x,y), char[0], fg)
-					else:
-						font[0].render_to(surf, (x,y), char[0], fg, bg)
+						bg = None
+					rect = font[0].get_rect(char[0])
+					font[0].render_to(surf, (x+rect.x,y-rect.y), None, fg, bg)
 
 			#log('%s,%s'%(row, self.rows))
 			if row == self.rows:
@@ -653,7 +653,6 @@ class Menu(ClientFrame):
 		super().__init__(server.menu)
 		s.editor = editor
 
-
 	def click(s,e):
 		for i,r in iteritems(s.rects):
 			if collidepoint(r, e.pos):
@@ -676,47 +675,19 @@ class Menu(ClientFrame):
 			except (IndexError, KeyError) as e:
 				log(e)
 				pass
-			log(item_index)
+			#log(item_index)
 
 			if old_item_index != item_index:
 				if old_item_index != START:
 					s.rects[old_item_index] = (
 						0,
-						startline * (font_height + args.line_spacing),
+						startline * (font_height + args.line_spacing) + 8, # fuck this freetype shit
 						maxlen * font_width,
 						(i - startline) * font_height)
 
 				maxlen = len(line[1])
 				startline = i
 				old_item_index = item_index
-
-		log(pp(s.rects))
-
-
-	def menu_generate_rects(s):
-		s.rects = dict()
-		for i in s.items_on_screen:
-			rl = i._render_lines[s]
-
-			startline = rl["startline"] - s.scroll_lines if "startline" in rl else 0
-			endline = rl["endline"]  - s.scroll_lines if "endline" in rl else s.rows
-
-			if endline < 0 or startline > s.rows:
-				continue
-			if startline < 0:
-				startline = 0
-			if endline > s.rows - 1:
-				endline = s.rows - 1
-
-			startchar = 0
-			#print startline, endline+1
-			endchar = max([len(l) for l in s.lines[startline:endline+1]])
-			r = (startchar * font_width,
-				 startline * font_height,
-				 (endchar  - startchar) * font_width,
-				 (endline - startline+1) * font_height)
-			s.rects[i] = r
-
 
 	def sdl_draw_stuff(s, surface):
 		log("drawing menu lines")
@@ -734,7 +705,6 @@ class Menu(ClientFrame):
 			else:
 				c = colors.menu_rect
 			pygame.draw.rect(surface, c, r, 1)
-
 
 	def move(s, x):
 		s.counterpart.move(x)

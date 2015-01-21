@@ -2102,20 +2102,6 @@ class ParserBase(Node):
 				ElementTag(item),
 				EndTag()]
 
-	def menu_item_selected(s, item, atts=None):
-		char_index = 0
-		if atts == None:
-			i = 0
-		else:
-			i = s.mine(atts)
-			if isinstance(i, unicode):
-				if "compiler item char" in atts:
-					char_index = atts["compiler item char"]
-				else:
-					char_index = len(i)
-
-		return s.menu_item_selected_for_child(item, i, char_index)
-
 	@staticmethod
 	def first_child(node):
 		for i in node.syntax:
@@ -2224,16 +2210,21 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		self.runtime = i.runtime
 		return self.runtime.value.val
 	"""
+
+	def menu_item_selected(s, item, atts=None):
+		return s.menu_item_selected_for_child(item)
+
 	#todo: make previous item the first child of the inserted item if applicable
-	def menu_item_selected_for_child(self, item, child_index, atts):
+	def menu_item_selected_for_child(self, item):
 		#if isinstance(item, (LeshMenuItem)):
 		#	return False#hack
 		if isinstance(item, ParserMenuItem):
 			node = item.value
-			if child_index != None:
-				self.items[child_index] = node
-			else:#?
-				self.items.append(node)
+			#if child_index != None:
+			#	self.items[child_index] = node
+			#else:#?
+			self.items.clear()
+			self.items.append(node)
 			node.parent = self
 			self.post_insert_move_cursor(node)
 			return True

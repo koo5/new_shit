@@ -78,9 +78,12 @@ rpcing_frames.get_font = get_font
 
 def make_font(size):
 	font = freetype.SysFont('monospace', size)
-	font.origin = True
+	#font.origin = True
 	_, _, w, _ = font.get_rect("X")
 	h = font.get_sized_glyph_height()
+	#for x in ['X', 'x', ':', 'rstartsiu#$#$TS', ',']:
+	#	log(font.get_rect(x))
+
 	return font, w, h
 
 def change_font_size(by = 0):

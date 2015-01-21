@@ -216,6 +216,7 @@ class Menu(ServerFrame):
 		s.update_current_text()
 		s.prepare_grammar(scope)
 		s.create_palette(scope, s.editor.atts, s.current_parser_node)
+		s.signal_change()
 
 	def prepare_grammar(s, scope):
 		#s.marpa.t.input.clear()
@@ -317,7 +318,8 @@ class Menu(ServerFrame):
 
 	@property
 	def items(s):
-		return [nodes.DefaultParserMenuItem(s.current_text)] + s.parse_results + s.sorted_palette
+		return [#nodes.DefaultParserMenuItem(s.current_text)
+		       ] + s.parse_results + s.sorted_palette
 
 	def parser_items2tokens(s, items):
 		symbols, text = [], ""
@@ -337,9 +339,9 @@ class Menu(ServerFrame):
 	def tags(s):
 		yield [ColorTag(colors.fg)]
 
-		yield [AttTag(Att.item_index, (s, -1))]
+		#yield [AttTag(Att.item_index, (s, -1))]
 		yield ["menu:(%s items)\n"%len(s.parse_results)]
-		yield [EndTag()]
+		#yield [EndTag()]
 
 		for index, item in enumerate(s.items):
 			yield [AttTag(Att.item_index, (s, index)),  ElementTag(item), EndTag(), "\n"]
@@ -357,16 +359,18 @@ class Menu(ServerFrame):
 			e.menu(atts, True)
 
 
-	def accept(self):
-
-			if s.current_parser_node.menu_item_selected(s.items[s.sel], s.root.atts):
-				self.sel = 0
-				self.scroll_lines = 0
+	def accept(s):
+		if s.sel >= 0:
+			if s.current_parser_node.menu_item_selected(s.items[s.sel], s.editor.atts):
+				s.sel = -1
+				s.scroll_lines = 0
+				s.signal_change()
 				return True
 
 
 	def move(s, y):
-		s.sel = clamp(s.sel + y, 0, len(s.items))
+		s.sel = clamp(s.sel + y, -1, len(s.items))
+		s.signal_change()
 
 
 
