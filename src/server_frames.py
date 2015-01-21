@@ -335,9 +335,15 @@ class Menu(ServerFrame):
 		s.draw_signal.emit()
 
 	def tags(s):
-		yield [ColorTag(colors.fg), "menu:(%s items)\n"%len(s.parse_results)]
-		for i in s.items:
-			yield [ElementTag(i), "\n"]
+		yield [ColorTag(colors.fg)]
+
+		yield [AttTag(Att.item_index, (s, -1))]
+		yield ["menu:(%s items)\n"%len(s.parse_results)]
+		yield [EndTag()]
+
+		for index, item in enumerate(s.items):
+			yield [AttTag(Att.item_index, (s, index)),  ElementTag(item), EndTag(), "\n"]
+
 		yield ["---", EndTag()]
 
 	def toggle_valid(s):

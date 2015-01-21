@@ -24,7 +24,7 @@ class ColorsSettings():
 		s.cursor = (155,255,255)
 		s.info_item_visibility_toggle = (100,100,100)
 		s.menu_rect_selected = (255,255,255)
-		s.menu_rect = (0,0,255)
+		s.menu_rect = (0,255,0)
 		s.help = (255,255,0)
 		s.compiler_hint = (100,100,100)
 		s.text_brackets = (0,255,0)

@@ -1,4 +1,5 @@
 from math import atan2, cos, sin
+from pprint import pformat as pp
 
 from lemon_platform import SDL, CURSES
 from lemon_utils.lemon_logging import log
@@ -660,6 +661,38 @@ class Menu(ClientFrame):
 				s.accept()
 				break
 
+	def generate_rects(s):
+		s.rects = {}
+		old_item_index = item_index = START = None
+		maxlen = 0
+		startline = 0
+		_, font_width, font_height = get_font(0)
+		counterpart = s.counterpart
+		for i, line in enumerate(s.lines.get()):
+			try:
+				container, ii = line[1][0][1][Att.item_index]
+				if container == counterpart:
+					item_index = ii
+			except (IndexError, KeyError) as e:
+				log(e)
+				pass
+			log(item_index)
+
+			if old_item_index != item_index:
+				if old_item_index != START:
+					s.rects[old_item_index] = (
+						0,
+						startline * (font_height + args.line_spacing),
+						maxlen * font_width,
+						(i - startline) * font_height)
+
+				maxlen = len(line[1])
+				startline = i
+				old_item_index = item_index
+
+		log(pp(s.rects))
+
+
 	def menu_generate_rects(s):
 		s.rects = dict()
 		for i in s.items_on_screen:
@@ -689,13 +722,14 @@ class Menu(ClientFrame):
 		log("drawing menu lines")
 		#for i in s.tags.get():
 		#	log(list(i))
+		s.generate_rects()
 		s.sdl_draw_lines(surface)
-		#s.sdl_draw_rects(surface)
+		s.sdl_draw_rects(surface)
 
 	def sdl_draw_rects(s, surface):
+		sel = s.counterpart.sel
 		for i,r in iteritems(s.rects):
-			#print i ,s.selected
-			if i == s.selected:
+			if i == sel:
 				c = colors.menu_rect_selected
 			else:
 				c = colors.menu_rect
