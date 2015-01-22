@@ -398,7 +398,7 @@ class Editor(ClientFrame):
 
 	def first_nonblank(self):
 		r = 0
-		for ch, a in self.lines[self.cursor_r]:
+		for ch, a in self.lines[self.cursor_r][1]:
 			if ch == " ":
 				r += 1
 			else:

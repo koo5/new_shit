@@ -24,11 +24,32 @@ RIGHT = 2
 #in addition to sdl key constants:
 UNICODE = -1
 
-class H(collections.namedtuple("Handler", 'mods key sidedness')):
-	def __new__(cls, mods, key, sidedness=None):
-		if type(mods) != tuple:
-			mods = (mods, )
-		return tuple.__new__(cls, (mods, key, sidedness))
+class K(collections.namedtuple("Keys", 'mods key')):
+	def __new__(cls, mods, key):
+		if type(mods) == tuple:
+			mods = frozenset(mods)
+		else:
+			mods = frozenset([mods])
+		return tuple.__new__(cls, (mods, key))
+
+class H(collections.namedtuple("Handler", 'func checker sidedness')):
+	def __new__(cls, func, checker=None, sidedness=None):
+		return tuple.__new__(cls, (func, checker, sidedness))
+
+def add_keys(node, sup, handlers):
+	if sup == -1:
+		node.keys = .__bases__[-1].keys.copy()
+	elif sup == None:
+		node.keys = odict()
+	else:
+		die()
+
+	for k, v in handlers:
+		if type(k.key) == tuple:
+			for key in k.key:
+				node.keys[K(k.mods, key)] = v
+		else:
+			node.keys[k] = v
 
 """
 widgets.py
@@ -53,19 +74,20 @@ def k_unicode(s, e):
 	return s.after_edit(len(e.uni))
 w.Text.k_unicode = k_unicode
 
-w.Text.keys = {H((), K_BACKSPACE, LEFT): w.Text.k_backspace,
-			   H((), K_DELETE, RIGHT): w.Text.k_delete,
-			   H((), UNICODE): w.Text.k_unicode}
+add_keys(w.Text, None,
+			{
+			K((), K_BACKSPACE):  H(w.Text.k_backspace, None, LEFT),
+			K((), K_DELETE):     H(w.Text.k_delete, None, RIGHT),
+			K((), UNICODE):      H(w.Text.k_unicode)})
 
 
 
 
 def press(self, e):
 	self.on_press.emit(self)
-	return CHANGED
-w.Button.press = press
 
-w.Button.keys = {H((), (K_RETURN, K_SPACE)): w.Button.press}
+add_keys(w.Button, None, {
+	K((), (K_RETURN, K_SPACE)): H(press)}
 
 
 
@@ -78,7 +100,8 @@ def toggle(self, e):
 	self.on_change.emit(self)
 w.NState.toggle = toggle
 
-w.NState.keys = {H((), (K_RETURN, K_SPACE)): w.NState.toggle}
+add_keys(w.NState, None, {
+	K((), (K_RETURN, K_SPACE)): H(w.NState.toggle)}
 
 
 
@@ -86,7 +109,8 @@ w.NState.keys = {H((), (K_RETURN, K_SPACE)): w.NState.toggle}
 def toggle(self):
 	self.value = not self.value
 	self.on_change.emit(self)
-w.Toggle.keys = {H((), (K_RETURN, K_SPACE)): toggle}
+add_keys(w.Toggle, None, {
+	K((), (K_RETURN, K_SPACE)): H(toggle)}
 
 
 
@@ -104,15 +128,15 @@ def delete_self(s):
 	s.parent.delete_child(s)
 	return AST_CHANGED
 
-n.Node.keys = odict({
-	H((),           K_F7):      eval,
-	H(KMOD_CTRL,    K_DELETE):  delete_self
+add_keys(n.Node, None, odict({
+	K((),           K_F7):      H(eval),
+	K(KMOD_CTRL,    K_DELETE):  H(delete_self)
 })
 
 
-n.Syntaxed.keys = n.Node.keys.plus({
-	H(KMOD_CTRL, K_PERIOD): n.Syntaxed.prev_syntax,
-    H(KMOD_CTRL, K_COMMA ): n.Syntaxed.next_syntax})
+add_keys(n.Syntaxed, n.Node, {
+	K(KMOD_CTRL, K_PERIOD): H(n.Syntaxed.prev_syntax),
+    K(KMOD_CTRL, K_COMMA ): H(n.Syntaxed.next_syntax)})
 
 
 def delete_item_check(s, atts):
@@ -128,9 +152,9 @@ def newline(s, e):
 	s.newline(item_index)
 	return CHANGED
 
-n.List.keys = n.List.__bases__[-1].keys.plus(
-	{   H((KMOD_CTRL),  K_DELETE): (delete_item_check, delete_item),
-		H((),           K_RETURN): (lambda s, atts: s.item_index(atts) != None, newline)})
+add_keys(n.List, -1,
+	{   K((KMOD_CTRL),  K_DELETE): H(delete_item, delete_item_check),
+		K((),           K_RETURN): H(newline, lambda s, atts: s.item_index(atts) != None)})
 
 def run_line(self, e):
 	index = self.index_of_item_under_cursor(e)
@@ -139,14 +163,14 @@ def run_line(self, e):
 	self.items.insert(index + 1, result)
 	return CHANGED
 
-n.Statements.keys = n.Statements.__bases__[-1].keys.plus(
-	{H(KMOD_CTRL, K_RETURN): (lambda s, atts: s.item_index(atts) != None, run_line)})
+add_keys(n.Statements, -1, {
+	K(KMOD_CTRL, K_RETURN): H(run_line, lambda s, atts: s.item_index(atts) != None)})
 
 
-n.Module.keys = n.Module.__bases__[-1].keys.plus({
-	H(KMOD_CTRL, K_s): n.Module.save,
-	H(KMOD_CTRL, K_r): n.Module.reload,
-	H(KMOD_CTRL, K_BACKSLASH ): n.Module.run})
+add_keys(n.Module, -1, {
+	K(KMOD_CTRL, K_s): H(n.Module.save),
+	K(KMOD_CTRL, K_r): H(n.Module.reload),
+	K(KMOD_CTRL, K_BACKSLASH ): H(n.Module.run)})
 
 
 def check_backspace(s, atts):
@@ -170,10 +194,10 @@ def k_unicode(s, e):
 	#s.root.delayed_cursor_move -= atts['char_index'] -1
 
 
-n.ParserBase.keys = n.ParserBase.__bases__[-1].keys.plus({
+add_keys(n.ParserBase, -1, {
 	#H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
 	#H((), K_DELETE, LEFT): k_delete
-	H((), UNICODE): k_unicode
+	K((), UNICODE): H(k_unicode)
 
 	})
 

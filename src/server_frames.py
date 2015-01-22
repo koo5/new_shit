@@ -138,12 +138,21 @@ def handle_keypress(event):
 
 
 def potential_handlers(trip):
-	"""return every handler for the element in atts, whose checker passess.
+	"""return every handler for the elements in trip and parents, whose checker passess.
 	mods and key are irrelevant, we arent dealing with any particular event
-
-	its counterintuitive that we first list all potential handlers(running their checker)
-	and only then look for a match of mod and key
 	"""
+	m,l,r = trip.middle or {}, trip.left or {}, trip.right or {}
+	elems = x.get(Att.elem) for x in [m,l,r]
+
+	while any(elems):
+		for elem, sidedness in [(elems[0], None),
+		                        (elems[1], elements_keybindings.LEFT),
+								(elems[2], elements_keybindings.RIGHT)]:
+			for constraints, handler in iteritems(elem.keys):
+
+
+
+
 	for sidedness, atts in [(None, trip.middle),
 	             (elements_keybindings.LEFT, trip.left),
 	             (elements_keybindings.RIGHT, trip.right)]:
@@ -390,29 +399,29 @@ class GlobalKeys(StaticInfoFrame):
 	items = ["ctrl + =,- : font size",
 			"f5 : eval",
 			"f4 : clear eval results",
-			"f2 : replay keypresses from previous session",
+			"f2 : replay previous session",
 			"ctrl + up, down: menu movement",
 			"space: menu selection",
-	        "ctrl + d : dump root frame to dump.txt",
-	        "ctrl + p : dump parents",
-	        "ctrl + g : generate graph.gif",
+	        #"ctrl + d : dump root frame to dump.txt",
+	        #"ctrl + p : dump parents",
+	        #"ctrl + g : generate graph.gif",
+			#"f9 : only valid items in menu - doesnt do much atm",
+			#"f8 : toggle the silly arrows from Refs to their targets, (and current node highlighting, oops)"
+			]
 
-			"f9 : only valid items in menu - doesnt do much atm",
-			"f8 : toggle the silly arrows from Refs to their targets, (and current node highlighting, oops)"]
 
-"""
-class NodeInfo(InfoFrame):
+class NodeInfo(StaticInfoFrame):
 	def __init__(s, root):
-		super(NodeInfo, s).__init__(root)
-		#s.node_infoitem = InfoItem("bla")
-		#s.deffun_infoitem = InfoItem("bla")
+		super(NodeInfo, s).__init__()
+		editor.on_serverside_change.connect(s.on_editor_change)
+		editor.on_atts_change.connect(s.on_editor_change)
 
-	def update(s):
-		super(NodeInfo, s).update()
-		uc = s.root.under_cursor
+	def on_editor_change(s):
+		uc = editor.under_cursor
 		while uc != None:
 			if isinstance(uc, nodes.FunctionCall):
 				s.items.append(InfoItem(["target=", ElementTag(uc.target)]))
+
 
 			if uc.keys_help_items == None:
 				uc.generate_keys_help_items()
