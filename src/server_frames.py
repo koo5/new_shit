@@ -7,7 +7,7 @@ from fuzzywuzzy import fuzz
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
-from lemon_utils.utils import Evil, batch, clamp, flatten
+from lemon_utils.utils import Evil, batch, clamp, flatten, odict
 from lemon_colors import colors
 from lemon_utils.lemon_logging import log
 from lemon_utils.dotdict import Dotdict
@@ -18,6 +18,7 @@ from element import Element
 from menu_items import InfoItem
 import widgets
 import elements_keybindings
+from elements_keybindings import LEFT, RIGHT, UNICODE
 import keys
 
 from marpa_cffi.marpa_rpc_client import ThreadedMarpa
@@ -57,10 +58,10 @@ class Editor(ServerFrame):
 		s.draw_signal.emit()
 
 	def must_recollect(s):
-		log('must_recollect(%s)', s)
+		#log('must_recollect(%s)', s)
 		if s.root.changed or s.root.ast_changed:
 			s.root.changed = s.root.ast_changed = False
-			log("true")
+			#log("true")
 			return True
 		log("false")
 
@@ -120,38 +121,63 @@ class Editor(ServerFrame):
 
 def handle_keypress(event):
 	ph = potential_handlers(event.trip)
-#	log(pp(list(ph)))
 	log(event)
-	for elem, handler, func in ph:
-		log("matching with %s..", handler)
-		if (event.mods == set(handler.mods) and (
-			event.key == handler.key or (type(handler.key) == tuple and	event.key in handler.key)) or
-		    (event.uni and handler.key == elements_keybindings.UNICODE and event.key not in (keys.K_ESCAPE, keys.K_BACKSPACE, keys.K_DELETE))):
+	for k, (elem, handler) in ph:
+		log("matching with %s:%s..", k, handler)
+		if (event.mods == k.mods and (
+			event.key == k.key ) or
+		    (k.key == UNICODE and event.uni and event.key not in (
+		    keys.K_ESCAPE, keys.K_BACKSPACE, keys.K_DELETE))):
 				event.left, event.middle, event.right = (
 					event.trip.left   if event.trip.left and event.trip.left.get(Att.elem) == elem else None,
 					event.trip.middle if event.trip.middle and event.trip.middle.get(Att.elem) == elem else None,
 					event.trip.right  if event.trip.right and event.trip.right.get(Att.elem) == elem else None)
 				event.atts = event.middle or event.left or event.right
-				log("match:%s.%s",elem,func)
-				return elem, func(elem, event)
-
+				log("match:%s.%s", elem, handler.func)
+				return elem, handler.func(elem, event)
 
 
 def potential_handlers(trip):
 	"""return every handler for the elements in trip and parents, whose checker passess.
 	mods and key are irrelevant, we arent dealing with any particular event
 	"""
-	m,l,r = trip.middle or {}, trip.left or {}, trip.right or {}
-	elems = x.get(Att.elem) for x in [m,l,r]
+	output = odict()
+
+	elems = [x.get(Att.elem) for x in [trip.middle or {}, trip.left or {}, trip.right or {}]]
 
 	while any(elems):
-		for elem, sidedness in [(elems[0], None),
-		                        (elems[1], elements_keybindings.LEFT),
-								(elems[2], elements_keybindings.RIGHT)]:
-			for constraints, handler in iteritems(elem.keys):
+		for elem, sidedness, atts in [
+								(elems[0], None, trip.middle),
+		                        (elems[1], LEFT, trip.left),
+								(elems[2], RIGHT, trip.right)]:
+			if elem:
+				for keys, handler in iteritems(elem.keys):
+					if handler.sidedness in (None, sidedness):
+						if not handler.checker or handler.checker(elem, atts):
+							if keys not in output:
+								yield keys, (elem, handler)
+								output[keys] = True
+		for i in range(3):
+			if elems[i]:
+				elems[i] =  elems[i].parent
 
 
+def handlers_info(trip):
 
+	for k, (elem, handler) in potential_handlers(trip):
+
+		element_name = elem.__class__.__name__
+		function_name = handler.func.__name__
+
+		if k.key == UNICODE:
+			kstr = 'text input'
+		else:
+			kstr = key_to_name(k.key)
+		kmods = mods_to_str(k.mods)
+		yield ' '.join(kmods + [kstr]) + ": " + element_name + "." + function_name
+
+
+	"""
 
 	for sidedness, atts in [(None, trip.middle),
 	             (elements_keybindings.LEFT, trip.left),
@@ -169,7 +195,7 @@ def potential_handlers(trip):
 							checker, func = None, v
 						if not checker or checker(elem,atts):
 							yield elem, handler, func
-
+	"""
 
 class Menu(ServerFrame):
 	def __init__(s):
@@ -180,7 +206,7 @@ class Menu(ServerFrame):
 		s.valid_only = False
 		s._changed = True
 		s.current_parser_node = None
-		s.sel = 0
+		s.sel = -1
 		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
@@ -387,12 +413,18 @@ class StaticInfoFrame(ServerFrame):
 	def __init__(s):
 		super(StaticInfoFrame, s).__init__()
 		s.name = s.__class__.__name__
+		s._changed = True
 
 	def tags(s):
-		yield [ColorTag("help"), s.name + ":  "+"\n"]
+		yield [ColorTag(colors.help), s.name + ":  "+"\n"]
 		for i in s.items:
 			yield [i, "\n"]
 		yield [EndTag()] # color
+
+	def must_recollect(s):
+		if s._changed:
+			s._changed = False
+			return True
 
 
 class GlobalKeys(StaticInfoFrame):
@@ -411,12 +443,24 @@ class GlobalKeys(StaticInfoFrame):
 
 
 class NodeInfo(StaticInfoFrame):
-	def __init__(s, root):
+	def __init__(s, editor):
 		super(NodeInfo, s).__init__()
-		editor.on_serverside_change.connect(s.on_editor_change)
-		editor.on_atts_change.connect(s.on_editor_change)
+		s.editor = editor
+		#editor.on_serverside_change.connect(s.on_editor_change)
+		editor.on_atts_change.connect(s.on_editor_atts_change)
+		s.items = []
 
-	def on_editor_change(s):
+	def on_editor_atts_change(self):
+		self._changed = True
+		log(self.editor.atts)
+		self.items = list(handlers_info(self.editor.atts))
+		self.draw_signal.emit()
+
+	#def on_editor_change(self, _):
+	#	s.on_editor_atts_change()
+"""
+	def xxx(s):
+
 		uc = editor.under_cursor
 		while uc != None:
 			if isinstance(uc, nodes.FunctionCall):
@@ -436,7 +480,6 @@ class NodeInfo(StaticInfoFrame):
 				uc.long__repr__()]))
 			uc = uc.parent
 """
-
 class Intro(StaticInfoFrame):
 	items = ["welcome to lemon!",
 		    "press F1 to cycle this sidebar",
@@ -478,7 +521,8 @@ class Log(ServerFrame):
 
 
 def init(thread_message_signal_, send_thread_message_):
-	global thread_message_signal, send_thread_message, logframe, intro, editor, menu
+	global thread_message_signal, send_thread_message, logframe, intro, editor, menu, node_info
+
 	thread_message_signal, send_thread_message = thread_message_signal_, send_thread_message_
 
 	logframe = Log()
@@ -489,7 +533,7 @@ def init(thread_message_signal_, send_thread_message_):
 
 	menu = Menu()
 
-
+	node_info = NodeInfo(editor)
 
 
 def element_click(element):

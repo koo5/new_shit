@@ -37,8 +37,9 @@ class Client():
 
 			s.sidebars = [#frames.Intro(root),
 			            #frames.GlobalKeys(root),
-			            s.menu]#,
-			            #frames.NodeInfo(root)]
+			            s.menu,
+			            rpcing_frames.InfoFrame(rpcing_frames.server.node_info)]
+
 			            #frames.ContextInfo(root)]#carry on...
 
 			s.allframes = s.sidebars + [s.logframe, s.editor]
@@ -62,6 +63,7 @@ class Client():
 	def cycle_sidebar(s):
 		s.sidebar = s.sidebars[s.sidebars.index(s.sidebar) + 1]
 		log("sidebar:%s", s.sidebar)
+		redraw(666)
 
 	def visibleframes(s):
 		return [s.sidebar, s.logframe, s.editor]

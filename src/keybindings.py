@@ -5,7 +5,7 @@ import replay
 
 
 def change_font_size(x):
-	"""dummy"""
+	"""dummy for the curses frontend, set from sdl_client"""
 	pass
 
 def keypress(e):

@@ -1541,7 +1541,7 @@ class VarRef(VarRefPersistenceStuff, Node):
 		super(VarRef, self).__init__()
 		self.target = target
 		assert isinstance(target, (UntypedVar, TypedParameter))
-		log("varref target:"+str(target))
+		#log("varref target:"+str(target))
 
 	def render(self):
 		return [TextTag('$'), ArrowTag(self.target), TextTag(self.name)]

@@ -17,7 +17,7 @@ def TextTag(text):
 	return text
 
 def AttTag(k,v):
-	return (k,v)
+	return k,v
 
 end_tag = 0
 def EndTag():

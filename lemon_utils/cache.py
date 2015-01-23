@@ -23,3 +23,5 @@ class Cache(object):
 
 		def __getitem__(s, item):
 			return s.data[item]
+
+# see also functools.lru_cache

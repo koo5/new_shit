@@ -18,6 +18,8 @@ from lemon_utils.lemon_logging import log, info
 
 
 import lemon_args
+
+
 lemon_args.parse_args()
 from lemon_args import args
 from frontend_events import *
@@ -125,6 +127,9 @@ def pygame_keypressevent__repr__(self):
 			(pygame.key.name(self.key), self.uni, bin(self.mod)))
 KeypressEvent.__repr__ = pygame_keypressevent__repr__
 
+rpcing_frames.server.key_to_name = pygame.key.name
+rpcing_frames.server.mods_to_str = mods_to_str
+
 
 def keypress(e):
 	reset_cursor_blink_timer()
@@ -214,7 +219,7 @@ def process_event(event):
 
 def redraw(self):
 	for f in c.visibleframes():
-		#log("maybe_redrawing %s on the client window request",f)
+		log("maybe_redrawing %s on client window request",f)
 		f.maybe_draw()
 	pygame.display.flip()
 #lemon_client.draw = redraw
@@ -222,7 +227,7 @@ def redraw(self):
 #hook into "aggregate" server.on_change instead
 if not args.rpc:
 	rpcing_frames.ClientFrame.redraw = redraw
-
+lemon_client.redraw = redraw
 
 def loop():
 	process_event(pygame.event.wait())
@@ -237,7 +242,7 @@ def initial_resize():
 	try:
 		w = pygame.display.get_wm_info()["wmwindow"]
 		import subprocess
-		x =  subprocess.check_output(["xwininfo", "-id", str(w)])
+		x =  subprocess.check_output(["xwininfo", "-id", str(w)]).decode()
 		y = x.splitlines()
 		for l in y:
 			s = l.split()
@@ -246,15 +251,16 @@ def initial_resize():
 					w = int(s[1])
 				if s[0] == "Height:":
 					h = int(s[1])
-		resize(w, h)
+		resize((w, h))
 	except Exception as e:
 		info("%s, failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize", e)
 
 def fix_keyboard():
 	repeat_delay, repeat_rate = 300, 30
 	try:#try to set SDL keyboard settings to system settings
-		lines = subprocess.check_output(['xset', '-q']).split(b'\n')
-		line = [line.split() for line in lines if "repeat delay" in line][0]
+		lines = subprocess.check_output(['xset', '-q']).decode().splitlines()
+		lines = [line.split() for line in lines if "repeat delay" in line]
+		line = lines[0]
 		#old: line = os.popen('xset -q  | grep "repeat delay"').read().split()
 		repeat_delay, repeat_rate = int(line[3]), int(line[6])
 	except Exception as e:

@@ -50,6 +50,14 @@ class ClientFrame(object):
 		s.lines = Cache(s.project)
 		s.counterpart.draw_signal.connect(s.redraw)
 
+	@property
+	def rect(s):
+		return s._rect
+	@rect.setter
+	def rect(s, x):
+		s._rect = x
+		#s.lines.dirty = True
+		s.tags.dirty = s.lines.dirty = True
 
 	#frames with default font have it easy
 	@property
@@ -75,9 +83,9 @@ class ClientFrame(object):
 
 	def maybe_draw(s):
 		must_recollect = s.counterpart.must_recollect()
-		#if must_recollect:
-		s.tags.dirty = s.lines.dirty = True
-		if must_recollect or s.lines.dirty or s.must_redraw or not args.rpc:
+		if must_recollect:
+			s.tags.dirty = s.lines.dirty = True
+		if must_recollect or s.lines.dirty or s.tags.dirty or s.must_redraw:# or not args.rpc:
 			#log("drawing, %s.must_recollect = %s, s.lines.dirty = %s, s.s.must_redraw = %s", s.counterpart, must_recollect, s.lines.dirty, s.must_redraw)
 			s.draw()
 			s.must_redraw = False
@@ -172,8 +180,6 @@ class ClientFrame(object):
 			except c.error:#it throws an error to indicate last cell
 				if (row+1, col+1) != win.getmaxyx():
 					raise
-
-
 
 
 	def project_tags(s,batches):
@@ -632,11 +638,12 @@ def sdl_arrow_side(length,a,x2,y2, surface):
 	pygame.draw.line(surface, colors.arrow, x1y1,(int(x2),int(y2)))
 
 
-class StaticInfoFrame(ClientFrame):
+class InfoFrame(ClientFrame):
 	def __init__(s, counterpart):
-		super(InfoFrame, s).__init__()
-		s.counterpart = counterpart
+		super(InfoFrame, s).__init__(counterpart)
 
+	def sdl_draw_stuff(s, surf):
+		s.sdl_draw_lines(surf)
 
 
 def draw(s, surface):
@@ -673,7 +680,7 @@ class Menu(ClientFrame):
 				if container == counterpart:
 					item_index = ii
 			except (IndexError, KeyError) as e:
-				log(e)
+				#log(e)
 				pass
 			#log(item_index)
 

@@ -11,6 +11,7 @@ from nodes import AST_CHANGED
 
 from lemon_utils.utils import odict
 from lemon_utils.lemon_logging import log
+from lemon_utils.lemon_six import iteritems
 
 """ an event comes with two lists of attributes, one for the char(cell) that was on the left
 of the cursor and one for the right. If either side doesnt belong to the element whose handler
@@ -28,6 +29,8 @@ class K(collections.namedtuple("Keys", 'mods key')):
 	def __new__(cls, mods, key):
 		if type(mods) == tuple:
 			mods = frozenset(mods)
+		elif type(mods) == frozenset:
+			pass
 		else:
 			mods = frozenset([mods])
 		return tuple.__new__(cls, (mods, key))
@@ -38,13 +41,15 @@ class H(collections.namedtuple("Handler", 'func checker sidedness')):
 
 def add_keys(node, sup, handlers):
 	if sup == -1:
-		node.keys = .__bases__[-1].keys.copy()
+		node.keys = node.__bases__[-1].keys.copy()
 	elif sup == None:
 		node.keys = odict()
 	else:
-		die()
+		node.keys = sup.keys.copy()
 
-	for k, v in handlers:
+
+
+	for k, v in iteritems(handlers):
 		if type(k.key) == tuple:
 			for key in k.key:
 				node.keys[K(k.mods, key)] = v
@@ -87,7 +92,7 @@ def press(self, e):
 	self.on_press.emit(self)
 
 add_keys(w.Button, None, {
-	K((), (K_RETURN, K_SPACE)): H(press)}
+	K((), (K_RETURN, K_SPACE)): H(press)})
 
 
 
@@ -101,7 +106,7 @@ def toggle(self, e):
 w.NState.toggle = toggle
 
 add_keys(w.NState, None, {
-	K((), (K_RETURN, K_SPACE)): H(w.NState.toggle)}
+	K((), (K_RETURN, K_SPACE)): H(w.NState.toggle)})
 
 
 
@@ -110,7 +115,7 @@ def toggle(self):
 	self.value = not self.value
 	self.on_change.emit(self)
 add_keys(w.Toggle, None, {
-	K((), (K_RETURN, K_SPACE)): H(toggle)}
+	K((), (K_RETURN, K_SPACE)): H(toggle)})
 
 
 
@@ -128,7 +133,7 @@ def delete_self(s):
 	s.parent.delete_child(s)
 	return AST_CHANGED
 
-add_keys(n.Node, None, odict({
+add_keys(n.Node, None, {
 	K((),           K_F7):      H(eval),
 	K(KMOD_CTRL,    K_DELETE):  H(delete_self)
 })

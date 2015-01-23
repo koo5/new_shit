@@ -30,12 +30,19 @@ class KeypressEvent(object):
 				if self.key == K_g:
 					self.key = K_RIGHT
 
-		self.mods = set([x for x in [KMOD_CTRL, KMOD_ALT] if mod & x])
+		self.mods = frozenset([x for x in [KMOD_CTRL, KMOD_ALT] if mod & x])
 
 	def __repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
 			(self.key, self.uni, bin(self.mod)))
 
+def mods_to_str(mods):
+	r = []
+	if KMOD_CTRL in mods:
+		r.append("ctrl")
+	if KMOD_ALT in mods:
+		r.append("alt")
+	return r
 
 class MousedownEvent(object):
 	def __init__(s, e):
