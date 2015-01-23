@@ -1,96 +1,116 @@
 from lemon_platform import SDL, CURSES
+from lemon_utils.utils import odict
 from keys import *
 from server_side import server as s
 import replay
+
+
 
 
 def change_font_size(x):
 	"""dummy for the curses frontend, set from sdl_client"""
 	pass
 
+
+def die():
+	if not replay.we_are_replaying: c.bye()
+
+
+
+
+
 def keypress(e):
-	if not global_key(e):
+	h = find_handler(e)
+	if h:
+		check = False
+		if type(h) == tuple:
+			if len(h) > 2:
+				check = h[2] == CHECK
+			h = h[0]
+		if not h() and check:
+			s.editor.keypress(e)
+	else:
 		s.editor.keypress(e)
 
-#we should declarativize this too, just like element_keybindings
 
-def global_key(e):
-	k = e.key
-	if KMOD_CTRL & e.mod:
-
-		if e.uni == '=':
-			change_font_size(1)
-		elif e.uni == '-':
-			change_font_size(-1)
-
-		elif k == K_LEFT:
-			c.editor.prev_elem()
-		elif k == K_RIGHT:
-			c.editor.next_elem()
-		elif k == K_HOME:
-			c.editor.cursor_top()
-		elif k == K_END:
-			c.editor.cursor_bottom()
-
-		elif k == K_f:
-			c.editor.dump_to_file()
-		elif k == K_q:
-			s.bye()
-		elif e.key == K_m:
-			s.menu.menu_dump()
+def find_handler(e):
+	if e.mods in global_keys:
+		h = global_keys[e.mods]
+		return h.get(e.uni) or h.get(e.key)
 
 
-		elif SDL and e.key == K_UP:
-			c.sidebar.move(-1)
-		elif SDL and e.key == K_DOWN:
-			c.sidebar.move(1)
-
-		elif CURSES and e.key == K_INSERT: # todo: find better keybindings for curses
-			c.sidebar.move(-1)
-		elif CURSES and e.key == K_DELETE:
-			c.sidebar.move(1)
-		else:
-			return False
-		return True
 
 
-	else: # with no modifier keys
-		if k == K_F1:
-			c.cycle_sidebar()
-		elif k == K_F2:
-			replay.do_replay()
-		elif k == K_F8:
-			c.editor.toggle_arrows()
+HIDDEN = 0
+CHECK = 1
+global_keys = {}
+c = 666
 
-		elif k == K_UP:
-			c.editor.move_cursor_v(-1)
-			c.editor.and_sides(e)
-		elif k == K_DOWN:
-			c.editor.move_cursor_v(+1)
-			c.editor.and_sides(e)
-		elif k == K_LEFT:
-			c.editor.move_cursor_h(-1)
-			c.editor.and_updown(e)
-		elif k == K_RIGHT:
-			c.editor.move_cursor_h(+1)
-			c.editor.and_updown(e)
-		elif k == K_HOME:
-			c.editor.cursor_home()
-		elif k == K_END:
-			c.editor.cursor_end()
-		elif k == K_PAGEUP:
-			c.editor.move_cursor_v(-10)
-		elif k == K_PAGEDOWN:
-			c.editor.move_cursor_v(10)
 
-		elif k == K_ESCAPE:
-			if not replay.we_are_replaying:
-				c.bye()
-		elif e.uni == ' ':
-			return s.menu.accept()
-		else:
-			return False
-		return True
+
+
+def setup(client):
+	global c
+	c = client
+	global_keys[frozenset()] = odict([
+		(K_F1, c.cycle_sidebar),
+		(K_F2, replay.do_replay),
+		#K_F8: c.editor.toggle_arrows,
+		(K_UP, (lambda:(
+				c.editor.move_cursor_v(-1) and
+				c.editor.and_sides(e)), HIDDEN)),
+		(K_DOWN,(lambda:(
+			c.editor.move_cursor_v(+1) and
+			c.editor.and_sides(e)), HIDDEN)),
+		(K_LEFT,(lambda:(
+			c.editor.move_cursor_h(-1) and
+			c.editor.and_updown(e)), HIDDEN)),
+		(K_RIGHT,(lambda:(
+			c.editor.move_cursor_h(+1) and
+			c.editor.and_updown(e)), HIDDEN)),
+		(K_HOME,
+			(c.editor.cursor_home, HIDDEN)),
+		(K_END,
+			(c.editor.cursor_end, HIDDEN)),
+		(K_PAGEUP,
+			(lambda:c.editor.move_cursor_v(-10), HIDDEN)),
+		(K_PAGEDOWN,
+			(lambda:c.editor.move_cursor_v(10), HIDDEN)),
+		(K_ESCAPE,
+			die),
+		(' ',
+			(s.menu.accept, None, CHECK))
+	])
+
+	global_keys[frozenset([KMOD_CTRL])] = odict([
+		('=',
+			(lambda:change_font_size(1),'inc font size')),
+		('-',
+			(lambda:change_font_size(-1),'dec font size')),
+		(K_LEFT,
+			c.editor.prev_elem),
+		(K_RIGHT,
+			c.editor.next_elem),
+		(K_HOME,
+			c.editor.cursor_top),
+		(K_END,
+			c.editor.cursor_bottom),
+		(K_f,
+			c.editor.dump_to_file),
+		#(K_q,
+		#	s.bye),
+		(K_m,
+			s.menu.menu_dump)])
+
+	if SDL:
+		global_keys[frozenset([KMOD_CTRL])].update(odict([
+			(K_UP,
+			 (lambda:c.sidebar.move(-1), "menu up")),
+			(K_DOWN,
+			 (lambda:c.sidebar.move(1), "menu down"))]))
+
+
+
 
 
 """here we count on the fact that each client frame has been assigned to an

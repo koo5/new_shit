@@ -284,16 +284,12 @@ def main():
 		pass
 
 	fix_keyboard()
-
 	change_font_size()
 
 	c = lemon_client.Client(thread_message_signal, send_thread_message)
-	keybindings.c = c
-	#for f in c.allframes:
-	#	f.rect = pygame.Rect((6,6),(6,6))
+	keybindings.setup(c)
 
 	initial_resize()
-
 	c.after_start()
 
 	if args.no_timers:
