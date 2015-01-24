@@ -399,6 +399,8 @@ class Menu(ServerFrame):
 			if s.current_parser_node.menu_item_selected(s.items[s.sel], s.editor.atts):
 				s.sel = -1
 				s.scroll_lines = 0
+				s.editor.root.ast_chanxxged = True
+				s.editor.signal_change()
 				s.signal_change()
 				return True
 
@@ -449,11 +451,12 @@ class NodeInfo(StaticInfoFrame):
 		#editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.on_editor_atts_change)
 		s.items = []
+		#s.global_keys = []
 
 	def on_editor_atts_change(self):
 		self._changed = True
 		log(self.editor.atts)
-		self.items = list(handlers_info(self.editor.atts))
+		self.items = list(handlers_info(self.editor.atts)) + self.global_keys
 		self.draw_signal.emit()
 
 	#def on_editor_change(self, _):

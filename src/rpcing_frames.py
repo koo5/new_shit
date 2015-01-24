@@ -638,6 +638,10 @@ def sdl_arrow_side(length,a,x2,y2, surface):
 	pygame.draw.line(surface, colors.arrow, x1y1,(int(x2),int(y2)))
 
 
+
+
+
+
 class InfoFrame(ClientFrame):
 	def __init__(s, counterpart):
 		super(InfoFrame, s).__init__(counterpart)
@@ -645,6 +649,8 @@ class InfoFrame(ClientFrame):
 	def sdl_draw_stuff(s, surf):
 		s.sdl_draw_lines(surf)
 
+	def move(s, x):
+		s.scroll(x)
 
 def draw(s, surface):
 	s.draw_lines(surface)
