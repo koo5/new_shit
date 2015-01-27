@@ -21,7 +21,6 @@ from server_side import server
 if SDL:
 	import pygame
 
-"""
 class Line():
 	__slots__ = ['font', 'chars']
 	def __init__(s, font, chars):
@@ -35,7 +34,6 @@ class Font():
 		s.font = font
 		s.width = width
 		s.height = height
-"""
 
 class ClientFrame(object):
 
@@ -72,19 +70,15 @@ class ClientFrame(object):
 	#frames with default font have it easy
 	@property
 	def cols(s):
-		return s.rect.width // get_font(0)[1]
+		return s.rect.width // get_font(0).width
 	@property
 	def rows(s):
-		return s.rect.width // get_font(0)[1]
+		return s.rect.width // get_font(0).height
 
 
 	def project(s):
 		s.completed_arrows = None
 		return s.project_tags(s.tags.get())
-
-	#def resize(s, cols, rows):
-	#	s.cols, s.rows = cols, rows
-	#	s.lines.dirty = True
 
 	def redraw(self):
 		"""non-rpcing client overrides this with a
@@ -100,21 +94,19 @@ class ClientFrame(object):
 			s.draw()
 			s.must_redraw = False
 
-	def curses_draw(s):
-		s.curses_win.clear()
-		s.curses_draw_stuff()
-
-	def sdl_draw(self):
-		if self.rect.h == 0 or self.rect.w == 0:
-			return
-		surface = pygame.Surface((self.rect.w, self.rect.h), 0)
-		if colors.bg != (0,0,0):
-			surface.fill(colors.bg)
-		self.sdl_draw_stuff(surface)
-		sdl_screen_surface.blit(surface, self.rect.topleft)
-
-	if SDL:	draw = sdl_draw
-	elif CURSES: draw = curses_draw
+	if CURSES:
+		def draw(s):
+			s.curses_win.clear()
+			s.curses_draw_stuff()
+	elif SDL:
+		def draw(self):
+			if self.rect.h == 0 or self.rect.w == 0:
+				return
+			surface = pygame.Surface((self.rect.w, self.rect.h), 0)
+			if colors.bg != (0,0,0):
+				surface.fill(colors.bg)
+			self.sdl_draw_stuff(surface)
+			sdl_screen_surface.blit(surface, self.rect.topleft)
 
 	def sdl_draw_lines(self, surf, highlight=None, transparent=False, just_bg=False):
 
@@ -123,7 +115,11 @@ class ClientFrame(object):
 
 		y = 0
 
-		for row, (font, line) in enumerate(self.lines.get()):
+		for row, line in enumerate(self.lines.get()):
+			assert type(line) == Line
+			font = line.font
+			assert type(font) == Font
+
 			if row < self.scroll_lines:
 				continue
 
@@ -132,17 +128,17 @@ class ClientFrame(object):
 				y += args.line_spacing
 				font = get_font(1)
 
-			y += font[2]
+			y += font.height
 
-			for col, char in enumerate(line):
-				x = font[1] * col
+			for col, char in enumerate(line.chars):
+				x = font.width * col
 
 				hi = highlight and char[1].get(Att.elem) == highlight
 
 				if hi:
 					bg = highlighted_bg_cached
 					if just_bg:
-						pygame.draw.rect(surf,bg,(x,y,font[1],font[2]))
+						pygame.draw.rect(surf,bg,(x,y,font.width,font.height))
 				else:
 					bg = bg_cached
 
@@ -150,8 +146,8 @@ class ClientFrame(object):
 					fg = char[1][Att.color]
 					if transparent:
 						bg = None
-					rect = font[0].get_rect(char[0])
-					font[0].render_to(surf, (x+rect.x,y-rect.y), None, fg, bg)
+					rect = font.font.get_rect(char[0])
+					font.font.render_to(surf, (x+rect.x,y-rect.y), None, fg, bg)
 
 			#log('%s,%s'%(row, self.rows))
 			if row == self.rows:
@@ -162,32 +158,32 @@ class ClientFrame(object):
 			if fisheye:
 				y += args.line_spacing
 
+	if CURSES:
+		def curses_draw_lines(s, win):
+			for row, line in enumerate(s.lines):
 
-	def curses_draw_lines(s, win):
-		for row, line in enumerate(s.lines):
+				#lets implement scrolling here, for once. Im still pondering a proper, somewhat element-based solution
+				real_row = row + s.scroll_lines
+				if real_row < 0:
+					continue
+				if real_row > s.rows:
+					return
 
-			#lets implement scrolling here, for once. Im still pondering a proper, somewhat element-based solution
-			real_row = row + s.scroll_lines
-			if real_row < 0:
-				continue
-			if real_row > s.rows:
-				return
+				assert len(line) <= self.cols
+				s.draw_line(win, line)
 
-			assert len(line) <= self.cols
-			s.draw_line(win, line)
-
-	def curses_draw_line(s, win, line):
-		for col, char in enumerate(line):
-			mode = 0
-			try:
-				if char[1][Att.elem] == s.highlight:
-					mode = c.A_BOLD + c.A_REVERSE
-			except:	pass
-			try:
-				win.addch(row,col,ord(char[0]), mode)
-			except c.error:#it throws an error to indicate last cell
-				if (row+1, col+1) != win.getmaxyx():
-					raise
+		def curses_draw_line(s, win, line):
+			for col, char in enumerate(line):
+				mode = 0
+				try:
+					if char[1][Att.elem] == s.highlight:
+						mode = c.A_BOLD + c.A_REVERSE
+				except:	pass
+				try:
+					win.addch(row,col,ord(char[0]), mode)
+				except c.error:#it throws an error to indicate last cell
+					if (row+1, col+1) != win.getmaxyx():
+						raise
 
 
 	def project_tags(s,batches):
@@ -199,45 +195,43 @@ class ClientFrame(object):
 		# dict with custom stuff
 		"""
 		s.zwes = {}
-		line = []
+		chars = []
 		atts = []
 		char_index = 0
 		indentation = 0
 		lines_count = 0
 		editable = False
-		font = line_cols = Evil()
+		font = Evil('font')
+		line_cols = Evil("line cols")
 
 		def switch_font(level = 0):
 			nonlocal font, line_cols
 			font = get_font(level)
-			line_cols = (s.rect.width-1) // font[1]
+			line_cols = (s.rect.width-1) // font.width
 
 		def indent():
 			numspaces = indentation * s.indent_width
-			spaceleft = line_cols - len(line)
-			to_go = min(spaceleft, numspaces)
-			for i in range(to_go):
+			spaceleft = line_cols - len(chars)
+			for i in range(min(numspaces, spaceleft)):
 				append(' ')
-				#calling a dict() with atts, which is a list of tuples (key, value)
-				#"squashes" it, the last attributes (on top) overwrite the ones below
 
 		def append(char):
-			line.append((char, atts_dict()))
+			chars.append((char, atts_dict()))
 
 		def current_cr():
-			return (len(line), lines_count)
+			return (len(chars), lines_count)
 
 		def add_zwe():
 			s.zwes[current_cr()] = atts_dict()
 
 		def atts_dict():
+			#calling a dict() with atts, which is a list of tuples (key, value)
+			#"squashes" it, the more recently appended attributes overwrite the older ones
 			return dict(atts + [(Att.char_index, char_index)])
 
 		switch_font()
 
 		for batch in batches:
-			#if isinstance(s, Menu):
-			#	log(list(batch))
 
 			for tag in batch:
 
@@ -254,9 +248,9 @@ class ClientFrame(object):
 						if char != "\n":
 							append(char)
 							char_index += 1
-						if len(line) == line_cols or char == "\n":
-							yield font, line
-							line = []
+						if len(chars) == line_cols or char == "\n":
+							yield Line(font, chars)
+							chars = []
 							if char == "\n":
 								switch_font()#back to default
 							indent()
@@ -269,8 +263,6 @@ class ClientFrame(object):
 				elif tag == dedent_tag:
 					indentation -= 1
 					assert indentation >= 0
-
-				#elif tag == zero_width_element_tag:
 
 				elif tag == editable_start_tag:
 					editable = True
@@ -291,12 +283,11 @@ class ClientFrame(object):
 				else:
 					raise Exception("is %s a tag?, %s" % (repr(tag)))
 
-		yield font, line
+		yield Line(font, chars)
 
 
 		"""
 		def test():
-			#we would have to set cols somehow
 			project_tags([[
 				(Att.color, (0,0,0)),
 				"hey",
@@ -313,7 +304,7 @@ class ClientFrame(object):
 	def under_cr(self, cr):
 		c,r = cr
 		try:
-			return self.lines[r][1][c][1][Att.elem]
+			return self.lines[r].chars[c][1][Att.elem]
 		except (IndexError, KeyError):
 			return None
 
@@ -341,13 +332,10 @@ class ClientFrame(object):
 
 
 	def sdl_cursor_xy(s,c,r):
-		font, _ = s.lines[r]
-		font_width = font[1]
-		x = font_width * c
-
+		x = c * s.lines[r].font.width
 		y = 0
-		for row, (font, line) in enumerate(s.lines):
-			fh = font[2]
+		for row, line in enumerate(s.lines):
+			fh = line.font.height
 			if row == r:
 				return (x, y, y + fh)
 			else:
@@ -356,10 +344,10 @@ class ClientFrame(object):
 
 	def sdl_xy2cr(s, xy):
 		x,y = xy
-		for row, (font, line) in enumerate(s.lines):
-			y -= font[2] + args.line_spacing
+		for row, line in enumerate(s.lines):
+			y -= line.font.height + args.line_spacing
 			if row <= 0:
-				return (x//font[1], row)
+				return (x//line.font.width, row)
 
 
 
@@ -386,18 +374,18 @@ class Editor(ClientFrame):
 
 	def and_sides(s,e):
 		if e.all[K_LEFT]:
-			log('diagonal')
+			log('moving diagonally:-)')
 			s.move_cursor_h(-1)
 		if e.all[K_RIGHT]:
-			log('diagonal')
+			log('moving diagonally:-)')
 			s.move_cursor_h(1)
 
 	def and_updown(s,event):
 		if event.all[K_UP]:
-			log('diagonal')
+			log('moving diagonally:-)')
 			s.move_cursor_v(-1)
 		if event.all[K_DOWN]:
-			log('diagonal')
+			log('moving diagonally:-)')
 			s.move_cursor_v(1)
 
 	@property
@@ -406,7 +394,7 @@ class Editor(ClientFrame):
 
 	def first_nonblank(self):
 		r = 0
-		for ch, a in self.lines[self.cursor_r][1]:
+		for ch, a in self.lines[self.cursor_r].chars:
 			if ch == " ":
 				r += 1
 			else:
@@ -427,12 +415,12 @@ class Editor(ClientFrame):
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
 		if len(s.lines) <= s.cursor_r or \
-						s.cursor_c > len(s.lines[s.cursor_r][1]):
+						s.cursor_c > len(s.lines[s.cursor_r].chars):
 			s._move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
 			if s._move_cursor_v(-1):
-				s.cursor_c = len(s.lines[s.cursor_r][1])
+				s.cursor_c = len(s.lines[s.cursor_r].chars)
 		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 		return moved
 
@@ -487,7 +475,7 @@ class Editor(ClientFrame):
 
 	def cursor_end(s):
 		if len(s.lines) > s.cursor_r:
-			s.cursor_c = len(s.lines[s.cursor_r][1])
+			s.cursor_c = len(s.lines[s.cursor_r].chars)
 			s.after_cursor_moved()
 
 	def cursor_top(s):
@@ -495,13 +483,13 @@ class Editor(ClientFrame):
 		s.after_cursor_moved()
 
 	def cursor_bottom(s):
-		log("hmpf")
+		log("i was too lazy to implement this")
 		s.after_cursor_moved()
 
 	def after_project(s):
 		s.do_post_render_move_cursor()
 		s.complete_arrows()
-
+		"""outdated
 		if False:#__debug__:
 			for l in self.lines:
 				assert(isinstance(l, list))
@@ -512,15 +500,14 @@ class Editor(ClientFrame):
 					assert(isinstance(i[1], dict))
 					assert(Att.elem in i[1])
 					assert(Att.char_index in i[1])
-
+		"""
 	def find_element(s, e):
 		"""return coordinates of element"""
 		#assert(isinstance(e, int)),  e
-		for r,(_, line) in enumerate(s.lines):
-			for c,char in enumerate(line):
+		for r, line in enumerate(s.lines):
+			for c,char in enumerate(line.chars):
 				if char[1][Att.elem] == e:
 					return c, r
-
 
 	def after_cursor_moved(s):
 		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
@@ -550,10 +537,9 @@ class Editor(ClientFrame):
 	@property
 	def atts_at_cursor(self):
 		try:
-			return self.lines[self.cursor_r][1][self.cursor_c][1]
+			return self.lines[self.cursor_r].chars[self.cursor_c][1]
 		except IndexError:
 			return None
-
 
 	@property
 	def atts_triple(s):
@@ -568,13 +554,6 @@ class Editor(ClientFrame):
 		middle = s.zwes.get((s.cursor_c, s.cursor_r))
 
 		return dict(left=left, middle=middle, right=right)
-	"""
-	def keypress_on_element(event):
-		#event.cursor = (s.cursor_c, s.cursor_r)
-		event.atts = self.atts
-
-		server.on_keypress(event)
-	"""
 
 	def sdl_draw_stuff(s, surf):
 		highlight = s.under_cursor if not args.eightbit else None
@@ -639,7 +618,7 @@ class Editor(ClientFrame):
 	def	dump_to_file(s):
 		f = open("dump.txt", "w")
 		for l in s.lines:
-			for ch in l:
+			for ch in l.chars:
 				f.write(ch[0])
 			f.write("\n")
 		f.close()
@@ -689,14 +668,14 @@ class Menu(ClientFrame):
 	def generate_rects(s):
 		s.rects = {}
 		old_item_index = item_index = START = None
-		maxlen = 0
+		highest_len = 0
 		startline = 0
-		_, font_width, font_height = get_font(0)
-		counterpart = s.counterpart
+		font = get_font(0)
+
 		for i, line in enumerate(s.lines.get()):
 			try:
-				container, ii = line[1][0][1][Att.item_index]
-				if container == counterpart:
+				container, ii = line.chars[0][1][Att.item_index]
+				if container == s.counterpart:
 					item_index = ii
 			except (IndexError, KeyError) as e:
 				#log(e)
@@ -707,11 +686,11 @@ class Menu(ClientFrame):
 				if old_item_index != START:
 					s.rects[old_item_index] = (
 						0,
-						startline * (font_height + args.line_spacing) + 8, # fuck this freetype shit
-						maxlen * font_width,
-						(i - startline) * font_height)
+						startline * (font.height + args.line_spacing) + 8, # fuck this freetype shit
+						highest_len * font.width,
+						(i - startline) * font.height)
 
-				maxlen = len(line[1])
+				highest_len = len(line.chars)
 				startline = i
 				old_item_index = item_index
 

@@ -53,7 +53,7 @@ import lemon_client, rpcing_frames
 import keybindings
 import replay
 
-
+from rpcing_frames import Font, Line
 
 
 def reset_cursor_blink_timer():
@@ -70,7 +70,7 @@ keybindings.change_font_size = user_change_font_size
 
 fonts = {}
 font_size_multiplier = 10
-#freetype only
+
 def get_font(modifier):
 	size = (modifier * font_size_multiplier) + args.font_size
 	if size not in fonts:
@@ -86,7 +86,7 @@ def make_font(size):
 	#for x in ['X', 'x', ':', 'rstartsiu#$#$TS', ',']:
 	#	log(font.get_rect(x))
 
-	return font, w, h
+	return Font(font, w, h)
 
 def change_font_size(by = 0):
 	args.font_size += by
@@ -106,7 +106,7 @@ replay.resize = resize
 def resize_frames():
 		c.logframe.rect = Rect (
 			0, screen_height - args.log_height,
-			screen_width, args.log_height * get_font(0)[2]) # log frame uses default font
+			screen_width, args.log_height * get_font(0).height) # log frame uses default font
 
 		c.editor.rect = Rect(0,0,
 			screen_width // 3 * 2,
