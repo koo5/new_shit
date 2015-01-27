@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from types import GeneratorType
 from collections import namedtuple
 from pprint import pformat as pp
@@ -26,7 +28,7 @@ from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 
 
 class Atts(object):
-	def __init__(s, a):
+	def __init__(s, a) -> int:
 		#s.by_priority = [a['middle'], a['left'], a['right']]
 		s.middle, s.left, s.right = a['middle'], a['left'], a['right']
 		s.any = s.middle or s.left or s.right or {}
@@ -453,7 +455,7 @@ class NodeInfo(StaticInfoFrame):
 		s.items = []
 		#s.global_keys = []
 
-	def on_editor_atts_change(self):
+	def on_editor_atts_change(self) -> None:
 		self._changed = True
 		log(self.editor.atts)
 		self.items = list(handlers_info(self.editor.atts)) + ["\n"] + self.global_keys

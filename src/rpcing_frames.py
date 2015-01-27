@@ -421,6 +421,8 @@ class Editor(ClientFrame):
 		if s.cursor_c < 0:
 			if s._move_cursor_v(-1):
 				s.cursor_c = len(s.lines[s.cursor_r].chars)
+			else:
+				s.cursor_c = 0
 		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
 		return moved
 
@@ -712,7 +714,9 @@ class Menu(ClientFrame):
 			pygame.draw.rect(surface, c, r, 1)
 
 	def move(s, x):
+		s.scroll(x)
 		s.counterpart.move(x)
+
 
 
 def collidepoint(r, pos):

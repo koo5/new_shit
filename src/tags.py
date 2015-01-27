@@ -50,20 +50,17 @@ def ColorTag(value):
 
 # nesting, expanded in collect()
 
-class Tag(object):
-	__slots__=[]
-
-class ChildTag(Tag):
+class ChildTag():
 	__slots__ = ['name']
 	def __init__(self, name):
 		self.name = name
 
-class MemberTag(Tag):
+class MemberTag():
 	__slots__ = ['name']
 	def __init__(self, name):
 		self.name = name
 
-class ElementTag(Tag):
+class ElementTag():
 	__slots__ = ['element']
 	def __init__(self, el):
 		#assert(isinstance(el, asselement.Element))

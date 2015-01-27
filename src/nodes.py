@@ -16,6 +16,7 @@ good luck.
 import json
 from types import SimpleNamespace
 import collections
+from pprint import pformat as pp
 
 from pizco import Signal
 
@@ -108,6 +109,18 @@ def make_dict_from_anything_to_anything():
 
 def new_module():
 	return B.module.inst_fresh()
+
+def num_arg(name = "number"):
+	return TypedParameter({'name':Text(name), 'type':Ref(B.number)})
+
+def text_arg():
+	return TypedParameter({'name':Text("text"), 'type':Ref(B.text)})
+
+def num_list():
+	return  list_of(B.number)
+
+def num_list_arg():
+	return TypedParameter({'name':Text("list of numbers"), 'type':num_list()})
 
 def is_flat(l):
 	return flatten(l) == l
@@ -739,7 +752,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		syms = []
 		ddecl = deref_decl(cls.decl)
 		for i in ddecl.instance_syntaxes[0]:
-			if type(i) in (unicode, TextTag):
+			if type(i) == unicode:
 				syms.append(m.known_string(i))
 			elif type(i) == ChildTag:
 				child_type = ddecl.instance_slots[i.name]
@@ -905,7 +918,7 @@ class Collapsible(Node):
 		s.view_mode_widget.value = m
 
 	def render(self):
-		yield [MemberTag('view_mode_widget')] + [IndentTag()]
+		yield [MemberTag('view_mode_widget'), IndentTag()]
 		if self.view_mode > 0:
 			yield self.render_items()
 			if self.view_mode == 2:
@@ -1194,7 +1207,7 @@ class Statements(List):
 
 	def render_items(self):
 		for i, item in enumerate(self.items):
-			yield [AttTag(Att.item_index, (self, i))]
+			yield [AttTag(Att.item_index, (self, i)),editable_start_tag, editable_end_tag]
 			if i != 0:
 				if self.view_mode == 2:
 					yield ['\n']
@@ -1452,7 +1465,7 @@ class Module(Syntaxed):
 			return node.eval()
 
 	def reload(s):
-		log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
+		log(B.b_lemon_load_file.fun(s.root, 'test_save.lemon.json'))
 		return CHANGED
 
 	def run(s):
@@ -2663,12 +2676,12 @@ class FunctionCallNodecl(NodeclBase):
 def build_in_misc():
 	class Note(Syntaxed):
 		def __init__(self, children):
-			self.text = widgets.Text(self, "")
+			#self.text = widgets.Text(self, "")
 			super(Note,self).__init__(children)
 
 	build_in(SyntaxedNodecl(Note,
-				   [["note: ", MemberTag("text")]],
-				   {'text': Exp(B.text)}))
+				   [["note: ", ChildTag("text")]],
+				   {'text': B.text}))
 
 
 	class Annotation(Node):
@@ -2806,6 +2819,11 @@ def make_root():
 
 	build_in_editor_structure_nodes()
 	build_in_lemon_language()
+	build_in_misc()
+
+	#for k,v in iteritems(B._dict):
+	#	log(k, v)
+
 
 	r['welcome'] = Text("Press F1 to cycle the sidebar!")
 	r["intro"] = new_module()
@@ -3121,21 +3139,6 @@ def build_in_lemon_language():
 	build_in(FunctionCallNodecl(), 'call')
 	build_in(WorksAs.b("call", "expression"), False)
 
-
-
-
-
-	def num_arg(name = "number"):
-		return TypedParameter({'name':Text(name), 'type':Ref(B.number)})
-
-	def text_arg():
-		return TypedParameter({'name':Text("text"), 'type':Ref(B.text)})
-
-	def num_list():
-		return  list_of(B.number)
-
-	def num_list_arg():
-		return TypedParameter({'name':Text("list of numbers"), 'type':num_list()})
 
 
 

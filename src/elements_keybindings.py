@@ -1,4 +1,5 @@
 import collections
+from pprint import pformat as pp
 
 from keys import *
 from tags import *
@@ -165,6 +166,8 @@ def delete_item(s):
 	return CHANGED
 
 def newline(s, e):
+	log("eee")
+	log(pp(e))
 	item_index = s.item_index(e.atts)
 	s.newline(item_index)
 	return CHANGED
@@ -186,10 +189,12 @@ add_keys(n.Statements, -1, {
 
 def save(s, e):
 	s.save()
+def reload(s, e):
+	s.reload()
 
 add_keys(n.Module, -1, {
 	K(KMOD_CTRL, K_s): H(save),
-	K(KMOD_CTRL, K_r): H(n.Module.reload),
+	K(KMOD_CTRL, K_r): H(reload),
 	K(KMOD_CTRL, K_BACKSLASH ): H(n.Module.run)})
 
 

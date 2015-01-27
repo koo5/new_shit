@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 
@@ -7,6 +7,7 @@ import subprocess
 from math import *
 from pprint import pformat as pp
 from copy import copy
+import traceback
 
 
 from pizco import Signal
@@ -31,13 +32,13 @@ if False:#hasattr(sys, 'pypy_version_info'):
 	try:
 		sys.path.append("pygame_cffi")
 		import pygame
-		if hasattr(pygame, 'cffi'):
-			print("yep, loaded pygame_cffi")
 	except:
 		sys.path.remove("pygame_cffi")
 import pygame
+if hasattr(pygame, 'cffi'):
+		print("loaded pygame_cffi")
 from pygame import display, image, Rect, time
-flags = pygame.RESIZABLE|pygame.DOUBLEBUF
+flags = pygame.RESIZABLE#|pygame.DOUBLEBUF
 
 
 display.init()
@@ -64,7 +65,7 @@ def reset_cursor_blink_timer():
 def user_change_font_size(by = 0):
 	change_font_size(by)
 	resize_frames()
-	redraw(666)
+	redraw_all()
 keybindings.change_font_size = user_change_font_size
 
 
@@ -100,7 +101,7 @@ def resize(size):
 	rpcing_frames.sdl_screen_surface = screen_surface = pygame.display.set_mode(size, flags)
 	screen_width, screen_height = screen_surface.get_size()
 	resize_frames()
-	redraw(666)
+	redraw_all(555)
 replay.resize = resize
 
 def resize_frames():
@@ -172,12 +173,20 @@ def dispatch_input_event(event):
 replay.replay_input_event = dispatch_input_event
 
 def handle(e):
-	try:
-		#it gets messed up so i make a throwaway copy and pickle the original
-		dispatch_input_event(copy(e))
-	finally:
-		#log(pp(e))
-		replay.add(e)
+	def do_it():
+		try:
+			#e gets messed up so i use a throwaway copy inside the handlers and pickle the original
+			dispatch_input_event(copy(e))
+		finally:
+			#log(pp(e))
+			replay.add(e)
+	if args.crash:
+		do_it()
+	else:
+		try:
+			do_it()
+		except:
+			traceback.print_exc(file=sys.stdout)
 
 def send_thread_message():
 	pygame.event.post(pygame.event.Event(pygame.USEREVENT + 2))
@@ -209,7 +218,7 @@ def process_event(event):
 		else:
 			pygame.time.set_timer(pygame.USEREVENT + 1, 0)#disable the timer
 			c.editor.cursor_blink_phase = False
-		redraw(666)
+		redraw_all(666)
 
 	elif event.type == pygame.QUIT:
 		pygame.display.iconify()
@@ -218,17 +227,17 @@ def process_event(event):
 
 
 
-def redraw(self):
+def redraw_all(self=None):
 	for f in c.visibleframes():
 		#log("maybe_redrawing %s on client window request",f)
 		f.maybe_draw()
 	pygame.display.flip()
-#lemon_client.draw = redraw
-#all frames are in one window, so avoid signaling each about redrawing,
-#hook into "aggregate" server.on_change instead
-if not args.rpc:
-	rpcing_frames.ClientFrame.redraw = redraw
-lemon_client.redraw = redraw
+lemon_client.redraw = redraw_all
+
+def redraw(self):
+	self.maybe_draw()
+	pygame.display.update(self.rect)
+rpcing_frames.ClientFrame.redraw = redraw
 
 def loop():
 	process_event(pygame.event.wait())
