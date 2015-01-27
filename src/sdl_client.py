@@ -92,6 +92,7 @@ def change_font_size(by = 0):
 	args.font_size += by
 	if args.font_size < 1:
 		args.font_size = 1
+	log("font size:%s", args.font_size)
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
@@ -219,7 +220,7 @@ def process_event(event):
 
 def redraw(self):
 	for f in c.visibleframes():
-		log("maybe_redrawing %s on client window request",f)
+		#log("maybe_redrawing %s on client window request",f)
 		f.maybe_draw()
 	pygame.display.flip()
 #lemon_client.draw = redraw

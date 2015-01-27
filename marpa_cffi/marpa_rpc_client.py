@@ -1,3 +1,4 @@
+import sys, traceback
 import operator
 import types
 from queue import Queue
@@ -199,7 +200,12 @@ class MarpaThread(threading.Thread):
 			if inp.task == 'feed':
 				s.feed(inp)
 			elif inp.task == 'parse':
-				s.send(Dotdict(message = 'parsed', results = list(s.parse(inp.tokens, inp.raw, inp.rules))))
+				r = []
+				try:
+					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
+				except Exception as e:
+					traceback.print_exc(file=sys.stdout)
+				s.send(Dotdict(message = 'parsed', results = r))
 
 
 	def feed(s, inp):
@@ -233,7 +239,10 @@ class MarpaThread(threading.Thread):
 			#if args.log_parsing:
 			#	log ("input:symid:%s name:%s raw:%s"%(sym, m.symbol2name(sym),raw[i]))
 			#assert type(sym) == symbol_int
-			r.alternative(s.c_syms[sym], i+1)
+			if sym == None:
+				log("grammar not implemented, skipping this node")
+			else:
+				r.alternative(s.c_syms[sym], i+1)
 			r.earleme_complete()
 
 		#token value 0 has special meaning(unvalued),

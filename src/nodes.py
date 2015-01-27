@@ -15,6 +15,7 @@ good luck.
 
 import json
 from types import SimpleNamespace
+import collections
 
 from pizco import Signal
 
@@ -22,6 +23,7 @@ from lemon_utils.lemon_six import iteritems, iterkeys, itervalues, unicode
 from lemon_utils.notifyinglist import NotifyingList
 
 import element
+from element import CHANGED
 from menu_items import MenuItem
 import widgets
 import tags
@@ -905,9 +907,9 @@ class Collapsible(Node):
 	def render(self):
 		yield [MemberTag('view_mode_widget')] + [IndentTag()]
 		if self.view_mode > 0:
+			yield self.render_items()
 			if self.view_mode == 2:
 				yield TextTag("\n")
-			yield self.render_items()
 		yield [DedentTag()]
 
 	@classmethod
@@ -1027,6 +1029,7 @@ class List(ListPersistenceStuff, Collapsible):
 		r = List()
 		r.items = x[1][::2]
 		r.view_mode = r.vm_multiline
+		r.fix_parents()
 		return r
 
 	def render_items(self):
@@ -1057,8 +1060,7 @@ class List(ListPersistenceStuff, Collapsible):
 		return [s.item_type]
 
 	def item_index(self, atts):
-		#for atts in [atts.middle, atts.left, atts.right]:
-		li = atts.get('list_item')
+		li = atts.get(Att.item_index)
 		if li and li[0] == self:
 			return li[1]
 
@@ -1191,17 +1193,16 @@ class Statements(List):
 		return B.statement
 
 	def render_items(self):
-		r = []
-		for item in self.items:
-			r += [ElementTag(item)]
-			if self.view_mode == 2:
-				r+= ['\n']
-			else:
-				r+= [TextTag(', ')]
+		for i, item in enumerate(self.items):
+			yield [AttTag(Att.item_index, (self, i))]
+			if i != 0:
+				if self.view_mode == 2:
+					yield ['\n']
+				else:
+					yield [TextTag(', ')]
+			yield [ElementTag(item),EndTag()]
 			#we will have to work towards having this kind of syntax
 			#defined declaratively so Parser can deal with it
-		r += []
-		return r
 
 	def run(self):
 		[i.eval() for i in self.items]
@@ -1378,27 +1379,25 @@ class Text(WidgetedValue):
 		return Text(self.pyval)
 
 
+class DelayedCursorMove():
+	__slots__ = ['chars', 'node']
+	def __init__(s):
+		s.chars = 0
+		s.node = None
+
 
 class Root(Dict):
 	def __init__(self):
 		super(Root, self).__init__()
 		self.parent = None
 		self.decl = None
-		self.delayed_cursor_move = 0
+		self.delayed_cursor_move = DelayedCursorMove()
 		#the frontend moves the cursor by this many chars after a render()
 		## The reason is for example a textbox recieves a keyboard event,
 		## appends a character to its contents, and wants to move the cursor,
 		## but before re-rendering, it might move it beyond the end of file
 		self.indent_length = 4 #not really used but would be nice to have it variable
 		self.changed = True
-
-	@property
-	def delayed_cursor_move(s):
-		return s._delayed_cursor_move
-	@delayed_cursor_move.setter
-	def delayed_cursor_move(s, x):
-		log ("setting delayed_cursor_move to %s"%(x,))
-		s._delayed_cursor_move = x
 
 	def render(self):
 		#there has to be some default color for everything, the rendering routine looks for it..
@@ -2051,7 +2050,7 @@ class ParserBase(Node):
 	def __init__(self):
 		super(ParserBase, self).__init__()
 		self.items = NotifyingList()
-		self.items.append(widgets.Text(self,"x"))
+		#self.items.append(widgets.Text(self,"x"))
 		self.decl = None
 		self.on_edit = Signal()
 		self.brackets_color = colors.compiler_brackets
@@ -2116,20 +2115,20 @@ class ParserBase(Node):
 			if isinstance(fch, Syntaxed):
 				fch = s.first_child(fch)
 				#...
-			s.root.delayed_cursor_move = (fch,)
+			s.root.delayed_cursor_move.node = fch
 		#todo
 		#elif isinstance(node, FunctionCall):
 		#	if len(node.args) > 0:
 		#		s.root.post_render_move_caret = node.args[0]
-		elif isinstance(node, WidgetedValue):
-			if len(node.widget.text) > 0:
-				s.root.delayed_cursor_move += 2
+		#elif isinstance(node, WidgetedValue):
+		#	if len(node.widget.text) > 0:
+		#		s.root.delayed_cursor_move.chars += 2
 				#another hacky option: post_render_move_caret_after
 				#nonhacky option: render out a tag acting as an anchor to move the cursor to
 				#this would be also useful above
 		elif isinstance(node, List):
 			if len(node.items) > 0:
-				s.root.delayed_cursor_move = (node.items[0],)
+				s.root.delayed_cursor_move.node = node.items[0]
 		#todo etc. make the cursor move naturally
 
 	def delete_child(s, child):
@@ -2231,7 +2230,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		elif isinstance(item, DefaultParserMenuItem):
 			return False
 		else:
-			raise Exception("whats that shit, cowboy?")
+			raise Exception("whats that shit, cowboy? %s?"%item)
 
 	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
@@ -2808,18 +2807,18 @@ def make_root():
 	build_in_editor_structure_nodes()
 	build_in_lemon_language()
 
+	r['welcome'] = Text("Press F1 to cycle the sidebar!")
 	r["intro"] = new_module()
 	r["intro"].ch.statements.items = [
 		Text("""
 
-Welcome to lemon! Press F1 to cycle the sidebar!
 the interface of lemon is currently implemented like this:
 root is a dictionary with keys like "intro", "some program" etc.
 it's values are mostly modules. modules can be collapsed and expanded and they
 hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
 
 Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
-ctrl-d will delete something. Inserting of nodes happens in the Parser node."""),
+ctrl-del will delete something. Inserting of nodes happens in the Parser node."""),
 		#it looks like this:"""),
 		#Parser(b['number']), todo:ParserWithType
 		Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),

@@ -59,6 +59,7 @@ def add_keys(node, sup, handlers):
 """
 widgets.py
 """
+add_keys(w.Widget, None, {})
 
 def k_backspace (s, e):
 	pos = e.left[Att.char_index]
@@ -68,7 +69,7 @@ w.Text.k_backspace = k_backspace
 
 def k_delete(s, e):
 	pos = e.right[Att.char_index]
-	s.text = s.text[0:(pos-1)] + s.text[pos:]
+	s.text = s.text[0:pos] + s.text[pos+1:]
 	return s.after_edit(0)
 w.Text.k_delete = k_delete
 
@@ -125,11 +126,15 @@ nodes.py
 """
 
 
-def eval(s):
+def eval(s, e):
 	s.eval()
 	return CHANGED
 
-def delete_self(s):
+
+#def delete_self_check(s, atts):
+#	return s.parent != None
+
+def delete_self(s, e):
 	s.parent.delete_child(s)
 	return AST_CHANGED
 
@@ -138,10 +143,17 @@ add_keys(n.Node, None, {
 	K(KMOD_CTRL,    K_DELETE):  H(delete_self)
 })
 
+add_keys(n.Root, None, {})
+
+
+def prev_syntax(s, e):
+	s.prev_syntax()
+def next_syntax(s, e):
+	s.next_syntax()
 
 add_keys(n.Syntaxed, n.Node, {
-	K(KMOD_CTRL, K_PERIOD): H(n.Syntaxed.prev_syntax),
-    K(KMOD_CTRL, K_COMMA ): H(n.Syntaxed.next_syntax)})
+	K(KMOD_CTRL, K_PERIOD): H(prev_syntax),
+    K(KMOD_CTRL, K_COMMA ): H(next_syntax)})
 
 
 def delete_item_check(s, atts):
@@ -158,7 +170,7 @@ def newline(s, e):
 	return CHANGED
 
 add_keys(n.List, -1,
-	{   K((KMOD_CTRL),  K_DELETE): H(delete_item, delete_item_check),
+	{   K(KMOD_CTRL,    K_DELETE): H(delete_item, delete_item_check),
 		K((),           K_RETURN): H(newline, lambda s, atts: s.item_index(atts) != None)})
 
 def run_line(self, e):
@@ -172,8 +184,11 @@ add_keys(n.Statements, -1, {
 	K(KMOD_CTRL, K_RETURN): H(run_line, lambda s, atts: s.item_index(atts) != None)})
 
 
+def save(s, e):
+	s.save()
+
 add_keys(n.Module, -1, {
-	K(KMOD_CTRL, K_s): H(n.Module.save),
+	K(KMOD_CTRL, K_s): H(save),
 	K(KMOD_CTRL, K_r): H(n.Module.reload),
 	K(KMOD_CTRL, K_BACKSLASH ): H(n.Module.run)})
 
@@ -184,7 +199,7 @@ def check_backspace(s, atts):
 		return i[0] == s# and s.items[i[1]]
 
 def k_backspace(s):
-	s.root.delayed_cursor_move -= 1
+	s.root.delayed_cursor_move.chars -= 1
 	s.on_edit.emit(s)
 	return CHANGED
 
@@ -196,13 +211,16 @@ def k_unicode(s, e):
 	atts = e.atts
 	log("adding first item")
 	s.items.append(w.Text(s, e.uni))
-	#s.root.delayed_cursor_move -= atts['char_index'] -1
+	s.root.delayed_cursor_move.node = s.items[0]
+	s.root.delayed_cursor_move.chars = len(e.uni)
 
+def k_unicode_check(s, _):
+	return len(s.items) == 0
 
 add_keys(n.ParserBase, -1, {
 	#H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
 	#H((), K_DELETE, LEFT): k_delete
-	K((), UNICODE): H(k_unicode)
+	K((), UNICODE): H(k_unicode, k_unicode_check)
 
 	})
 

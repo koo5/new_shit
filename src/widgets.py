@@ -40,7 +40,7 @@ class Text(Widget):
 		self.text = v
 
 	def after_edit(s, move):
-		s.root.delayed_cursor_move += move
+		s.root.delayed_cursor_move.chars += move
 		s.on_edit.emit(s)
 		return CHANGED
 
@@ -64,7 +64,7 @@ class Number(Widget):
 	def __init__(self, parent, text, limits=(None,None)):
 		super().__init__(parent)
 		self.limits = limits
-		self.text = Text(self, str(text))
+		self.text_widget = Text(self, str(text))
 		self.minus_button = Button(self, "-")
 		self.plus_button = Button(self, "+")
 		for b in (self.plus_button, self.minus_button):
@@ -75,13 +75,13 @@ class Number(Widget):
 		self.plus_button. on_press.connect(self.on_widget_click)
 		self.plus_button. on_text. connect(self.on_widget_text)
 		self.on_change = Signal(1)
-		self.text.on_edit.connect(self._on_text_change) # ^.^
+		self.text_widget.on_edit.connect(self._on_text_change) # ^.^
 
 	def _on_text_change(self, widget):
-		self.on_change.fire(self)
+		self.on_change.emit(self)
 
 	def render(self):
-		return [MemberTag('minus_button'), MemberTag('text'), MemberTag('plus_button')]
+		return [MemberTag('minus_button'), MemberTag('text_widget'), MemberTag('plus_button')]
 
 	@property
 	def value(self):
@@ -92,6 +92,13 @@ class Number(Widget):
 	@value.setter
 	def value(self, v):
 		self.text = str(v)
+
+	@property
+	def text(s):
+		return s.text_widget.text
+	@text.setter
+	def text(s, x):
+		s.text_widget.text = x
 
 	def inc(self):
 		if self.limits[1] == None or self.limits[1] > int(self.text):
@@ -108,6 +115,7 @@ class Number(Widget):
 			self.dec()
 		if widget == self.plus_button:
 			self.inc()
+
 	def on_widget_text(self,text):
 		if text == "+":
 			self.inc()

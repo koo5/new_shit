@@ -8,7 +8,7 @@ def updated_with(d, d2):
 	"""update d with d2 and return it"""
 	d.update(d2)
 	return d
-odict.updated = updated_with
+odict.updated_with = updated_with
 
 def plus(d, d2):
 	"""copy d, update it with d2 and return"""

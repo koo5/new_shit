@@ -63,7 +63,7 @@ class Editor(ServerFrame):
 			s.root.changed = s.root.ast_changed = False
 			#log("true")
 			return True
-		log("false")
+		#log("false")
 
 	@property
 	def element_under_cursor(s):
@@ -79,7 +79,7 @@ class Editor(ServerFrame):
 		log("setting atts under cursor to %s",pp(atts))
 		editor.atts = Atts(atts)
 		editor.on_atts_change.emit()
-		editor.draw_signal.emit()
+		#editor.draw_signal.emit()
 
 	def run_active_program(editor):
 		editor.root['some program'].run()
@@ -267,7 +267,7 @@ class Menu(ServerFrame):
 			#if m.for_node == self.current_parser_node:
 				self.marpa.enqueue_parsing(self.parser_items2tokens(self.current_parser_node.items))
 		elif m.message == 'parsed':
-				self.parse_results = m.results
+				self.parse_results = [nodes.ParserMenuItem(x) for x in m.results]
 				#	r.append(ParserMenuItem(i, 333))
 				self.signal_change()
 
@@ -399,7 +399,7 @@ class Menu(ServerFrame):
 			if s.current_parser_node.menu_item_selected(s.items[s.sel], s.editor.atts):
 				s.sel = -1
 				s.scroll_lines = 0
-				s.editor.root.ast_chanxxged = True
+				s.editor.root.ast_changed = True
 				s.editor.signal_change()
 				s.signal_change()
 				return True
@@ -448,7 +448,7 @@ class NodeInfo(StaticInfoFrame):
 	def __init__(s, editor):
 		super(NodeInfo, s).__init__()
 		s.editor = editor
-		#editor.on_serverside_change.connect(s.on_editor_change)
+		editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.on_editor_atts_change)
 		s.items = []
 		#s.global_keys = []
@@ -456,11 +456,12 @@ class NodeInfo(StaticInfoFrame):
 	def on_editor_atts_change(self):
 		self._changed = True
 		log(self.editor.atts)
-		self.items = list(handlers_info(self.editor.atts)) + self.global_keys
+		self.items = list(handlers_info(self.editor.atts)) + ["\n"] + self.global_keys
 		self.draw_signal.emit()
 
-	#def on_editor_change(self, _):
-	#	s.on_editor_atts_change()
+	def on_editor_change(self, _):
+		self.on_editor_atts_change()
+
 """
 	def xxx(s):
 

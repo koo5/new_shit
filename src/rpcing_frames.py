@@ -43,12 +43,22 @@ class ClientFrame(object):
 		super().__init__()
 		s.arrows = []
 		s.must_redraw = True
-		s.scroll_lines = 0
+		s._scroll_lines = 0
 		s.indent_width = 4
 		s.counterpart = counterpart
 		s.tags = Cache(s.counterpart.collect_tags)
 		s.lines = Cache(s.project)
 		s.counterpart.draw_signal.connect(s.redraw)
+
+	@property
+	def scroll_lines(s):
+		return s._scroll_lines
+	@scroll_lines.setter
+	def scroll_lines(s, x):
+		if s._scroll_lines != x:
+			s._scroll_lines = x
+			s.tags.dirty = s.lines.dirty = True
+			log("scroll_lines:%s", x)
 
 	@property
 	def rect(s):
@@ -90,11 +100,6 @@ class ClientFrame(object):
 			s.draw()
 			s.must_redraw = False
 
-	def scroll(s,l):
-		s.scroll_lines -= l
-		if s.scroll_lines < 0:
-			s.scroll_lines = 0
-
 	def curses_draw(s):
 		s.curses_win.clear()
 		s.curses_draw_stuff()
@@ -119,6 +124,9 @@ class ClientFrame(object):
 		y = 0
 
 		for row, (font, line) in enumerate(self.lines.get()):
+			if row < self.scroll_lines:
+				continue
+
 			fisheye = args.fisheye and type(self) == Editor and row == self.cursor_r
 			if fisheye:
 				y += args.line_spacing
@@ -202,7 +210,7 @@ class ClientFrame(object):
 		def switch_font(level = 0):
 			nonlocal font, line_cols
 			font = get_font(level)
-			line_cols = s.rect.width // font[1]
+			line_cols = (s.rect.width-1) // font[1]
 
 		def indent():
 			numspaces = indentation * s.indent_width
@@ -314,18 +322,12 @@ class ClientFrame(object):
 		if not node or not node.on_mouse_press(e.button):
 			s.cursor_c, s.cursor_r = e.cr
 
-	def mousedown(s,e):
-		if e.button == 1:
-			s.click(e)
-		elif e.button == 4:
-			s.scroll(-5)
-		elif e.button == 5:
-			s.scroll(5)
-
 	def scroll(s,l):
-		s.scroll_lines += l
-		if s.scroll_lines < 0:
-			s.scroll_lines = 0
+		sl = s.scroll_lines + l
+		if sl < 0:
+			sl = 0
+		s.scroll_lines = sl
+		s.redraw()
 
 
 	def sdl_mousedown(s,e):
@@ -498,8 +500,7 @@ class Editor(ClientFrame):
 
 	def after_project(s):
 		s.do_post_render_move_cursor()
-		s.update_atts_on_server()
-		s.complete_arrows(s.arrows)
+		s.complete_arrows()
 
 		if False:#__debug__:
 			for l in self.lines:
@@ -512,41 +513,6 @@ class Editor(ClientFrame):
 					assert(Att.elem in i[1])
 					assert(Att.char_index in i[1])
 
-
-	def sdl_draw_stuff(s, surf):
-		highlight = s.under_cursor if not args.eightbit else None
-
-		if s.arrows_visible:
-			s.sdl_draw_lines(surf, highlight,
-			                 transparent=True)
-			s.sdl_draw_arrows(surf)
-		else:
-			s.sdl_draw_lines(surf, highlight, False)
-		s.draw_cursor(surf)
-
-	""" def sdl_draw_stuff(s, surf):
-		if s.arrows_visible:
-			s.sdl_draw_lines(surf, highlight=s.under_cursor,
-			                 transparent=Evil('justbg, so no transparent'),
-			                 just_bg=True)
-			s.sdl_draw_arrows(surf)
-			s.sdl_draw_lines(surf, s.under_cursor, True)
-		else:
-			s.sdl_draw_lines(surf, s.under_cursor, False)
-		s.draw_cursor(surf)"""
-
-
-	def curses_draw_stuff(s, win):
-		s.curses_draw_lines(win)
-
-	def complete_arrows(s):
-		s.completed_arrows = []
-		if s.arrows_visible:
-			for a in s.arrows:
-				target = s.find_element(a[2])
-				if target:
-					s.completed_arrows.append(((a[0],a[1] - s.scroll_lines), target))
-
 	def find_element(s, e):
 		"""return coordinates of element"""
 		#assert(isinstance(e, int)),  e
@@ -556,52 +522,29 @@ class Editor(ClientFrame):
 					return c, r
 
 
-	def sdl_draw_arrows(s, surface):
-		#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen pointing to that same target, to avoid making it unreadable
-		if s.completed_arrows == None:
-			s.complete_arrows()
-		for ((c,r),(c2,r2)) in s.completed_arrows:
-			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
-			pygame.draw.line(surface, colors.arrow, (int(x),int(y)),(int(x2),int(y2)))
-			a = atan2(y-y2, x-x2)
-			angle = 0.1
-			length = 40
-			sdl_arrow_side(length, a+angle, x2,y2, surface)
-			sdl_arrow_side(length, a-angle, x2,y2, surface)
-
-
-	def draw_cursor(self, surf):
-		if self.cursor_blink_phase:
-			x, y, y2 = self.sdl_cursor_xy(self.cursor_c, self.cursor_r)
-			pygame.draw.rect(surf, colors.cursor, (x, y, 1, y2 - y,))
-
-
-
-	def toggle_arrows(s):
-		s.arrows_visible = not s.arrows_visible
+	def after_cursor_moved(s):
+		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
 		s.must_redraw = True
+		s.update_atts_on_server()
 		s.redraw()
 
-	def	dump_to_file(s):
-		f = open("dump.txt", "w")
-		for l in s.lines:
-			for ch in l:
-				f.write(ch[0])
-			f.write("\n")
-		f.close()
-
-
 	def do_post_render_move_cursor(s):
-		move = s.counterpart.root.post_render_move_caret
-		if isinstance(move, int): # by this many chars
-			log("moving cursor by %s chars", where)
-			s.move_cursor_h(move)
-		else: #to a node, lets indicate it with a tuple hmmm
-			node = move[0]
-			log("moving cursor to %s", node)
-			s.cursor_c, s.cursor_r = s.find_element(node)
-			s.after_cursor_moved()
-		s.counterpart.root.post_render_move_caret = 0
+		m = s.counterpart.root.delayed_cursor_move
+
+		if m.node:
+			log("moving cursor to %s", m.node)
+			pos = s.find_element(m.node)
+			if pos:
+				s.cursor_c, s.cursor_r = pos
+
+		if m.chars:
+			log("moving cursor by %s chars", m.chars)
+			s._move_cursor_h(m.chars)
+
+		if m.node != None or m.chars != 0:
+			m.node = None
+			m.chars = 0
+			s.update_atts_on_server()
 
 
 	@property
@@ -632,6 +575,76 @@ class Editor(ClientFrame):
 
 		server.on_keypress(event)
 	"""
+
+	def sdl_draw_stuff(s, surf):
+		highlight = s.under_cursor if not args.eightbit else None
+
+		if s.arrows_visible:
+			s.sdl_draw_lines(surf, highlight,
+			                 transparent=True)
+			s.sdl_draw_arrows(surf)
+		else:
+			s.sdl_draw_lines(surf, highlight, False)
+		s.after_project()
+		s.draw_cursor(surf)
+
+
+	""" def sdl_draw_stuff(s, surf):
+		if s.arrows_visible:
+			s.sdl_draw_lines(surf, highlight=s.under_cursor,
+			                 transparent=Evil('justbg, so no transparent'),
+			                 just_bg=True)
+			s.sdl_draw_arrows(surf)
+			s.sdl_draw_lines(surf, s.under_cursor, True)
+		else:
+			s.sdl_draw_lines(surf, s.under_cursor, False)
+		s.draw_cursor(surf)"""
+
+
+	def curses_draw_stuff(s, win):
+		s.curses_draw_lines(win)
+
+	def complete_arrows(s):
+		s.completed_arrows = []
+		if s.arrows_visible:
+			for a in s.arrows:
+				target = s.find_element(a[2])
+				if target:
+					s.completed_arrows.append(((a[0],a[1] - s.scroll_lines), target))
+
+	def sdl_draw_arrows(s, surface):
+		#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen pointing to that same target, to avoid making it unreadable
+		if s.completed_arrows == None:
+			s.complete_arrows()
+		for ((c,r),(c2,r2)) in s.completed_arrows:
+			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
+			pygame.draw.line(surface, colors.arrow, (int(x),int(y)),(int(x2),int(y2)))
+			a = atan2(y-y2, x-x2)
+			angle = 0.1
+			length = 40
+			sdl_arrow_side(length, a+angle, x2,y2, surface)
+			sdl_arrow_side(length, a-angle, x2,y2, surface)
+
+
+	def draw_cursor(self, surf):
+		if self.cursor_blink_phase:
+			x, y, y2 = self.sdl_cursor_xy(self.cursor_c, self.cursor_r)
+			pygame.draw.rect(surf, colors.cursor, (x, y, args.font_size//8, y2 - y,))
+
+	def toggle_arrows(s):
+		s.arrows_visible = not s.arrows_visible
+		s.must_redraw = True
+		s.redraw()
+
+	def	dump_to_file(s):
+		f = open("dump.txt", "w")
+		for l in s.lines:
+			for ch in l:
+				f.write(ch[0])
+			f.write("\n")
+		f.close()
+
+
 
 def sdl_arrow_side(length,a,x2,y2, surface):
 	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
