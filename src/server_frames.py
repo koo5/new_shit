@@ -4,7 +4,7 @@ from types import GeneratorType
 from collections import namedtuple
 from pprint import pformat as pp
 
-from pizco import Signal
+from lemon_utils.pizco_signal.util import Signal
 from fuzzywuzzy import fuzz
 
 from lemon_utils.lemon_six import iteritems, unicode
@@ -199,25 +199,26 @@ def handlers_info(trip):
 							yield elem, handler, func
 	"""
 
-class Menu(ServerFrame):
+class SidebarFrame(ServerFrame):
 	def __init__(s):
-		super(Menu, s).__init__()
+		super().__init__()
+		s.sel = -1
+
+
+class Menu(SidebarFrame):
+	def __init__(s):
+		super().__init__()
 		s.editor = editor
 		editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.on_editor_atts_change)
 		s.valid_only = False
 		s._changed = True
 		s.current_parser_node = None
-		s.sel = -1
 		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
 		s.sorted_palette = []
 		s.current_text = "yo"
-
-	@property
-	def items(s):
-		return s.parse_results
 
 	def must_recollect(s):
 		if s._changed:
@@ -358,6 +359,12 @@ class Menu(ServerFrame):
 		return [#nodes.DefaultParserMenuItem(s.current_text)
 		       ] + s.parse_results + s.sorted_palette
 
+
+	def get_items(s):
+		for i in s.items:
+			yield _collect_tags(666, [ColorTag(colors.fg), ElementTag(i)])
+
+
 	def parser_items2tokens(s, items):
 		symbols, text = [], ""
 		for i in items:
@@ -373,6 +380,10 @@ class Menu(ServerFrame):
 		s._changed = True
 		s.draw_signal.emit()
 
+	def tags4item(s, i: int) -> list:
+		return _collect_tags(666, [ColorTag(colors.fg), AttTag(Att.item_index, (s, i)),  ElementTag(s.items[i]), EndTag(), EndTag()])
+
+	"""
 	def tags(s):
 		yield [ColorTag(colors.fg)]
 
@@ -384,7 +395,7 @@ class Menu(ServerFrame):
 			yield [AttTag(Att.item_index, (s, index)),  ElementTag(item), EndTag(), "\n"]
 
 		yield ["---", EndTag()]
-
+	"""
 	def toggle_valid(s):
 		s.valid_only = not s.valid_only
 		s.signal_change()
@@ -413,17 +424,15 @@ class Menu(ServerFrame):
 
 
 
-class StaticInfoFrame(ServerFrame):
+class StaticInfoFrame(SidebarFrame):
 	def __init__(s):
-		super(StaticInfoFrame, s).__init__()
+		super().__init__()
 		s.name = s.__class__.__name__
 		s._changed = True
 
-	def tags(s):
-		yield [ColorTag(colors.help), s.name + ":  "+"\n"]
+	def get_items(s):
 		for i in s.items:
-			yield [i, "\n"]
-		yield [EndTag()] # color
+			yield [ColorTag(colors.help), TextTag(i)]
 
 	def must_recollect(s):
 		if s._changed:
@@ -448,7 +457,7 @@ class GlobalKeys(StaticInfoFrame):
 
 class NodeInfo(StaticInfoFrame):
 	def __init__(s, editor):
-		super(NodeInfo, s).__init__()
+		super().__init__()
 		s.editor = editor
 		editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.on_editor_atts_change)
@@ -578,6 +587,7 @@ def load(name):
 
 
 def _collect_tags(elem, tags):
+	"""make a flat list, expanding child elements"""
 	for tag in tags:
 		if type(tag) in (GeneratorType, list):
 			for i in _collect_tags(elem, tag):

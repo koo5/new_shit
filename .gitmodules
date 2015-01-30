@@ -4,9 +4,6 @@
 [submodule "pygame_cffi"]
 	path = pygame_cffi
 	url = https://github.com/CTPUG/pygame_cffi.git
-[submodule "pizco_git"]
-	path = pizco_git
-	url = https://github.com/PierreBouzard/pizco.git
 [submodule "logpy_git"]
 	path = logpy_git
 	url = https://github.com/logpy/logpy.git

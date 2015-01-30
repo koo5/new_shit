@@ -20,6 +20,7 @@ from server_side import server
 
 if SDL:
 	import pygame
+	from pygame import Rect
 
 class Line():
 	__slots__ = ['font', 'chars']
@@ -39,6 +40,7 @@ class ClientFrame(object):
 
 	def __init__(s, counterpart):
 		super().__init__()
+		s.visible = True
 		s.arrows = []
 		s.must_redraw = True
 		s._scroll_lines = 0
@@ -86,6 +88,7 @@ class ClientFrame(object):
 		Xself.maybe_draw()
 
 	def maybe_draw(s):
+		if not s.visible: return
 		must_recollect = s.counterpart.must_recollect()
 		if must_recollect:
 			s.tags.dirty = s.lines.dirty = True
@@ -109,10 +112,6 @@ class ClientFrame(object):
 			sdl_screen_surface.blit(surface, self.rect.topleft)
 
 	def sdl_draw_lines(self, surf, highlight=None, transparent=False, just_bg=False):
-
-		bg_cached = colors.bg
-		highlighted_bg_cached = colors.highlighted_bg
-
 		y = 0
 
 		for row, line in enumerate(self.lines.get()):
@@ -130,26 +129,8 @@ class ClientFrame(object):
 
 			y += font.height
 
-			for col, char in enumerate(line.chars):
-				x = font.width * col
+			self.sdl_draw_line(surf, line.chars, line.font, y, highlight, transparent, just_bg)
 
-				hi = highlight and char[1].get(Att.elem) == highlight
-
-				if hi:
-					bg = highlighted_bg_cached
-					if just_bg:
-						pygame.draw.rect(surf,bg,(x,y,font.width,font.height))
-				else:
-					bg = bg_cached
-
-				if not just_bg:
-					fg = char[1][Att.color]
-					if transparent:
-						bg = None
-					rect = font.font.get_rect(char[0])
-					font.font.render_to(surf, (x+rect.x,y-rect.y), None, fg, bg)
-
-			#log('%s,%s'%(row, self.rows))
 			if row == self.rows:
 				break
 
@@ -157,6 +138,29 @@ class ClientFrame(object):
 
 			if fisheye:
 				y += args.line_spacing
+
+	@staticmethod
+	def sdl_draw_line(surf, chars, font, y, highlighted_element=None, transparent=False, just_bg=False):
+		for col, char in enumerate(chars):
+			x = font.width * col
+
+			hi = highlighted_element and char[1].get(Att.elem) == highlighted_element
+
+			if hi:
+				bg = colors.highlighted_bg
+				if just_bg:
+					pygame.draw.rect(surf,bg,(x,y,font.width,font.height))
+			else:
+				bg = colors.bg
+
+			if not just_bg:
+				fg = char[1][Att.color]
+				if transparent:
+					bg = None
+				rect = font.font.get_rect(char[0])
+				font.font.render_to(surf, (x+rect.x,y-rect.y), None, fg, bg)# - ?!
+
+
 
 	if CURSES:
 		def curses_draw_lines(s, win):
@@ -276,7 +280,8 @@ class ClientFrame(object):
 						s.arrows.append(current_cr() + (tag['arrow'],))
 					elif 'font_level' in tag:
 						switch_font(tag['font_level'])
-						#log("font_level:%s"%tag['font_level'])
+					#elif 'long_text' in tag:
+
 					else:
 						wat
 
@@ -627,101 +632,75 @@ class Editor(ClientFrame):
 
 
 
-def sdl_arrow_side(length,a,x2,y2, surface):
-	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
-	pygame.draw.line(surface, colors.arrow, x1y1,(int(x2),int(y2)))
 
 
 
-
-
-
-class InfoFrame(ClientFrame):
-	def __init__(s, counterpart):
-		super(InfoFrame, s).__init__(counterpart)
-
-	def sdl_draw_stuff(s, surf):
-		s.sdl_draw_lines(surf)
-
+class SidebarFrame(ClientFrame):
 	def move(s, x):
-		s.scroll(x)
+		s.counterpart.move(x)
 
-def draw(s, surface):
-	s.draw_lines(surface)
+	def get_items(s):
+		for i in s.counterpart.get_items():
+			yield SidebarItem(list(s.project_tags([i])))
+
+	def sdl_draw_items(s, surface):
+		done = False
+		item_top_y = 0
+		current_line = 0
+		s.drawn_rects = {}
+
+		for i, item in enumerate(s.get_items()):
+			item_height = biggest_width = 0
+			lines_to_draw = []
+			for l in item.lines:
+				if current_line >= s.scroll_lines:
+					biggest_width = max(biggest_width, len(l.chars)*l.font.width)
+					item_height += l.font.height
+					lines_to_draw.append((l.chars, l.font, item_top_y + item_height))
+					if item_top_y + item_height > s.rect.height:
+						done = True
+						break
+				current_line += 1
+
+			if item_height > 0:
+				rect = Rect(0, item_top_y,
+				            biggest_width,
+				            item_height)
+				s.drawn_rects[i] = rect
+
+				is_selected = s.counterpart.sel == i
+				color = colors.menu_rect_selected if is_selected else colors.menu_rect
+				pygame.draw.rect(surface, color, rect, 1)
+
+				item_top_y += item_height
+
+			for i in lines_to_draw:
+				s.sdl_draw_line(surface, *i)
+
+			if done:
+				return
+
+	def sdl_draw_stuff(s, surface):
+		s.sdl_draw_items(surface)
+
+
+class InfoFrame(SidebarFrame):
+	def __init__(s, counterpart):
+		super().__init__(counterpart)
 
 
 
-
-
-
-
-class Menu(ClientFrame):
+class Menu(SidebarFrame):
 	def __init__(s, editor):
 		super().__init__(server.menu)
 		s.editor = editor
 
 	def click(s,e):
-		for i,r in iteritems(s.rects):
+		for i,r in iteritems(s.drawn_rects):
 			if collidepoint(r, e.pos):
-				s.sel = s.items_on_screen.index(i)
-				s.accept()
+				s.counterpart.sel = i
+				s.counterpart.accept()
 				break
-
-	def generate_rects(s):
-		s.rects = {}
-		old_item_index = item_index = START = None
-		highest_len = 0
-		startline = 0
-		font = get_font(0)
-
-		for i, line in enumerate(s.lines.get()):
-			try:
-				container, ii = line.chars[0][1][Att.item_index]
-				if container == s.counterpart:
-					item_index = ii
-			except (IndexError, KeyError) as e:
-				#log(e)
-				pass
-			#log(item_index)
-
-			if old_item_index != item_index:
-				if old_item_index != START:
-					s.rects[old_item_index] = (
-						0,
-						startline * (font.height + args.line_spacing) + 8, # fuck this freetype shit
-						highest_len * font.width,
-						(i - startline) * font.height)
-
-				highest_len = len(line.chars)
-				startline = i
-				old_item_index = item_index
-
-	def sdl_draw_stuff(s, surface):
-		log("drawing menu lines")
-		#for i in s.tags.get():
-		#	log(list(i))
-		s.generate_rects()
-		s.sdl_draw_lines(surface)
-		s.sdl_draw_rects(surface)
-
-	def sdl_draw_rects(s, surface):
-		sel = s.counterpart.sel
-		for i,r in iteritems(s.rects):
-			if i == sel:
-				c = colors.menu_rect_selected
-			else:
-				c = colors.menu_rect
-			pygame.draw.rect(surface, c, r, 1)
-
-	def move(s, x):
-		s.scroll(x)
-		s.counterpart.move(x)
-
-
-
-def collidepoint(r, pos):
-	x, y = pos
-	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]
 
 
 class Log(ClientFrame):
@@ -748,5 +727,20 @@ class Log(ClientFrame):
 
 
 
+def draw(s, surface):
+	s.draw_lines(surface)
 
 
+class SidebarItem():
+	def __init__(s, lines, rect=None):
+		s.lines = lines
+		s.rect = rect
+
+def sdl_arrow_side(length,a,x2,y2, surface):
+	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
+	pygame.draw.line(surface, colors.arrow, x1y1,(int(x2),int(y2)))
+
+
+def collidepoint(r, pos):
+	x, y = pos
+	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]

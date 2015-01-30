@@ -46,6 +46,7 @@ class Client():
 
 			s.sidebars.append(s.sidebars[0])#add a sentinel for easy cycling:)
 			s.sidebar = s.sidebars[0] # currently active sidebar
+			s.after_sidebar_changed()
 
 	def bye(s):
 		log("deading pygame..")
@@ -60,8 +61,14 @@ class Client():
 			do_replay(False)
 
 
+	def after_sidebar_changed(s):
+		for i in s.sidebars:
+			i.visible = i == s.sidebar
+
+
 	def cycle_sidebar(s):
-		s.sidebar = s.sidebars[s.sidebars.index(s.sidebar) + 1]
+		s.sidebar = s.sidebars[1 + s.sidebars.index(s.sidebar)]
+		s.after_sidebar_changed()
 		log("sidebar:%s", s.sidebar)
 		redraw(666)
 

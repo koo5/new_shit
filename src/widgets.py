@@ -2,7 +2,7 @@
 
 """textbox, button, toggle.."""
 
-from pizco import Signal
+from lemon_utils.pizco_signal.util import Signal
 
 from element import Element, CHANGED
 from lemon_utils.lemon_logging import log

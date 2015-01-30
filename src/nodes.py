@@ -18,7 +18,7 @@ from types import SimpleNamespace
 import collections
 from pprint import pformat as pp
 
-from pizco import Signal
+from lemon_utils.pizco_signal.util import Signal
 
 from lemon_utils.lemon_six import iteritems, iterkeys, itervalues, unicode
 from lemon_utils.notifyinglist import NotifyingList

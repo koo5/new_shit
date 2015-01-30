@@ -10,7 +10,8 @@ from copy import copy
 import traceback
 
 
-from pizco import Signal
+#from pizco import Signal
+from lemon_utils.pizco_signal.util import Signal
 
 
 from lemon_utils.lemon_six import iteritems
@@ -185,7 +186,7 @@ def handle(e):
 	else:
 		try:
 			do_it()
-		except:
+		except Exception:
 			traceback.print_exc(file=sys.stdout)
 
 def send_thread_message():
