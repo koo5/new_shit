@@ -166,15 +166,13 @@ def delete_item(s):
 	return CHANGED
 
 def newline(s, e):
-	log("eee")
-	log(pp(e))
-	item_index = s.item_index(e.atts)
+	item_index = s.item_index(e.any) or (-1 if 'list_end' in e.any else None) or 0
 	s.newline(item_index)
 	return CHANGED
 
 add_keys(n.List, -1,
 	{   K(KMOD_CTRL,    K_DELETE): H(delete_item, delete_item_check),
-		K((),           K_RETURN): H(newline, lambda s, atts: s.item_index(atts) != None)})
+		K((),           K_RETURN): H(newline)})
 
 def run_line(self, e):
 	index = self.index_of_item_under_cursor(e)

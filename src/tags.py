@@ -12,6 +12,13 @@ class Att():#Enum):
 	char_index = 2
 	item_index = 3
 
+end_tag = 0
+indent_tag = 1
+dedent_tag = 2
+editable_start_tag = 3
+editable_end_tag = 4
+zwe_tag = 5
+
 def TextTag(text):
 	assert isinstance(text, unicode)
 	return text
@@ -19,26 +26,17 @@ def TextTag(text):
 def AttTag(k,v):
 	return k,v
 
-end_tag = 0
 def EndTag():
 	return end_tag
 
-indent_tag = 1
 def IndentTag():
 	return indent_tag
 
-dedent_tag = 2
 def DedentTag():
 	return dedent_tag
 
-editable_start_tag = 3
-editable_end_tag = 4
-
-
 def ArrowTag(target):
 	return {"arrow": target}
-
-editable_end_tag = 4
 
 def NewlineTag(Tag):
 	return "\n"

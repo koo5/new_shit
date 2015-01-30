@@ -1,3 +1,4 @@
+make menu.current_parser a weakref
 ----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 

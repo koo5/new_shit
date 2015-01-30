@@ -26,7 +26,7 @@ class ColorsSettings():
 		s.menu_rect_selected = (255,255,255)
 		s.menu_rect = (0,0,255)
 		s.help = (255,255,0)
-		s.compiler_hint = (100,100,100)
+		s.parser_hint = (100,100,100)
 		s.text_brackets = (0,255,0)
 		s.compiler_brackets = (255,255,0)
 		s.node_brackets = (250,150,150)

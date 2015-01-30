@@ -921,9 +921,7 @@ class Collapsible(Node):
 		yield [MemberTag('view_mode_widget'), IndentTag()]
 		if self.view_mode > 0:
 			yield self.render_items()
-			if self.view_mode == 2:
-				yield TextTag("\n")
-		yield [DedentTag()]
+		yield DedentTag()
 
 	@classmethod
 	def fresh(cls, decl):
@@ -1046,16 +1044,17 @@ class List(ListPersistenceStuff, Collapsible):
 		return r
 
 	def render_items(self):
-		#we will have to work towards having this kind of syntax
-		#defined declaratively so Parser can deal with it
-		yield TextTag('[')
-		for item in self.items:
-			yield [ElementTag(item)]
-			if self.view_mode == 2:
-				yield '\n'
-			else:
-				yield TextTag(', ')
-		yield TextTag(']')
+		opening, pre, closing = ('[', ',', ']') if self.view_mode == 1 else ('', '\n', '\n')
+		yield opening
+		for i, item in enumerate(self.items):
+			if i != 0 and self.view_mode == 1: yield ' '
+			yield [AttTag(Att.item_index, (self, i)), zwe_tag]
+			if i != 0: yield pre
+			yield [ElementTag(item),EndTag()]
+
+		yield [AttTag('list_end',555), zwe_tag, closing, EndTag()]
+
+
 
 	def __getitem__(self, i):
 		return self.items[i]
@@ -1108,14 +1107,18 @@ class List(ListPersistenceStuff, Collapsible):
 		new.parent = self
 
 	def add(self, item):
-		self.items.append(item)
 		assert(isinstance(item, Node))
 		item.parent = self
+		self.items.append(item)
+		return item
 
 	def newline(self, pos=-1):
 		p = Parser(0)
 		p.parent = self
-		self.items.insert(pos, p)
+		if pos == -1:
+			self.items.append(p)
+		else:
+			self.items.insert(pos, p)
 		return p
 
 	def newline_with(self, node):
@@ -1204,18 +1207,6 @@ class Statements(List):
 	@property
 	def item_type(self):
 		return B.statement
-
-	def render_items(self):
-		for i, item in enumerate(self.items):
-			yield [AttTag(Att.item_index, (self, i)),editable_start_tag, editable_end_tag]
-			if i != 0:
-				if self.view_mode == 2:
-					yield ['\n']
-				else:
-					yield [TextTag(', ')]
-			yield [ElementTag(item),EndTag()]
-			#we will have to work towards having this kind of syntax
-			#defined declaratively so Parser can deal with it
 
 	def run(self):
 		[i.eval() for i in self.items]
@@ -2172,7 +2163,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		return r
 
 	def empty_render(s):
-		return [ColorTag(colors.compiler_hint), TextTag('('+s.type.name+')'), EndTag()]
+		return [ColorTag(colors.parser_hint), TextTag('('+s.type.name+')'), EndTag()]
 
 	@property
 	def parsed(self):
@@ -2736,7 +2727,7 @@ def build_in_misc():
 	class FilesystemPath(Syntaxed):
 		def __init__(self, children):
 			self.status = widgets.Text(self, "(status)")
-			self.status.color = colors.compiler_hint
+			self.status.color = colors.parser_hint
 			super(FilesystemPath, self).__init__(children)
 
 		def _eval(s):

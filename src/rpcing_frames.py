@@ -274,6 +274,8 @@ class ClientFrame(object):
 				elif tag == editable_end_tag:
 					editable = False
 					add_zwe()
+				elif tag == zwe_tag:
+					add_zwe()
 
 				elif type(tag) == dict:
 					if 'arrow' in tag:
