@@ -1,5 +1,6 @@
-from typing import Iterable
+#from typing import Iterable
 
+from weakref import ref as weakref
 from types import GeneratorType
 from collections import namedtuple
 from pprint import pformat as pp
@@ -216,12 +217,23 @@ class Menu(SidebarFrame):
 		editor.on_atts_change.connect(s.on_editor_atts_change)
 		s.valid_only = False
 		s._changed = True
-		s.current_parser_node = None
 		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
 		s.sorted_palette = []
 		s.current_text = "yo"
+		s._current_parser_node = None
+
+	@property
+	def current_parser_node(s):
+		if s._current_parser_node:
+			return s._current_parser_node()
+	@current_parser_node.setter
+	def current_parser_node(s, x):
+		s._current_parser_node = weakref(x)
+
+
+
 
 	def must_recollect(s):
 		if s._changed:
@@ -253,11 +265,16 @@ class Menu(SidebarFrame):
 			return True
 
 	def update_menu(s):
-		scope = s.current_parser_node.scope()
-		s.update_current_text()
-		s.prepare_grammar(scope)
-		s.create_palette(scope, s.editor.atts, s.current_parser_node)
-		s.signal_change()
+		if s.current_parser_node:
+			try:#hack, current_parser_node could have been deleted,
+				#and theres currently no way to know
+				scope = s.current_parser_node.scope()
+			except AssertionError:
+				return
+			s.update_current_text()
+			s.prepare_grammar(scope)
+			s.create_palette(scope, s.editor.atts, s.current_parser_node)
+			s.signal_change()
 
 	def prepare_grammar(s, scope):
 		#s.marpa.t.input.clear()
@@ -265,13 +282,16 @@ class Menu(SidebarFrame):
 		for i in s.editor.root.flatten():
 			i.forget_symbols() # todo:start using visitors
 		s.marpa.collect_grammar(scope)
-		s.marpa.enqueue_precomputation(666)
+		assert s.current_parser_node
+		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
 
 	def on_thread_message(self):
 		m = self.marpa.t.output.get()
 		if m.message == 'precomputed':
 			#if m.for_node == self.current_parser_node:
-				self.marpa.enqueue_parsing(self.parser_items2tokens(self.current_parser_node.items))
+				node = m.for_node()
+				if node:#brainfart
+					self.marpa.enqueue_parsing(self.parser_items2tokens(node))
 		elif m.message == 'parsed':
 				self.parse_results = [nodes.ParserMenuItem(x) for x in m.results]
 				#	r.append(ParserMenuItem(i, 333))

@@ -388,8 +388,8 @@ class ParserPersistenceStuff(object):
 		r = []
 		for i in s.items:
 			#log("serializing " + str(i))
-			if isinstance(i, unicode):
-				r.append(i)
+			if isinstance(i, widgets.Text):
+				r.append(i.value)
 			else:
 				r.append(i.serialize())
 		return r
@@ -401,7 +401,7 @@ class ParserPersistenceStuff(object):
 		log("deserializing Parser "+str(data))
 		for i in data['items']:
 			if isinstance(i, unicode):
-				r.add(i)
+				r.add(widgets.Text(666, i))
 			else:
 				r.add(deserialize(i, r))
 		r.fix_parents()
@@ -581,7 +581,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 		assert self.parent != None, self.long__repr__()
 		r += [self.parent]
-		r += self.parent.scope()
+		r += self.parent.scope() # note:Root has parent None
 
 		assert(r != None)
 		assert(flatten(r) == r)
@@ -1134,7 +1134,7 @@ class List(ListPersistenceStuff, Collapsible):
 		return r
 
 	def above(self, item):
-		assert item in self.items,  (item, item.parent)
+		assert item in self.items,  (item, item.parent, self)
 		r = []
 		for i in self.items:
 			if i == item:
@@ -1417,8 +1417,8 @@ class Root(Dict):
 	#	recursively check parents?
 
 	def scope(self):
-		we_should_never_get_here()
-		#crude, but for now..
+		# deserialization needs this
+		self.root["builtins"].ch.statements.parsed
 
 
 
@@ -1456,7 +1456,7 @@ class Module(Syntaxed):
 			return node.eval()
 
 	def reload(s):
-		log(B.b_lemon_load_file.fun(s.root, 'test_save.lemon.json'))
+		log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
 		return CHANGED
 
 	def run(s):
@@ -2750,30 +2750,6 @@ def build_in_misc():
 
 	BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
 
-	def b_lemon_load_file(root, name):
-		try:
-			log("loading "+name)
-			try:
-				#import yaml
-				#input = yaml.load(open(name, "r").read())
-				import json
-				input = json.load(open(name, "r"))
-			except Exception as e:
-				return str(e)
-
-			#root["loaded program"] = b['module'].inst_fresh() # this is needed so that the module correctly limits scope resolving during deserialization
-			#root["loaded program"].parent = root
-			root["loaded program"] = deserialize(input, root["loaded program"])
-			root.fix_parents()
-			for i in root["loaded program"].flatten():
-				if isinstance(i, Serialized):
-					i.unserialize()
-			root.fix_parents()
-		except Exception as e:
-			raise
-
-		return name + " loaded ok"
-
 	def load_module(file, placeholder):
 		log("loading "+file)
 		input = json.load(open(file, "r"))
@@ -2841,7 +2817,9 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	r["some program"].ch.statements.newline()
 	#r['some program'].ch.statements.items[1].add("12")
 	#r["lemon console"] =b['module'].inst_fresh()
-	r["loaded program"] = Text("placeholder 01")
+
+	r["loaded program"] = B.module.inst_fresh()
+	r["loaded program"].ch.name = Text("placeholder")
 
 	library = r["library"] = make_list('module')
 	import glob
@@ -3253,6 +3231,32 @@ def build_in_lemon_language():
 		{'function': B.functionsignatureref,
 		 'body': B.statements}))
 	"""
+
+def b_lemon_load_file(root, name):
+	try:
+		log("loading "+name)
+		try:
+			#import yaml
+			#input = yaml.load(open(name, "r").read())
+			import json
+			input = json.load(open(name, "r"))
+		except Exception as e:
+			return str(e)
+
+		#root["loaded program"] = b['module'].inst_fresh() # this is needed so that the module correctly limits scope resolving during deserialization
+		#root["loaded program"].parent = root
+		root["loaded program"] = deserialize(input, root["loaded program"])
+		root.fix_parents()
+		for i in root["loaded program"].flatten():
+			if isinstance(i, Serialized):
+				i.unserialize()
+		root.fix_parents()
+	except Exception as e:
+		raise
+
+	return name + " loaded ok"
+
+
 
 
 """
