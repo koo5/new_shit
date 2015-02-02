@@ -133,11 +133,15 @@ def handle_keypress(event):
 		    keys.K_ESCAPE, keys.K_BACKSPACE, keys.K_DELETE))):
 
 				event.any = event.trip.middle or event.trip.left or event.trip.right
+
 				event.left, event.middle, event.right = (
 					event.trip.left   if event.trip.left and event.trip.left.get(Att.elem) == elem else None,
 					event.trip.middle if event.trip.middle and event.trip.middle.get(Att.elem) == elem else None,
 					event.trip.right  if event.trip.right and event.trip.right.get(Att.elem) == elem else None)
+
 				event.atts = event.middle or event.left or event.right
+				#this should be named "my", to reflect that is corresponds to the node thats gonna handle it,
+				# not some of its children (as opposed to "any")
 
 				log("match:%s.%s", elem, handler.func)
 				return elem, handler.func(elem, event)

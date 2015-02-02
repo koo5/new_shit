@@ -160,9 +160,9 @@ add_keys(n.Syntaxed, n.Node, {
 def delete_item_check(s, atts):
 	return s.item_index(atts) != None
 
-def delete_item(s):
-	ii = self.item_index(e)
-	del self.items[ii]
+def delete_item(s, e):
+	ii = s.item_index(e.any)
+	del s.items[ii]
 	return CHANGED
 
 def newline(s, e):

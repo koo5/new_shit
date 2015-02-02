@@ -216,7 +216,7 @@ def find_decl(name, decls):
 	assert isinstance(name, unicode)
 	for i in decls:
 		if name == i.name:
-			log("found",name)
+			log("found:%s",name)
 			return i
 	raise DeserializationException ("%s not found in %s"% (repr(name), repr(decls)))
 
@@ -224,7 +224,7 @@ def find_decl(name, decls):
 def resolve(data, parent):
 
 	assert(data['resolve'])
-	log("resolving", data)
+	log("resolving%s", data)
 	scope = parent.scope()
 
 	if 'decl' in data:
@@ -243,21 +243,27 @@ def resolve(data, parent):
 
 			for i in scope:
 				#if decl.eq(i.decl) and i.name == name:
-				log(deref_decl(decl) ,deref_decl(i.decl))
-				if deref_decl(decl) == deref_decl(i.decl):
-					log("in scope:",i)
+				dd1,dd2 = deref_decl(decl) ,deref_decl(i.decl)
+				log('dd1:%s, dd2:%s'%(dd1,dd2))
+				if dd1 == dd2:
+					log("in scope:%s",i)
 					if i.name == name:
 						return i
 			raise DeserializationException("node not found: %s ,decl: %s"%(data,decl))
 
 	elif 'class' in data:
-		name = data['name']
-		c = data['class']
+		sought_name = data['name']
+		sought_class_name = data['class']
+		log("looking for name:%s, class:%s", sought_name, sought_class_name)
 		for i in scope:
-			#log(i.__class__.__name__.lower(), c)
-			if i.__class__.__name__.lower()  == c and i.name == name:
-				return i
-		raise DeserializationException("node with name %s and class %s not found"%(name,c))
+			class_name = i.__class__.__name__.lower()
+
+			if class_name == sought_class_name:
+				name = i.name
+				log("class:%s, name:%s",class_name, name)
+				if name == sought_name:
+					return i
+		raise DeserializationException("node with name %s and class %s not found"%(sought_name, sought_class_name))
 
 	else:
 		raise DeserializationException("dunno how to resolve %s" % data)
@@ -367,7 +373,7 @@ class VarRefPersistenceStuff(BaseRefPersistenceStuff):
 		placeholder.parent = parent
 		decl = deserialize(data['target']['decl'], placeholder)
 		for i in parent.vardecls_in_scope:
-			log(i)
+			log('i in parent.vardecls_in_scope:%s',i)
 			if decl.eq_by_value_and_python_class(i.decl):
 				if i.name == data['target']['name']:
 					r = cls(i)
@@ -470,7 +476,7 @@ class WidgetedValuePersistenceStuff(object):
 	@classmethod
 	def deserialize(cls, data, parent):
 		r = cls()
-		log(data)
+		log('deserializing widgeted value:%s'%data)
 		r.text = data['text']
 		r.parent = parent
 		return r
@@ -1017,7 +1023,7 @@ class List(ListPersistenceStuff, Collapsible):
 	def __init__(self):
 		super(List, self).__init__()
 		self.items = []
-		self.decl = Ref(B.anything)
+		self.decl = Ref(B.list_of_statements)
 
 	@classmethod
 	def register_class_symbol(cls):
@@ -2662,122 +2668,6 @@ class FunctionCallNodecl(NodeclBase):
 
 # endregion
 
-# region misc nodes
-
-def build_in_misc():
-	class Note(Syntaxed):
-		def __init__(self, children):
-			#self.text = widgets.Text(self, "")
-			super(Note,self).__init__(children)
-
-	build_in(SyntaxedNodecl(Note,
-				   [["note: ", ChildTag("text")]],
-				   {'text': B.text}))
-
-
-	class Annotation(Node):
-		def __init__(self, target, text):
-			self.text = text
-			self.target = target
-			super(Annotation,self).__init__()
-
-		def render(s):
-			return [ArrowTag(s.target), TextTag(s.text)]
-
-
-	class Clock(Node):
-		def __init__(self):
-			super(Clock,self).__init__()
-			self.datetime = __import__("datetime")
-		def render(self):
-			return [TextTag(str(self.datetime.datetime.now()))]
-		def _eval(self):
-			return Text(str(self.datetime.datetime.now()))
-
-
-
-	class PythonEval(Syntaxed):
-		def __init__(self, children):
-			super(PythonEval, self).__init__(children)
-
-	SyntaxedNodecl(PythonEval,
-				   [TextTag("python eval"), ChildTag("text")],
-				   {'text': Exp(B.text)})
-
-
-
-	class ShellCommand(Syntaxed):
-		info = ["runs a command with os.system"]
-		def __init__(self, children):
-			super(ShellCommand, self).__init__(children)
-
-		def _eval(s):
-			cmd = s.ch.command.eval()
-			import os
-			try:
-				return Text(str(os.system(cmd.pyval)))
-			except Exception as e:
-				return Text(str(e))
-
-	build_in(SyntaxedNodecl(ShellCommand,
-				   [["bash:", ChildTag("command")]],
-				   {'command': Exp(B.text)}))
-
-
-	class FilesystemPath(Syntaxed):
-		def __init__(self, children):
-			self.status = widgets.Text(self, "(status)")
-			self.status.color = colors.parser_hint
-			super(FilesystemPath, self).__init__(children)
-
-		def _eval(s):
-			p = s.ch.path.eval().pyval
-			from os import path
-			s.status.text = "(valid)" if path.exists(p) else "(invalid)"
-			return Text(p)
-
-
-	build_in(SyntaxedNodecl(FilesystemPath,
-				   [[ChildTag("path")],
-				    [ChildTag("path"), MemberTag("status")]],
-				   {'path': Exp(B.text)}))
-
-	def b_files_in_dir(dir):
-		import os
-		for x in os.walk(dir):
-			return x[2]
-		return []
-
-	BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
-
-	def load_module(file, placeholder):
-		log("loading "+file)
-		input = json.load(open(file, "r"))
-		d = deserialize(input, placeholder)
-		placeholder.parent.replace_child(d)
-		d.fix_parents()
-		for i in d.flatten():
-			if isinstance(i, Serialized):
-				i.unserialize()
-			d.fix_parents()
-		log("ok")
-
-	BuiltinPythonFunctionDecl.create(
-		b_lemon_load_file, [Text("load"), text_arg()], Ref(B.text), "load file", "open").pass_root = True
-
-	"""
-	def editor_load_file(name):
-		path = name.eval().text
-	    log("loading", path)
-		try:
-			data = json.load(open(path, "r"))
-			root = name.root #hack
-			r.add(("loaded program", deserialize0(root, data)))
-		except Exception as e:
-			log(e)
-	"""
-
-	# endregion
 
 
 
@@ -2899,6 +2789,16 @@ def build_in_editor_structure_nodes():
 
 	build_in(SyntacticCategory({'name': Text("statement")}))
 
+	build_in(
+	SyntaxedNodecl(Definition,
+				   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
+				   {'name': 'text', 'type': 'type'}))
+
+	build_in(
+		Definition(
+			{'name': Text("list of statements"),
+			 'type': list_of(B.statement)}))
+
 	build_in(Nodecl(Statements))
 
 	build_in(
@@ -2930,9 +2830,6 @@ def build_in_lemon_language():
 	SyntaxedNodecl(WorksAs,
 				   [ChildTag("sub"), TextTag("works as"), ChildTag("sup")],
 				   {'sub': 'type', 'sup': 'type'}),
-	SyntaxedNodecl(Definition,
-				   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
-				   {'name': 'text', 'type': 'type'}),
 
 	SyntacticCategory({'name': Text("anything")}),
 	SyntacticCategory({'name': Text("expression")})
@@ -3180,29 +3077,6 @@ def build_in_lemon_language():
 
 
 
-	# region more nodes
-	class Serialized(Syntaxed):
-		def __init__(self, children):
-			#self.status = widgets.Text(self, "(status)")
-			#self.status.color = "compiler hint"
-			super(Serialized, self).__init__(children)
-
-		def _eval(s):
-			return Banana("deserialize me first")
-
-		def on_keypress(self, e):
-			if e.key == K_d and e.mod & KMOD_CTRL:
-				self.unserialize()
-				return True
-
-		def unserialize(self):
-			data = self.ch.serialization.pyval
-			log("unserializing %s"%data)
-			new = deserialize(data, self)
-			log("voila:%s"%new)
-			self.parent.replace_child(self, new)
-
-
 
 	class CustomNodeDef(Syntaxed):
 		pass
@@ -3232,6 +3106,30 @@ def build_in_lemon_language():
 		 'body': B.statements}))
 	"""
 
+
+class Serialized(Syntaxed):
+	def __init__(self, children):
+		#self.status = widgets.Text(self, "(status)")
+		#self.status.color = "compiler hint"
+		super(Serialized, self).__init__(children)
+
+	def _eval(s):
+		return Banana("deserialize me first")
+
+	def on_keypress(self, e):
+		if e.key == K_d and e.mod & KMOD_CTRL:
+			self.unserialize()
+			return True
+
+	def unserialize(self):
+		data = self.ch.serialization.pyval
+		log("unserializing %s"%data)
+		new = deserialize(data, self)
+		log("voila:%s"%new)
+		self.parent.replace_child(self, new)
+
+
+
 def b_lemon_load_file(root, name):
 	try:
 		log("loading "+name)
@@ -3256,6 +3154,120 @@ def b_lemon_load_file(root, name):
 
 	return name + " loaded ok"
 
+
+
+def build_in_misc():
+	class Note(Syntaxed):
+		def __init__(self, children):
+			#self.text = widgets.Text(self, "")
+			super(Note,self).__init__(children)
+
+	build_in(SyntaxedNodecl(Note,
+				   [["note: ", ChildTag("text")]],
+				   {'text': B.text}))
+
+
+	class Annotation(Node):
+		def __init__(self, target, text):
+			self.text = text
+			self.target = target
+			super(Annotation,self).__init__()
+
+		def render(s):
+			return [ArrowTag(s.target), TextTag(s.text)]
+
+
+	class Clock(Node):
+		def __init__(self):
+			super(Clock,self).__init__()
+			self.datetime = __import__("datetime")
+		def render(self):
+			return [TextTag(str(self.datetime.datetime.now()))]
+		def _eval(self):
+			return Text(str(self.datetime.datetime.now()))
+
+
+
+	class PythonEval(Syntaxed):
+		def __init__(self, children):
+			super(PythonEval, self).__init__(children)
+
+	SyntaxedNodecl(PythonEval,
+				   [TextTag("python eval"), ChildTag("text")],
+				   {'text': Exp(B.text)})
+
+
+
+	class ShellCommand(Syntaxed):
+		info = ["runs a command with os.system"]
+		def __init__(self, children):
+			super(ShellCommand, self).__init__(children)
+
+		def _eval(s):
+			cmd = s.ch.command.eval()
+			import os
+			try:
+				return Text(str(os.system(cmd.pyval)))
+			except Exception as e:
+				return Text(str(e))
+
+	build_in(SyntaxedNodecl(ShellCommand,
+				   [["bash:", ChildTag("command")]],
+				   {'command': Exp(B.text)}))
+
+
+	class FilesystemPath(Syntaxed):
+		def __init__(self, children):
+			self.status = widgets.Text(self, "(status)")
+			self.status.color = colors.parser_hint
+			super(FilesystemPath, self).__init__(children)
+
+		def _eval(s):
+			p = s.ch.path.eval().pyval
+			from os import path
+			s.status.text = "(valid)" if path.exists(p) else "(invalid)"
+			return Text(p)
+
+
+	build_in(SyntaxedNodecl(FilesystemPath,
+				   [[ChildTag("path")],
+				    [ChildTag("path"), MemberTag("status")]],
+				   {'path': Exp(B.text)}))
+
+	def b_files_in_dir(dir):
+		import os
+		for x in os.walk(dir):
+			return x[2]
+		return []
+
+	BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
+
+	def load_module(file, placeholder):
+		log("loading "+file)
+		input = json.load(open(file, "r"))
+		d = deserialize(input, placeholder)
+		placeholder.parent.replace_child(d)
+		d.fix_parents()
+		for i in d.flatten():
+			if isinstance(i, Serialized):
+				i.unserialize()
+			d.fix_parents()
+		log("ok")
+
+	BuiltinPythonFunctionDecl.create(
+		b_lemon_load_file, [Text("load"), text_arg()], Ref(B.text), "load file", "open").pass_root = True
+
+	"""
+	def editor_load_file(name):
+		path = name.eval().text
+	    log("loading", path)
+		try:
+			data = json.load(open(path, "r"))
+			root = name.root #hack
+			r.add(("loaded program", deserialize0(root, data)))
+		except Exception as e:
+			log(e)
+	"""
 
 
 
