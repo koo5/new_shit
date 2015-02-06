@@ -113,8 +113,8 @@ def new_module():
 def num_arg(name = "number"):
 	return TypedParameter({'name':Text(name), 'type':Ref(B.number)})
 
-def text_arg():
-	return TypedParameter({'name':Text("text"), 'type':Ref(B.text)})
+def str_arg(name="text"):
+	return TypedParameter({'name':Text(name), 'type':Ref(B.text)})
 
 def num_list():
 	return  list_of(B.number)
@@ -2434,7 +2434,7 @@ class FunctionDefinitionBase(Syntaxed):
 				evaluated_args[name] = arg.eval()
 			else:
 				evaluated_args[name] = arg.parsed
-		log("evaluated_args:", [i.long__repr__() for i in itervalues(evaluated_args)])
+		log("evaluated_args:%s", [i.long__repr__() for i in itervalues(evaluated_args)])
 
 		assert(len(evaluated_args) == len(self.params))
 		r = self._call(evaluated_args )
@@ -3000,8 +3000,8 @@ def build_in_lemon_language():
 
 	def b_print(args):
 		o = args['expression'].to_python_str()
-		#print o
-		log(o)
+		print (o)
+		#log(o)
 		return NoValue()
 
 	BuiltinFunctionDecl.create(
@@ -3023,6 +3023,8 @@ def build_in_lemon_language():
 			return_type = Ref(B.number)
 		elif return_type == bool:
 			return_type = Ref(B.bool)
+		elif return_type == str:
+			return_type = Ref(B.text)
 		elif return_type == None:
 			return_type = Ref(B.void)
 
@@ -3054,7 +3056,7 @@ def build_in_lemon_language():
 
 		pfn(op.abs, [Text("abs("), num_arg(), Text(")")])
 		pfn(op.add, [num_arg('A'), Text("+"), num_arg('B')])
-
+		pfn(op.add, [str_arg('A'), Text("+"), str_arg('B')], str, name='str add')
 		pfn(op.eq,  [num_arg('A'), Text("=="),num_arg('B')], bool)
 		pfn(op.ge,  [num_arg('A'), Text(">="),num_arg('B')], bool)
 		pfn(op.gt,  [num_arg('A'), Text(">"), num_arg('B')], bool)
@@ -3064,6 +3066,7 @@ def build_in_lemon_language():
 		pfn(op.mul, [num_arg('A'), Text("*"), num_arg('B')])
 		pfn(op.neg, [Text("-"), num_arg()])
 		pfn(op.sub, [num_arg('A'), Text("-"), num_arg('B')])
+		pfn(str,    [Text("str"), num_arg('converted')], str)
 
 		#import math
 
@@ -3249,7 +3252,7 @@ def build_in_misc():
 			return x[2]
 		return []
 
-	BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), text_arg()], list_of('text'), "list files in dir", "ls, dir")
+	BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), str_arg()], list_of('text'), "list files in dir", "ls, dir")
 
 	def load_module(file, placeholder):
 		log("loading "+file)
@@ -3264,7 +3267,7 @@ def build_in_misc():
 		log("ok")
 
 	BuiltinPythonFunctionDecl.create(
-		b_lemon_load_file, [Text("load"), text_arg()], Ref(B.text), "load file", "open").pass_root = True
+		b_lemon_load_file, [Text("load"), str_arg()], Ref(B.text), "load file", "open").pass_root = True
 
 	"""
 	def editor_load_file(name):
