@@ -189,11 +189,14 @@ def save(s, e):
 	s.save()
 def reload(s, e):
 	s.reload()
+def run(s, e):
+	s.run()
+
 
 add_keys(n.Module, -1, {
 	K(KMOD_CTRL, K_s): H(save),
 	K(KMOD_CTRL, K_r): H(reload),
-	K(KMOD_CTRL, K_BACKSLASH ): H(n.Module.run)})
+	K(KMOD_CTRL, K_BACKSLASH ): H(run)})
 
 
 def check_backspace(s, atts):

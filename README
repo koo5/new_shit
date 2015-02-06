@@ -2,33 +2,25 @@ what is this
 ===
 a protoprototype of a structural editor and a programming / shell language / user interface, inspired by inform 7, playing with natural language-like projections and stuff
 screenshots: <http://imgur.com/a/otY8X#1>
-research and discussion: http://goo.gl/1XilSW
-talk to us in [irc://irc.freenode.net/lemonparty](irc://irc.freenode.net/lemonparty)
+info: http://goo.gl/1XilSW
+irc: [irc://irc.freenode.net/lemonparty](irc://irc.freenode.net/lemonparty)
 
 
 dependencies
 ===
-hard:
-python3.4
+needed:
+python3.4 (?)
 fuzzywuzzy - for basic ordering of the menu
-pizco - at least for the Signal class
 
 recommended:
-libmarpa - needed for parsing
+cffi and libmarpa - needed for parsing
 https://github.com/jeffreykegler/libmarpa.git
 libmarpa is in latest ubuntu, but dunno what version and how that will play with the cffied header i have in marpa_cffi
 
-optional:
-colors - for rainbowy brackets:)
-
-the ncurses frontend needs some finishing, need to come up with good key combinations and finish the translation table  
 the pygame frontend requires pygame, obviously  
 
-apt-get install python3-pip  
-pip3 install --user fuzzywuzzy colors.py  
-
-get pizco with:  
-git submodule init; git submodule update  
+apt-get install python3-pip python3.4
+pip3 install --user fuzzywuzzy
 
 python3 pygame:
 https://packages.debian.org/experimental/python3-pygame
@@ -56,20 +48,7 @@ help wanted#update
 here are some (random and possibly outdated) things that i think would help lemon further, sometimes directly, sometimes by making it more
 accesible/interesting to other people. Some understanding of lemon is usually
 necessary though. I will be more than happy to explain every detail, but be prepared that it takes some time.
-some (messy) notes are also towards the end of stuff/the_doc.py, and search for "todo" in the source files..
-
-* support for more human languages.
- would make lemon interesting as a non-english programming tool
- i think this is an easy task. A syntax defined in python code is a list of tags.
- Sometimes you may see them grouped in another list, so there are several alternatives.
- I would wrap each tags list in a dict with additional metadata: "lang" and maybe "verbosity"..  
-
-* help me learn unipycation, yield python <http://yieldprolog.sourceforge.net/> , kanren or other logic programming
-  (learning logpy currently, and liking it)
- it will be needed for a lot of features of lemon.
- you dont actually need to know lemon to help me with this
-
-* improve the user interaction with nodes or the context help "system"
+some (messy) notes are also notes1, and search for "todo" in the source files..
 
 * add more standard library functions, operators for strings and lists
 
@@ -79,37 +58,26 @@ some (messy) notes are also towards the end of stuff/the_doc.py, and search for 
 
 * improve the curses frontend, figure out what keys to use
 
-* do more research on related projects (projectured, cedalion, MPS, eastwest..)
+* do more research on or write comparisons of related projects (projectured, cedalion, MPS, eastwest..)
 
 * figure out how to have a better font in pygame (for mathy expressions, for example) compatible with lemon license (search stuff/the_doc.py for 'font')
 
-* give me feedback on the builtins module, it should server as a reference to the language, with documentation and examples. 
+* improve logging
 
-* migrate the google doc to something saner? github wiki? the_doc.py?
-
-* add command line arguments or some other system to select/filter log messages by topic. use standard python logging module?
-
-* revive the_doc.py, the settings module, the toolbar, add support for images or live graphic canvas..
-
-* integrate some test framework, the few tests i have are simply ran on each start
-
-* get rid of the homebrew logging
+* integrate some test framework
 
 
-files#fixme
+files
 ===
-* main_sdl.py: the frontend, handles a window, events, drawing. run this one.
-* main_curses.py: proof-of-concept console frontend
-* lemon.py: frontend-agnostic middlestuff with debug replay functionality
+* sdl_client.py: the frontend, handles a window, events, drawing. run this one.
 * nodes.py: AST classes
 * widgets.py textbox, number box, button..
 * element.py - both widgets and nodes descend from Element
-* project.py: project() "projects" the AST tree into a grid of text
 * tags.py: the results of calling element.render(), text, attribute, child..
-* frames.py: the panels: Root, Menu, Info..
+* server_frames.py, rpcing_frames.py: the panels: Root, Menu, Info..
 * lemon_colors.py: color settings
 * lemon_args.py: command line arguments
-* stuff/the_doc.py: an attempt to migrate all documentation into lemon
+* notes1: an attempt to migrate all documentation into lemon:)
 
 
 

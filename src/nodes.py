@@ -171,25 +171,26 @@ def deserialize(data, parent):
 	parent is a dummy node placed at the point where the deserialized node should go,
 	this makes things like List.above() work while getting scope
 	"""
-
+	assert parent
 	if 'resolve' in data: # create a Ref pointing to another node
 		return resolve(data, parent)
 	if not 'decl' in data: # every node must have a type
 		raise DeserializationException("decl key not in found in %s"%data)
 	decl = data['decl']
-	log("deserializing node with decl %s"%decl)
+	log("deserializing node with decl %s"%repr(decl))
 	if decl == 'Parser': # ok, some nodes are special, we dont have a type for Parser
 		return Parser.deserialize(data, parent)
-	if decl == 'defun': # or defun..apparently..
+	elif decl == 'defun': # i dont save the exact class of functions definitions, makes it easier to change functions from BuiltinPythonFunctionDecl to FunctionDefinition, for example
 		return FunctionDefinitionBase.deserialize(data, parent)
 	#if decl == 'varref':
 	#	return VarRef.deserialize(data, parent)
-	if isinstance(decl, unicode): # we will look for a nodecl node with this name
+	elif isinstance(decl, unicode): # we will look for a nodecl node with this name
 		decl = find_decl(decl, parent.nodecls)
 		if decl:
 			log("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
 			return decl.instance_class.deserialize(data, parent)
 		else:
+			log("nodecl node not found")
 			raise DeserializationException ("cto takoj " + repr(decl))
 	elif isinstance(decl, dict): # the node comes with a decl as, basically, its child
 		decl = deserialize(decl, parent)
@@ -197,13 +198,15 @@ def deserialize(data, parent):
 			return deref_decl(decl).instance_class.deserialize(data, parent)
 		except DeserializationException as e:
 			log(e)
-			return failed_deser(data)
+			return failed_deser(data, parent)
 	else:
 		raise DeserializationException ("cto takoj " + repr(decl))
 
-def failed_deser(data):
+def failed_deser(data, parent):
 	"""create a Serialized node that holds the data that failed to deserialize"""
+	assert parent
 	r = Serialized.fresh()
+	r.parent = parent
 	if 'last_rendering' in data:
 		r.ch.last_rendering.pyval = data['last_rendering']
 	r.ch.serialization = to_lemon(data)
@@ -222,9 +225,9 @@ def find_decl(name, decls):
 
 
 def resolve(data, parent):
-
+	assert parent
 	assert(data['resolve'])
-	log("resolving%s", data)
+	log("resolving %s", data)
 	scope = parent.scope()
 
 	if 'decl' in data:
@@ -310,6 +313,7 @@ class SyntaxedPersistenceStuff(object):
 
 	@classmethod
 	def deserialize(cls, data, parent):
+		assert parent
 		r = cls.fresh()
 		r.parent = parent
 		for k,v in iteritems(data['children']):
@@ -326,17 +330,21 @@ class ListPersistenceStuff(object):
 
 	@classmethod
 	def deserialize(cls, data, parent):
+		assert parent
 		r = cls()
-		assert(r.items == [])
+
 		r.parent = parent
 
 		placeholder = Text("placeholder")
-		placeholder.parent = parent
+		placeholder.parent = parent#?maybe rather =r?
 		r.decl = deserialize(data['decl'], placeholder)
 
+		assert(r.items == [])
 		for i, item_data in enumerate(data['items']):
-			r.add(Text("placeholder"))
-			r.items[i] = deserialize(item_data, r.items[i])
+			pl = Text("placeholder")
+			r.add(pl)
+			r.items[i] = deserialize(item_data, pl)
+			r.items[i].parent = r
 		return r
 
 class BaseRefPersistenceStuff(object):
@@ -353,6 +361,7 @@ class RefPersistenceStuff(BaseRefPersistenceStuff):
 
 	@classmethod
 	def deserialize(cls, data, parent):
+		assert parent
 		placeholder = Text("placeholder")
 		placeholder.parent = parent
 		target = deserialize(data['target'], placeholder)
@@ -369,6 +378,7 @@ class VarRefPersistenceStuff(BaseRefPersistenceStuff):
 	@classmethod
 
 	def deserialize(cls, data, parent):
+		assert parent
 		placeholder = Text("placeholder")
 		placeholder.parent = parent
 		decl = deserialize(data['target']['decl'], placeholder)
@@ -402,6 +412,7 @@ class ParserPersistenceStuff(object):
 
 	@classmethod
 	def deserialize(cls, data, parent):
+		assert parent
 		r = cls(data['slot'])
 		r.parent = parent
 		log("deserializing Parser "+str(data))
@@ -427,6 +438,7 @@ class FunctionCallPersistenceStuff(object):
 
 	@classmethod
 	def deserialize(cls, data, parent):
+		assert parent
 		placeholder = Text("placeholder")
 		placeholder.parent = parent
 		r = cls(deserialize(data['target'], placeholder))
@@ -1023,7 +1035,7 @@ class List(ListPersistenceStuff, Collapsible):
 	def __init__(self):
 		super(List, self).__init__()
 		self.items = []
-		self.decl = Ref(B.list_of_statements)
+		self.decl = Ref(B.list_of_anything)
 
 	@classmethod
 	def register_class_symbol(cls):
@@ -1203,6 +1215,7 @@ class Statements(List):
 	def __init__(s):
 		super(Statements, s).__init__()
 		s.view_mode = Collapsible.vm_multiline
+		s.decl = Ref(B.statements)
 
 	@classmethod
 	def fresh(cls, decl=None):
@@ -1464,11 +1477,6 @@ class Module(Syntaxed):
 	def reload(s):
 		log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
 		return CHANGED
-
-	def run(s):
-		log(s.run())
-		return CHANGED
-
 
 	def save(self):
 		#import yaml
@@ -2367,13 +2375,14 @@ class FunctionDefinitionBase(Syntaxed):
 	@property
 	def sig(self):
 		sig = self.ch.sig.parsed
+
 		#check..
 		for i in sig.items:
 			assert(i.parent)
 
 		#check..
 		if not isinstance(sig, List):
-			log("sig did not parse to list but to ", repr(sig))
+			log("sig did not parse to list but to %s", repr(sig))
 			r = [Text("function's sig is not a List")]
 		else:
 			r = [i.parsed for i in sig.items]
@@ -2783,21 +2792,23 @@ def build_in_editor_structure_nodes():
 					 {'itemtype': B.type}),'list')
 
 	build_in(
+	SyntaxedNodecl(Definition,
+				   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
+				   {'name': 'text', 'type': 'type'}))
+
+
+	build_in(
 		SyntaxedNodecl(SyntacticCategory,
 			[TextTag("syntactic category:"), ChildTag("name")],
 			{'name': 'text'}))
 
 	build_in(SyntacticCategory({'name': Text("statement")}))
-
-	build_in(
-	SyntaxedNodecl(Definition,
-				   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
-				   {'name': 'text', 'type': 'type'}))
+	build_in(SyntacticCategory({'name': Text("anything")}))
 
 	build_in(
 		Definition(
-			{'name': Text("list of statements"),
-			 'type': list_of(B.statement)}))
+			{'name': Text("list of anything"),
+			 'type': list_of(B.anything)}))
 
 	build_in(Nodecl(Statements))
 
@@ -2826,13 +2837,11 @@ def build_in_lemon_language():
 	build_in(Nodecl(List), "list_literal")
 
 	build_in([
+		SyntaxedNodecl(WorksAs,
+					   [ChildTag("sub"), TextTag("works as"), ChildTag("sup")],
+					   {'sub': 'type', 'sup': 'type'}),
 
-	SyntaxedNodecl(WorksAs,
-				   [ChildTag("sub"), TextTag("works as"), ChildTag("sup")],
-				   {'sub': 'type', 'sup': 'type'}),
-
-	SyntacticCategory({'name': Text("anything")}),
-	SyntacticCategory({'name': Text("expression")})
+		SyntacticCategory({'name': Text("expression")})
 	])
 
 	build_in(WorksAs.b("statement", "anything"), False)

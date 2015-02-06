@@ -1154,3 +1154,30 @@ https://mail.mozilla.org/pipermail/firefox-dev/2014-December/002510.html
 
 
 
+
+
+
+
+
+
+ponderings
+===
+* revive the_doc.py, the settings module, the toolbar, add support for images or live graphic canvas..
+
+* support for more human languages.
+ would make lemon interesting as a non-english programming tool
+ i think this is an easy task. A syntax defined in python code is a list of tags.
+ Sometimes you may see them grouped in another list, so there are several alternatives.
+ I would wrap each tags list in a dict with additional metadata: "lang" and maybe "verbosity"..  
+
+* help me learn unipycation, yield python <http://yieldprolog.sourceforge.net/> , kanren or other logic programming
+  (learning logpy currently, and liking it)
+ it will be needed for a lot of features of lemon.
+ you dont actually need to know lemon to help me with this
+
+* improve the user interaction with nodes or the context help "system"
+
+* give me feedback on the builtins module, it should serve as a reference to the language, with documentation and examples. 
+
+* migrate the google doc to something saner? github wiki? the_doc.py?
+

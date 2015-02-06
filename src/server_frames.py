@@ -122,29 +122,32 @@ class Editor(ServerFrame):
 			s.signal_change()
 
 
-def handle_keypress(event):
-	ph = potential_handlers(event.trip)
-	log(event)
+def handle_keypress(e):
+	ph = potential_handlers(e.trip)
+	log(e)
 	for k, (elem, handler) in ph:
 		log("matching with %s:%s..", k, handler)
-		if (event.mods == k.mods and (
-			event.key == k.key ) or
-		    (k.key == UNICODE and event.uni and event.key not in (
-		    keys.K_ESCAPE, keys.K_BACKSPACE, keys.K_DELETE))):
+		if (
+			(e.mods == k.mods and e.key == k.key)
+		or
+		    (k.key == UNICODE
+		     and e.uni
+		     and len(e.mods) == 0
+		     and e.key not in (keys.K_ESCAPE, keys.K_BACKSPACE, keys.K_DELETE))):
 
-				event.any = event.trip.middle or event.trip.left or event.trip.right
+				e.any = e.trip.middle or e.trip.left or e.trip.right
 
-				event.left, event.middle, event.right = (
-					event.trip.left   if event.trip.left and event.trip.left.get(Att.elem) == elem else None,
-					event.trip.middle if event.trip.middle and event.trip.middle.get(Att.elem) == elem else None,
-					event.trip.right  if event.trip.right and event.trip.right.get(Att.elem) == elem else None)
+				e.left, e.middle, e.right = (
+					e.trip.left   if e.trip.left and e.trip.left.get(Att.elem) == elem else None,
+					e.trip.middle if e.trip.middle and e.trip.middle.get(Att.elem) == elem else None,
+					e.trip.right  if e.trip.right and e.trip.right.get(Att.elem) == elem else None)
 
-				event.atts = event.middle or event.left or event.right
+				e.atts = e.middle or e.left or e.right
 				#this should be named "my", to reflect that is corresponds to the node thats gonna handle it,
 				# not some of its children (as opposed to "any")
 
 				log("match:%s.%s", elem, handler.func)
-				return elem, handler.func(elem, event)
+				return elem, handler.func(elem, e)
 
 
 def potential_handlers(trip):
@@ -313,14 +316,19 @@ class Menu(SidebarFrame):
 	def update_current_text(s):
 		parser = s.current_parser_node
 		i = s.parser_node_item(parser, s.editor.atts)
+		text = ""
+		if i != None:
 
-		if i == None:
-			text = ""
-		else:
-			if isinstance(parser.items[i], nodes.Node):
-				text = ""
-			else:
-				text = parser.items[i].text
+			try:# we're gonna need to first re-project the editor,
+				# then have the frontend call a more general editor.after-project, that updates
+				# the atts and notifies the menu. We have outdated atts here now.
+
+				if isinstance(parser.items[i], nodes.Node):
+					text = ""
+				else:
+					text = parser.items[i].text
+			except IndexError:
+				pass
 
 		s.current_text = text
 

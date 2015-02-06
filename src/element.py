@@ -31,7 +31,7 @@ class Element():
 			else:
 				r = s._parent()
 			if not r:
-				log("parent is None", s)
+				log("%s.parent is None", s)
 			return r
 		else:
 			return s._parent
