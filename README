@@ -20,12 +20,13 @@ libmarpa is in latest ubuntu, but dunno what version and how that will play with
 the pygame frontend requires pygame, obviously  
 
 apt-get install python3-pip python3.4
+
 pip3 install --user fuzzywuzzy
 
 python3 pygame:
 https://packages.debian.org/experimental/python3-pygame
 http://pygame.org/wiki/CompileUbuntu
-https://launchpad.net/~thopiekar/+archive/ubuntu/pygame
+https://launchpad.net/~thopiekar/+archive/ubuntu/pygame <- seems to not include freetype
 
 
 running it
