@@ -1181,3 +1181,15 @@ ponderings
 
 * migrate the google doc to something saner? github wiki? the_doc.py?
 
+
+
+
+
+
+
+#http://python-future.org/
+#from future.builtins import super #seems to break things... lets just wait to split the frontend/backend or ditch python2 pygame?
+
+
+
+

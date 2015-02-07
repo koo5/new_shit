@@ -14,7 +14,6 @@ good luck.
 # region imports
 
 import json
-from types import SimpleNamespace
 import collections
 from pprint import pformat as pp
 

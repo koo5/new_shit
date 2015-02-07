@@ -6,6 +6,9 @@ from collections import namedtuple
 from pprint import pformat as pp
 
 from lemon_utils.pizco_signal.util import Signal
+
+#import sys
+#sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
 from fuzzywuzzy import fuzz
 
 from lemon_utils.lemon_six import iteritems, unicode
