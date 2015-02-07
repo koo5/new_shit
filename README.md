@@ -1,3 +1,5 @@
+see the dev branch for a largely rewritten version
+
 what is this
 ===
 a protoprototype of a structural editor and a programming / shell language / user interface, inspired by inform 7, playing with natural language-like projections
