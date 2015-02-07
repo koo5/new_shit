@@ -14,15 +14,15 @@ fuzzywuzzy - for basic ordering of the menu
 
 recommended:
 cffi and libmarpa - needed for parsing
+apt-get install python3-cffi
+or
+pip3 install --user cffi
 https://github.com/jeffreykegler/libmarpa.git
-libmarpa is in latest ubuntu, but dunno what version and how that will play with the cffied header i have in marpa_cffi
-
-the pygame frontend requires pygame, obviously  
 
 apt-get install python3-pip python3.4
-
 pip3 install --user fuzzywuzzy
 
+the pygame frontend requires pygame, obviously  
 python3 pygame:
 https://packages.debian.org/experimental/python3-pygame
 http://pygame.org/wiki/CompileUbuntu
@@ -38,13 +38,12 @@ if the latest commit doesnt run, git checkout HEAD^ until you find one that does
 
 getting started
 ===
-some info is in intro.txt, some in the builtins module inside lemon,
-some context sensitive help is in the sidebars.  
+some context sensitive help is in the sidebar.  
 Stop by in the irc channel. I can also take you on a tour in VNC.
 
 
 
-help wanted#update
+help wanted
 ===
 here are some (random and possibly outdated) things that i think would help lemon further, sometimes directly, sometimes by making it more
 accesible/interesting to other people. Some understanding of lemon is usually

@@ -2719,17 +2719,6 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	r["loaded program"] = B.module.inst_fresh()
 	r["loaded program"].ch.name = Text("placeholder")
 
-	library = r["library"] = make_list('module')
-	import glob
-	for file in glob.glob("library/*.lemon.json"):
-		placeholder = library.add(new_module())
-		placeholder.ch.name.pyval = "placeholder for "+file
-		load_module(file, placeholder)
-
-	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
-
-
-
 
 	r["builtins"] = new_module()
 	r["builtins"].ch.statements.items = list(itervalues(B._dict))
@@ -2739,6 +2728,13 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	r["builtins"].ch.statements.view_mode = 2
 
 
+	library = r["library"] = make_list('module')
+	import glob
+	for file in glob.glob("library/*.lemon.json"):
+		placeholder = library.add(new_module())
+		placeholder.ch.name.pyval = "placeholder for "+file
+		load_module(file, placeholder)
+	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
 
 
 
@@ -3142,28 +3138,25 @@ class Serialized(Syntaxed):
 
 
 def b_lemon_load_file(root, name):
+	return load_module(name, root["loaded program"])
+
+def load_module(file_name, placeholder):
+	log("loading "+file_name)
 	try:
-		log("loading "+name)
-		try:
-			#import yaml
-			#input = yaml.load(open(name, "r").read())
-			import json
-			input = json.load(open(name, "r"))
-		except Exception as e:
-			return str(e)
-
-		#root["loaded program"] = b['module'].inst_fresh() # this is needed so that the module correctly limits scope resolving during deserialization
-		#root["loaded program"].parent = root
-		root["loaded program"] = deserialize(input, root["loaded program"])
-		root.fix_parents()
-		for i in root["loaded program"].flatten():
-			if isinstance(i, Serialized):
-				i.unserialize()
-		root.fix_parents()
+		input = json.load(open(file_name, "r"))
 	except Exception as e:
-		raise
+		return str(e)
+	d = deserialize(input, placeholder)
+	placeholder.parent.replace_child(placeholder, d)
+	d.fix_parents()
+	for i in d.flatten():
+		if isinstance(i, Serialized):
+			i.unserialize()
+		d.fix_parents()
+	log("ok")
+	return file_name + " loaded ok"
 
-	return name + " loaded ok"
+
 
 
 
@@ -3252,18 +3245,6 @@ def build_in_misc():
 		return []
 
 	BuiltinPythonFunctionDecl.create(b_files_in_dir, [Text("files in"), str_arg()], list_of('text'), "list files in dir", "ls, dir")
-
-	def load_module(file, placeholder):
-		log("loading "+file)
-		input = json.load(open(file, "r"))
-		d = deserialize(input, placeholder)
-		placeholder.parent.replace_child(d)
-		d.fix_parents()
-		for i in d.flatten():
-			if isinstance(i, Serialized):
-				i.unserialize()
-			d.fix_parents()
-		log("ok")
 
 	BuiltinPythonFunctionDecl.create(
 		b_lemon_load_file, [Text("load"), str_arg()], Ref(B.text), "load file", "open").pass_root = True

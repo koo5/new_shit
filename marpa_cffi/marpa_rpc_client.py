@@ -10,6 +10,8 @@ from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues
 from lemon_utils.utils import uniq
 from lemon_args import args
+from lemon_utils.lemon_logging import log, warn
+from marpa_cffi.marpa_misc import *
 
 import marpa_cffi
 marpa = marpa_cffi.try_loading_marpa()
@@ -17,12 +19,11 @@ if marpa == True:
 	import marpa_cffi.marpa_codes
 	import marpa_cffi.graphing_wrapper as graphing_wrapper
 	from marpa_cffi.marpa import *
-	from marpa_cffi.marpa_misc import *
 else:
 	log(marpa)
 	log('no marpa, no parsing!')
 	if not args.lame:
-		log("install libmarpa or run with --lame")
+		log("install cffi and libmarpa, or run with --lame")
 		raise marpa
 	else:
 		marpa = False
