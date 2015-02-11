@@ -1497,15 +1497,13 @@ class Module(Syntaxed):
 		if self == self.root["builtins"]:
 			return [] # builtins dont see anything
 		else:
-			r = self.root["builtins"].ch.statements.parsed.items
+			r = self.root["builtins"].ch.statements.parsed.items[:]
 
-			return r
-			# this uncovers some deserialization bug with two empty Parsers being added to builtins
 			for module in self.root['library'].items:
 				if module != self:
-					r += module.ch.statements.parsed.items
-				#log(module)
-				#log(r)
+					r += [x.parsed for x in module.ch.statements.parsed.items]
+				log(module)
+				log(r)
 			return r
 
 
@@ -3219,12 +3217,14 @@ def build_in_misc():
 			super(ShellCommand, self).__init__(children)
 
 		def _eval(s):
-			cmd = s.ch.command.eval()
-			import os
+			cmd = s.ch.command.eval().pyval
+			import subprocess
 			try:
-				return Text(str(os.system(cmd.pyval)))
-			except Exception as e:
-				return Text(str(e))
+				o = subprocess.check_output(cmd, stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
+			except subprocess.CalledProcessError as e:
+				o = e.output
+
+			return Text(str(o))
 
 	build_in(SyntaxedNodecl(ShellCommand,
 				   [["bash:", ChildTag("command")]],
