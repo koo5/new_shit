@@ -1,5 +1,8 @@
+going back to single font by default, not gonna implement them properly yet. Fixed editor scrolling. removed odict.py. 
+---
+subclass module into terminal. make library visible in scope and 
+---
 make menu.current_parser a weakref
-----
 
 only register grammar if root.reregister is set. Only render if root.rerender. 
 #Only output grammar debugging info if --debug-grammar

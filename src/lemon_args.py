@@ -40,6 +40,8 @@ parser.add_argument('--profile', action='store_true')
 parser.add_argument('--no-timers', action='store_true')
 parser.add_argument('--arrows', action='store_true')
 parser.add_argument('--fisheye', action='store_true')
+parser.add_argument('--multiple-fonts', action='store_true')
+
 parser.add_argument('--crash', action='store_true')
 
 parser.add_argument('--line-spacing', type=int,

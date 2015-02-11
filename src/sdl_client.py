@@ -71,10 +71,12 @@ keybindings.change_font_size = user_change_font_size
 
 
 fonts = {}
-font_size_multiplier = 10
+font_size_step = 10
 
-def get_font(modifier):
-	size = (modifier * font_size_multiplier) + args.font_size
+def get_font(level):
+	if not args.multiple_fonts:
+		level = 0
+	size = (level * font_size_step) + args.font_size
 	if size not in fonts:
 		fonts[size] = make_font(size)
 	return fonts[size]

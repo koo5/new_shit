@@ -1494,10 +1494,20 @@ class Module(Syntaxed):
 
 	def scope(self):
 
-		if self != self.root["builtins"]:
-			return self.root["builtins"].ch.statements.parsed
+		if self == self.root["builtins"]:
+			return [] # builtins dont see anything
 		else:
-			return [] #nothing above but Root
+			r = self.root["builtins"].ch.statements.parsed.items
+
+			return r
+			# this uncovers some deserialization bug with two empty Parsers being added to builtins
+			for module in self.root['library'].items:
+				if module != self:
+					r += module.ch.statements.parsed.items
+				#log(module)
+				#log(r)
+			return r
+
 
 
 # endregion

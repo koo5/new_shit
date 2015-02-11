@@ -131,7 +131,7 @@ class ClientFrame(object):
 
 			self.sdl_draw_line(surf, line.chars, line.font, y, highlight, transparent, just_bg)
 
-			if row == self.rows:
+			if row == self.rows + self.scroll_lines:
 				break
 
 			y += args.line_spacing
@@ -542,6 +542,8 @@ class Editor(ClientFrame):
 			m.chars = 0
 			s.update_atts_on_server()
 
+
+	#do we want to keep cursor_r relative to root or screen (scrolled)?
 
 	@property
 	def atts_at_cursor(self):
