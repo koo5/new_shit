@@ -129,7 +129,7 @@ def handle_keypress(e):
 	ph = potential_handlers(e.trip)
 	log(e)
 	for k, (elem, handler) in ph:
-		log("matching with %s:%s..", k, handler)
+		#log("matching with %s:%s..", k, handler)
 		if (
 			(e.mods == k.mods and e.key == k.key)
 		or

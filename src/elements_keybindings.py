@@ -172,7 +172,7 @@ def newline(s, e):
 
 add_keys(n.List, -1,
 	{   K(KMOD_CTRL,    K_DELETE): H(delete_item, delete_item_check),
-		K((),           K_RETURN): H(newline)})
+		K((),           K_RETURN): H(newline, None, RIGHT)})
 
 def run_line(self, e):
 	index = self.index_of_item_under_cursor(e)

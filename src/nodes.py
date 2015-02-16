@@ -284,7 +284,7 @@ class NodePersistenceStuff(object):
 
 	def serialize_decl(s):
 		if s.decl:
-			log("serializing decl %s of %s"%(s.decl, s))
+			#log("serializing decl %s of %s"%(s.decl, s))
 			return {'decl': s.decl.serialize()}
 		else:
 			return {'class': s.__class__.__name__.lower()}
@@ -949,10 +949,27 @@ class Collapsible(Node):
 		assert(r.decl)
 		return r
 
+
+def replace_thing_in_odict(d:odict, old, new):
+	r = odict()
+	for k,v in iteritems(d):
+		if k == old:
+			r[new] = v
+		elif v == old:
+			r[k] = new
+		else:
+			r[k] = v
+	return r
+
+
 class Dict(Collapsible):
 	def __init__(self):
 		super(Dict, self).__init__()
 		self.items = odict()
+
+	def replace_child(s, old, new):
+		s.items = replace_thing_in_odict(s.items, old, new)
+		s.fix_parents()
 
 	def render_items(self):
 		r = []
@@ -1061,17 +1078,13 @@ class List(ListPersistenceStuff, Collapsible):
 		return r
 
 	def render_items(self):
-		opening, pre, closing = ('[', ',', ']') if self.view_mode == 1 else ('', '\n', '\n')
+		opening, between, closing = ('[', ', ', ']') if self.view_mode == 1 else ('[ \n', ' \n', '\n]')
 		yield opening
 		for i, item in enumerate(self.items):
-			if i != 0 and self.view_mode == 1: yield ' '
 			yield [AttTag(Att.item_index, (self, i)), zwe_tag]
-			if i != 0: yield pre
+			if i != 0: yield between
 			yield [ElementTag(item),EndTag()]
-
 		yield [AttTag('list_end',555), zwe_tag, closing, EndTag()]
-
-
 
 	def __getitem__(self, i):
 		return self.items[i]
@@ -1473,9 +1486,15 @@ class Module(Syntaxed):
 		if node:
 			return node.eval()
 
+	@property
+	def file_name(s):
+		r = s.ch.file.pyval
+		if r == "":
+			r = 'test_save.lemon.json'
+		return r
+
 	def reload(s):
-		log(b_lemon_load_file(s.root, 'test_save.lemon.json'))
-		return CHANGED
+		log(load_module(s.file_name, s))
 
 	def save(self):
 		#import yaml
@@ -1484,13 +1503,15 @@ class Module(Syntaxed):
 		#log(s)
 		#todo easy: find a json module that would preserve odict ordering (or hjson)
 		import json
-		s = json.dumps(self.serialize(), indent = 4)
-		open('test_save.lemon.json', "w").write(s)
-		log(s)
+		out = json.dumps(self.serialize(), indent = 4)
+		with open(self.file_name, "w") as f:
+			f.write(out)
+			f.close()
+		#log(out)
+		log("saved to "+self.file_name)
 		#except Exception as e:
 		#	log(e)
 		#	raise e
-		return CHANGED
 
 	def scope(self):
 
@@ -1500,10 +1521,12 @@ class Module(Syntaxed):
 			r = self.root["builtins"].ch.statements.parsed.items[:]
 
 			for module in self.root['library'].items:
+				if not isinstance(module, Module):
+					continue
 				if module != self:
 					r += [x.parsed for x in module.ch.statements.parsed.items]
-				log(module)
-				log(r)
+				#log(module)
+				#log(r)
 			return r
 
 
@@ -2729,6 +2752,10 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	r["loaded program"].ch.name = Text("placeholder")
 
 
+	library = r["library"] = make_list('module')
+	library.view_mode = library.vm_multiline
+
+
 	r["builtins"] = new_module()
 	r["builtins"].ch.statements.items = list(itervalues(B._dict))
 	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
@@ -2736,8 +2763,6 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	r["builtins"].ch.statements.add(Text("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
 
-
-	library = r["library"] = make_list('module')
 	import glob
 	for file in glob.glob("library/*.lemon.json"):
 		placeholder = library.add(new_module())
@@ -3157,6 +3182,7 @@ def load_module(file_name, placeholder):
 		return str(e)
 	d = deserialize(input, placeholder)
 	placeholder.parent.replace_child(placeholder, d)
+	d.ch.file.pyval = file_name
 	d.fix_parents()
 	for i in d.flatten():
 		if isinstance(i, Serialized):
@@ -3259,18 +3285,6 @@ def build_in_misc():
 
 	BuiltinPythonFunctionDecl.create(
 		b_lemon_load_file, [Text("load"), str_arg()], Ref(B.text), "load file", "open").pass_root = True
-
-	"""
-	def editor_load_file(name):
-		path = name.eval().text
-	    log("loading", path)
-		try:
-			data = json.load(open(path, "r"))
-			root = name.root #hack
-			r.add(("loaded program", deserialize0(root, data)))
-		except Exception as e:
-			log(e)
-	"""
 
 
 

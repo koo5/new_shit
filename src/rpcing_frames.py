@@ -311,7 +311,7 @@ class ClientFrame(object):
 	def under_cr(self, cr):
 		c,r = cr
 		try:
-			return self.lines[r].chars[c][1][Att.elem]
+			return self.lines[r+self.scroll_lines].chars[c][1][Att.elem]
 		except (IndexError, KeyError):
 			return None
 
@@ -395,13 +395,9 @@ class Editor(ClientFrame):
 			log('moving diagonally:-)')
 			s.move_cursor_v(1)
 
-	@property
-	def under_cursor(self):
-		return self.under_cr((self.cursor_c, self.cursor_r))
-
 	def first_nonblank(self):
 		r = 0
-		for ch, a in self.lines[self.cursor_r].chars:
+		for ch, a in self.lines[self.cursor_r+s.scroll_lines].chars:
 			if ch == " ":
 				r += 1
 			else:
@@ -412,7 +408,7 @@ class Editor(ClientFrame):
 		s.counterpart.set_atts(s.atts_triple)
 
 	def after_cursor_moved(s):
-		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
+		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r+s.scroll_lines)
 		s.must_redraw = True
 		s.update_atts_on_server()
 
@@ -421,13 +417,13 @@ class Editor(ClientFrame):
 		"""returns True if it moved"""
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
-		if len(s.lines) <= s.cursor_r or \
-						s.cursor_c > len(s.lines[s.cursor_r].chars):
+		if len(s.lines) <= s.cursor_r+s.scroll_lines or \
+						s.cursor_c > len(s.lines[s.cursor_r+s.scroll_lines].chars):
 			s._move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
 			if s._move_cursor_v(-1):
-				s.cursor_c = len(s.lines[s.cursor_r].chars)
+				s.cursor_c = len(s.lines[s.cursor_r+s.scroll_lines].chars)
 			else:
 				s.cursor_c = 0
 		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
@@ -475,7 +471,7 @@ class Editor(ClientFrame):
 				break
 
 	def cursor_home(s):
-		if len(s.lines) > s.cursor_r: # dont try to home beyond the end of file
+		if len(s.lines) > s.cursor_r+s.scroll_lines: # dont try to home beyond the end of file
 			if s.cursor_c != 0:
 				s.cursor_c = 0
 			else:
@@ -483,8 +479,8 @@ class Editor(ClientFrame):
 			s.after_cursor_moved()
 
 	def cursor_end(s):
-		if len(s.lines) > s.cursor_r:
-			s.cursor_c = len(s.lines[s.cursor_r].chars)
+		if len(s.lines) > s.cursor_r+s.scroll_lines:
+			s.cursor_c = len(s.lines[s.cursor_r+s.scroll_lines].chars)
 			s.after_cursor_moved()
 
 	def cursor_top(s):
@@ -511,12 +507,12 @@ class Editor(ClientFrame):
 					assert(Att.char_index in i[1])
 		"""
 	def find_element(s, e):
-		"""return coordinates of element"""
+		"""return coordinates of element in s.lines"""
 		#assert(isinstance(e, int)),  e
-		for r, line in enumerate(s.lines):
+		for l, line in enumerate(s.lines):
 			for c,char in enumerate(line.chars):
 				if char[1][Att.elem] == e:
-					return c, r
+					return c, l
 
 	def after_cursor_moved(s):
 		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
@@ -531,7 +527,8 @@ class Editor(ClientFrame):
 			log("moving cursor to %s", m.node)
 			pos = s.find_element(m.node)
 			if pos:
-				s.cursor_c, s.cursor_r = pos
+				s._move_cursor_v(s.cursor_r - pos[1] - s.scroll_lines)
+				s.cursor_c = pos[0]
 
 		if m.chars:
 			log("moving cursor by %s chars", m.chars)
@@ -543,12 +540,15 @@ class Editor(ClientFrame):
 			s.update_atts_on_server()
 
 
-	#do we want to keep cursor_r relative to root or screen (scrolled)?
+	@property
+	def under_cursor(self):
+		return self.under_cr((self.cursor_c, self.cursor_r))
+
 
 	@property
 	def atts_at_cursor(self):
 		try:
-			return self.lines[self.cursor_r].chars[self.cursor_c][1]
+			return self.lines[self.cursor_r+self.scroll_lines].chars[self.cursor_c][1]
 		except IndexError:
 			return None
 
