@@ -166,7 +166,7 @@ def delete_item(s, e):
 	return CHANGED
 
 def newline(s, e):
-	item_index = s.item_index(e.any) or (-1 if 'list_end' in e.any else None) or 0
+	item_index = (-1 if 'list_end' in e.any else None) or s.item_index(e.any) or 0
 	s.newline(item_index)
 	return CHANGED
 

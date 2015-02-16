@@ -116,11 +116,11 @@ class ClientFrame(object):
 
 		for row, line in enumerate(self.lines.get()):
 			assert type(line) == Line
-			font = line.font
-			assert type(font) == Font
-
 			if row < self.scroll_lines:
 				continue
+
+			font = line.font
+			assert type(font) == Font
 
 			fisheye = args.fisheye and type(self) == Editor and row == self.cursor_r
 			if fisheye:
@@ -308,11 +308,22 @@ class ClientFrame(object):
 	              ]])
 		"""
 
-	def under_cr(self, cr):
+
+	@property
+	def under_cursor(s):
+		atts = s.atts_at_cursor
+		if atts:
+			return atts[Att.elem]
+
+	@property
+	def atts_at_cursor(s):
+		return s.atts_at_cr((s.cursor_c, s.cursor_r))
+
+	def atts_at_cr(self, cr):
 		c,r = cr
 		try:
-			return self.lines[r+self.scroll_lines].chars[c][1][Att.elem]
-		except (IndexError, KeyError):
+			return self.lines[r+self.scroll_lines].chars[c][1]
+		except IndexError:
 			return None
 
 	def click_cr(s,e):
@@ -403,9 +414,6 @@ class Editor(ClientFrame):
 			else:
 				return r
 
-
-	def update_atts_on_server(s):
-		s.counterpart.set_atts(s.atts_triple)
 
 	def after_cursor_moved(s):
 		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r+s.scroll_lines)
@@ -527,7 +535,7 @@ class Editor(ClientFrame):
 			log("moving cursor to %s", m.node)
 			pos = s.find_element(m.node)
 			if pos:
-				s._move_cursor_v(s.cursor_r - pos[1] - s.scroll_lines)
+				s._move_cursor_v(s.cursor_r - pos[1] + s.scroll_lines)
 				s.cursor_c = pos[0]
 
 		if m.chars:
@@ -539,18 +547,8 @@ class Editor(ClientFrame):
 			m.chars = 0
 			s.update_atts_on_server()
 
-
-	@property
-	def under_cursor(self):
-		return self.under_cr((self.cursor_c, self.cursor_r))
-
-
-	@property
-	def atts_at_cursor(self):
-		try:
-			return self.lines[self.cursor_r+self.scroll_lines].chars[self.cursor_c][1]
-		except IndexError:
-			return None
+	def update_atts_on_server(s):
+		s.counterpart.set_atts(s.atts_triple)
 
 	@property
 	def atts_triple(s):
@@ -562,7 +560,7 @@ class Editor(ClientFrame):
 			left = None
 
 		right = s.atts_at_cursor
-		middle = s.zwes.get((s.cursor_c, s.cursor_r))
+		middle = s.zwes.get((s.cursor_c, s.cursor_r+s.scroll_lines))
 
 		return dict(left=left, middle=middle, right=right)
 
