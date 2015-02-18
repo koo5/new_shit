@@ -46,6 +46,9 @@ class ServerFrame(object):
 	def collect_tags(s):
 		return batch(_collect_tags(s, s.tags()))
 
+	def on_elem_mouse_press(elem, button):
+		return elem.on_mouse_press(button)
+
 
 class Editor(ServerFrame):
 	def __init__(self):

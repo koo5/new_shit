@@ -310,14 +310,21 @@ class ClientFrame(object):
 
 
 	@property
-	def under_cursor(s):
-		atts = s.atts_at_cursor
+	def cursor(s):
+		return s.cursor_c, s.cursor_r
+
+	def under_cr(s, cr):
+		atts = s.atts_at_cr(cr)
 		if atts:
 			return atts[Att.elem]
 
 	@property
+	def under_cursor(s):
+		return s.under_cr(s.cursor)
+
+	@property
 	def atts_at_cursor(s):
-		return s.atts_at_cr((s.cursor_c, s.cursor_r))
+		return s.atts_at_cr(s.cursor)
 
 	def atts_at_cr(self, cr):
 		c,r = cr
@@ -327,9 +334,12 @@ class ClientFrame(object):
 			return None
 
 	def click_cr(s,e):
-		node = s.under_cr(e.cr)
-		if not node or not node.on_mouse_press(e.button):
-			s.cursor_c, s.cursor_r = e.cr
+		elem = s.under_cr(e.cr)
+		if not node or not s.counterpart.on_elem_mouse_press(elem, e.button):
+			s.click_fallthrough(e.cr)
+
+	def click_fallthrough(s, cr):
+		pass
 
 	def scroll(s,l):
 		sl = s.scroll_lines + l
@@ -349,6 +359,7 @@ class ClientFrame(object):
 			s.click_cr(e)
 
 
+
 	def sdl_cursor_xy(s,c,r):
 		x = c * s.lines[r].font.width
 		y = 0
@@ -359,13 +370,13 @@ class ClientFrame(object):
 			else:
 				y += fh + args.line_spacing
 
-
 	def sdl_xy2cr(s, xy):
 		x,y = xy
 		for row, line in enumerate(s.lines):
+			if row < s.scroll_lines: continue
 			y -= line.font.height + args.line_spacing
-			if row <= 0:
-				return (x//line.font.width, row)
+			if y < 0:
+				return (x//line.font.width, row-s.scroll_lines)
 
 
 
@@ -413,13 +424,6 @@ class Editor(ClientFrame):
 				r += 1
 			else:
 				return r
-
-
-	def after_cursor_moved(s):
-		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r+s.scroll_lines)
-		s.must_redraw = True
-		s.update_atts_on_server()
-
 
 	def _move_cursor_h(s, x):
 		"""returns True if it moved"""
@@ -522,12 +526,6 @@ class Editor(ClientFrame):
 				if char[1][Att.elem] == e:
 					return c, l
 
-	def after_cursor_moved(s):
-		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
-		s.must_redraw = True
-		s.update_atts_on_server()
-		s.redraw()
-
 	def do_post_render_move_cursor(s):
 		m = s.counterpart.root.delayed_cursor_move
 
@@ -549,6 +547,15 @@ class Editor(ClientFrame):
 
 	def update_atts_on_server(s):
 		s.counterpart.set_atts(s.atts_triple)
+
+	def after_cursor_moved(s):
+		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
+		s.must_redraw = True
+		s.update_atts_on_server()
+
+	def click_fallthrough(s, cr):
+		s.cursor_c, s.cursor_r = cr
+		s.after_cursor_moved()
 
 	@property
 	def atts_triple(s):

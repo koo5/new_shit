@@ -148,7 +148,8 @@ class NState(Widget):
 		return self.texts[self.value]
 
 	def on_mouse_press(self, button):
-		return self.toggle()
+		self.toggle(555)
+		return True
 
 
 
@@ -167,4 +168,5 @@ class Toggle(Widget):
 	def text(self):
 		return self.texts[0] if self.value else self.texts[1]
 	def on_mouse_press(self, button):
-		self.toggle()
+		self.toggle(555)
+		return True

@@ -58,20 +58,17 @@ import replay
 from rpcing_frames import Font, Line
 
 
-def reset_cursor_blink_timer():
-	if not args.dontblink:
-		pygame.time.set_timer(pygame.USEREVENT + 1, 1600)
-	c.editor.cursor_blink_phase = True
+
+
+
+fonts = {}
+font_size_step = 10
 
 def user_change_font_size(by = 0):
 	change_font_size(by)
 	resize_frames()
 	redraw_all()
 keybindings.change_font_size = user_change_font_size
-
-
-fonts = {}
-font_size_step = 10
 
 def get_font(level):
 	if not args.multiple_fonts:
@@ -97,6 +94,10 @@ def change_font_size(by = 0):
 	if args.font_size < 1:
 		args.font_size = 1
 	log("font size:%s", args.font_size)
+
+
+
+
 
 def resize(size):
 	global screen_surface, screen_width, screen_height
@@ -126,14 +127,7 @@ def resize_frames():
 		log("resized frames")
 
 
-def pygame_keypressevent__repr__(self):
-		#a better repr that translates keys to key names
-		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
-			(pygame.key.name(self.key), self.uni, bin(self.mod)))
-KeypressEvent.__repr__ = pygame_keypressevent__repr__
 
-rpcing_frames.server.key_to_name = pygame.key.name
-rpcing_frames.server.mods_to_str = mods_to_str
 
 
 def keypress(e):
@@ -191,10 +185,6 @@ def handle(e):
 		except Exception:
 			traceback.print_exc(file=sys.stdout)
 
-def send_thread_message():
-	pygame.event.post(pygame.event.Event(pygame.USEREVENT + 2))
-
-thread_message_signal = Signal(0)
 
 def process_event(event):
 	if event.type == pygame.USEREVENT:
@@ -230,6 +220,7 @@ def process_event(event):
 
 
 
+
 def redraw_all(self=None):
 	for f in c.visibleframes():
 		#log("maybe_redrawing %s on client window request",f)
@@ -242,8 +233,9 @@ def redraw(self):
 	pygame.display.update(self.rect)
 rpcing_frames.ClientFrame.redraw = redraw
 
-def loop():
-	process_event(pygame.event.wait())
+
+
+
 
 def initial_resize():
 	"""SDL insists that you must give your new window some size
@@ -282,9 +274,42 @@ def fix_keyboard():
 	pygame.key.set_repeat(repeat_delay, 1000//repeat_rate)
 
 
+
+
+
+def send_thread_message():
+	pygame.event.post(pygame.event.Event(pygame.USEREVENT + 2))
+
+thread_message_signal = Signal(0)
+
+def reset_cursor_blink_timer():
+	if not args.dontblink:
+		pygame.time.set_timer(pygame.USEREVENT + 1, 1600)
+	c.editor.cursor_blink_phase = True
+
+def pygame_keypressevent__repr__(self):
+		#a better repr that translates keys to key names
+		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %
+			(pygame.key.name(self.key), self.uni, bin(self.mod)))
+KeypressEvent.__repr__ = pygame_keypressevent__repr__
+
+rpcing_frames.server.key_to_name = pygame.key.name
+rpcing_frames.server.mods_to_str = mods_to_str
+
+
+
+
+
+
+def loop():
+	process_event(pygame.event.wait())
+
 def mainloop():
 	while True:
 		loop()
+
+
+
 
 
 def main():
@@ -325,6 +350,9 @@ def main():
 		#log(e),pass
 		pygame.display.iconify()
 		raise
+
+
+
 
 if __name__ == "__main__":
 	main()
