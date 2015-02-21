@@ -46,25 +46,31 @@ class ServerFrame(object):
 	def collect_tags(s):
 		return batch(_collect_tags(s, s.tags()))
 
-	def on_elem_mouse_press(elem, button):
-		return elem.on_mouse_press(button)
+	def on_elem_mouse_press(s, elem, button):
+		pass
 
 
 class Editor(ServerFrame):
-	def __init__(self):
-		super(Editor, self).__init__()
+	def __init__(s):
+		super(Editor, s).__init__()
 
-		self.root = nodes.make_root()
-		self.root.fix_parents()
-		self.atts = Atts(dict(left={},right={},middle={}))
-		self.on_serverside_change = Signal(1)
-		self.on_atts_change = Signal(0)
+		s.root = nodes.make_root()
+		s.root.fix_parents()
+		s.atts = Atts(dict(left={},right={},middle={}))
+		s.on_serverside_change = Signal(1)
+		s.on_atts_change = Signal(0)
+
+	def on_elem_mouse_press(s, elem, button):
+		if elem.on_mouse_press(button):
+			s.root.changed = True
+			s.signal_change()
+			return True
 
 	def signal_change(s, force=False):
 		if force or s.root.changed or s.root.ast_changed:
-			s.on_serverside_change.emit(s.root.ast_changed)
-		log("s.draw_signal.emit()")
-		s.draw_signal.emit()
+			#s.on_serverside_change.emit(s.root.ast_changed)
+			#log("s.draw_signal.emit()")
+			s.draw_signal.emit()
 
 	def must_recollect(s):
 		#log('must_recollect(%s)', s)
@@ -226,8 +232,8 @@ class Menu(SidebarFrame):
 	def __init__(s):
 		super().__init__()
 		s.editor = editor
-		editor.on_serverside_change.connect(s.on_editor_change)
-		editor.on_atts_change.connect(s.on_editor_atts_change)
+		#editor.on_serverside_change.connect(s.on_editor_change)
+		editor.on_atts_change.connect(s.update)
 		s.valid_only = False
 		s._changed = True
 		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
@@ -236,6 +242,7 @@ class Menu(SidebarFrame):
 		s.sorted_palette = []
 		s.current_text = "yo"
 		s._current_parser_node = None
+		s.must_update = True
 
 	@property
 	def current_parser_node(s):
@@ -253,15 +260,15 @@ class Menu(SidebarFrame):
 			s._changed = False
 			return True
 
-	def on_editor_change(self, ast):
-		#welp, changes tracking is tbd..
-		_ = self.parser_changed()
-		if self.current_parser_node:
-			self.update_menu()
+	def on_editor_change(s, ast):
+		s.must_update = True
 
-	def on_editor_atts_change(self):
-		if self.parser_changed():
-			self.update_menu()
+	def update(s):
+		node_changed = s.parser_changed()
+		old_text = s.current_text
+		s.update_current_text()
+		if s.current_parser_node and (node_changed or old_text != s.current_text):
+			s.update_menu()
 
 	def parser_changed(s):
 		def relevant_parser(e):
@@ -298,17 +305,17 @@ class Menu(SidebarFrame):
 		assert s.current_parser_node
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
 
-	def on_thread_message(self):
-		m = self.marpa.t.output.get()
+	def on_thread_message(s):
+		m = s.marpa.t.output.get()
 		if m.message == 'precomputed':
-			#if m.for_node == self.current_parser_node:
+			#if m.for_node == s.current_parser_node:
 				node = m.for_node()
 				if node:#brainfart
-					self.marpa.enqueue_parsing(self.parser_items2tokens(node))
+					s.marpa.enqueue_parsing(s.parser_items2tokens(node))
 		elif m.message == 'parsed':
-				self.parse_results = [nodes.ParserMenuItem(x) for x in m.results]
+				s.parse_results = [nodes.ParserMenuItem(x) for x in m.results]
 				#	r.append(ParserMenuItem(i, 333))
-				self.signal_change()
+				s.signal_change()
 
 	@staticmethod
 	def parser_node_item(parser, atts):
@@ -371,7 +378,7 @@ class Menu(SidebarFrame):
 			#if isinstance(v, Syntaxed):
 			#	for i in v.syntax:
 			#   		if isinstance(i, t):
-			#			item.score += fuzz.partial_ratio(i.text, self.pyval)
+			#			item.score += fuzz.partial_ratio(i.text, s.pyval)
 			#search thru an actual rendering(including children)
 			tags =     v.render()
 			texts = [i for i in tags if type(i) == unicode]
@@ -500,19 +507,19 @@ class NodeInfo(StaticInfoFrame):
 	def __init__(s, editor):
 		super().__init__()
 		s.editor = editor
-		editor.on_serverside_change.connect(s.on_editor_change)
+		#editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.on_editor_atts_change)
 		s.items = []
 		#s.global_keys = []
 
-	def on_editor_atts_change(self) -> None:
-		self._changed = True
-		log(self.editor.atts)
-		self.items = list(handlers_info(self.editor.atts)) + ["\n"] + self.global_keys
-		self.draw_signal.emit()
+	def on_editor_atts_change(s) -> None:
+		s._changed = True
+		log(s.editor.atts)
+		s.items = list(handlers_info(s.editor.atts)) + ["\n"] + s.global_keys
+		s.draw_signal.emit()
 
-	def on_editor_change(self, _):
-		self.on_editor_atts_change()
+	def on_editor_change(s, _):
+		s.on_editor_atts_change()
 
 """
 	def xxx(s):

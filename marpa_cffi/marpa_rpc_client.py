@@ -198,6 +198,7 @@ class MarpaThread(threading.Thread):
 		lets make a litte event loop here"""
 		while True:
 			inp = s.input.get()
+			if not marpa: continue
 			if inp.task == 'feed':
 				s.feed(inp)
 			elif inp.task == 'parse':

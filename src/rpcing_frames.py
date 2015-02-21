@@ -48,7 +48,7 @@ class ClientFrame(object):
 		s.counterpart = counterpart
 		s.tags = Cache(s.counterpart.collect_tags)
 		s.lines = Cache(s.project)
-		s.counterpart.draw_signal.connect(s.redraw)
+		s.counterpart.draw_signal.connect(s.maybe_redraw)
 
 	@property
 	def scroll_lines(s):
@@ -82,7 +82,7 @@ class ClientFrame(object):
 		s.completed_arrows = None
 		return s.project_tags(s.tags.get())
 
-	def redraw(self):
+	def maybe_redraw(s):
 		"""non-rpcing client overrides this with a
 		function that maybe_draws all frames in the window at once"""
 		Xself.maybe_draw()
@@ -93,7 +93,7 @@ class ClientFrame(object):
 		if must_recollect:
 			s.tags.dirty = s.lines.dirty = True
 		if must_recollect or s.lines.dirty or s.tags.dirty or s.must_redraw:# or not args.rpc:
-			#log("drawing, %s.must_recollect = %s, s.lines.dirty = %s, s.s.must_redraw = %s", s.counterpart, must_recollect, s.lines.dirty, s.must_redraw)
+			log("drawing %s, must_recollect = %s, lines.dirty = %s, must_redraw = %s", s.counterpart, must_recollect, s.lines.dirty, s.must_redraw)
 			s.draw()
 			s.must_redraw = False
 
@@ -102,36 +102,36 @@ class ClientFrame(object):
 			s.curses_win.clear()
 			s.curses_draw_stuff()
 	elif SDL:
-		def draw(self):
-			if self.rect.h == 0 or self.rect.w == 0:
+		def draw(s):
+			if s.rect.h == 0 or s.rect.w == 0:
 				return
-			surface = pygame.Surface((self.rect.w, self.rect.h), 0)
+			surface = pygame.Surface((s.rect.w, s.rect.h), 0)
 			if colors.bg != (0,0,0):
 				surface.fill(colors.bg)
-			self.sdl_draw_stuff(surface)
-			sdl_screen_surface.blit(surface, self.rect.topleft)
+			s.sdl_draw_stuff(surface)
+			sdl_screen_surface.blit(surface, s.rect.topleft)
 
-	def sdl_draw_lines(self, surf, highlight=None, transparent=False, just_bg=False):
+	def sdl_draw_lines(s, surf, highlight=None, transparent=False, just_bg=False):
 		y = 0
 
-		for row, line in enumerate(self.lines.get()):
+		for row, line in enumerate(s.lines.get()):
 			assert type(line) == Line
-			if row < self.scroll_lines:
+			if row < s.scroll_lines:
 				continue
 
 			font = line.font
 			assert type(font) == Font
 
-			fisheye = args.fisheye and type(self) == Editor and row == self.cursor_r
+			fisheye = args.fisheye and type(s) == Editor and row == s.cursor_r
 			if fisheye:
 				y += args.line_spacing
 				font = get_font(1)
 
 			y += font.height
 
-			self.sdl_draw_line(surf, line.chars, line.font, y, highlight, transparent, just_bg)
+			s.sdl_draw_line(surf, line.chars, line.font, y, highlight, transparent, just_bg)
 
-			if row == self.rows + self.scroll_lines:
+			if row == s.rows + s.scroll_lines:
 				break
 
 			y += args.line_spacing
@@ -173,7 +173,7 @@ class ClientFrame(object):
 				if real_row > s.rows:
 					return
 
-				assert len(line) <= self.cols
+				assert len(line) <= s.cols
 				s.draw_line(win, line)
 
 		def curses_draw_line(s, win, line):
@@ -326,16 +326,16 @@ class ClientFrame(object):
 	def atts_at_cursor(s):
 		return s.atts_at_cr(s.cursor)
 
-	def atts_at_cr(self, cr):
+	def atts_at_cr(s, cr):
 		c,r = cr
 		try:
-			return self.lines[r+self.scroll_lines].chars[c][1]
+			return s.lines[r+s.scroll_lines].chars[c][1]
 		except IndexError:
 			return None
 
 	def click_cr(s,e):
 		elem = s.under_cr(e.cr)
-		if not node or not s.counterpart.on_elem_mouse_press(elem, e.button):
+		if not elem or not s.counterpart.on_elem_mouse_press(elem, e.button):
 			s.click_fallthrough(e.cr)
 
 	def click_fallthrough(s, cr):
@@ -346,7 +346,8 @@ class ClientFrame(object):
 		if sl < 0:
 			sl = 0
 		s.scroll_lines = sl
-		s.redraw()
+		s.must_redraw = True
+		s.maybe_redraw()
 
 
 	def sdl_mousedown(s,e):
@@ -417,9 +418,9 @@ class Editor(ClientFrame):
 			log('moving diagonally:-)')
 			s.move_cursor_v(1)
 
-	def first_nonblank(self):
+	def first_nonblank(s):
 		r = 0
-		for ch, a in self.lines[self.cursor_r+s.scroll_lines].chars:
+		for ch, a in s.lines[s.cursor_r+s.scroll_lines].chars:
 			if ch == " ":
 				r += 1
 			else:
@@ -508,7 +509,7 @@ class Editor(ClientFrame):
 		s.complete_arrows()
 		"""outdated
 		if False:#__debug__:
-			for l in self.lines:
+			for l in s.lines:
 				assert(isinstance(l, list))
 				for i in l:
 					assert(isinstance(i, tuple))
@@ -552,6 +553,7 @@ class Editor(ClientFrame):
 		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
 		s.must_redraw = True
 		s.update_atts_on_server()
+		s.maybe_redraw()
 
 	def click_fallthrough(s, cr):
 		s.cursor_c, s.cursor_r = cr
@@ -621,15 +623,15 @@ class Editor(ClientFrame):
 			sdl_arrow_side(length, a-angle, x2,y2, surface)
 
 
-	def draw_cursor(self, surf):
-		if self.cursor_blink_phase:
-			x, y, y2 = self.sdl_cursor_xy(self.cursor_c, self.cursor_r)
+	def draw_cursor(s, surf):
+		if s.cursor_blink_phase:
+			x, y, y2 = s.sdl_cursor_xy(s.cursor_c, s.cursor_r)
 			pygame.draw.rect(surf, colors.cursor, (x, y, args.font_size//8, y2 - y,))
 
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible
 		s.must_redraw = True
-		s.redraw()
+		s.maybe_redraw()
 
 	def	dump_to_file(s):
 		f = open("dump.txt", "w")
@@ -723,10 +725,10 @@ class Log(ClientFrame):
 		for i in s.items:
 			yield [i, '\n']
 
-	def add(self, msg):
+	def add(s, msg):
 		#time, topic, text = msg
 		print (msg)
-		self.items.append(str(msg))
+		s.items.append(str(msg))
 
 	def sdl_draw_stuff(s, surface):
 		s.sdl_draw_lines(surface)

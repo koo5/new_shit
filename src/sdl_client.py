@@ -231,7 +231,7 @@ lemon_client.redraw = redraw_all
 def redraw(self):
 	self.maybe_draw()
 	pygame.display.update(self.rect)
-rpcing_frames.ClientFrame.redraw = redraw
+rpcing_frames.ClientFrame.maybe_redraw = redraw
 
 
 

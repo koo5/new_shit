@@ -13,31 +13,31 @@ from lemon_colors import colors
 
 
 class Widget(Element):
-	def __init__(self, parent):
-		super(Widget, self).__init__()
-		self.parent = parent
+	def __init__(s, parent):
+		super(Widget, s).__init__()
+		s.parent = parent
 	#def __repr__(s):
 	#	return object.__repr__(s) + "(parent:'"+str(s.parent)+"')"
 
 
 class Text(Widget):
-	def __init__(self, parent, text):
+	def __init__(s, parent, text):
 		super().__init__(parent)
-		self.on_edit = Signal(1)
-		self.color = colors.widget_color
+		s.on_edit = Signal(1)
+		s.color = colors.widget_color
 		assert isinstance(text, unicode)
-		self.text = text
-		self.brackets = ['','']
+		s.text = text
+		s.brackets = ['','']
 
-	def render(self):
-		return [editable_start_tag, TextTag(self.text), editable_end_tag]
+	def render(s):
+		return [editable_start_tag, TextTag(s.text), editable_end_tag]
 
 	@property
-	def value(self):
-		return self.text
+	def value(s):
+		return s.text
 	@value.setter
-	def value(self, v):
-		self.text = v
+	def value(s, v):
+		s.text = v
 
 	def after_edit(s, move):
 		s.root.delayed_cursor_move.chars += move
@@ -46,52 +46,52 @@ class Text(Widget):
 
 
 class Button(Widget):
-	def __init__(self, parent, text="[button]", description = "?"):#?
+	def __init__(s, parent, text="[button]", description = "?"):#?
 		super().__init__(parent)
-		self.on_press = Signal(1)
-		self.on_text = Signal(1)
-		self.color = colors.button
-		self.text = text
+		s.on_press = Signal(1)
+		s.on_text = Signal(1)
+		s.color = colors.button
+		s.text = text
 
-	def on_mouse_press(self, button):
-		self.on_click.emit(self)
+	def on_mouse_press(s, button):
+		s.on_click.emit(s)
 		return CHANGED
 
-	def render(self):
-		return [ColorTag(self.color),TextTag(self.text), EndTag()]
+	def render(s):
+		return [ColorTag(s.color),TextTag(s.text), EndTag()]
 
 class Number(Widget):
-	def __init__(self, parent, text, limits=(None,None)):
+	def __init__(s, parent, text, limits=(None,None)):
 		super().__init__(parent)
-		self.limits = limits
-		self.text_widget = Text(self, str(text))
-		self.minus_button = Button(self, "-")
-		self.plus_button = Button(self, "+")
-		for b in (self.plus_button, self.minus_button):
+		s.limits = limits
+		s.text_widget = Text(s, str(text))
+		s.minus_button = Button(s, "-")
+		s.plus_button = Button(s, "+")
+		for b in (s.plus_button, s.minus_button):
 			b.brackets = ('[',']')
 			b.brackets_color = b.color = colors.number_buttons
-		self.minus_button.on_press.connect(self.on_widget_click)
-		self.minus_button.on_text. connect(self.on_widget_text)
-		self.plus_button. on_press.connect(self.on_widget_click)
-		self.plus_button. on_text. connect(self.on_widget_text)
-		self.on_change = Signal(1)
-		self.text_widget.on_edit.connect(self._on_text_change) # ^.^
+		s.minus_button.on_press.connect(s.on_widget_click)
+		s.minus_button.on_text. connect(s.on_widget_text)
+		s.plus_button. on_press.connect(s.on_widget_click)
+		s.plus_button. on_text. connect(s.on_widget_text)
+		s.on_change = Signal(1)
+		s.text_widget.on_edit.connect(s._on_text_change) # ^.^
 
-	def _on_text_change(self, widget):
-		self.on_change.emit(self)
+	def _on_text_change(s, widget):
+		s.on_change.emit(s)
 
-	def render(self):
+	def render(s):
 		return [MemberTag('minus_button'), MemberTag('text_widget'), MemberTag('plus_button')]
 
 	@property
-	def value(self):
+	def value(s):
 		try:
-			return int(self.text)
+			return int(s.text)
 		except:
-			return float(self.text)
+			return float(s.text)
 	@value.setter
-	def value(self, v):
-		self.text = str(v)
+	def value(s, v):
+		s.text = str(v)
 
 	@property
 	def text(s):
@@ -100,55 +100,55 @@ class Number(Widget):
 	def text(s, x):
 		s.text_widget.text = x
 
-	def inc(self):
-		if self.limits[1] == None or self.limits[1] > int(self.text):
-			self.text = str(int(self.text)+1)
-			self.on_change.emit(self)
+	def inc(s):
+		if s.limits[1] == None or s.limits[1] > int(s.text):
+			s.text = str(int(s.text)+1)
+			s.on_change.emit(s)
 
-	def dec(self):
-		if self.limits[0] == None or self.limits[0] < int(self.text):
-			self.text = str(int(self.text)-1)
-			self.on_change.emit(self)
+	def dec(s):
+		if s.limits[0] == None or s.limits[0] < int(s.text):
+			s.text = str(int(s.text)-1)
+			s.on_change.emit(s)
 
-	def on_widget_click(self,widget):
-		if widget == self.minus_button:
-			self.dec()
-		if widget == self.plus_button:
-			self.inc()
+	def on_widget_click(s,widget):
+		if widget == s.minus_button:
+			s.dec()
+		if widget == s.plus_button:
+			s.inc()
 
-	def on_widget_text(self,text):
+	def on_widget_text(s,text):
 		if text == "+":
-			self.inc()
+			s.inc()
 		if text == "-":
-			self.dec()
+			s.dec()
 
-	def on_mouse_press(self, button):
+	def on_mouse_press(s, button):
 		""" handles scrollwheel	"""
 		if button == 4:
-			self.inc()
+			s.inc()
 		if button == 5:
-			self.dec()
+			s.dec()
 
 
 
 class NState(Widget):
-	def __init__(self, parent, value, texts = ("to state 1", "to state 2", "to state 0")):
-		super(NState, self).__init__(parent)
-		self.on_change = Signal(1)
-		self.value = value
+	def __init__(s, parent, value, texts = ("to state 1", "to state 2", "to state 0")):
+		super(NState, s).__init__(parent)
+		s.on_change = Signal(1)
+		s.value = value
 		assert(0 <= value < len(texts))
-		self.texts = texts
-		self.color = colors.fg
+		s.texts = texts
+		s.color = colors.fg
 
-	def render(self):
-		return [ColorTag(self.color), TextTag(self.text), EndTag()]
+	def render(s):
+		return [ColorTag(s.color), TextTag(s.text), EndTag()]
 
 	@property
-	def text(self):
-		return self.texts[self.value]
+	def text(s):
+		return s.texts[s.value]
 
-	def on_mouse_press(self, button):
-		self.toggle(555)
+	def on_mouse_press(s, button):
+		s.toggle(555)
 		return True
 
 
@@ -156,17 +156,17 @@ class NState(Widget):
 #NState uses a number, Toggle bool..
 
 class Toggle(Widget):
-	def __init__(self, parent, value, texts = ("checked", "unchecked")):
-		super(Toggle, self).__init__(parent)
-		self.on_change = Signal(1)
-		self.value = value
-		self.texts = texts
-		self.color = colors.fg
-	def render(self):
-		return [ColorTag(self.color), TextTag(self.text), EndTag()]
+	def __init__(s, parent, value, texts = ("checked", "unchecked")):
+		super(Toggle, s).__init__(parent)
+		s.on_change = Signal(1)
+		s.value = value
+		s.texts = texts
+		s.color = colors.fg
+	def render(s):
+		return [ColorTag(s.color), TextTag(s.text), EndTag()]
 	@property
-	def text(self):
-		return self.texts[0] if self.value else self.texts[1]
-	def on_mouse_press(self, button):
-		self.toggle(555)
+	def text(s):
+		return s.texts[0] if s.value else s.texts[1]
+	def on_mouse_press(s, button):
+		s.toggle(555)
 		return True
