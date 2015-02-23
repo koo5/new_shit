@@ -1,9 +1,10 @@
-i wanted to rpc seamlessly. (after an appropriate redesign). This needs multiple objects.
-currently im leaning towards rewriting clientserver.py in pizco. the multiobject branch seems
+i wanted to rpc seamlessly. (after an appropriate redesign) (the redesign was finished.). This needs acessing multiple objects on the server. Currently im leaning towards rewriting clientserver.py in pizco. The multiobject branch seems
 unfinished, repeating functionality and was made against an old version. The file isnt long,
 keeping intact some of the pizco functionality like 'instantiate' could require more investigation
 and not sure if worth it. (at least for a start i could drop it). The things touching the io loop
-are a bit arcane, maybe the gevent fork can help.
+are a bit arcane, maybe the gevent fork can help. Other option is to not rpc so seamlessly, give up on seamless object/attribute access and make the interface from method calls.
+
+At any case, the priority of splitting lemon into rpcing components has decreased, as ive optimized it to run quite nicely as a single process (with marpa in a thread). Disorganized notes follow.
 
 zerorpc doesnt have any remote attributes. Other libraries seem to be even worse off, requiring
 various declarations and stuff. One thing zerorpc has is streaming generators.
