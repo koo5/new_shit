@@ -374,6 +374,7 @@ class ClientFrame(object):
 	def sdl_xy2cr(s, xy):
 		x,y = xy
 		for row, line in enumerate(s.lines):
+			log (y)
 			if row < s.scroll_lines: continue
 			y -= line.font.height + args.line_spacing
 			if y < 0:

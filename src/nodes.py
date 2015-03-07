@@ -66,6 +66,12 @@ def build_in(node, name=None):
 		B[key] = node
 	return node
 
+class DelayedCursorMove():
+	__slots__ = ['chars', 'node']
+	def __init__(s):
+		s.chars = 0
+		s.node = None
+
 # region utils
 
 def is_decl(node):
@@ -1414,11 +1420,27 @@ class Text(WidgetedValue):
 		return Text(s.pyval)
 
 
-class DelayedCursorMove():
-	__slots__ = ['chars', 'node']
-	def __init__(s):
-		s.chars = 0
-		s.node = None
+
+class Identifier(WidgetedValue):
+	def __init__(s, value=""):
+		super().__init__()
+		s.widget = widgets.Text(s, value)
+
+	@classmethod
+	def register_class_symbol(cls):
+		log("registering identifier grammar")
+		body_part = m.symbol('body_part')
+		m.rule('identifier_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
+		m.rule('identifier_body_part_is_known_char', body_part, m.syms.known_char)
+		r = m.symbol('Identifier')
+		m.sequence('identifier is seq of body part', r, body_part, cls.from_parse)
+		return r
+
+	@classmethod
+	def from_parse(cls, args):
+		return cls(''.join(args))
+
+
 
 
 class Root(Dict):
@@ -2861,7 +2883,7 @@ def build_in_lemon_language():
 
 	build_in(VarRefNodecl(), 'varref')
 
-	build_in([Nodecl(x) for x in [Number, Banana, Bananas]])
+	build_in([Nodecl(x) for x in [Number, Banana, Bananas, Identifier]])
 
 	build_in(Nodecl(List), "list_literal")
 
