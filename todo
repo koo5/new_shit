@@ -1,27 +1,22 @@
-test
+sleep
 ---
-subclass module into terminal. make library visible in scope and 
+?:
+* integrate betty
+* experiment with a rdf version
+* sketch out a graph-based version for #nars
+* continue hacking on the mockup language: add Identifier as a fallback for parsing identifiers not in scope
+
 ---
-make menu.current_parser a weakref
-
-only register grammar if root.reregister is set. Only render if root.rerender. 
-#Only output grammar debugging info if --debug-grammar
-#only parse if Parser.reparse
+subclass module into terminal. make library visible in scope and ...
+---
+outdatedness follows...
 
 
+register grammar if root.reregister is set
+only parse if Parser.reparse?
 
 
-#total split or threading? reading https://wiki.python.org/moin/GlobalInterpreterLock
 
-add --server to main_sdl and main_curses
-
-accepts tcp connection, creates some 
-client object
-  .proxy is a weakref dict from some int
-
-for tag in tags:
-  if type(tag) == ElementTag:
-    proxy[len(proxy)] = weakref(node)
 
     
     

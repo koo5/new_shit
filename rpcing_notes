@@ -90,3 +90,20 @@ def proxy_this(v):
 	proxied[key_counter] = v
 	return key_counter
 """
+
+
+
+#total split or threading? 
+https://wiki.python.org/moin/GlobalInterpreterLock
+http://pypy.readthedocs.org/en/latest/stm.html
+
+add --server to main_sdl and main_curses
+
+accepts tcp connection, creates some 
+client object
+  .proxy is a weakref dict from some int
+
+for tag in tags:
+  if type(tag) == ElementTag:
+    proxy[len(proxy)] = weakref(node)
+

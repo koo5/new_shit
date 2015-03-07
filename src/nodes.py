@@ -1689,7 +1689,7 @@ class TypeNodecl(NodeclBase):
 	"""
 	help = ["points to another node, like using an identifier. Used only for pointing to types."]
 	def __init__(s):
-		super(TypeNodecl, s).__init__(Ref)
+		super().__init__(Ref)
 
 	def palette(s, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
@@ -1714,7 +1714,7 @@ class VarRefNodecl(NodeclBase):
 					'body': body})
 
 	def __init__(s):
-		super(VarRefNodecl, s).__init__(VarRef)
+		super().__init__(VarRef)
 
 
 	def palette(s, scope, text, node):

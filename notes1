@@ -12,6 +12,24 @@ http://libra.msra.cn/Publication/23265/profit-prolog-with-features-inheritance-a
 
 
 
+
+prolog and beyond
+http://www.csupomona.edu/~jrfisher/www/prolog_tutorial/7_3.html
+http://www.allisons.org/ll/Logic/Prolog/Examples/
+
+http://en.wikipedia.org/wiki/Visual_Prolog
+http://www.learnprolognow.org/lpnpage.php?pagetype=html&pageid=lpn-htmlse1
+
+http://mitpress.mit.edu/sicp/full-text/book/book-Z-H-29.html#%_sec_4.4
+http://en.wikipedia.org/wiki/Mercury_%28programming_language%29
+
+http://aabs.wordpress.com/2010/03/10/programming-with-petri-nets/
+https://www.google.com/search?client=ubuntu&channel=fs&q=reasoning+in+Common+lisp
+
+
+
+
+
 “asimov’s laws in n3”:
 http://en.wikipedia.org/wiki/Three_Laws_of_Robotics
 http://en.wikipedia.org/wiki/OpenCog
@@ -63,6 +81,8 @@ https://github.com/smichal/hs-logic
 
 
 
+
+
 old - Element data structure research
 ElementTree
 http://effbot.org/zone/element-index.htm
@@ -70,6 +90,8 @@ MiniDom
 http://wiki.python.org/moin/MiniDom
 http://programmers.stackexchange.com/questions/199534/homogeneous-vs-heterogeneous-ast-representation?rq=1
 3
+
+
 
 
 
@@ -276,20 +298,6 @@ http://sourceforge.net/projects/presage/?source=directory
 https://www.mail-archive.com/picolisp@software-lab.de/msg04193.html
 
 
-
-
-prolog and beyond
-http://www.csupomona.edu/~jrfisher/www/prolog_tutorial/7_3.html
-http://www.allisons.org/ll/Logic/Prolog/Examples/
-
-http://en.wikipedia.org/wiki/Visual_Prolog
-http://www.learnprolognow.org/lpnpage.php?pagetype=html&pageid=lpn-htmlse1
-
-http://mitpress.mit.edu/sicp/full-text/book/book-Z-H-29.html#%_sec_4.4
-http://en.wikipedia.org/wiki/Mercury_%28programming_language%29
-
-http://aabs.wordpress.com/2010/03/10/programming-with-petri-nets/
-https://www.google.com/search?client=ubuntu&channel=fs&q=reasoning+in+Common+lisp
 
 
 
