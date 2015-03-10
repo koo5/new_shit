@@ -1,9 +1,12 @@
 
 # just for some type checking
+
 class symbol_int(int):pass
 class rule_int(int):pass
 
-#some parser action callbacks
+
+
+#some parser action ("valuator") callbacks
 
 def ident(x):
 	assert len(x) == 1

@@ -74,6 +74,13 @@ class DelayedCursorMove():
 
 # region utils
 
+def make_union(items: list):
+	r = B.union.inst_fresh()
+	r.ch["items"].items = items
+	r.fix_parents()
+	return r
+
+
 def is_decl(node):
 	return isinstance(node, (NodeclBase, ParametricTypeBase, ParametricNodecl))
 def is_type(node):
@@ -780,7 +787,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			elif type(i) == ChildTag:
 				child_type = ddecl.instance_slots[i.name]
 				if type(child_type) == Exp:
-					x = B.anything.symbol
+					x = B.expression.symbol
 				else:
 					x = deref_decl(child_type).symbol
 				if not x:
@@ -2959,7 +2966,7 @@ def build_in_lemon_language():
 	build_in(SyntaxedNodecl(VarlessFor,
 				   [TextTag("for"), ChildTag("items"),
 				        ":\n", ChildTag("body")],
-				   {'items': Exp(list_of('type')),
+				   {'items': Exp(list_of('anything')),
 				   'body': B.statements}))
 
 
@@ -3155,7 +3162,17 @@ def build_in_lemon_language():
 				   'syntax': B.custom_syntax_list}))
 	"""this gets us a node defining nodes, so it should have nodecl functionality"""
 
+	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
 
+	"""
+	types and unions make the world burn
+	class Assignment(Syntaxed):
+		pass
+	build_in(SyntaxedNodecl(Assignment,
+				   [ChildTag('target'), "=", ChildTag("source")],
+				   {'target' : B.lvalue,
+				   'source': B.expression}))
+	"""
 
 
 
