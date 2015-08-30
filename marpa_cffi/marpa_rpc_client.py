@@ -282,10 +282,7 @@ class MarpaThread(threading.Thread):
 			if babble:
 				log  ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
 				log ("step:%s"%codes.steps2[s])
-			if s == lib.MARPA_STEP_INACTIVE:
-				break
-
-			elif s == lib.MARPA_STEP_TOKEN:
+			if s == lib.MARPA_STEP_TOKEN:
 
 				pos = v.v.t_token_value - 1
 				sym = symbol_int(v.v.t_token_id)
