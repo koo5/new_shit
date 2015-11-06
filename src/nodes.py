@@ -2866,6 +2866,10 @@ class Kbdbg(Node):
 		s.step = -1
 		s.step_fwd()
 
+	def print_log(s):
+		for line in s.steps[s.step].log:
+			print(line)
+
 	def step_back(s):
 		global arrows
 		if s.step != 0:
@@ -2873,6 +2877,7 @@ class Kbdbg(Node):
 		arrows = copy(s.cache[s.step])
 		s.update()
 		print ("step:", s.step)
+		s.print_log()
 
 	def step_fwd(s):
 		global arrows
@@ -2885,6 +2890,7 @@ class Kbdbg(Node):
 				s.cache[s.step] = copy(arrows)
 			s.update()
 		print ("step:", s.step)
+		s.print_log()
 
 	def do_step(s, i):
 		global arrows

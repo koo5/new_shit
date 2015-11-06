@@ -6,7 +6,7 @@ import logging
 from pprint import pformat as pp
 
 logger = logging.Logger('lemon')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)
 ch = logging.StreamHandler(sys.stderr)
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
