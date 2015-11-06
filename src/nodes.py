@@ -12,7 +12,7 @@ good luck.
 """
 
 # region imports
-
+from copy import copy
 import json
 import collections
 from pprint import pformat as pp
@@ -589,7 +589,7 @@ class Node(NodePersistenceStuff, element.Element):
 		s.runtime._dict.clear()
 
 	def set_parent(s, v):
-		assert v or isinstance(s, Root),  s
+		assert v or isinstance(s, Root) or s.isroot,  s
 		super(Node, s).set_parent(v)
 		if "value" in s.runtime._dict: #crap
 			s.runtime.value.parent = s.parent
@@ -2736,95 +2736,175 @@ class FunctionCallNodecl(NodeclBase):
 
 
 # endregion
+"""
+		parts = {(0,): Part("a"), (1,): Part("b")}
+		kb = ["kb: ", (0,) , " a ", (1,), ".\n"];
+		arrows = [((0x1111, (0,)), (0x2222, (1,)))]
+		for i in kb:
+			if isinstance(i, unicode):
+				items.append(p)
+			elif isinstance(p, tuple):
+				for a in arrows:
+					if a[0][1] == p:
+						items.append(ArrowTag(parts[a[1][1]]))
+				items.append(ElementTag(parts[p]))
+			else: assert(False)
+		s.items = items
+"""
 
+arrows = []
+parts = odict()
+
+
+class Part(Node):
+
+	def __init__(s, id, v):
+		global parts
+		super(Part, s).__init__()
+		s.brackets = ("", "")
+		s.stuff = []
+		counter = 0
+		for i in v:
+			if isinstance(i, str):
+				s.stuff.append(i)
+			elif isinstance(i, list):
+				childid = id + (counter,)
+				childpart = Part(childid, i)
+				childpart.set_parent(s)
+				parts[childid] = childpart
+				s.stuff.append(childpart)
+				counter += 1
+			else:
+				assert(False)
+
+	def render(s):
+		yield s.items
+
+	def update(s):
+		global step, parts
+		s.items = []
+		for i in s.stuff:
+			if isinstance(i, str):
+				s.items.append(i)
+			elif isinstance(i, Part):
+				i.update()
+				for a in arrows:
+					#print (parts)
+					if parts[a[0][1:]] == i:
+						s.items.append(ArrowTag(parts[a[1][1:]]))
+						print ("arrow")
+				s.items.append(ElementTag(i))
+
+	def on_mouse_press(self, button):
+		if button == 1:
+			self.parent.step_back()
+		if button == 3:
+			self.parent.step_fwd()
+		return True
+
+	def step_back(s):
+		s.parent.step_back()
+	def step_fwd(s):
+		s.parent.step_fwd()
+
+
+class Kbdbg(Node):
+	def __init__(s):
+		super(Kbdbg, s).__init__()
+		s.isroot = True
+		s.parent = None
+		s.decl = None
+		s.delayed_cursor_move = DelayedCursorMove()
+		s.indent_length = 4
+		s.changed = True
+
+		s.brackets = ("", "")
+		s.items = []
+		s.loadkb()
+		print (Kbdbg.keys)
+
+	def render(s):
+		yield ColorTag(colors.fg)
+		yield s.items
+		yield EndTag()
+
+	def update(s):
+		print (arrows)
+		for i in s.items:
+			i.element.update()
+
+	def add_step(s):
+		print("adding step")
+		s.steps.append(Dotdict())
+		s.steps[-1].log = []
+		s.steps[-1].vis = []
+
+	def loadkb(s):
+		global arrows
+		s.steps = []
+		s.add_step()
+		input = json.load(open("kbdbg.json", "r"))
+		kb = []
+		for i in input:
+			if isinstance(i, dict):
+				print (i)
+				if i["type"] == "step":
+					s.add_step()
+				else:
+					s.steps[-1].vis.append(i)
+			elif isinstance(i, unicode):
+				s.steps[-1].log.append(i)
+			elif isinstance(i, list):
+				kb += i
+
+		ch = Part(tuple(), kb)
+		ch.set_parent(s)
+		s.items.append(ElementTag(ch))
+		arrows = []
+		s.cache = {}
+		s.step = -1
+		s.step_fwd()
+
+	def step_back(s):
+		global arrows
+		if s.step != 0:
+			s.step -= 1
+		arrows = copy(s.cache[s.step])
+		s.update()
+		print ("step:", s.step)
+
+	def step_fwd(s):
+		global arrows
+		if s.step < len(s.steps) -1 :
+			s.step += 1
+			if s.step in s.cache:
+				arrows = copy(s.cache[s.step])
+			else:
+				s.do_step(s.step)
+				s.cache[s.step] = copy(arrows)
+			s.update()
+		print ("step:", s.step)
+
+	def do_step(s, i):
+		global arrows
+		for x in s.steps[i].vis:
+			print(x)
+			p = (tuple(x["a"]), tuple(x["b"]))
+			if x["type"] == "add":
+				print("add" , p)
+				arrows.append(p)
+			elif x["type"] == "remove":
+				for y in range(len(arrows)):
+					if arrows[y] == p:
+						print("remove" , p)
+						arrows.remove(p)
+			else:
+				assert(False)
 
 
 
 def make_root():
-	r = Root()
-
-	build_in_editor_structure_nodes()
-	build_in_lemon_language()
-	build_in_misc()
-
-	#for k,v in iteritems(B._dict):
-	#	log(k, v)
-
-
-	r['welcome'] = Text("Press F1 to cycle the sidebar!")
-	r["intro"] = new_module()
-	r["intro"].ch.statements.items = [
-		Text("""
-
-the interface of lemon is currently implemented like this:
-root is a dictionary with keys like "intro", "some program" etc.
-it's values are mostly modules. modules can be collapsed and expanded and they
-hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
-
-Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
-ctrl-del will delete something. Inserting of nodes happens in the Parser node."""),
-		#it looks like this:"""),
-		#Parser(b['number']), todo:ParserWithType
-		Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
-		Text("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
-	]
-
-	
-	r["intro"].ch.statements.view_mode=0
-	#r.add(("lesh", Lesh()))
-	r["some program"] = B.module.inst_fresh()
-	r["some program"].ch.statements.newline()
-	#r['some program'].ch.statements.items[1].add("12")
-	#r["lemon console"] =b['module'].inst_fresh()
-
-	r["loaded program"] = B.module.inst_fresh()
-	r["loaded program"].ch.name = Text("placeholder")
-
-
-	library = r["library"] = make_list('module')
-	library.view_mode = library.vm_multiline
-
-
-	r["builtins"] = new_module()
-	r["builtins"].ch.statements.items = list(itervalues(B._dict))
-	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
-	log("built in %s nodes",len(r["builtins"].ch.statements.items))
-	r["builtins"].ch.statements.add(Text("---end of builtins---"))
-	r["builtins"].ch.statements.view_mode = 2
-
-	import glob
-	for file in glob.glob("library/*.lemon.json"):
-		placeholder = library.add(new_module())
-		placeholder.ch.name.pyval = "placeholder for "+file
-		load_module(file, placeholder)
-	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
-
-
-
-	#r.add(("toolbar", toolbar.build()))
-
-	#log(len(r.flatten()))
-	#for i in r.flatten():
-	#		assert isinstance(i, Root) or i.parent, i.long__repr__()
-	#		if not i.parent:
-	#			log(i.long__repr__())
-	#log("--------------")
-	#log(r["builtins"].ch.statements.items)
-	#test_serialization(r)
-	#log(b_lemon_load_file(r, 'test_save.lemon.json'))
-	#log(len(r.flatten()))
-	#log(r["builtins"].ch.statements.items)
-	#import gc
-	#log(gc.garbage)
-	#gc.collect()
-	#r["some program"].save()
-	#log("ok")
-	r.fix_parents()
-	if __debug__:
-		for i in r.flatten():
-			if not isinstance(i, Root):
-				assert i.parent,  i.long__repr__()
-	return r
+	return Kbdbg()
 
 
 """

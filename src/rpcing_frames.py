@@ -79,6 +79,7 @@ class ClientFrame(object):
 
 
 	def project(s):
+		s.arrows = []
 		s.completed_arrows = None
 		return s.project_tags(s.tags.get())
 
@@ -279,7 +280,7 @@ class ClientFrame(object):
 
 				elif type(tag) == dict:
 					if 'arrow' in tag:
-						s.arrows.append(current_cr() + (tag['arrow'],))
+						s.arrows.append(current_cr() + (tag['arrow'],tag['type']))
 					elif 'font_level' in tag:
 						switch_font(tag['font_level'])
 					#elif 'long_text' in tag:
@@ -608,15 +609,20 @@ class Editor(ClientFrame):
 			for a in s.arrows:
 				target = s.find_element(a[2])
 				if target:
-					s.completed_arrows.append(((a[0],a[1] - s.scroll_lines), target))
+					s.completed_arrows.append(((a[0],a[1] - s.scroll_lines), target, a[3]))
 
 	def sdl_draw_arrows(s, surface):
 		#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen pointing to that same target, to avoid making it unreadable
 		if s.completed_arrows == None:
 			s.complete_arrows()
-		for ((c,r),(c2,r2)) in s.completed_arrows:
-			x,y,x2,y2 = font_width * (c+0.5), font_height * (r+0.5), font_width * (c2+0.5), font_height * (r2+0.5)
-			pygame.draw.line(surface, colors.arrow, (int(x),int(y)),(int(x2),int(y2)))
+		font = get_font(0)
+		for ((c,r),(c2,r2),type) in s.completed_arrows:
+			x,y,x2,y2 = font.width * (c+0.5), font.height * (r+0.5), font.width * (c2+0.5), font.height * (r2+0.5)
+			if type == "normal":
+				color = colors.arrow
+			else:
+				color = colors.arrow_fail
+			pygame.draw.line(surface, color, (int(x),int(y)),(int(x2),int(y2)))
 			a = atan2(y-y2, x-x2)
 			angle = 0.1
 			length = 40

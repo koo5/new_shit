@@ -35,8 +35,8 @@ def IndentTag():
 def DedentTag():
 	return dedent_tag
 
-def ArrowTag(target):
-	return {"arrow": target}
+def ArrowTag(target, t="normal"):
+	return {"arrow": target, "type":t}
 
 def NewlineTag(Tag):
 	return "\n"

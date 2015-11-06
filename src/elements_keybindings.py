@@ -238,3 +238,19 @@ based on item_att delete(or deconstruct) the node
 if Parser is empty: check succeeds only for UNICODE (on body), creates Text
 """
 
+def step_fwd(s, e):
+	print("fwd")
+	s.step_fwd()
+def step_back(s, e):
+	s.step_back()
+
+add_keys(n.Kbdbg, None, {
+	#K((),           K_PLUS):        H(step_fwd),
+	#K((),           K_MINUS):       H(step_back)
+	K((),           K_1):       H(step_fwd)
+})
+add_keys(n.Part, None, {
+	#K((),           K_PLUS):        H(step_fwd),
+	#K((),           K_MINUS):       H(step_back)
+	K((),           K_1):       H(step_fwd)
+})

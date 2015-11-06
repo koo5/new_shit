@@ -114,7 +114,7 @@ def resize_frames():
 			screen_width, args.log_height * get_font(0).height) # log frame uses default font
 
 		c.editor.rect = Rect(0,0,
-			screen_width // 3 * 2,
+			screen_width,# // 3 * 2,
 			screen_height - c.logframe.rect.height)
 
 		sidebar_rect = Rect(c.editor.rect.w, 0,

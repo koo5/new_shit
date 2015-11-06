@@ -1,0 +1,12 @@
+http://www.codediesel.com/javascript/sharing-messages-and-data-across-windows-using-localstorage/
+http://www.jstorage.info/
+https://blog.nraboy.com/2014/12/use-ngstorage-angularjs-local-storage-needs/
+https://truongtx.me/2014/06/16/cross-tab-communication-using-html5-dom-storage/
+http://tutorials.jenkov.com/html5/local-storage.html
+http://stackoverflow.com/questions/10927436/backbone-js-and-local-storage-with-multiple-browser-tabs-windows-overwrites-da
+http://www.ionicframework.com/examples/
+http://stackoverflow.com/questions/554167/drawing-arrows-on-an-html-page-to-visualize-semantic-links-between-textual-spans#623770
+http://stackoverflow.com/questions/26886545/draw-a-bendable-arrow-between-two-html-elements?rq=1
+http://stackoverflow.com/questions/20037122/draw-an-arrow-between-two-divs?lq=1
+http://www.dbp-consulting.com/tutorials/canvas/CanvasArrow.html
+
