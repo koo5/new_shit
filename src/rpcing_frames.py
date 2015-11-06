@@ -280,7 +280,7 @@ class ClientFrame(object):
 
 				elif type(tag) == dict:
 					if 'arrow' in tag:
-						s.arrows.append(current_cr() + (tag['arrow'],tag['type']))
+						s.arrows.append(current_cr() + (tag['arrow'],tag['style']))
 					elif 'font_level' in tag:
 						switch_font(tag['font_level'])
 					#elif 'long_text' in tag:
@@ -328,6 +328,8 @@ class ClientFrame(object):
 		return s.atts_at_cr(s.cursor)
 
 	def atts_at_cr(s, cr):
+		if cr == None:
+			return None
 		c,r = cr
 		try:
 			return s.lines[r+s.scroll_lines].chars[c][1]
@@ -363,11 +365,11 @@ class ClientFrame(object):
 
 
 	def sdl_cursor_xy(s,c,r):
-		x = c * s.lines[r].font.width
 		y = 0
 		for row, line in enumerate(s.lines):
 			fh = line.font.height
 			if row == r:
+				x = c * s.lines[r].font.width
 				return (x, y, y + fh)
 			else:
 				y += fh + args.line_spacing
@@ -558,8 +560,9 @@ class Editor(ClientFrame):
 		s.maybe_redraw()
 
 	def click_fallthrough(s, cr):
-		s.cursor_c, s.cursor_r = cr
-		s.after_cursor_moved()
+		if cr:
+			s.cursor_c, s.cursor_r = cr
+			s.after_cursor_moved()
 
 	@property
 	def atts_triple(s):
@@ -616,9 +619,9 @@ class Editor(ClientFrame):
 		if s.completed_arrows == None:
 			s.complete_arrows()
 		font = get_font(0)
-		for ((c,r),(c2,r2),type) in s.completed_arrows:
-			x,y,x2,y2 = font.width * (c+0.5), font.height * (r+0.5), font.width * (c2+0.5), font.height * (r2+0.5)
-			if type == "normal":
+		for ((c,r),(c2,r2),style) in s.completed_arrows:
+			x,y,x2,y2 = font.width * (c+0.5), font.height * (r+1.0), font.width * (c2+0.5), font.height * (r2+1.0)
+			if style == "normal":
 				color = colors.arrow
 			else:
 				color = colors.arrow_fail
@@ -626,8 +629,8 @@ class Editor(ClientFrame):
 			a = atan2(y-y2, x-x2)
 			angle = 0.1
 			length = 40
-			sdl_arrow_side(length, a+angle, x2,y2, surface)
-			sdl_arrow_side(length, a-angle, x2,y2, surface)
+			sdl_arrow_side(length, a+angle, x2,y2, surface, color)
+			sdl_arrow_side(length, a-angle, x2,y2, surface, color)
 
 
 	def draw_cursor(s, surf):
@@ -754,9 +757,9 @@ class SidebarItem():
 		s.lines = lines
 		s.rect = rect
 
-def sdl_arrow_side(length,a,x2,y2, surface):
+def sdl_arrow_side(length,a,x2,y2, surface, color):
 	x1y1 = int(length * cos(a) + x2), int(length * sin(a) + y2)
-	pygame.draw.line(surface, colors.arrow, x1y1,(int(x2),int(y2)))
+	pygame.draw.line(surface, color, x1y1,(int(x2),int(y2)))
 
 
 def collidepoint(r, pos):

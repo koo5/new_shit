@@ -2791,7 +2791,8 @@ class Part(Node):
 				for a in arrows:
 					#print (parts)
 					if parts[a[0][1:]] == i:
-						s.items.append(ArrowTag(parts[a[1][1:]]))
+						style = a[2]
+						s.items.append(ArrowTag(parts[a[1][1:]], style))
 						print ("arrow")
 				s.items.append(ElementTag(i))
 
@@ -2889,7 +2890,7 @@ class Kbdbg(Node):
 		global arrows
 		for x in s.steps[i].vis:
 			print(x)
-			p = (tuple(x["a"]), tuple(x["b"]))
+			p = (tuple(x["a"]), tuple(x["b"]), x["style"])
 			if x["type"] == "add":
 				print("add" , p)
 				arrows.append(p)
