@@ -2793,7 +2793,7 @@ class Part(Node):
 					if parts[a[0][1:]] == i:
 						style = a[2]
 						s.items.append(ArrowTag(parts[a[1][1:]], style))
-						print ("arrow")
+						#print ("arrow")
 				s.items.append(ElementTag(i))
 
 	def on_mouse_press(self, button):
@@ -2830,7 +2830,8 @@ class Kbdbg(Node):
 		yield EndTag()
 
 	def update(s):
-		print (arrows)
+		for a in arrows:
+			print (a)
 		for i in s.items:
 			i.element.update()
 

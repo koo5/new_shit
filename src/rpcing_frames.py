@@ -619,8 +619,24 @@ class Editor(ClientFrame):
 		if s.completed_arrows == None:
 			s.complete_arrows()
 		font = get_font(0)
-		for ((c,r),(c2,r2),style) in s.completed_arrows:
+		for i, a in enumerate(s.completed_arrows):
+			((c,r),(c2,r2),style) = a
 			x,y,x2,y2 = font.width * (c+0.5), font.height * (r+1.0), font.width * (c2+0.5), font.height * (r2+1.0)
+
+			dupes = 0
+			for j, b in enumerate(s.completed_arrows):
+				if a == b:
+					dupes += 1
+			
+			dupnum = 0
+			for j, b in enumerate(s.completed_arrows):
+				if i == j:
+					break
+				if a == b:
+					dupnum += 1
+			
+			y -= dupnum * font.height / dupes
+					
 			if style == "normal":
 				color = colors.arrow
 			else:
