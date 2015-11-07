@@ -643,9 +643,9 @@ class Editor(ClientFrame):
 				color = colors.arrow_fail
 			pygame.draw.line(surface, color, (int(x),int(y)),(int(x2),int(y2)))
 			a = atan2(y-y2, x-x2)
-			angle = 0.1
+			angle = 0.51
 			#length = sqrt((x2-x)**2 + (y2-y)**2)
-			length = font.height
+			length = font.height / 2
 			sdl_arrow_side(length, a+angle, x2,y2, surface, color)
 			sdl_arrow_side(length, a-angle, x2,y2, surface, color)
 
