@@ -17,4 +17,10 @@
     nodes.ParserBase.post_insert_move_cursor
 
 
+cursor pos is a number
 
+
+to move cursor left:
+	move cursor left by one character
+
+to move cursor left by <number> character(s):
