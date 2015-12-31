@@ -187,7 +187,7 @@ def deserialize(data, parent):
 	if 'resolve' in data: # create a Ref pointing to another node
 		return resolve(data, parent)
 	if not 'decl' in data: # every node must have a type
-		raise DeserializationException("decl key not in found in %s"%data)
+		raise DeserializationException("no decl key in %s"%data)
 	decl = data['decl']
 	log("deserializing node with decl %s"%repr(decl))
 	if decl == 'Parser': # ok, some nodes are special, we dont have a type for Parser
@@ -2912,7 +2912,95 @@ class Kbdbg(Node):
 
 
 def make_root():
-	return Kbdbg()
+	#return Kbdbg()
+
+	r = Root()
+
+	build_in_editor_structure_nodes()
+	build_in_lemon_language()
+	build_in_misc()
+
+	#for k,v in iteritems(B._dict):
+	#	log(k, v)
+
+
+	r['welcome'] = Text("Press F1 to cycle the sidebar!")
+	r["intro"] = new_module()
+	r["intro"].ch.statements.items = [
+		Text("""
+
+the interface of lemon is currently implemented like this:
+root is a dictionary with keys like "intro", "some program" etc.
+it's values are mostly modules. modules can be collapsed and expanded and they
+hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
+
+Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
+ctrl-del will delete something. Inserting of nodes happens in the Parser node."""),
+		#it looks like this:"""),
+		#Parser(b['number']), todo:ParserWithType
+		Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
+		Text("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
+	]
+
+
+	r["intro"].ch.statements.view_mode=0
+	#r.add(("lesh", Lesh()))
+	r["some program"] = B.module.inst_fresh()
+	r["some program"].ch.statements.newline()
+	#r['some program'].ch.statements.items[1].add("12")
+	#r["lemon console"] =b['module'].inst_fresh()
+
+	r["loaded program"] = B.module.inst_fresh()
+	r["loaded program"].ch.name = Text("placeholder")
+
+
+	library = r["library"] = make_list('module')
+	library.view_mode = library.vm_multiline
+
+
+	r["builtins"] = new_module()
+	r["builtins"].ch.statements.items = list(itervalues(B._dict))
+	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
+	log("built in %s nodes",len(r["builtins"].ch.statements.items))
+	r["builtins"].ch.statements.add(Text("---end of builtins---"))
+	r["builtins"].ch.statements.view_mode = 2
+
+	import glob
+	for file in glob.glob("library/*.lemon.json"):
+		placeholder = library.add(new_module())
+		placeholder.ch.name.pyval = "placeholder for "+file
+		load_module(file, placeholder)
+	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
+
+
+
+	#r.add(("toolbar", toolbar.build()))
+
+	#log(len(r.flatten()))
+	#for i in r.flatten():
+	#		assert isinstance(i, Root) or i.parent, i.long__repr__()
+	#		if not i.parent:
+	#			log(i.long__repr__())
+	#log("--------------")
+	#log(r["builtins"].ch.statements.items)
+	#test_serialization(r)
+	#log(b_lemon_load_file(r, 'test_save.lemon.json'))
+	#log(len(r.flatten()))
+	#log(r["builtins"].ch.statements.items)
+	#import gc
+	#log(gc.garbage)
+	#gc.collect()
+	#r["some program"].save()
+	#log("ok")
+	r.fix_parents()
+	if __debug__:
+		for i in r.flatten():
+			if not isinstance(i, Root):
+				assert i.parent,  i.long__repr__()
+	return r
+
+
+
 
 
 """
