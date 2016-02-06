@@ -588,14 +588,20 @@ class Node(NodePersistenceStuff, element.Element):
 	def clear_runtime_dict(s):
 		s.runtime._dict.clear()
 
+
+
+
 	def set_parent(s, v):
 		assert v or isinstance(s, Root) or s.isroot,  s
 		super(Node, s).set_parent(v)
 		if "value" in s.runtime._dict: #crap
 			s.runtime.value.parent = s.parent
 
-	#overriding properties has to be done like this
+	#in python, overriding properties has to be done like this
 	parent=property(element.Element.get_parent, set_parent)
+
+
+
 
 	@property
 	def parsed(s):
@@ -610,11 +616,13 @@ class Node(NodePersistenceStuff, element.Element):
 			r += [x.parsed for x in s.parent.above(s)]
 
 		assert s.parent != None, s.long__repr__()
+
 		r += [s.parent]
 		r += s.parent.scope() # note:Root has parent None
 
 		assert(r != None)
 		assert(flatten(r) == r)
+
 		return r
 
 	@property
@@ -692,7 +700,7 @@ class Node(NodePersistenceStuff, element.Element):
 	def tags(elem):
 		"""called from Element.render"""
 		yield super().tags()
-		#results of eval
+		#add results of eval
 		if "value" in elem.runtime._dict \
 				and "evaluated" in elem.runtime._dict \
 				and not isinstance(elem.parent, Parser): #dont show evaluation results of parser's direct children
@@ -931,11 +939,12 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 class Collapsible(Node):
 	"""Collapsible - List or Dict -
-	they dont have a title, just a collapse button, right of which first item is rendered
+	they dont have a title, just a collapse button, right of which the first item is rendered
 	"""
 	vm_collapsed = 0
 	vm_oneline = 1
 	vm_multiline = 2
+
 	def __init__(s):
 		super(Collapsible, s).__init__()
 		s.view_mode_widget = widgets.NState(s, 0, ("+","v","-"))
