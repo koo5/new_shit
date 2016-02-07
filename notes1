@@ -1201,3 +1201,30 @@ ponderings
 
 
 
+
+
+class state
+    string name
+    bool start, final, dead
+class transition
+    state A, B
+    string input
+ 
+
+data state = ..., 
+data alphabet = ...., 
+transition: state -> alphabet -> state
+
+
+state is a class
+transition is a class
+state has string name
+state has bool start, final, dead
+transition has state A, B
+transition has string input
+
+
+A a state. B a state. X a transition. X source A. X target B. X input i.
+<stoopkid> M a semiautomaton. M hasState A. M hasState B. M hasTransition X
+
+
