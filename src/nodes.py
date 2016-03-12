@@ -2752,61 +2752,7 @@ class FunctionCallNodecl(NodeclBase):
 		s.items = items
 """
 
-arrows = []
-parts = odict()
 
-
-class Part(Node):
-
-	def __init__(s, id, v):
-		global parts
-		super(Part, s).__init__()
-		s.brackets = ("", "")
-		s.stuff = []
-		counter = 0
-		for i in v:
-			if isinstance(i, str):
-				s.stuff.append(i)
-			elif isinstance(i, list):
-				childid = id + (counter,)
-				childpart = Part(childid, i)
-				childpart.set_parent(s)
-				parts[childid] = childpart
-				s.stuff.append(childpart)
-				counter += 1
-			else:
-				assert(False)
-
-	def render(s):
-		yield s.items
-
-	def update(s):
-		global step, parts
-		s.items = []
-		for i in s.stuff:
-			if isinstance(i, str):
-				s.items.append(i)
-			elif isinstance(i, Part):
-				i.update()
-				for a in arrows:
-					#print (parts)
-					if parts[a[0][1:]] == i:
-						style = a[2]
-						s.items.append(ArrowTag(parts[a[1][1:]], style))
-						#print ("arrow")
-				s.items.append(ElementTag(i))
-
-	def on_mouse_press(self, button):
-		if button == 1:
-			self.parent.step_back()
-		if button == 3:
-			self.parent.step_fwd()
-		return True
-
-	def step_back(s):
-		s.parent.step_back()
-	def step_fwd(s):
-		s.parent.step_fwd()
 
 
 class Kbdbg(Node):
@@ -2818,23 +2764,37 @@ class Kbdbg(Node):
 		s.delayed_cursor_move = DelayedCursorMove()
 		s.indent_length = 4
 		s.changed = True
-
 		s.brackets = ("", "")
 		s.items = []
+		s.arrows = []
 		s.loadkb()
 		print (Kbdbg.keys)
+		s.update()
 
 	def render(s):
 		yield ColorTag(colors.fg)
+		#print ("RENDER", s.items)
 		yield s.items
 		yield EndTag()
 
 	def update(s):
-		for a in arrows:
+		for a in s.arrows:
 			print (a)
-		for i in s.items:
-			i.element.update()
-
+			
+		s.items.clear()
+		for i in s.kb:
+			#print(i)
+			if len(i.markup) != 0:
+				for a in s.arrows:
+					if i.markup == a[0]["markup"]:
+						#print ("OOO", i.markup, "FFF", a[0]["markup"])
+						style = a[2]
+						for j in s.kb:
+							print("XXX",  j.markup, a[1]["markup"])
+							if j.markup == a[1]["markup"]:
+								s.items.append(ArrowTag(j, style))
+			s.items.append(ElementTag(i))
+	
 	def add_step(s):
 		print("adding step")
 		s.steps.append(Dotdict())
@@ -2842,11 +2802,11 @@ class Kbdbg(Node):
 		s.steps[-1].vis = []
 
 	def loadkb(s):
-		global arrows
+
 		s.steps = []
 		s.add_step()
 		input = json.load(open("kbdbg.json", "r"))
-		kb = []
+		s.kb = []
 		for i in input:
 			if isinstance(i, dict):
 				#print (i)
@@ -2857,12 +2817,19 @@ class Kbdbg(Node):
 			elif isinstance(i, unicode):
 				s.steps[-1].log.append(i)
 			elif isinstance(i, list):
-				kb += i
+				for x in i:
+					if isinstance(x, str):
+						t = x
+						m = []
+					elif isinstance(x, dict):			
+						t = x["text"]
+						m = x["markup"]
+					w = widgets.Text(s, t)
+					
+					w.markup = m
+					s.kb.append(w)
 
-		ch = Part(tuple(), kb)
-		ch.set_parent(s)
-		s.items.append(ElementTag(ch))
-		arrows = []
+		s.arrows = []
 		s.cache = {}
 		s.step = -1
 		s.step_fwd()
@@ -2872,10 +2839,10 @@ class Kbdbg(Node):
 			print(line)
 
 	def step_back(s):
-		global arrows
+		
 		if s.step != 0:
 			s.step -= 1
-		arrows = copy(s.cache[s.step])
+		s.arrows = copy(s.cache[s.step])
 		s.update()
 		if s.step == 0:
 			print()
@@ -2891,33 +2858,42 @@ class Kbdbg(Node):
 		s.print_log()
 
 	def step_fwd(s):
-		global arrows
+		
 		if s.step < len(s.steps) -1 :
 			s.step += 1
 			if s.step in s.cache:
-				arrows = copy(s.cache[s.step])
+				s.arrows = copy(s.cache[s.step])
 			else:
 				s.do_step(s.step)
-				s.cache[s.step] = copy(arrows)
+				s.cache[s.step] = copy(s.arrows)
 			s.update()
 		print ("step:", s.step)
 		s.print_log()
 
 	def do_step(s, i):
-		global arrows
+	
 		for x in s.steps[i].vis:
 			print(x)
-			p = (tuple(x["a"]), tuple(x["b"]), x["style"])
+			p = (x["a"], x["b"], x["style"])
 			if x["type"] == "add":
 				print("add" , p)
-				arrows.append(p)
+				s.arrows.append(p)
 			elif x["type"] == "remove":
-				for y in range(len(arrows)):
-					if arrows[y] == p:
+				for y in range(len(s.arrows)):
+					if s.arrows[y] == p:
 						print("remove" , p)
-						arrows.remove(p)
+						s.arrows.remove(p)
+						break
 			else:
 				assert(False)
+
+	def on_mouse_press(self, button):
+		if button == 1:
+			self.step_back()
+		if button == 3:
+			self.step_fwd()
+		return True
+
 
 
 

@@ -245,12 +245,6 @@ def step_back(s, e):
 	s.step_back()
 
 add_keys(n.Kbdbg, None, {
-	#K((),           K_PLUS):        H(step_fwd),
-	#K((),           K_MINUS):       H(step_back)
-	K((),           K_1):       H(step_fwd)
-})
-add_keys(n.Part, None, {
-	#K((),           K_PLUS):        H(step_fwd),
-	#K((),           K_MINUS):       H(step_back)
-	K((),           K_1):       H(step_fwd)
+	K((),           K_F11):       H(step_back),
+	K((),           K_F12):       H(step_fwd)
 })

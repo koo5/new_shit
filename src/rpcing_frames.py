@@ -652,7 +652,7 @@ class Editor(ClientFrame):
 				color = colors.arrow
 			else:
 				color = colors.arrow_fail
-			pygame.draw.line(surface, color, (int(x),int(y)),(int(x2),int(y2)))
+			pygame.draw.line(surface, color, (int(x),int(y)),(int(x2),int(y2)), 3)
 			a = atan2(y-y2, x-x2)
 			angle = 0.51
 			#length = sqrt((x2-x)**2 + (y2-y)**2)
