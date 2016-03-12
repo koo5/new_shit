@@ -24,6 +24,11 @@ import lemon_args
 
 lemon_args.parse_args()
 from lemon_args import args
+
+
+args.lame = args.arrows = True
+
+
 from frontend_events import *
 
 

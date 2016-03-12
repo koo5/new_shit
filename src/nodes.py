@@ -2849,7 +2849,7 @@ class Kbdbg(Node):
 		kb = []
 		for i in input:
 			if isinstance(i, dict):
-				print (i)
+				#print (i)
 				if i["type"] == "step":
 					s.add_step()
 				else:
@@ -2877,6 +2877,16 @@ class Kbdbg(Node):
 			s.step -= 1
 		arrows = copy(s.cache[s.step])
 		s.update()
+		if s.step == 0:
+			print()
+			print()
+			print()
+			print()
+			print("START")
+			print()
+			print()
+			print()
+			
 		print ("step:", s.step)
 		s.print_log()
 

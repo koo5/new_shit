@@ -612,7 +612,7 @@ class Editor(ClientFrame):
 			for a in s.arrows:
 				target = s.find_element(a[2])
 				if target:
-					s.completed_arrows.append(((a[0],a[1] - s.scroll_lines), target, a[3]))
+					s.completed_arrows.append(((a[0],a[1]), target, a[3]))
 
 	def sdl_draw_arrows(s, surface):
 		#todo: would be nice if the target ends of arrows faded out proportionally to the number of arrows on screen pointing to that same target, to avoid making it unreadable
@@ -621,9 +621,18 @@ class Editor(ClientFrame):
 		font = get_font(0)
 		for i, a in enumerate(s.completed_arrows):
 			((c,r),(c2,r2),style) = a
-			x,y,x2,y2 = font.width * (c+0.5), font.height * (r+1.0), font.width * (c2+0.5), font.height * (r2+1.0)
+			r = r  - s.scroll_lines
+			r2 = r2- s.scroll_lines
+			
+			x,y,yb = s.sdl_cursor_xy(c, r)
+			x = x + 0.5*font.width
+			x2,y2,yb2 = s.sdl_cursor_xy(c2, r2)
+			x2 = x2 + 0.5*font.width
+			
+			
+			#x,y,x2,y2 = font.width * (c+0.5), font.height * (r+1.0), font.width * (c2+0.5), font.height * (r2+1.0)
 
-			dupes = 0
+			dupes = -1
 			for j, b in enumerate(s.completed_arrows):
 				if a == b:
 					dupes += 1
@@ -635,7 +644,9 @@ class Editor(ClientFrame):
 				if a == b:
 					dupnum += 1
 			
-			y -= dupnum * font.height / dupes
+			if dupes != 0:
+				y = y - font.height / 2
+				y = y + font.height / dupes * dupnum
 					
 			if style == "normal":
 				color = colors.arrow
