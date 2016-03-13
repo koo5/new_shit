@@ -628,7 +628,8 @@ class Editor(ClientFrame):
 			x = x + 0.5*font.width
 			x2,y2,yb2 = s.sdl_cursor_xy(c2, r2)
 			x2 = x2 + 0.5*font.width
-			
+			y = (y + yb) / 2
+			y2 = (y2 + yb2) / 2
 			
 			#x,y,x2,y2 = font.width * (c+0.5), font.height * (r+1.0), font.width * (c2+0.5), font.height * (r2+1.0)
 
@@ -645,8 +646,8 @@ class Editor(ClientFrame):
 					dupnum += 1
 			
 			if dupes != 0:
-				y = y - font.height / 2
-				y = y + font.height / dupes * dupnum
+				y = y + font.height / 2
+				y = y - font.height / dupes * dupnum
 					
 			if style == "normal":
 				color = colors.arrow

@@ -2778,21 +2778,26 @@ class Kbdbg(Node):
 		yield EndTag()
 
 	def update(s):
-		for a in s.arrows:
-			print (a)
+		#for a in s.arrows:
+			#print (a)
 			
 		s.items.clear()
 		for i in s.kb:
-			#print(i)
+			#print(i.markup)
 			if len(i.markup) != 0:
 				for a in s.arrows:
 					if i.markup == a[0]["markup"]:
 						#print ("OOO", i.markup, "FFF", a[0]["markup"])
-						style = a[2]
 						for j in s.kb:
-							print("XXX",  j.markup, a[1]["markup"])
+							#print("XXX",  j.markup, a[1]["markup"])
 							if j.markup == a[1]["markup"]:
+								style = a[2]
 								s.items.append(ArrowTag(j, style))
+								s.items.append("o")
+					#if i.markup == a[1]["markup"]:
+					#	s.items.append("x")
+	
+
 			s.items.append(ElementTag(i))
 	
 	def add_step(s):
@@ -2824,8 +2829,7 @@ class Kbdbg(Node):
 					elif isinstance(x, dict):			
 						t = x["text"]
 						m = x["markup"]
-					w = widgets.Text(s, t)
-					
+					w = widgets.Text(s, t)		
 					w.markup = m
 					s.kb.append(w)
 
@@ -2887,12 +2891,26 @@ class Kbdbg(Node):
 			else:
 				assert(False)
 
-	def on_mouse_press(self, button):
-		if button == 1:
-			self.step_back()
-		if button == 3:
-			self.step_fwd()
-		return True
+
+	def has_result(s):
+		for line in s.steps[s.step].log:
+			if line[:6] == "RESULT":
+				return True
+
+
+	def res_back(s,e):
+		while s.step != 0:
+			s.step_back()
+			if s.has_result(): return
+	
+	def res_fwd(s,e):
+		while s.step < len(s.steps) -1 :
+			s.step_fwd()
+			if s.has_result(): return
+			
+
+		
+		
 
 
 
