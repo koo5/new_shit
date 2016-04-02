@@ -24,6 +24,11 @@ import lemon_args
 
 lemon_args.parse_args()
 from lemon_args import args
+
+if args.kbdbg:
+	args.lame = args.arrows = True
+
+
 from frontend_events import *
 
 
@@ -113,8 +118,14 @@ def resize_frames():
 			0, screen_height - args.log_height,
 			screen_width, args.log_height * get_font(0).height) # log frame uses default font
 
+		if args.kbdbg:
+			ew = screen_width
+		else:
+			ew = screen_width // 3 * 2
+
+
 		c.editor.rect = Rect(0,0,
-			screen_width,# // 3 * 2,
+			ew,
 			screen_height - c.logframe.rect.height)
 
 		sidebar_rect = Rect(c.editor.rect.w, 0,
