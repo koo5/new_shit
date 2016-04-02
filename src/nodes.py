@@ -2745,21 +2745,21 @@ class FunctionCallNodecl(NodeclBase):
 
 
 # endregion
-"""
-		parts = {(0,): Part("a"), (1,): Part("b")}
-		kb = ["kb: ", (0,) , " a ", (1,), ".\n"];
-		arrows = [((0x1111, (0,)), (0x2222, (1,)))]
-		for i in kb:
-			if isinstance(i, unicode):
-				items.append(p)
-			elif isinstance(p, tuple):
-				for a in arrows:
-					if a[0][1] == p:
-						items.append(ArrowTag(parts[a[1][1]]))
-				items.append(ElementTag(parts[p]))
-			else: assert(False)
-		s.items = items
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2782,13 +2782,14 @@ class Kbdbg(Node):
 
 	def render(s):
 		yield ColorTag(colors.fg)
-		#print ("RENDER", s.items)
+		print ("RENDER")
 		yield s.items
 		yield EndTag()
 
 	def update(s):
 		#for a in s.arrows:
 			#print (a)
+		print ("UPDATE")
 			
 		s.items.clear()
 		for i in s.kb:
@@ -2919,13 +2920,22 @@ class Kbdbg(Node):
 			
 
 		
+
+
+
+
 		
 
 
 
 
 def make_root():
-	#return Kbdbg()
+	if args.kbdbg:
+		return Kbdbg()
+		
+		
+		
+		
 
 	r = Root()
 

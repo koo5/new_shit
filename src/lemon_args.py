@@ -3,6 +3,7 @@ import argparse
 from lemon_utils.lemon_six import unicode
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--kbdbg', action='store_true')
 parser.add_argument('--eightbit', action='store_true',
 			   help='try to be compatible with 8 bit color mode.')
 parser.add_argument('--dontblink', action='store_true',
