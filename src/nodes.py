@@ -769,6 +769,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
 	def __init__(s, children):
 		super(Syntaxed, s).__init__()
+		s.brackets = ("", "")
 		s.check_slots(s.slots)
 		s.syntax_index = 0
 		s.ch = Children()
@@ -1397,6 +1398,7 @@ class Number(WidgetedValue):
 	def match(text):
 		if text.isdigit():
 			return True
+			
 
 class Text(WidgetedValue):
 	easily_instantiable = True
@@ -1435,6 +1437,10 @@ class Text(WidgetedValue):
 	def _eval(s):
 		return Text(s.pyval)
 
+
+
+#class Comment(Text):
+	
 
 
 class Identifier(WidgetedValue):

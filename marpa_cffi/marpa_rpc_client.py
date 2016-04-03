@@ -335,6 +335,7 @@ class MarpaThread(threading.Thread):
 			elif s == lib.MARPA_STEP_INACTIVE:
 				if args.log_parsing:
 					log("MARPA_STEP_INACTIVE:i'm done")
+				break
 			elif s == lib.MARPA_STEP_INITIAL:
 				if args.log_parsing:
 					log("MARPA_STEP_INITIAL:starting...")
