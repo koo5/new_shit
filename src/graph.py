@@ -1,4 +1,7 @@
-from lemon_utils.lemon_logging import log
+
+import logging
+logger=logging.getLogger("root")
+info=logger.info
 
 def gen_graph(root):
 	try:
@@ -28,4 +31,4 @@ def gen_graph(root):
 
 	graph.set_rankdir("LR")
 	graph.write_gif("graph.gif")
-	log("graph.gif written")
+	info("graph.gif written")

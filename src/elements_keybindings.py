@@ -11,8 +11,14 @@ from element import CHANGED
 from nodes import AST_CHANGED
 
 from lemon_utils.utils import odict
-from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import iteritems
+
+
+import logging
+logger=logging.getLogger("root")
+info=logger.info
+log=logger.debug
+
 
 """ an event comes with two lists of attributes, one for the char(cell) that was on the left
 of the cursor and one for the right. If either side doesnt belong to the element whose handler

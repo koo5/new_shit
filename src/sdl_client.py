@@ -16,7 +16,11 @@ from lemon_utils.pizco_signal.util import Signal
 
 from lemon_utils.lemon_six import iteritems
 from lemon_utils.utils import Evil
-from lemon_utils.lemon_logging import log, info
+import lemon_utils.lemon_logging
+import logging
+logger=logging.getLogger("root")
+log=logger.debug
+info=logger.info
 
 
 import lemon_args

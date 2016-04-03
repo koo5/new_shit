@@ -2,7 +2,6 @@ from types import SimpleNamespace
 
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_utils.dotdict import Dotdict
-from lemon_utils.lemon_logging import info,log
 from lemon_args import args
 
 
@@ -11,7 +10,7 @@ try:
 	from colors import *
 	assert rgb,  'we imported some outdated .pyc or something'
 except ImportError as e:
-	info("%s, ...but nevermind", e)
+	print("%s, ...but nevermind"% e)
 
 
 class ColorsSettings():

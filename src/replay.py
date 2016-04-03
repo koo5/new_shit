@@ -1,6 +1,10 @@
 import pickle
 
-from lemon_utils.lemon_logging import log
+import logging
+logger=logging.getLogger("root")
+log=logger.debug
+
+
 from frontend_events import *
 
 replay_input_event = 666 # set from sdl_client
@@ -43,7 +47,7 @@ def do_replay(invoked_interactively = True):
 		return
 	try:
 		with open(replay_file, "rb") as f:
-			log("replaying...")
+			info("replaying...")
 			we_are_replaying = True
 			while 1:
 				try:
@@ -53,6 +57,6 @@ def do_replay(invoked_interactively = True):
 				log(e)
 				replay_input_event(e)
 	except IOError as e:
-		log("couldnt open replay.p",e)
+		info("couldnt open replay.p",e)
 	finally:
 		we_are_replaying = False

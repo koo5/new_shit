@@ -5,12 +5,16 @@
 from lemon_utils.pizco_signal.util import Signal
 
 from element import Element, CHANGED
-from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import unicode
 from tags import *
 from keys import *
 from lemon_colors import colors
 
+
+import logging
+logger=logging.getLogger("root")
+info=logger.info
+log=logger.debug
 
 class Widget(Element):
 	def __init__(s, parent):

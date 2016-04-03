@@ -6,11 +6,14 @@ import threading
 from itertools import starmap, repeat
 from pprint import pformat as pp
 
+import logging
+logger=logging.getLogger("marpa")
+log=logger.debug
+
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues
 from lemon_utils.utils import uniq
 from lemon_args import args
-from lemon_utils.lemon_logging import log, warn
 from marpa_cffi.marpa_misc import *
 
 import marpa_cffi
@@ -236,6 +239,7 @@ class MarpaThread(threading.Thread):
 
 		r = Recce(s.g)
 		r.start_input()
+		s.g.print_events()
 
 		for i, sym in enumerate(tokens):
 			#if args.log_parsing:
@@ -246,6 +250,7 @@ class MarpaThread(threading.Thread):
 			else:
 				r.alternative(s.c_syms[sym], i+1)
 			r.earleme_complete()
+			s.g.print_events()
 
 		#token value 0 has special meaning(unvalued),
 		# so lets i+1 over there and prepend a dummy
@@ -294,7 +299,6 @@ class MarpaThread(threading.Thread):
 				if babble:
 					log ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
 				stack[where] = stack2[where] = char
-
 			elif s == lib.MARPA_STEP_RULE:
 				r = v.v.t_rule_id
 				#print ("rule id:%s"%r)

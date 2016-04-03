@@ -15,8 +15,12 @@ from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
 from lemon_utils.utils import Evil, batch, clamp, flatten, odict
 from lemon_colors import colors
-from lemon_utils.lemon_logging import log
 from lemon_utils.dotdict import Dotdict
+
+import logging
+logger=logging.getLogger("root")
+info=logger.info
+log=logger.debug
 
 import nodes
 from tags import *

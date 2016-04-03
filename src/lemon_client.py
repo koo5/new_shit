@@ -4,12 +4,14 @@
 
 import sys
 
-from lemon_utils.lemon_logging import log
 import rpcing_frames
 from keys import *
 from lemon_args import args
-import lemon_utils.lemon_logging
-lemon_utils.lemon_logging.do_topics = args.debug
+
+
+import logging
+logger=logging.getLogger("root")
+log=logger.debug
 
 
 if args.debug_objgraph:

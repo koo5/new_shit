@@ -1,33 +1,21 @@
 #import traceback,
 #from inspect import *
 #from time import time
+
 import sys
 import logging
-from pprint import pformat as pp
+import logging.config
 
-logger = logging.Logger('lemon')
-logger.setLevel(logging.WARNING)
-logger.setLevel(logging.DEBUG)
-ch = logging.StreamHandler(sys.stderr)
-ch.setLevel(logging.DEBUG)
-logger.addHandler(ch)
+logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
 
-f = logging.Formatter(
-	'%(asctime)s %(module)s:%(lineno)d : %(message)s', '%H:%M:%S')
-"""
-class PrettyPrintingFormatter(logging.Formatter):
-	def formatMessage(self, record):
-		print (record.__dict__)
-		record.args = tuple([pp(i) for i in record.args])
-		return self._style.format(record)
 
-f = PrettyPrintingFormatter()
-"""
-ch.setFormatter(f)
-log = logger.debug
-warn = logger.warning
-info = logger.info
 
+
+
+
+
+
+#??..
 
 
 #https://docs.python.org/3/howto/logging-cookbook.html

@@ -34,7 +34,13 @@ from keys import *
 from lemon_utils.utils import flatten, odict, Evil, uniq
 from lemon_utils.dotdict import Dotdict
 from lemon_args import args
-from lemon_utils.lemon_logging import log, warn
+
+
+import logging
+logger=logging.getLogger("nodes")
+info=logger.info
+log=logger.debug
+warn=logger.warn
 
 from marpa_cffi.marpa_misc import * # valuator actions
 

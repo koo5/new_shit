@@ -32,11 +32,9 @@ lib.marpa_c_init(marpa_config)
 #Always succeeds.
 
 
-
-#a wee bit of dependency on something in the lemon repo, feel free to use it or
-#cut it out...we have to ..somehow..i have to learn to use the python logging module
-from lemon_utils.lemon_logging import log
-
+import logging
+logger=logging.getLogger("marpa")
+log=logger.debug
 
 
 

@@ -2,12 +2,18 @@ from math import atan2, cos, sin
 from pprint import pformat as pp
 
 from lemon_platform import SDL, CURSES
-from lemon_utils.lemon_logging import log
 from lemon_utils.lemon_six import iteritems, unicode
 from lemon_args import args
 from lemon_utils.utils import Evil
 from lemon_utils.cache import Cache
 from lemon_colors import colors
+
+
+import logging
+logger=logging.getLogger("events")
+log=logger.debug
+
+
 
 import graph
 import nodes

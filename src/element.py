@@ -3,11 +3,16 @@
 from weakref import ref as weakref
 
 import lemon_platform as platform
-from lemon_utils.lemon_logging import log
 import tags
 from tags import *
 from lemon_utils.utils import Evil
 from lemon_colors import colors
+
+
+import logging
+logger=logging.getLogger("root")
+log=logger.debug
+
 
 CHANGED = 1
 
