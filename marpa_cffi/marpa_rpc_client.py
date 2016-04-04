@@ -31,7 +31,15 @@ else:
 	else:
 		marpa = False
 
-
+"""diosyncrat_> you can pull them out of the progress reports already.
+<idiosyncrat_> you can also add nulling symbols and use nulling events
+<idiosyncrat_> That is, before every nonterminal whose prediction is of interest ...
+<idiosyncrat_> place a nulling symbol, and add a nulling event for it.
+<idiosyncrat_> And you should be able to use prediction events.
+<idiosyncrat_> Prediction events cannot be *marked* in the recognizer, only in the grammar, but ...
+<idiosyncrat_> they can be *activitated* and *deactivated* in the recognizer.
+<idiosyncrat_> (The reason for all this is there is some overhead per marked symbol for each event, so it pays to make the user declare which symbols he *might* want to use.  The user can then activate them and deactivate the events, depending on whether they actually want to see the events or not.)
+"""
 
 
 
@@ -240,6 +248,20 @@ class MarpaThread(threading.Thread):
 		r = Recce(s.g)
 		r.start_input()
 		s.g.print_events()
+
+		ce = lib.marpa_r_current_earleme(r.r);
+		log("current earleme: %s"% ce)
+		lib.marpa_r_progress_report_start(r.r, ce)
+
+		position = ffi.new('int*')
+		origin = ffi.new('int*')
+		Marpa_Rule_ID = None
+		while Marpa_Rule_ID != -1:
+			Marpa_Rule_ID = lib.marpa_r_progress_item ( r.r, position, origin )
+			log("position:%s origin:%s Marpa_Rule_ID:%s"%(position[0], origin[0], Marpa_Rule_ID))
+			if Marpa_Rule_ID != -1:
+				log ("rule:"+s.rule2debug_name(r))
+
 
 		for i, sym in enumerate(tokens):
 			#if args.log_parsing:
