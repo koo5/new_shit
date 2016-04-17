@@ -19,11 +19,12 @@ CHANGED = 1
 class Element():
 	"""an object that can be rendered, a common base for widgets and nodes"""
 	help = []
+	brackets = ('<', '>')
 	def __init__(self):
 		super().__init__()
 		self._parent = Evil('_parent')
 		self.brackets_color = colors.element_brackets
-		self.brackets = ('<','>')
+
 		self._render_lines = {}
 
 

@@ -31,15 +31,6 @@ else:
 	else:
 		marpa = False
 
-"""diosyncrat_> you can pull them out of the progress reports already.
-<idiosyncrat_> you can also add nulling symbols and use nulling events
-<idiosyncrat_> That is, before every nonterminal whose prediction is of interest ...
-<idiosyncrat_> place a nulling symbol, and add a nulling event for it.
-<idiosyncrat_> And you should be able to use prediction events.
-<idiosyncrat_> Prediction events cannot be *marked* in the recognizer, only in the grammar, but ...
-<idiosyncrat_> they can be *activitated* and *deactivated* in the recognizer.
-<idiosyncrat_> (The reason for all this is there is some overhead per marked symbol for each event, so it pays to make the user declare which symbols he *might* want to use.  The user can then activate them and deactivate the events, depending on whether they actually want to see the events or not.)
-"""
 
 
 client = None
@@ -156,8 +147,10 @@ class ThreadedMarpa(object):
 		s.scope = scope
 		s.named_symbol('start')
 		#s.set_start_symbol(s.syms.start)
+
 		s.named_symbol('nonspecial_char')
 		s.named_symbol('known_char')
+
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
 
@@ -404,8 +397,15 @@ parse_result = [i for i in parse_result if not i in nope]
 """#i dont feel like implementing eq_by_value for everything now
 
 
-
-
+"""diosyncrat_> you can pull them out of the progress reports already.
+<idiosyncrat_> you can also add nulling symbols and use nulling events
+<idiosyncrat_> That is, before every nonterminal whose prediction is of interest ...
+<idiosyncrat_> place a nulling symbol, and add a nulling event for it.
+<idiosyncrat_> And you should be able to use prediction events.
+<idiosyncrat_> Prediction events cannot be *marked* in the recognizer, only in the grammar, but ...
+<idiosyncrat_> they can be *activitated* and *deactivated* in the recognizer.
+<idiosyncrat_> (The reason for all this is there is some overhead per marked symbol for each event, so it pays to make the user declare which symbols he *might* want to use.  The user can then activate them and deactivate the events, depending on whether they actually want to see the events or not.)
+"""
 
 
 """

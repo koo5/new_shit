@@ -773,9 +773,9 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	their types are in s.slots.
 	syntax is a list of Tags, and it can contain ChildTag
 	"""
+	brackets = ("", "")
 	def __init__(s, children):
 		super(Syntaxed, s).__init__()
-		s.brackets = ("", "")
 		s.check_slots(s.slots)
 		s.syntax_index = 0
 		s.ch = Children()
@@ -1408,48 +1408,44 @@ class Number(WidgetedValue):
 
 class Text(WidgetedValue):
 	easily_instantiable = True
-	#brackets = ('[', ']')
+	brackets = ('[', ']')
 	def __init__(s, value="", debug_note=""):
 		super(Text, s).__init__()
 		s.widget = widgets.Text(s, value)
 		s.brackets_color = colors.text_brackets
 		s.debug_note = debug_note
-		s.brackets = ('[', ']')
+
 
 	@classmethod
 	def register_class_symbol(cls):
-		log("registering text grammar")
+		clsstr = str(cls)
+		log("registering "+clsstr+" grammar")
 		double_slash = m.known_string('//')
-		slashed_end =  m.known_string('/]')
-		body_part = m.symbol('body_part')
-		m.rule('string_body_part_is_double_slash', body_part, double_slash)
-		m.rule('string_body_part_is_slashed_end', body_part, slashed_end)
-		m.rule('string_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
-		m.rule('string_body_part_is_known_char', body_part, m.syms.known_char)
+		slashed_end =  m.known_string('/'+brackets[1])
+		body_part = m.symbol(clsstr+'_body_part')
+		m.rule(clsstr+'_body_part_is_double_slash', body_part, double_slash)
+		m.rule(clsstr+'_body_part_is_slashed_end', body_part, slashed_end)
+		m.rule(clsstr+'_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
+		m.rule(clsstr+'_body_part_is_known_char', body_part, m.syms.known_char)
 		body = m.symbol('body')
-		m.sequence('string_body is seq of body part', body, body_part, join)
-		text = m.symbol('Text')
-		opening =  m.known_char('[')
-		closing =  m.known_char(']')
-		#opening =  m.known_string(cls.brackets[0])
-		#closing =  m.known_string(cls.brackets[1])
-		m.rule('Text_is_[body]', text, [opening, body, closing], cls.from_parse)
+		m.sequence(clsstr+'_body is seq of body part', body, body_part, join)
+		text = m.symbol(clsstr)
+		opening =  m.known_string(cls.brackets[0])
+		closing =  m.known_string(cls.brackets[1])
+		m.rule(clsstr+'_is_[body]', text, [opening, body, closing], cls.from_parse)
 		return text
 
 	@classmethod
 	def from_parse(cls, args):
 		return cls(args[1])
 
-	#def render(s):
-	#	return s.widget.render()
-
 	def _eval(s):
 		return Text(s.pyval)
 
 
 
-#class Comment(Text):
-	
+class Comment(Text):
+	brackets = ('/*', '*/')
 
 
 class Identifier(WidgetedValue):
@@ -2977,10 +2973,10 @@ def make_root():
 	#	log(k, v)
 
 
-	r['welcome'] = Text("Press F1 to cycle the sidebar!")
+	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
 	r["intro"] = new_module()
 	r["intro"].ch.statements.items = [
-		Text("""
+		Comment("""
 
 the interface of lemon is currently implemented like this:
 root is a dictionary with keys like "intro", "some program" etc.
@@ -2991,8 +2987,8 @@ Lemon can't do much yet. You can add function calls and maybe define functions. 
 ctrl-del will delete something. Inserting of nodes happens in the Parser node."""),
 		#it looks like this:"""),
 		#Parser(b['number']), todo:ParserWithType
-		Text("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
-		Text("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
+		Comment("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
+		Comment("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
 	]
 
 
@@ -3015,7 +3011,7 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	r["builtins"].ch.statements.items = list(itervalues(B._dict))
 	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
 	log("built in %s nodes",len(r["builtins"].ch.statements.items))
-	r["builtins"].ch.statements.add(Text("---end of builtins---"))
+	r["builtins"].ch.statements.add(Comment("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 2
 
 	import glob
@@ -3071,6 +3067,7 @@ todo:rename FunctionDefinition to Defun, FunctionCall to Call, maybe remove "Stu
 def build_in_editor_structure_nodes():
 
 	build_in(Nodecl(Text))
+	build_in(Nodecl(Comment))
 	build_in(TypeNodecl(), 'type')
 
 	build_in(
@@ -3109,7 +3106,7 @@ def build_in_editor_structure_nodes():
 
 def build_in_lemon_language():
 
-	build_in(Text(
+	build_in(Comment(
 	"""We start by declaring the existence of some types (decls).
 	Once declared, we can reference them from lemon objects.
 	Internally, each declaration is a Nodecl object.
