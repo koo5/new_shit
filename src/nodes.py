@@ -1408,12 +1408,13 @@ class Number(WidgetedValue):
 
 class Text(WidgetedValue):
 	easily_instantiable = True
+	#brackets = ('[', ']')
 	def __init__(s, value="", debug_note=""):
 		super(Text, s).__init__()
 		s.widget = widgets.Text(s, value)
 		s.brackets_color = colors.text_brackets
-		s.brackets = ('[',']')
 		s.debug_note = debug_note
+		s.brackets = ('[', ']')
 
 	@classmethod
 	def register_class_symbol(cls):
@@ -1430,6 +1431,8 @@ class Text(WidgetedValue):
 		text = m.symbol('Text')
 		opening =  m.known_char('[')
 		closing =  m.known_char(']')
+		#opening =  m.known_string(cls.brackets[0])
+		#closing =  m.known_string(cls.brackets[1])
 		m.rule('Text_is_[body]', text, [opening, body, closing], cls.from_parse)
 		return text
 
@@ -2677,6 +2680,21 @@ class BuiltinPythonFunctionDecl(BuiltinFunctionDecl):
 
 	#def palette(s, scope, text, node):
 	#	return []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -42,10 +42,12 @@ else:
 """
 
 
-
+client = None
 
 class ThreadedMarpa(object):
 	def __init__(s ,send_thread_message, debug=True):
+		global client
+		client = s
 		s.debug = debug
 		s.clear()
 		#---
@@ -243,6 +245,15 @@ class MarpaThread(threading.Thread):
 		s.send(Dotdict(message = 'precomputed', for_node = inp.for_node))
 
 
+	def print_completions(s, r):
+		position = ffi.new('int*')
+		origin = ffi.new('int*')
+		Marpa_Rule_ID = None
+		while Marpa_Rule_ID != -1:
+			Marpa_Rule_ID = lib.marpa_r_progress_item ( r.r, position, origin )
+			if Marpa_Rule_ID != -1:
+				log("%s %s %s"%(position[0], origin[0], client.rule2debug_name(Marpa_Rule_ID)))
+
 	def parse(s, tokens, raw, rules):
 
 		r = Recce(s.g)
@@ -253,15 +264,7 @@ class MarpaThread(threading.Thread):
 		log("current earleme: %s"% ce)
 		lib.marpa_r_progress_report_start(r.r, ce)
 
-		position = ffi.new('int*')
-		origin = ffi.new('int*')
-		Marpa_Rule_ID = None
-		while Marpa_Rule_ID != -1:
-			Marpa_Rule_ID = lib.marpa_r_progress_item ( r.r, position, origin )
-			log("position:%s origin:%s Marpa_Rule_ID:%s"%(position[0], origin[0], Marpa_Rule_ID))
-			if Marpa_Rule_ID != -1:
-				log ("rule:"+s.rule2debug_name(r))
-
+		#s.print_completions(r)
 
 		for i, sym in enumerate(tokens):
 			#if args.log_parsing:
@@ -273,6 +276,9 @@ class MarpaThread(threading.Thread):
 				r.alternative(s.c_syms[sym], i+1)
 			r.earleme_complete()
 			s.g.print_events()
+			#s.print_completions(r)
+
+		#s.print_completions(r)
 
 		#token value 0 has special meaning(unvalued),
 		# so lets i+1 over there and prepend a dummy
