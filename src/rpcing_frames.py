@@ -92,7 +92,7 @@ class ClientFrame(object):
 	def maybe_redraw(s):
 		"""non-rpcing client overrides this with a
 		function that maybe_draws all frames in the window at once"""
-		Xself.maybe_draw()
+		assert False
 
 	def maybe_draw(s):
 		if not s.visible: return
@@ -800,3 +800,30 @@ def sdl_arrow_side(length,a,x2,y2, surface, color):
 def collidepoint(r, pos):
 	x, y = pos
 	return x >= r[0] and y >= r[1] and x < r[0] + r[2] and y < r[1] + r[3]
+
+
+"""
+def after_start():
+	if args.load:
+		server.load(args.load)
+
+	if args.run:
+		server.load(args.run)
+		root.root['loaded program'].run()
+
+	initially_position_cursor()
+
+def initially_position_cursor():
+	editor.render()
+
+	try:
+		#if args.lesh:
+		#	something = root.root['lesh'].command_line
+		#else:
+		something = editor.root['some program'].ch.statements.items[1]
+
+		root.cursor_c, root.cursor_r = project.find(something, root.lines)
+		#root.cursor_c += 1
+	except Exception as e:
+		log (e.__repr__(), ", cant set initial cursor position")
+"""

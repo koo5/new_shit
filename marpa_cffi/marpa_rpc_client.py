@@ -9,6 +9,7 @@ from pprint import pformat as pp
 import logging
 logger=logging.getLogger("marpa")
 log=logger.debug
+info=logger.info
 
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues
@@ -87,6 +88,8 @@ class ThreadedMarpa(object):
 				assert type(i) == symbol_int
 			assert type(debug_name) == unicode
 			assert type(action) in (tuple, types.FunctionType, types.MethodType)
+
+		info((debug_name, lhs, rhs, action))
 
 		s.rules.append((False, debug_name, lhs, rhs, action))
 
@@ -200,8 +203,8 @@ class MarpaThread(threading.Thread):
 
 	def run(s):
 		"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4
-		imho unbased requirement that all operations are done in one thread..so
-		lets make a litte event loop here"""
+		imho unbased requirement that all operations are done in one thread..
+		anyway, lets make a little event loop here"""
 		while True:
 			inp = s.input.get()
 			if not marpa: continue
@@ -370,7 +373,8 @@ class MarpaThread(threading.Thread):
 
 		v.unref()#promise me not to use it from now on
 		#print "tada:"+str(stack[0])
-	#	print ("tada:"+json.dumps(stack[0], indent=2))
+		import json
+		print ("tada:"+json.dumps(stack[0], indent=2))
 		#log ("tada:"+json.dumps(stack2[0], indent=2))
 		res = stack2[0] # in position 0 is final result
 		if args.log_parsing:

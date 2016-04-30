@@ -3,6 +3,7 @@ import pickle
 import logging
 logger=logging.getLogger("root")
 log=logger.debug
+info=logger.info
 
 
 from frontend_events import *

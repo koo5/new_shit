@@ -773,7 +773,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	their types are in s.slots.
 	syntax is a list of Tags, and it can contain ChildTag
 	"""
-	brackets = ("", "")
+	brackets = ("<", ">")
 	def __init__(s, children):
 		super(Syntaxed, s).__init__()
 		s.check_slots(s.slots)
@@ -794,28 +794,61 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 	@classmethod
 	def register_class_symbol(cls):
-		syms = []
+		r = m.symbol(cls.__name__)
 		ddecl = deref_decl(cls.decl)
-		for i in ddecl.instance_syntaxes[0]:
-			if type(i) == unicode:
+		for sy in ddecl.instance_syntaxes:
+			cls.rule_for_syntax(r, sy, ddecl)
+		return r
+
+	@classmethod
+	def rule_for_syntax(cls,r,sy,ddecl):
+		syms = []
+		for i in sy:
+			ti = type(i)
+			if ti == unicode:
 				syms.append(m.known_string(i))
-			elif type(i) == ChildTag:
+			elif ti == ChildTag:
 				child_type = ddecl.instance_slots[i.name]
 				if type(child_type) == Exp:
 					x = B.expression.symbol
 				else:
 					x = deref_decl(child_type).symbol
 				if not x:
+					log("no type:" + str(i))
 					return None
-				assert x,  child_type
+				assert x, child_type
 				syms.append(x)
-			else:
-				panic()
 		assert len(syms) != 0
-		r = m.symbol(cls.__name__)
-		m.rule("", r, syms)
+		m.rule("", r, syms, action=lambda x: cls.from_parse(x, sy))
+
+	@classmethod
+	def from_parse(cls, p, sy):
+		log('from_parse:%s',p)
+		r = cls.fresh()
+		info((p, cls, sy))
+		j = 0
+		for i in sy:
+			ti = type(i)
+			tpj = type(p[j])
+			if ti == unicode:
+				assert tpj == unicode
+			elif ti == ChildTag:
+				r.ch[i.name] = p[j]
+			else:
+				continue
+			j+=1
+			if j == len(p): break
+
+		r.fix_parents()
 		return r
 
+	@classmethod
+	def fresh(cls, decl=None):
+		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
+		if decl:
+			r.decl = decl
+		r.fix_parents()
+		return r
 
 	def fix_parents(s):
 		s._fix_parents(list(s.ch._dict.values()))
@@ -900,14 +933,6 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			assert(isinstance(a, Node))
 			kids[k] = a
 		return kids
-
-	@classmethod
-	def fresh(cls, decl=None):
-		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
-		if decl:
-			r.decl = decl
-		r.fix_parents()
-		return r
 
 	@property
 	def name(s):
@@ -1421,7 +1446,7 @@ class Text(WidgetedValue):
 		clsstr = str(cls)
 		log("registering "+clsstr+" grammar")
 		double_slash = m.known_string('//')
-		slashed_end =  m.known_string('/'+brackets[1])
+		slashed_end =  m.known_string('/'+cls.brackets[1])
 		body_part = m.symbol(clsstr+'_body_part')
 		m.rule(clsstr+'_body_part_is_double_slash', body_part, double_slash)
 		m.rule(clsstr+'_body_part_is_slashed_end', body_part, slashed_end)
@@ -1720,7 +1745,7 @@ class NodeclBase(Node):
 		return s.instance_class.fresh(decl)
 
 	def palette(s, scope, text, node):
-			return [ParserMenuItem(s.instance_class.fresh())]
+			return [PaletteMenuItem(s.instance_class.fresh())]
 
 	def works_as(s, type):
 		if isinstance(type, Ref):
@@ -1742,7 +1767,7 @@ class TypeNodecl(NodeclBase):
 
 	def palette(s, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [ParserMenuItem(Ref(x)) for x in nodecls]
+		return [PaletteMenuItem(Ref(x)) for x in nodecls]
 
 	def make_example(s):
 		return Ref(B.module)
@@ -1770,7 +1795,7 @@ class VarRefNodecl(NodeclBase):
 		r = []
 		for x in node.vardecls_in_scope:
 			assert isinstance(x, (UntypedVar, TypedParameter))
-			r += [ParserMenuItem(VarRef(x))]
+			r += [PaletteMenuItem(VarRef(x))]
 		return r
 """
 	def palette(s, scope, text):
@@ -1782,7 +1807,7 @@ class VarRefNodecl(NodeclBase):
 				#log("vardecl compiles to: "+str(yc))
 				if isinstance(yc, (UntypedVar, TypedParameter)):
 					#log("vardecl:"+str(yc))
-					r += [ParserMenuItem(VarRef(yc))]
+					r += [PaletteMenuItem(VarRef(yc))]
 		#log (str(scope)+"varrefs:"+str(r))
 		return r
 """
@@ -1792,7 +1817,7 @@ class ExpNodecl(NodeclBase):
 
 	def palette(s, scope, text, node):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [ParserMenuItem(Exp(x)) for x in nodecls]
+		return [PaletteMenuItem(Exp(x)) for x in nodecls]
 
 class Nodecl(NodeclBase):
 	"""for simple nodes (Number, Text, Bool)"""
@@ -1815,7 +1840,7 @@ class Nodecl(NodeclBase):
 		else:
 			value = i()
 			score = 0
-		return ParserMenuItem(value, score)
+		return PaletteMenuItem(value, score)
 
 class SyntaxedNodecl(NodeclBase):
 	"""
@@ -1884,7 +1909,7 @@ class ParametricNodecl(SyntaxedNodecl):
 		return ParametricType(kids, s)
 
 	def palette(s, scope, text, node):
-		return [ParserMenuItem(ParametricType.fresh(s))]
+		return [PaletteMenuItem(ParametricType.fresh(s))]
 	#def obvious_fresh(s):
 	#if there is only one possible node type to instantiate..
 	"""
@@ -1924,7 +1949,7 @@ class EnumType(ParametricTypeBase):
 		s.instance_class = EnumVal
 		super(EnumType, s).__init__(children)
 	def palette(s, scope, text, node):
-		r = [ParserMenuItem(EnumVal(s, i)) for i in range(len(s.ch.options.items))]
+		r = [PaletteMenuItem(EnumVal(s, i)) for i in range(len(s.ch.options.items))]
 		#print ">",r
 		return r
 	def works_as(s, type):
@@ -1999,7 +2024,7 @@ class ListOfAnything(ParametricType):
 		i = s.inst_fresh()
 		i.view_mode = 1
 		i.newline()
-		return [ParserMenuItem(i)]
+		return [PaletteMenuItem(i)]
 	def works_as(s, type):
 		return True
 """
@@ -2353,6 +2378,11 @@ class ParserMenuItem(MenuItem):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
 
+class PaletteMenuItem(ParserMenuItem):
+	def __init__(s, value, score=0):
+		super(ParserMenuItem, s).__init__()
+		s.brackets_color = (255,255,0)
+
 class DefaultParserMenuItem(MenuItem):
 	def __init__(s, text):
 		super(DefaultParserMenuItem, s).__init__()
@@ -2535,7 +2565,7 @@ class FunctionDefinitionBase(Syntaxed):
 	"""
 
 	def palette(s, scope, text, node):
-		return [ParserMenuItem(FunctionCall(s))]
+		return [PaletteMenuItem(FunctionCall(s))]
 
 
 """for function overloading, we could have a node that would be a "Variant" of
@@ -2766,7 +2796,7 @@ class FunctionCallNodecl(NodeclBase):
 		return []
 		#the stuff below is now performed in FunctionDefinitionBase
 #		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
-#		return [ParserMenuItem(FunctionCall(x)) for x in decls]
+#		return [PaletteMenuItem(FunctionCall(x)) for x in decls]
 
 
 
@@ -3538,7 +3568,7 @@ def build_in_misc():
 	build_in(SyntaxedNodecl(FilesystemPath,
 				   [[ChildTag("path")],
 				    [ChildTag("path"), MemberTag("status")]],
-				   {'path': Exp(B.text)}))
+				   {'path': (B.text)}))
 
 	def b_files_in_dir(dir):
 		import os
@@ -3551,6 +3581,8 @@ def build_in_misc():
 	BuiltinPythonFunctionDecl.create(
 		b_lemon_load_file, [Text("load"), str_arg()], Ref(B.text), "load file", "open").pass_root = True
 
+
+#BuiltinMenuItem..
 
 
 """

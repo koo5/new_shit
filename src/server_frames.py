@@ -248,6 +248,10 @@ class Menu(SidebarFrame):
 		s._current_parser_node = None
 		s.must_update = True
 
+
+
+
+	#weakref wrapper
 	@property
 	def current_parser_node(s):
 		if s._current_parser_node:
@@ -297,7 +301,7 @@ class Menu(SidebarFrame):
 				return
 			s.update_current_text()
 			s.prepare_grammar(scope)
-			s.create_palette(scope, s.editor.atts, s.current_parser_node)
+			#s.create_palette(scope, s.editor.atts, s.current_parser_node)
 			s.signal_change()
 
 	def prepare_grammar(s, scope):
@@ -606,30 +610,6 @@ def init(thread_message_signal_, send_thread_message_):
 def element_click(element):
 	return element.on_mouse_press(e)
 
-
-def after_start():
-	if args.load:
-		load(args.load)
-
-	if args.run:
-		load(args.run)
-		root.root['loaded program'].run()
-
-	initially_position_cursor()
-
-def initially_position_cursor():
-	root.render()
-
-	try:
-		#if args.lesh:
-		#	something = root.root['lesh'].command_line
-		#else:
-		something = root.root['some program'].ch.statements.items[1]
-
-		root.cursor_c, root.cursor_r = project.find(something, root.lines)
-		#root.cursor_c += 1
-	except Exception as e:
-		log (e.__repr__(), ", cant set initial cursor position")
 
 def load(name):
 	assert(isinstance(name, unicode))

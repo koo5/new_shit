@@ -7,7 +7,7 @@ import sys
 import rpcing_frames
 from keys import *
 from lemon_args import args
-
+import replay
 
 import logging
 logger=logging.getLogger("root")
@@ -59,8 +59,9 @@ class Client():
 
 
 	def after_start(s):
+		#rpcing_frames.after_start()
 		if args.replay:
-			do_replay(False)
+			replay.do_replay(False)
 
 
 	def after_sidebar_changed(s):
