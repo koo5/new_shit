@@ -53,7 +53,7 @@ AST_CHANGED = 2
 B = Dotdict()
 B._dict = odict()
 
-def build_in(node, name=None):
+def build_in(node, name=None, builtins_table = B):
 	"""add node to B"""
 	if isinstance(node, list):
 		[build_in(node) for node in node]
@@ -68,8 +68,8 @@ def build_in(node, name=None):
 			key = key.replace(' ', '_')
 		assert node
 		assert key,  key
-		assert key not in B._dict,  repr(key) + " already in builtins:" + repr(node)
-		B[key] = node
+		assert key not in builtins_table._dict,  repr(key) + " already in builtins:" + repr(node)
+		builtins_table[key] = node
 	return node
 
 class DelayedCursorMove():
@@ -1191,7 +1191,7 @@ class List(ListPersistenceStuff, Collapsible):
 		new.parent = s
 
 	def add(s, item):
-		assert(isinstance(item, Node))
+		
 		item.parent = s
 		s.items.append(item)
 		return item
@@ -1530,6 +1530,7 @@ class Root(Dict):
 
 class Module(Syntaxed):
 	"""module or program"""
+	special_scope = None
 	def __init__(s, kids):
 		super(Module, s).__init__(kids)
 		#s.sortedview = SortableStatements(s)
@@ -1592,16 +1593,21 @@ class Module(Syntaxed):
 		if s == s.root["builtins"]:
 			return [] # builtins dont see anything
 		else:
-			r = s.root["builtins"].ch.statements.parsed.items[:]
+			if s.special_scope:
+				assert(isinstance(s.special_scope, Module))
+				return s.special_scope.ch.statements.parsed.items[:]
+			else:
 
-			for module in s.root['library'].items:
-				if not isinstance(module, Module):
-					continue
-				if module != s:
-					r += [x.parsed for x in module.ch.statements.parsed.items]
-				#log(module)
-				#log(r)
-			return r
+				r = s.root["builtins"].ch.statements.parsed.items[:]
+
+				for module in s.root['library'].items:
+					if not isinstance(module, Module):
+						continue
+					if module != s:
+						r += [x.parsed for x in module.ch.statements.parsed.items]
+					#log(module)
+					#log(r)
+				return r
 
 
 
@@ -1722,9 +1728,9 @@ class NodeclBase(Node):
 
 		if s.example == None:
 			s.example = s.make_example()
-			if s.example != None:
-				s.example.fix_parents()
-				s.example.parent = s
+		if s.example != None:
+			s.example.fix_parents()
+			s.example.parent = s
 		if s.example != None:
 			yield [TextTag("\nexample: "), ElementTag(s.example)]
 
@@ -1859,7 +1865,7 @@ class SyntaxedNodecl(NodeclBase):
 		s.example = None
 
 	def make_example(s):
-			return s.inst_fresh()
+		return s.inst_fresh()
 
 
 
@@ -1992,7 +1998,13 @@ class WorksAs(Syntaxed):
 	@classmethod
 	def b(cls, sub, sup):
 		"""building-in helper"""
-		return cls({'sub': Ref(B[sub]), 'sup': Ref(B[sup])})
+		
+		if isinstance(sub, unicode):
+			sub = B[sub]
+		if isinstance(sup, unicode):
+			sup = B[sup]
+			
+		return cls({'sub': Ref(sub), 'sup': Ref(sup)})
 
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
@@ -2979,7 +2991,6 @@ class Kbdbg(Node):
 
 
 
-
 		
 
 
@@ -3022,19 +3033,23 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	]
 
 
+
+
+
 	r["intro"].ch.statements.view_mode=0
 	#r.add(("lesh", Lesh()))
-	r["some program"] = B.module.inst_fresh()
+	r["some program"] = new_module()
 	r["some program"].ch.statements.newline()
+	r["some program"].ch.statements.view_mode=0
 	#r['some program'].ch.statements.items[1].add("12")
 	#r["lemon console"] =b['module'].inst_fresh()
 
 	r["loaded program"] = B.module.inst_fresh()
 	r["loaded program"].ch.name = Text("placeholder")
-
+	r["loaded program"].ch.statements.view_mode=0
 
 	library = r["library"] = make_list('module')
-	library.view_mode = library.vm_multiline
+	library.view_mode = 0#library.vm_multiline
 
 
 	r["builtins"] = new_module()
@@ -3042,7 +3057,30 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
 	log("built in %s nodes",len(r["builtins"].ch.statements.items))
 	r["builtins"].ch.statements.add(Comment("---end of builtins---"))
-	r["builtins"].ch.statements.view_mode = 2
+	r["builtins"].ch.statements.view_mode = 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	build_in_lc(r)
+
+
+
+
+
+
+
+
 
 	import glob
 	for file in glob.glob("library/*.lemon.json"):
@@ -3623,3 +3661,56 @@ add python_env to Module?
 
 
 """
+
+
+
+
+
+def build_in_lc(r):
+	lc1 = Dotdict()
+	lc1._dict = odict()
+
+	r["lc1"] = new_module()
+	r["lc1"].ch.statements.items = [
+		Comment("""untyped lambda calculus""")]
+	r["lc1-test"] = new_module()
+	r["lc1-test"].special_scope = [r["lc1"], 
+		B.identifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
+		];
+	def addsc(name):
+		build_in(SyntacticCategory({'name': Text(name)}), None, lc1)
+	addsc("exp")
+	class Var(Syntaxed):
+		help = ["a variable"]
+		pass
+	build_in(SyntaxedNodecl(Var,
+		[ChildTag("name")],
+		{'name': B.identifier}), None, lc1)
+	lc1.var.example = lc1.var.inst_fresh()
+	lc1.var.example.ch.name.text = "x"
+	class ParExp(Syntaxed): 
+		help = ["a parenthesized expression"]
+		pass
+	build_in(SyntaxedNodecl(ParExp,
+		[TextTag("("), ChildTag("exp"), TextTag(")")],
+		{'exp': lc1.exp}), None, lc1)
+	build_in(WorksAs.b(lc1.parexp, lc1.exp), False, lc1)
+
+	class Abs(Syntaxed): 
+		help = ["abstraction, a lambda"]
+		pass
+	build_in(SyntaxedNodecl(Abs,
+		[TextTag("\\"), ChildTag("var"), TextTag("."), ChildTag("exp")],
+		{'var': lc1.var, 'exp': lc1.exp}), None, lc1)
+
+	class App(Syntaxed): 
+		help = ["function application, a call"]
+		pass
+	build_in(SyntaxedNodecl(App,
+		[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
+		{'e1': lc1.exp, 'e2': lc1.exp}), None, lc1)
+
+
+
+	r["lc1"].ch.statements.items = list(itervalues(lc1._dict))
+
