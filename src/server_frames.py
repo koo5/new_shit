@@ -297,7 +297,8 @@ class Menu(SidebarFrame):
 			try:#hack, current_parser_node could have been deleted,
 				#and theres currently no way to know
 				scope = s.current_parser_node.scope()
-			except AssertionError:
+			except AssertionError as e:
+				print ("assertion error", e)
 				return
 			s.update_current_text()
 			s.prepare_grammar(scope)

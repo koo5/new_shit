@@ -97,7 +97,7 @@ def deref_decl(d):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
-	elif is_decl(d) or d == None:
+	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
 		return d
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
@@ -819,7 +819,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 				assert x, child_type
 				syms.append(x)
 		assert len(syms) != 0
-		m.rule("", r, syms, action=lambda x: cls.from_parse(x, sy))
+		m.rule(cls.__name__, r, syms, action=lambda x: cls.from_parse(x, sy))
 
 	@classmethod
 	def from_parse(cls, p, sy):
@@ -1594,8 +1594,15 @@ class Module(Syntaxed):
 			return [] # builtins dont see anything
 		else:
 			if s.special_scope:
-				assert(isinstance(s.special_scope, Module))
-				return s.special_scope.ch.statements.parsed.items[:]
+				print ('....')
+				r = []
+				for i in s.special_scope:
+					if isinstance(i, Module):
+						for x in i.ch.statements.parsed.items:
+							r.append(x)
+					else:
+						r.append(i)
+				return r
 			else:
 
 				r = s.root["builtins"].ch.statements.parsed.items[:]
