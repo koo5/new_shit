@@ -44,18 +44,24 @@ def handle(text=None):
 		return msg.results
 
 def lc1(text):
-
+	#this just prints the characters you got from stdin?
+	#prefixed by their position in the string?Ãeah
 	for i,x in enumerate(text):
 		print(i, x)
 	m.enqueue_precomputation(None)
 	return handle(text)
 
+#so this runs before the __main__ is called?Ãeah
 r = nodes.make_root()
 scope = r["lc1-test"].scope()
 m.collect_grammar(scope)
 
-
+#the condition is true when you do like python ./cli.py,
+#false when you run ipython and just import cli
 if __name__=='__main__':
 	text = sys.stdin.read()[:-1]
-	lc1(text)
+	p=lc1(text)
+	print (p.eval())
+	#reads stdin, cuts off last char
+	#reads stdin, cuts off last char
 

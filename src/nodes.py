@@ -127,6 +127,8 @@ def make_dict(key_type_name, val_type_name):
 def make_dict_from_anything_to_anything():
 	return make_dict('anything', 'anything')
 
+#where does .module.inst_fresh() come from?
+#is this a python-ism?
 def new_module():
 	return B.module.inst_fresh()
 
@@ -3723,7 +3725,10 @@ add python_env to Module?
 
 
 
-
+#interesting vim glitch made it look like it was commented out
+#if i search "/def build_in_lc(" from the top, i guess it doesn't
+#parse the whole file but sees this \"\"\" above
+#scroll up and back down and it goes away
 def build_in_lc(r):
 	"""creates a new module with definitions for a language separate from
 	the lemon stuff
@@ -3737,7 +3742,7 @@ def build_in_lc(r):
 	r["lc1"] = new_module()
 	r["lc1"].ch.statements.items = [
 		Comment("""untyped lambda calculus""")]
-		
+
 	""" whats the lc1-test for """
 	#well the gui shows a "root", a tree with a couple of entries,
 	#so thats like where you would type in your lambda calculus program	
@@ -3776,7 +3781,9 @@ def build_in_lc(r):
 
 	class ParExp(Syntaxed): 
 		help = ["a parenthesized expression"]
-		pass
+		def eval(s):
+			return s.ch.exp.eval()
+		
 	build_in(SyntaxedNodecl(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
 		{'exp': lc1.exp}), None, lc1)
@@ -3786,7 +3793,10 @@ def build_in_lc(r):
 
 	class Abs(Syntaxed): 
 		help = ["abstraction, a lambda"]
-		pass
+		#def eval(s):
+		
+		
+		
 	build_in(SyntaxedNodecl(Abs,
 		[TextTag("\\"), ChildTag("var"), TextTag("."), ChildTag("exp")],
 		{'var': lc1.var, 'exp': lc1.exp}), None, lc1)
@@ -3809,6 +3819,389 @@ def build_in_lc(r):
 
 	r["lc1"].ch.statements.items = list(itervalues(lc1._dict))
 
+	#//aka evaluate
+	#//Normal order:
+	def normalize (e) :
+		if isinstance(e, Var):
+			return e
+			
+		if isinstance(e, Abs):
+			#return Abs({'var': e.ch.var, e.ch.exp.eval()})
+			return Abs({'var': e.ch.var, 'exp': e.ch.exp.eval()})
+			
+		if isinstance(e, App):
+			if isinstance(e.ch.e1, Abs):
+				#//one-step evaluation:
+				
+				#return subst(e.ch.e1.ch.e2, e.ch.e1.ch.e1, e.ch.e2)
+				return subst(e.ch.e1.ch.exp, e.ch.e1.ch.var, e.ch.e2)
+				
+				#//full evaluation:
+				#return subst(e3,x,e2).eval()
+				#return subst(e.ch.e1.ch.exp, e.ch.e1.ch.var, e.ch.e2).eval()
+				
+			if isinstance(e.ch.e1, App):
+				#//one step eval or no-op
+				tmp = e.ch.e1.eval()
+				return App({'e1': tmp, 'e2' : e.ch.e2})
+				
+				#//definite one step evaluation:
+				#not a no-op unless it's in normal form
+				#tmp = e.ch.e1.eval()
+				#if(tmp == e.ch.e1)
+				#	return App({'e1': e.ch.e1, 'e2': e.ch.e2.eval()})
+				#else
+				#	return App({'e1': tmp, 'e2': e.ch.e2})
+				
+				
+				#//full evaluation:
+				#tmp = e.ch.e1.eval()
+				
+				#only run subst if tmp is an Abs
+				
+				#if isinstance(tmp, Abs):
+				#	return subst(tmp.ch.exp,tmp.ch.var,e.ch.e2).eval()
+				#else
+				#	return App({'e1': tmp, 'e2': e.ch.e2.eval()})
+					
+			return e
+
+
+	App.eval = Abs.eval = Var.eval = normalize
+
+
+"""
+
+Expr 		:=	Expr1 | "(" Expr ")"
+Expr1		:=	Var | Abs | App
+Var		:= 	Char Name # Identifier
+Abs		:=	"\" Var "." Expr
+App		:=	Expr " " Expr
+Name		:=	<endword> | Char Name
+Char		:=	"a" | "b" | "c" | ... | 
+			"A" | "B" | ... |
+			"1" | "2" | ... | 
+			"_" ...
+
+//possibly
+NamedExpr	:=	Name ":=" Expr
+
+
+//not all applications are function applications, cf. "y y"
+but the var could evaluate to a function
+unless we've reached normal form, i.e. nothing left to evaluate
+so is this a syntax for normal form or nonnormal form?
+could be either one. 
+
+\x.(x x) y  --reduce--> y y, and nothing left to evaluate so this is in normal form
+    ^ also occurs in the original expression here
+
+\y.(\x.(x x) y) \w.w --reduce -->
+\y.(y y) \w.w  --reduce -->
+    ^ here it occurs, but it's not in normal form
+
+lambda calculus is quite hard to follow
+i agree. it's mainly only of theoretical interest until you get
+some relatively sophisticated syntax for it
+i would probably start without the redex/nonredex distinction so we can meaningufully express even nonnormal programs, hrm, i don't think we need the redex/nonredex distinction for the syntax
+\w.w \w.w --reduce-->
+\w.w
+
+
+
+1) Parse query according to BNF above
+
+2) If it parses, then normalize the expression
+
+
+//Need to choose reduction strategy:
+//There are several options:
+/* * Full beta reduction: non-normalizing
+	Any reducible expression can be reduced at any time.
+   	This is essentially the lack of any particular reduction
+	strategy, or equivalently the union of all reduction strategies.
+
+
+   * Applicative order: non-normalizing
+	Rightmost, innermost reducible expression is always reduced first.
+	This means a function's arguments are always reduced before the
+	function itself.
+
+   * Normal order:
+	The leftmost, outermost reducible expression is always reduced first.
+
+   * Call by name:
+	Same as normal order except no reductions are performed inside abstractions.
+	For example: \x.((\x.x) x) would be considered to be in normal form, even
+	though it contains the reducible expression ((\x.x) x). Since this redex
+	occurs inside an abstraction, it is not to be reduced.
+
+   * Call by value:
+	?
+
+   * Call by need:
+	aka "lazy evaluation"
+	Function applications that would duplicate terms will name the argument
+	instead, which is then reduced only "when it is needed", and which will
+	represent all duplicated versions of itself. i.e. if you reduce one of
+	the duplicates, then they are all reduced, as they will just be names
+	referring to an expression that is now reduced.
+
+	This is the one to use, but the tradeoff is it's more complex to
+	implement.	
+
+*/		
+
+//aka evaluate
+//Normal order:
+Normalize (Expr e) :=
+	if (e is a Var x)
+		return e
+	if (e is an Abs x e1)
+		return (Abs x normalize(e1))
+	if (e is an App e1 e2)
+		if(e1 is an Abs x e3)
+			//one-step evaluation:
+			return subst(e3,x,e2)
+		ah so we should pick one here	
+			//full evaluation:
+			return normalize(subst(e3,x,e2))
+		if(e1 is an App e3 e4)
+			
+		else return e
+
+
+
+//applicative order:
+Normalize (Expr e) :=
+	if (e is a Var x)
+		return e
+	if (e is an Abs x e1)
+		return e
+	if (e is an App e1 e2)
+		if(e1 is an Abs x e3)
+			//first check if the rightmost expression is reducible
+			if(isReducible(e2))
+				//one-step evaluation
+				return (App e1 normalize(e2))
+
+				//full evaluation
+				return normalize((App e1 normalize(e2)))
+
+			//if not, then check if the innermost expression is
+			//reducible
+			if(isReducible(e3))
+				//one-step evaluation
+				return (App (Abs x normalize(e3)) e2)
+
+				//full evaluation
+				return normalize((App (Abs x normalize(e3)) e2))
+
+			//neither the rightmost nor innermost expressions are
+			//reducible
+			return subst(e3,x,e2)
+		else return e
+
+
+//call by name
+Normalize (Expr e) :=
+	if (e is a Var x)
+		return e
+	//unlike normal order we don't normalize inside abstractions
+	if (e is an Abs x e1)
+		return e
+	if (e is an App e1 e2)
+		if (e1 is an Abs x e3)
+			//one-step evaluation:
+                        return subst(e3,x,e2)
+
+                        //full evaluation:
+                        return normalize(subst(e3,x,e2))
+                else return e
+
+
+//call by value
+evaluate arguments to functions first before substituting them into
+the function
+
+this actually not one single evaluation strategy but is the family of
+evaluation strategies where the arguments are normalized before substituting
+them into the function. 
+
+here's one example that does this but follows the normal order evaluation
+strategy otherwise
+
+
+Normalize (Expr e) :=
+	if (e is a Var x)
+		return e
+	if (e is an Abs x e1)
+		return e
+	if (e is an App e1 e2)
+		if(isReducible(e2))
+			//one step evaluation
+			return (App e1 normalize(e2))
+
+			//full evaluation
+			return normalize(App e1 normalize(e2))
+		if (e1 is an Abs x e3)
+			//one step evaluation
+			return subst(e3,x,e2)
+		
+			//full evaluation
+			return normalize(subst(e3,x,e2))
+		else return e
+
+
+
+//call by need (aka lazy evaluation)
+need some mechanism for storing and retrieving the thunks
+expressions look different internally: composed of references
+to thunks
+
+
+
+
+//call by reference
+
+//call by sharing
+
+//call by copy-restore
+
+//call by future
+
+//optimistic evaluation
+
+//partial evaluation
+
+
+
+
+An expression is reducible if contains anything that can be reduced.
+The only things that can be reduced are of the form (App (Abs x e1) e2)
+
+//The expression contains a "top-level" reducible expression
+//meaning the reducible expression does not occur inside the body
+//of an abstraction.
+isReducible(Expr e) :=
+	if(e is a Var x) return false
+	if(e is a Abs x e1) return false
+	if(e is a App e1 e2)
+		if(e1 is a Abs x e3) return true
+		if(e1 is a Var x) return false
+		if(isReducible(e1)) return true
+		if(isReducible(e2)) return true
+		else return false
+	
+//The expression contains a reducible expression anywhere,
+//possibly in the body of an abstraction.
+isReducible2(Expr e) :=
+	if(e is a Var x) return false
+	if(e is a Abs x e1) return isReducible2(e1)
+	if(e is a App e1 e2)
+		if(e1 is a Abs x e3) return true
+		if(e1 is a Var x) return false
+		if(isReducible2(e1)) return true
+		if(isReducible2(e2)) return true
+		else return false
+
+
+//capture-avoiding substitution:
+subst(Expr e, Var x, Expr r) :=
+	replace all occurrences of x in e with r, potentially
+	changing variable names to avoid variable capture.
+
+	capture-avoidance:
+	don't let free variables become bound
+	
+/*
+	//This is the var we're substituting, so make
+	//the substitution
+	(Var x)[x := r]		= r
+	
+	//This is a different var than the one we're substituting,
+	//don't substitute anything
+	(Var y)[x := r]		= y
+
+	//Substitute into each component of an application:
+	(App t s)[x := r]	= (t[x:=r])(s[x:=r])
+				= App subst(t,x,r) subst(s,x,r)
+
+	//if the substitution-variable is the same as the bound-variable
+	//of an abstraction, then don't substitute, even in the expression t.
+	//why?
+	//answer 1: just because
+	//answer 2: ??
+	(Abs x t)[x := r]	= (Abs x t).
+
+	
+	//naive version:
+	//if the substitution-variable is *not* the same as the bound-variable
+	//of an abstraction, then substitute [x := r] in t
+	//there is nothing to avoid variable capture here.
+	(Abs y t)[x := r]	= (Abs y subst(t,x,r))
+
+
+	//capture-avoiding version:
+	//if the substitution-variable is *not* the same as the bound-variable
+	//of an abstraction, then if y is not in the FreeVars of r, then
+	//apply the substitution in the body of the abstraction.
+	//if y *is* in the FreeVars of r, then we'll rename y to a
+	//fresh variable name, z, and substitute z for y across the
+	//entire abstraction.
+	//then we will proceed with our usual substitution of r for x,
+	//as defined in the naive version.
+	(Abs y t)[x := r]	= 
+		if(y not in FreeVars(r)) -> (Abs y subst(t,x,r))
+		else
+			z = genFreshVarName()
+			t' = subst(t,y,z)
+			t'' = subst(t',x,r)
+			return (Abs z t'')
+
+
+*/
+
+
+FreeVars(Expr e, List<Var> * ret) :=
+	if (e is a Var x) 
+		ret = set_union(ret,{x})
+		return
+	if (e is a Abs x e1)
+		free_e := FreeVars(e1)
+		remove x from free_e
+		ret = set_union(ret,free_e)
+		return
+	if (e is a App e1 e2)
+		free_e1 := FreeVars(e1)
+		free_e2 := FreeVars(e2)
+		ret = set_union(ret,free_e1,free_e2)
+		return
+
+
+
+//eta-conversion
+
+f == \x.(f x)
+
+//not really necessary. not sure where this would even come up in normal
+//programming with lambdas. for theorem proving otoh, there's reason to use it
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # cool i guess that's everything from the bnf then
 # yeah next i have to finish the parser
@@ -3816,7 +4209,7 @@ def build_in_lc(r):
 #well, the gui is set up so that when you go into lc1-test, it
 #collects the grammar from the nodes in its scope
 
-"""the above module now looks like this in the gui:
+the above module now looks like this in the gui:
 [lc1]:<module[]from[]:
 <<->[ 
     <syntactic category:[exp]>
