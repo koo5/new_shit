@@ -3802,6 +3802,10 @@ def build_in_lc(r):
 		{'e1': lc1.exp, 'e2': lc1.exp}), None, lc1)
 
 
+	build_in(WorksAs.b(lc1.app, lc1.exp), False, lc1)
+	build_in(WorksAs.b(lc1.abs, lc1.exp), False, lc1)
+	build_in(WorksAs.b(lc1.var, lc1.exp), False, lc1)
+
 
 	r["lc1"].ch.statements.items = list(itervalues(lc1._dict))
 

@@ -10,8 +10,6 @@ import logging
 logger=logging.getLogger("marpa")
 log=logger.debug
 info=logger.info
-log("test")
-logger.setLevel(1)
 logger.warn("fuck")
 logger.info("python")
 logger.debug("!")
@@ -423,7 +421,7 @@ parse_result = [i for i in parse_result if not i in nope]
 """
 		if args.graph_grammar:
 			graphing_wrapper.start()
-			graphing_wrapper.symid2name = m.symbol2name
+			graphing_wrapper.symid2name = m.symbol2debug_name
 
 		if args.graph_grammar:
 			graphing_wrapper.generate_gv()

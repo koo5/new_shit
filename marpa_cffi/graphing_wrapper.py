@@ -31,6 +31,7 @@ def clear():
 	syms = []
 	rules= []
 	seqs = []
+	print ("clear")
 
 def symid2name(id):
 	return str(id)
@@ -39,16 +40,19 @@ def ruleid2name(id):
 	return str(id)
 
 def symbol_new(g):
+#	print ('fuck you')
 	s = orig.symbol_new(g)
 	syms.append(s)
 	return s
 
 def rule_new(g,lhs,rhs,length):
+#	print ('fuck you')
 	r = orig.rule_new(g,lhs,rhs,length)
 	rules.append((r, lhs, rhs))
 	return r
 
 def sequence_new(g,lhs,rhs,separator, min, flags ):
+#	print ('fuck you')
 	s = orig.sequence_new(g,lhs,rhs,separator, min, flags)
 	seqs.append((s, lhs, rhs, separator, min))
 	return s
@@ -59,6 +63,7 @@ def stop():
 	lib.marpa_g_sequence_new = orig.sequence_new
 
 def start():
+#	print(lib.fuck)
 	orig.symbol_new = lib.marpa_g_symbol_new
 	lib.marpa_g_symbol_new = symbol_new
 	orig.rule_new = lib.marpa_g_rule_new
@@ -113,7 +118,7 @@ def generate_bnf(filename='grammar.bnf'):
 
 
 
-def generate_png(filename='grammar.png'):
+def generate_png(filename='grammar'):
 	graph = generate()
 	graph.format = 'png'
 	graph.render(filename)
@@ -122,7 +127,7 @@ def generate_gv(filename='grammar.gv'):
 	generate().save(filename)
 
 def generate():
-
+	print ("generate graph")
 	import graphviz
 
 	graph = graphviz.Graph()
@@ -135,6 +140,10 @@ def generate():
 			label = str(sym)
 			color = 'gray'
 
+		#print ("s", sym, label)
+
+		label = label.replace('\\', '\\\\')
+
 		graph.node(str(sym), label,
 	                          #style="filled",
 	                          #fillcolor="green",
@@ -142,6 +151,7 @@ def generate():
 
 
 	for id, lhs, rhs in rules:
+#		print ("r", id)
 		#if len(rhs) > 1:
 			#sub = graphviz.Digraph()
 		for i in rhs:
@@ -151,6 +161,8 @@ def generate():
 	for id, lhs, rhs, sep, min in seqs:
 		graph.edge(str(lhs), str(rhs))
 	
+	print ("done")
 	return graph
 
+clear()
 
