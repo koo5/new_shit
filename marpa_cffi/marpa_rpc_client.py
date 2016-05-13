@@ -30,14 +30,14 @@ else:
 		log("install cffi and libmarpa, or run with --lame")
 		raise marpa
 	else:
-		marpa = False
+ 		marpa = False
 
 
 
 client = None
 
 class ThreadedMarpa(object):
-	def __init__(s ,send_thread_message, debug=True):
+	def __init__(s ,send_thread_message=print, debug=True):
 		global client
 		client = s
 		s.debug = debug
