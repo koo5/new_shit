@@ -23,7 +23,7 @@ graphing_wrapper.symid2name = m.symbol2debug_name
 
 
 
-def handle():
+def handle(text=None):
 	msg = m.t.output.get()
 	if msg.message == 'precomputed':
 		ts = m.string2tokens(text)
@@ -47,13 +47,12 @@ def lc1(text):
 
 	for i,x in enumerate(text):
 		print(i, x)
-	r = nodes.make_root()
-	scope = r["lc1-test"].scope()
-	m.collect_grammar(scope)
-
 	m.enqueue_precomputation(None)
-	return handle()
+	return handle(text)
 
+r = nodes.make_root()
+scope = r["lc1-test"].scope()
+m.collect_grammar(scope)
 
 
 if __name__=='__main__':
