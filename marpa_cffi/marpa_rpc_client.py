@@ -37,7 +37,7 @@ else:
 client = None
 
 class ThreadedMarpa(object):
-	def __init__(s ,send_thread_message=print, debug=True):
+	def __init__(s ,send_thread_message, debug=True):
 		global client
 		client = s
 		s.debug = debug
@@ -261,7 +261,7 @@ class MarpaThread(threading.Thread):
 		lib.marpa_r_progress_report_start(r.r, ce)
 
 		#s.print_completions(r)
-
+		
 		for i, sym in enumerate(tokens):
 			#if args.log_parsing:
 			#	log ("input:symid:%s name:%s raw:%s"%(sym, m.symbol2name(sym),raw[i]))

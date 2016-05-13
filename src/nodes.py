@@ -1493,6 +1493,32 @@ class Identifier(WidgetedValue):
 		return cls(''.join(args))
 
 
+class RestrictedIdentifier(WidgetedValue):
+	def __init__(s, value=""):
+		super().__init__()
+		s.widget = widgets.Text(s, value)
+
+	@classmethod
+	def register_class_symbol(cls):
+		log("registering restricted identifier grammar")
+		body_part = m.symbol('body_part')
+
+		allowed = []
+		for rng in ['az', 'AZ']:
+			allowed.extend([chr(x) for x in range(ord(rng[0]),ord(rng[1]))])
+		allowed.extend([ch for ch in '_-'])
+		for ch in allowed:
+			m.rule('restricted_identifier_body_part_is_', body_part, m.known_char(ch))
+		
+		r = m.symbol('Identifier')
+		m.sequence('identifier is seq of body part', r, body_part, cls.from_parse)
+		return r
+
+	@classmethod
+	def from_parse(cls, args):
+		return cls(''.join(args))
+
+
 
 
 class Root(Dict):
@@ -3191,7 +3217,7 @@ def build_in_lemon_language():
 
 	build_in(VarRefNodecl(), 'varref')
 
-	build_in([Nodecl(x) for x in [Number, Banana, Bananas, Identifier]])
+	build_in([Nodecl(x) for x in [Number, Banana, Bananas, Identifier, RestrictedIdentifier]])
 
 	build_in(Nodecl(List), "list_literal")
 
@@ -3682,7 +3708,7 @@ def build_in_lc(r):
 		Comment("""untyped lambda calculus""")]
 	r["lc1-test"] = new_module()
 	r["lc1-test"].special_scope = [r["lc1"], 
-		B.identifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
+		B.restrictedidentifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
 		];
 	def addsc(name):
 		build_in(SyntacticCategory({'name': Text(name)}), None, lc1)
@@ -3692,7 +3718,7 @@ def build_in_lc(r):
 		pass
 	build_in(SyntaxedNodecl(Var,
 		[ChildTag("name")],
-		{'name': B.identifier}), None, lc1)
+		{'name': B.restrictedidentifier}), None, lc1)
 	lc1.var.example = lc1.var.inst_fresh()
 	lc1.var.example.ch.name.text = "x"
 	class ParExp(Syntaxed): 
