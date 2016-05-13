@@ -3,15 +3,13 @@
 
 
 import sys
+
+
+
 import lemon_utils.lemon_logging
-
-
-
-
 import marpa_cffi.graphing_wrapper as graphing_wrapper
 from marpa_cffi.marpa_cffi import lib
 lib.rule_new = graphing_wrapper.rule_new
-lib.fuck = "YOU"
 graphing_wrapper.start()
 
 
@@ -31,26 +29,34 @@ def handle():
 		ts = m.string2tokens(text)
 		print ("tokens", ts)
 		m.enqueue_parsing([ts, text])
-		handle()
+		
+
+		graphing_wrapper.generate_png()
+		graphing_wrapper.generate_gv()
+		
+		
+		return handle()
 	elif msg.message == 'parsed':
 		print (len(msg.results), "results")
 		for i,r in enumerate(msg.results):
 			print (i, ":", r)
 			print("\n")
+		return msg.results
+
+def lc1(text):
+
+	for i,x in enumerate(text):
+		print(i, x)
+	r = nodes.make_root()
+	scope = r["lc1-test"].scope()
+	m.collect_grammar(scope)
+
+	m.enqueue_precomputation(None)
+	return handle()
 
 
-text = sys.stdin.read()[:-1]
-for i,x in enumerate(text):
-	print(i, x)
-r = nodes.make_root()
-scope = r["lc1-test"].scope()
-m.collect_grammar(scope)
 
+if __name__=='__main__':
+	text = sys.stdin.read()[:-1]
+	lc1(text)
 
-
-
-m.enqueue_precomputation(None)
-handle()
-
-graphing_wrapper.generate_png()
-graphing_wrapper.generate_gv()
