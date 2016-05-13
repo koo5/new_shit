@@ -56,6 +56,8 @@ B._dict = odict()
 def build_in(node, name=None, builtins_table = B):
 	"""add node to B"""
 	if isinstance(node, list):
+		#python lets you do this kind of name overriding?
+		#how does it know which node is the node you want
 		[build_in(node) for node in node]
 	else:
 		if name == False or isinstance(node, Text):
@@ -794,17 +796,31 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 	@classmethod
 	def register_class_symbol(cls):
+		#this is the grand-top-starting symbol for this node type
 		r = m.symbol(cls.__name__)
+		#uhh 
+		#since we have like class Var(Syntaxed)
+		the Var's decl is the SyntaxedNodecl that actually holds the syntaxes and sits in the declaring module
+		
+		
+		
+		
 		ddecl = deref_decl(cls.decl)
+		
+		#and a syntaxed can have multiple syntaxes, for now just in a primitive way
+		
 		for sy in ddecl.instance_syntaxes:
 			cls.rule_for_syntax(r, sy, ddecl)
 		return r
+
+
 
 	@classmethod
 	def rule_for_syntax(cls,r,sy,ddecl):
 		syms = []
 		for i in sy:
 			ti = type(i)
+
 			if ti == unicode:
 				syms.append(m.known_string(i))
 			elif ti == ChildTag:
@@ -820,6 +836,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 				syms.append(x)
 		assert len(syms) != 0
 		m.rule(cls.__name__, r, syms, action=lambda x: cls.from_parse(x, sy))
+		#the marpa rule gets a callback function for constructing what we want from the parsed parts and texts
 
 	@classmethod
 	def from_parse(cls, p, sy):
@@ -841,7 +858,8 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 		r.fix_parents()
 		return r
-
+#well this looks like it could be doing at least something,
+but i see now locally i have some bugs higer up,
 	@classmethod
 	def fresh(cls, decl=None):
 		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
@@ -1480,6 +1498,13 @@ class Identifier(WidgetedValue):
 
 	@classmethod
 	def register_class_symbol(cls):
+		#the symbol here is meant a marpa symbol, 
+		#grammars are made up of symbols and rules
+		#so, here we have a little builtin grammar for Identifier
+		#it prolly allows more than we want now but w/e
+		#its actually the menu class that goes and collects this
+		#and then calls the marpa thread
+		
 		log("registering identifier grammar")
 		body_part = m.symbol('body_part')
 		m.rule('identifier_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
@@ -2565,7 +2590,7 @@ class FunctionDefinitionBase(Syntaxed):
 	def vardecls(s):
 		log(s.params)
 		r = [i if isinstance(i, TypedParameter) else i.ch.argument for i in itervalues(s.params)]
-		#print ">>>>>>>>>>>", r
+		#print ">", r
 		return r
 
 	def typecheck(s, args):
@@ -3700,27 +3725,55 @@ add python_env to Module?
 
 
 def build_in_lc(r):
-	lc1 = Dotdict()
+	"""creates a new module with definitions for a language separate from
+	the lemon stuff
+	eventually, this would all be just data in lemon,
+	but for now, we "build it in"
+	"""
+	
+	lc1 = Dotdict() #a helper dict to hold the nodes being built in and to reference them easily
 	lc1._dict = odict()
 
 	r["lc1"] = new_module()
 	r["lc1"].ch.statements.items = [
 		Comment("""untyped lambda calculus""")]
+		
+	""" whats the lc1-test for """
+	#well the gui shows a "root", a tree with a couple of entries,
+	#so thats like where you would type in your lambda calculus program	
 	r["lc1-test"] = new_module()
 	r["lc1-test"].special_scope = [r["lc1"], 
 		B.restrictedidentifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
 		];
+		
+		
 	def addsc(name):
 		build_in(SyntacticCategory({'name': Text(name)}), None, lc1)
+	#this ended up being a one-shot function
+
+
+
+
+	#this is for a lambda expression? its the Expr in your bnf
+	#cool
 	addsc("exp")
+
+
 	class Var(Syntaxed):
 		help = ["a variable"]
 		pass
 	build_in(SyntaxedNodecl(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, lc1)
+	#what's B.identifier
+	#like we use the lc1 here, B is the main global builtins
+	#ah, and i guess identifier is just what we want a name to be?yea
+
 	lc1.var.example = lc1.var.inst_fresh()
 	lc1.var.example.ch.name.text = "x"
+
+
+
 	class ParExp(Syntaxed): 
 		help = ["a parenthesized expression"]
 		pass
@@ -3729,12 +3782,17 @@ def build_in_lc(r):
 		{'exp': lc1.exp}), None, lc1)
 	build_in(WorksAs.b(lc1.parexp, lc1.exp), False, lc1)
 
+
+
 	class Abs(Syntaxed): 
 		help = ["abstraction, a lambda"]
 		pass
 	build_in(SyntaxedNodecl(Abs,
 		[TextTag("\\"), ChildTag("var"), TextTag("."), ChildTag("exp")],
 		{'var': lc1.var, 'exp': lc1.exp}), None, lc1)
+
+
+
 
 	class App(Syntaxed): 
 		help = ["function application, a call"]
@@ -3747,3 +3805,49 @@ def build_in_lc(r):
 
 	r["lc1"].ch.statements.items = list(itervalues(lc1._dict))
 
+
+# cool i guess that's everything from the bnf then
+# yeah next i have to finish the parser
+# cool so how does what we have here fit into that
+#well, the gui is set up so that when you go into lc1-test, it
+#collects the grammar from the nodes in its scope
+
+"""the above module now looks like this in the gui:
+[lc1]:<module[]from[]:
+<<->[ 
+    <syntactic category:[exp]>
+    <var:
+        a variable
+        example: <{}>>
+    <parexp:
+        a parenthesized expression
+        example: <({})>>
+    <<*parexp>works as<*exp>>
+    <abs:
+        abstraction, a lambda
+        example: <\{}.{}>>
+    <app:
+        function application, a call
+        example: <{} {}>>
+    ]>end.>
+
+the "example:"'s dont work very well yet
+it doesnt even display the syntaxes, too
+
+
+
+
+
+
+
+
+
+
+this is the grammar of the particular node type
+		[TextTag("("), ChildTag("exp"), TextTag(")")],
+it has to go over this list
+ah it goes over the list to generate a grammar for marpa
+yeah to call marpa .symbol and .rule functions
+
+
+"""
