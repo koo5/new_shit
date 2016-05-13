@@ -800,7 +800,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		r = m.symbol(cls.__name__)
 		#uhh 
 		#since we have like class Var(Syntaxed)
-		the Var's decl is the SyntaxedNodecl that actually holds the syntaxes and sits in the declaring module
+		#the Var's decl is the SyntaxedNodecl that actually holds the syntaxes and sits in the declaring module
 		
 		
 		
@@ -858,8 +858,8 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 		r.fix_parents()
 		return r
-#well this looks like it could be doing at least something,
-but i see now locally i have some bugs higer up,
+
+
 	@classmethod
 	def fresh(cls, decl=None):
 		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
