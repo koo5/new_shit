@@ -3766,7 +3766,13 @@ def build_in_lc(r):
 
 	class Var(Syntaxed):
 		help = ["a variable"]
-		pass
+		@property
+		def varName(s):
+			return s.ch.name.pyval
+		@varName.setter
+		def varName(s, v):
+			s.ch.name.pyval = v
+		
 	build_in(SyntaxedNodecl(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, lc1)
@@ -3781,8 +3787,6 @@ def build_in_lc(r):
 
 	class ParExp(Syntaxed): 
 		help = ["a parenthesized expression"]
-		def eval(s):
-			return s.ch.exp.eval()
 		
 	build_in(SyntaxedNodecl(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
@@ -3819,6 +3823,15 @@ def build_in_lc(r):
 
 	r["lc1"].ch.statements.items = list(itervalues(lc1._dict))
 
+
+
+
+
+	Var.unparen = lambda s: s
+	App.unparen = Abs.unparen = lambda s: s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
+	ParExp.unparen = lambda s: s.ch.exp
+	
+	
 	#//aka evaluate
 	#//Normal order:
 	def normalize (e) :
@@ -3826,7 +3839,7 @@ def build_in_lc(r):
 			return e
 			
 		if isinstance(e, Abs):
-			#return Abs({'var': e.ch.var, e.ch.exp.eval()})
+			#return Abs({'var': e.ch.var.copy(), e.ch.exp.eval()})
 			return Abs({'var': e.ch.var, 'exp': e.ch.exp.eval()})
 			
 		if isinstance(e, App):
@@ -3867,15 +3880,57 @@ def build_in_lc(r):
 			return e
 
 
-	App.eval = Abs.eval = Var.eval = normalize
+	def eval(e):
+		return normalize(e.copy().unparen()).copy()
+
+	ParExp.eval = App.eval = Abs.eval = Var.eval = eval
 
 
+	freshvarid = [0]
+	def genFreshVarName():
+		freshvarid[0] += 1
+		return "var" + freshvarid[0]
+
+
+	def subst( where, what, by):#e1,x,e2):
+		if isinstance(where, Var):
+			#(Var x)[x := r]         = r
+			if (where.varName == what.varName):
+				return by
+			#(Var y)[x := r]         = y 
+			else:
+				return where
+		if isinstance(where, App):
+			#(App t s)[x := r]       = (t[x:=r])(s[x:=r])
+			return App({'e1': subst(where.ch.e1, what, by), 'e2': subst(where.ch.e2, what, by)})
+		if isinstance(where, Abs):
+			#(Abs x t)[x := r]       = (Abs x t).
+			if(where.ch.var.ch.name == what.ch.name):
+				return where
+			else:
+				#(Abs y t)[x := r]                                                                
+				#if(y not in FreeVars(r))
+				if(where.ch.var not in FreeVars(by)):
+					#(Abs y subst(t,x,r))
+					return Abs({'var':where.ch.var, 'exp': subst(where.ch.exp, what, by)}) 
+				else:
+					z = genFreshVarName()
+
+					#t' = subst(t,y,z)
+					t1 = subst(where.ch.exp,where.ch.var,z)
+
+					#t'' = subst(t',x,r)
+					t2 = subst(t1,what,by)
+
+					#return (Abs z t'')
+					return Abs({'var': z, 'exp': t2})
+		
 """
 
 Expr 		:=	Expr1 | "(" Expr ")"
 Expr1		:=	Var | Abs | App
 Var		:= 	Char Name # Identifier
-Abs		:=	"\" Var "." Expr
+Abs		:=	"|" Var "." Expr
 App		:=	Expr " " Expr
 Name		:=	<endword> | Char Name
 Char		:=	"a" | "b" | "c" | ... | 
@@ -3893,19 +3948,19 @@ unless we've reached normal form, i.e. nothing left to evaluate
 so is this a syntax for normal form or nonnormal form?
 could be either one. 
 
-\x.(x x) y  --reduce--> y y, and nothing left to evaluate so this is in normal form
+|x.(x x) y  --reduce--> y y, and nothing left to evaluate so this is in normal form
     ^ also occurs in the original expression here
 
-\y.(\x.(x x) y) \w.w --reduce -->
-\y.(y y) \w.w  --reduce -->
+|y.(|x.(x x) y) |w.w --reduce -->
+|y.(y y) |w.w  --reduce -->
     ^ here it occurs, but it's not in normal form
 
 lambda calculus is quite hard to follow
 i agree. it's mainly only of theoretical interest until you get
 some relatively sophisticated syntax for it
 i would probably start without the redex/nonredex distinction so we can meaningufully express even nonnormal programs, hrm, i don't think we need the redex/nonredex distinction for the syntax
-\w.w \w.w --reduce-->
-\w.w
+|w.w |w.w --reduce-->
+|w.w
 
 
 
@@ -3932,8 +3987,8 @@ i would probably start without the redex/nonredex distinction so we can meaningu
 
    * Call by name:
 	Same as normal order except no reductions are performed inside abstractions.
-	For example: \x.((\x.x) x) would be considered to be in normal form, even
-	though it contains the reducible expression ((\x.x) x). Since this redex
+	For example: |x.((|x.x) x) would be considered to be in normal form, even
+	though it contains the reducible expression ((|x.x) x). Since this redex
 	occurs inside an abstraction, it is not to be reduced.
 
    * Call by value:
@@ -4182,7 +4237,7 @@ FreeVars(Expr e, List<Var> * ret) :=
 
 //eta-conversion
 
-f == \x.(f x)
+f == |x.(f x)
 
 //not really necessary. not sure where this would even come up in normal
 //programming with lambdas. for theorem proving otoh, there's reason to use it
@@ -4222,7 +4277,10 @@ the above module now looks like this in the gui:
     <<*parexp>works as<*exp>>
     <abs:
         abstraction, a lambda
-        example: <\{}.{}>>
+        example: <|
+        
+        
+        {}.{}>>
     <app:
         function application, a call
         example: <{} {}>>
@@ -4245,6 +4303,4 @@ this is the grammar of the particular node type
 it has to go over this list
 ah it goes over the list to generate a grammar for marpa
 yeah to call marpa .symbol and .rule functions
-
-
 """
