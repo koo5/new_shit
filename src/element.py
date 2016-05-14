@@ -7,6 +7,7 @@ import tags
 from tags import *
 from lemon_utils.utils import Evil
 from lemon_colors import colors
+from types import GeneratorType
 
 
 import logging
@@ -19,7 +20,7 @@ CHANGED = 1
 class Element():
 	"""an object that can be rendered, a common base for widgets and nodes"""
 	help = []
-	brackets = ('<', '>')
+	brackets = ('', '')
 	def __init__(self):
 		super().__init__()
 		self._parent = Evil('_parent')
@@ -121,6 +122,43 @@ class Element():
 			return [s.parent] + s.parent.ancestors
 		else:
 			return []
+
+	def tostr(s):
+		return "".join([x for x in s.collect_tags() if isinstance(x,unicode)])
+
+
+	def collect_tags(s):
+		for t in s._collect_tags(s.tags()):
+			yield t
+
+	def _collect_tags(elem, tags):
+		"""make a flat list, expanding child elements"""
+		for tag in tags:
+			if type(tag) in (GeneratorType, list):
+				for i in elem._collect_tags(tag):
+					yield i
+
+			elif type(tag) == TextTag:
+				yield tag.text
+
+			elif type(tag) == ChildTag:
+				e = elem.ch[tag.name]
+				for i in e.collect_tags():
+					yield i
+
+			elif type(tag) == MemberTag:
+				e = elem.__dict__[tag.name] #get the element as an attribute #i think this should be getattr, but it seems to work
+				for i in e.collect_tags():
+					yield i
+
+			elif type(tag) == ElementTag:
+				e = tag.element
+				for i in e.collect_tags():
+					yield i
+
+			else:
+				yield tag
+
 
 
 

@@ -620,31 +620,4 @@ def load(name):
 
 
 def _collect_tags(elem, tags):
-	"""make a flat list, expanding child elements"""
-	for tag in tags:
-		if type(tag) in (GeneratorType, list):
-			for i in _collect_tags(elem, tag):
-				yield i
-
-		elif type(tag) == TextTag:
-			yield tag.text
-
-		elif type(tag) == ChildTag:
-			e = elem.ch[tag.name]
-			for i in _collect_tags(e, e.tags()):
-				yield i
-
-		elif type(tag) == MemberTag:
-			e = elem.__dict__[tag.name] #get the element as an attribute #i think this should be getattr, but it seems to work
-			for i in _collect_tags(e, e.tags()):
-				yield i
-
-		elif type(tag) == ElementTag:
-			e = tag.element
-			for i in _collect_tags(e, e.tags()):
-				yield i
-
-		else:
-			yield tag
-
-
+	return elem._collect_tags(tags)

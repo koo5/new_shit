@@ -147,29 +147,42 @@ class ThreadedMarpa(object):
 	#---------
 
 
-	def collect_grammar(s,scope:list):
+	def collect_grammar(s,scope:list,start=None):
 		assert scope == uniq(scope)
+
 		s.clear()
-		s.scope = scope
-		s.named_symbol('start')
-		#s.set_start_symbol(s.syms.start)
+		print("grammar clear")
+
 
 		s.named_symbol('nonspecial_char')
 		s.named_symbol('known_char')
-
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
 
+
+
+
+		s.scope = scope
+		anything = start==None
+		if anything:
+			s.start=s.named_symbol('start')
+		else:
+			s.start = start.symbol
+		print ("start=", s.start )
+		
 		for i in scope:
 			#the property is accessed here, forcing the registering of the nodes grammars
 			sym = i.symbol
-			if sym != None:
-				if args.log_parsing:
-					log(sym)
-					rulename = 'start is %s' % s.symbol2debug_name(sym)
-				else:
-					rulename = ""
-				s.rule(rulename , s.syms.start, sym)
+
+		if anything:
+			for i in scope:
+				if sym != None:
+					if args.log_parsing:
+						log(sym)
+						rulename = 'start is %s' % s.symbol2debug_name(sym)
+					else:
+						rulename = ""
+					s.rule(rulename , s.start, sym)
 
 
 	def enqueue_precomputation(s, for_node):
@@ -178,7 +191,7 @@ class ThreadedMarpa(object):
 			num_syms = s.num_syms,
 			rules = s.rules[:],
 			for_node = for_node,
-			start=s.syms.start))
+			start=s.start))
 
 	def enqueue_parsing(s, tr):
 		s.t.input.put(Dotdict(

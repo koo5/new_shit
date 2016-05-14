@@ -38,9 +38,6 @@ def handle(text=None):
 		return handle()
 	elif msg.message == 'parsed':
 		print (len(msg.results), "results")
-		for i,r in enumerate(msg.results):
-			print (i, ":", r)
-			print("\n")
 		return msg.results
 
 def lc1(text):
@@ -54,7 +51,7 @@ def lc1(text):
 #so this runs before the __main__ is called
 r = nodes.make_root()
 scope = r["lc1-test"].scope()
-m.collect_grammar(scope)
+m.collect_grammar(scope,nodes.lc1.exp)
 
 #the condition is true when you do like python ./cli.py,
 #false when you run ipython and just import cli

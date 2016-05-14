@@ -130,7 +130,7 @@ def generate():
 	print ("generate graph")
 	import graphviz
 
-	graph = graphviz.Graph()
+	graph = graphviz.Digraph()
 	
 	for sym in syms:
 		try:

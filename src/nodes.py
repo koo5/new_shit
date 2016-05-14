@@ -546,7 +546,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	@property
 	def symbol(s):
-		#log("gimme node_symbol")
+		print("gimme node_symbol for", s)
 		if s._symbol == None:
 			s.register_symbol()
 		return s._symbol
@@ -778,6 +778,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	syntax is a list of Tags, and it can contain ChildTag
 	"""
 	brackets = ("<", ">")
+	#brackets = ("", "")
 	def __init__(s, children):
 		super(Syntaxed, s).__init__()
 		s.check_slots(s.slots)
@@ -800,12 +801,11 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	def register_class_symbol(cls):
 		#this is the grand-top-starting symbol for this node type
 		r = m.symbol(cls.__name__)
-		#uhh 
+		
+		
 		#since we have like class Var(Syntaxed)
 		#the Var's decl is the SyntaxedNodecl that actually holds the syntaxes and sits in the declaring module
-		
-		
-		
+			
 		
 		ddecl = deref_decl(cls.decl)
 		
@@ -2032,8 +2032,7 @@ class SyntacticCategory(Syntaxed):
 		super(SyntacticCategory, s).__init__(children)
 
 	def register_symbol(s):
-		s._symbol = lhs = m.symbol(
-			repr(s))
+		s._symbol = lhs = m.symbol(s.name)
 
 class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
@@ -3723,6 +3722,8 @@ add python_env to Module?
 """
 
 
+lc1 = Dotdict() #a helper dict to hold the nodes being built in and to reference them easily
+lc1._dict = odict()
 
 
 #interesting vim glitch made it look like it was commented out
@@ -3736,8 +3737,6 @@ def build_in_lc(r):
 	but for now, we "build it in"
 	"""
 	
-	lc1 = Dotdict() #a helper dict to hold the nodes being built in and to reference them easily
-	lc1._dict = odict()
 
 	r["lc1"] = new_module()
 	r["lc1"].ch.statements.items = [
@@ -3748,23 +3747,17 @@ def build_in_lc(r):
 	#so thats like where you would type in your lambda calculus program	
 	r["lc1-test"] = new_module()
 	r["lc1-test"].special_scope = [r["lc1"], 
-		B.restrictedidentifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
+		#B.restrictedidentifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
 		];
 		
 		
-	def addsc(name):
-		build_in(SyntacticCategory({'name': Text(name)}), None, lc1)
-	#this ended up being a one-shot function
 
-
-
-
-	#this is for a lambda expression? its the Expr in your bnf
-	#cool
-	addsc("exp")
-
+	build_in(SyntacticCategory({'name': Text("exp")}), None, lc1)
+	lc1.exp.help = ["a lambda expression"]
+	
 
 	class Var(Syntaxed):
+		brackets = ("", "")
 		help = ["a variable"]
 		@property
 		def varName(s):
@@ -3787,6 +3780,7 @@ def build_in_lc(r):
 
 	class ParExp(Syntaxed): 
 		help = ["a parenthesized expression"]
+		brackets = ("", "")
 		
 	build_in(SyntaxedNodecl(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
@@ -3822,14 +3816,14 @@ def build_in_lc(r):
 
 
 	r["lc1"].ch.statements.items = list(itervalues(lc1._dict))
-
+	
 
 
 
 
 	Var.unparen = lambda s: s
 	App.unparen = Abs.unparen = lambda s: s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
-	ParExp.unparen = lambda s: s.ch.exp
+	ParExp.unparen = lambda s: s.ch.exp.unparen()
 	
 	
 	#//aka evaluate
@@ -3878,10 +3872,15 @@ def build_in_lc(r):
 				#	return App({'e1': tmp, 'e2': e.ch.e2.eval()})
 					
 			return e
+		assert False, "normalize"
 
 
 	def eval(e):
-		return normalize(e.copy().unparen()).copy()
+		x = e.copy().unparen()
+		print (x.tostr())
+		n = normalize(x)
+		assert n
+		return n.copy()
 
 	ParExp.eval = App.eval = Abs.eval = Var.eval = eval
 
@@ -3910,7 +3909,8 @@ def build_in_lc(r):
 			else:
 				#(Abs y t)[x := r]                                                                
 				#if(y not in FreeVars(r))
-				if(where.ch.var not in FreeVars(by)):
+				
+				if(where.ch.var.varName not in FreeVars(by)):
 					#(Abs y subst(t,x,r))
 					return Abs({'var':where.ch.var, 'exp': subst(where.ch.exp, what, by)}) 
 				else:
@@ -3924,7 +3924,37 @@ def build_in_lc(r):
 
 					#return (Abs z t'')
 					return Abs({'var': z, 'exp': t2})
+		assert False, ("subst", where, what, by)
 		
+		
+	
+	def FreeVars(expr,vars=None) -> set:
+		if vars==None: vars = set()
+		print("freevars", expr.tostr(), "vars:", vars)
+		
+		if isinstance(expr,Var):
+			vars.add(expr.varName)
+			return vars
+
+		#if (e is a Abs x e1)
+		if isinstance(expr,Abs):
+			free = FreeVars(expr.ch.exp, vars)
+			#shall we save varNames only?
+			#we could do that, name is all the structure they have
+			#otherwise this set magic wont work so magically
+			#standard implementations would do something like
+			#de bruijn indexes, i.e. just replace them with numbers
+			free.remove(expr.ch.var.varName)#because it's bound by this abstraction
+	
+			return free
+		#if (e is a App e1 e2)
+		if isinstance(expr,App):
+			free_e1 = FreeVars(e1, vars)
+			free_e2 = FreeVars(e2, vars)
+			return free_e1.union(free_e2)
+
+
+
 """
 
 Expr 		:=	Expr1 | "(" Expr ")"
