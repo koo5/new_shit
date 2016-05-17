@@ -11,6 +11,7 @@ def do(t):
 		print(r.tostr())
 		#r = r.unparen()
 		
+		#type-check it before evaluating:
 		print("type check:",r.type_check().tostr())
 		print("eval:",r.eval().tostr())
 

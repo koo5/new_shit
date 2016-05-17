@@ -4345,9 +4345,31 @@ App := Expr " " Expr
 #"The set of free variables of (a b) is the union of the set
 #of free variables of a and the set of free variables of b"
 
-
+	#so we call type_check with the expression
+	#to be type-checked and a list of "type-assumptions"
+	
+	#for the top-level expression that we intend to
+	#evaluate, we'll be calling this with the default,
+	#i.e. an empty set of type-assumptions.
+	
+	#the set of type-assumptions is a map from vars
+	#to their types
 	def type_check(expr,env=None):
 		if env==None: env = {}
+		#so if our 'e' was a Var, then we're
+		#just gonna grab it's type-assumption
+		#from the list
+		
+		#if the type-assumption isn't there, then
+		#we'll get a KeyError, which is fine cause
+		#we're supposed to fail anyway in that case
+		
+		#if the type-assumption isn't there, then
+		#it's basically like i just give you:
+		
+		# "x"
+		#and ask you what's the type
+		#there's no answer to that, it's untyped
 		if isinstance(expr,Var):
 			return env[expr.varName]
 			"""
@@ -4363,33 +4385,78 @@ App := Expr " " Expr
 			i.e. if we have '\\x:t.e', then when we go to
 			type-check 'e', then env will contain 'x:t'
 			"""
+		#type-assumptions get added to the list from
+		#abstractions
+		
+		#\\x:t.e, <-- "x:t" is a type-assumption
+		#we'll add this type assumption to the list
+		#before checking "e". 
 		if isinstance(expr,Abs):
-			tmp_env = env
+			#copy our current list of type-assumptions
+			tmp_env = dict(env)
+			
+			#add the type assumption
+			#if it's a repeated occurrence of a
+			#var in an inner lambda like
+			#\x:bool.\x:bool.x, then the inner
+			#should shadow the outer
+			
+			#actually for a real lang we would
+			#probably want to just disallow that
+			#syntactically hrrm
+			
+			#\x:bool.\x:int.x
+			#which x are we referring to?
+			#the inner:p
+			#our type-assumption will be the
+			#inner one, that's ensured by this
+			#next line, but how about for
+			#normalization, substitution, etc?
+			
+			#so normalize doesnt deal with this as expected?
+			#well, i think it's more that "expected" isnt
+			#even really well-defined yet (for us)
+			#well..lexical scope, i.e. the inner should
+			#shadow the outer?yea ok we'll check over it in
+			#a minute
+			
+			#it's not a big deal though, we
+			#can just avoid those for now and
+			#nit-pick at it later
 			tmp_env[expr.ch.var.varName] = expr.ch.type
 			return FunType({
+				#this is just 't'
 				"from": expr.ch.type,
+				#\\x:t.e
+				#so here we're type-checking the 'e'
+				#using the new set of type-assumptions
 				"to": type_check(expr.ch.exp,tmp_env)
 				})
-
+			#alright i think thats clear
+			
 		if isinstance(expr,App):
-			tf = type_check(expr.ch.e1, env)
-			if isinstance(tf,FunType):
-				ta = type_check(expr.ch.e2, env)
-				if ta.eq_by_value_and_python_class(tf.ch._dict["from"]):
-					return tf.ch.to
+			func_t = type_check(expr.ch.e1, env)
+			if isinstance(func_t,FunType):
+				arg_t = type_check(expr.ch.e2, env)
+				if arg_t.eq_by_value_and_python_class(func_t.ch._dict["from"]):
+					return func_t.ch.to
 				else:
 					print("Bad argument type")
-					assert false
+					assert False
 			else:
 				print("Application using non-function-type")
-				assert false
+				assert False
+
 		if type(expr) in [BoolTrue, BoolFalse]:
 			return BoolType({})
 		if isinstance(expr, Number):
 			return IntType({})
 		assert False
+		#ok!
+		#cool, make sense now?yeah thx np
+		#and that's it, simply typed is done
 		
-		
+		#ok time for a break i guess
 	def tc(e):
 		x = e.copy().unparen()
 		print (x.tostr())
