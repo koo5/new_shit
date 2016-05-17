@@ -302,8 +302,8 @@ def resolve(data, parent):
 class NodePersistenceStuff(object):
 	def serialize(s):
 		#assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
-		return odict(
-			s.serialize_decl()).updated_with(s._serialize())
+		r = odict(s.serialize_decl())
+		r.updated_with(s._serialize())
 
 	def serialize_decl(s):
 		if s.decl:
@@ -313,9 +313,11 @@ class NodePersistenceStuff(object):
 			return {'class': s.__class__.__name__.lower()}
 
 	def unresolvize(s):
-		return odict(
+		r = odict(
 			resolve = True,
-			name = s.name).updated_with(s.serialize_decl())
+			name = s.name)
+		r.update(s.serialize_decl())
+		return r
 
 	def _serialize(s):
 		return {}

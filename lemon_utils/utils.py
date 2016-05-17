@@ -8,14 +8,14 @@ def updated_with(d, d2):
 	"""update d with d2 and return it"""
 	d.update(d2)
 	return d
-odict.updated_with = updated_with
+#odict.updated_with = updated_with
 
 def plus(d, d2):
 	"""copy d, update it with d2 and return"""
 	r = d.copy()
 	r.update(d2)
 	return r
-odict.plus = plus
+#odict.plus = plus
 
 
 def flatten_gen(x):
