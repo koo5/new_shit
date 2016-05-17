@@ -1,0 +1,648 @@
+May 6
+
+
+23:06 < HMCa_> :13 < stoopkid> 05:25 < HMCa_> stoopkid trying to reinvent the functional extensionality proof XD
+23:06 < HMCa_> :13 < stoopkid> can you explain? i don't really understand this yet
+23:08 < HMCa_> itnis precisely that two functions can be shown as having isomorphisms at every input, and corresponding isomorphisms at every output, and are thus equivalent
+23:09 < stoopkid> ah
+23:09 < HMCa_> so if you have some f:a->b and g:c->d, an iso of a and c, an iso of b and d, and each object of a/c corresponds to an object of b/d
+23:10 < HMCa_> then you have f=g
+23:11 < stoopkid> that's by definition right?
+23:11 < HMCa_> yes
+23:12 < stoopkid> so what is being proved exactly?
+23:12 < HMCa_> that *is* the conclusion of the hott funext proof!
+23:13 < stoopkid> i thought that was just the definition of what it means for two functions to be equivalent
+23:13 < HMCa_> the proof is the "can be shown as"
+23:14 < stoopkid> but what does the "can be shown as" have to do with HoTT?
+23:14 < HMCa_> meaning you *can* typecheck a "(f:a->b)->(g:c->d)->(f=g)->Type"...
+23:14 < HMCa_> ah the proof is just set in hott
+23:15 < HMCa_> so far it is not known if the proof can be done *without* hott :-)
+23:15 < HMCa_> it was previously thought that the peoof was entirely impossible, heh...
+23:15 < HMCa_> *proof
+23:16 < stoopkid> "(f:a->b)->(g:c->d)->(f=g)->Type" why can't this be type-checked with HoTT so far?
+23:17 < stoopkid> without*
+23:17 < HMCa_> what im saying is that it *can*
+23:17 < HMCa_> ah
+23:17 < HMCa_> without hott
+23:17  * HMCa_ shrugs
+23:17 < HMCa_> if it is possible is an open question
+23:19 < HMCa_> https://homotopytypetheory.org/2014/02/17/another-proof-that-univalence-implies-function-extensionality/
+23:20 < HMCa_> so far there is not a known way to "do the same" but "without the homotopies"
+23:24 < stoopkid> so basically if i just define equality between functions as homotopy i get univalence?
+
+May 7
+
+
+00:06 < HMCa_> stoopkid: sure, that is one way to put it
+
+
+
+May 8
+
+
+00:48 < HMCa_> 33 < stoopkid> so, problem with having function types be specified by rdfs:domain & rdfs:range, is how do you have a function type like A -> (B -> C)
+00:50 < HMCa_> f domain A. f range _:g. _:g domain B, _:g range C
+00:50 < HMCa_> no?
+00:50 < HMCa_> ...
+
+
+
+01:53 < stoopkid> HMCa_: how much of the MLTT overlaps with RDF/RDFS inferencing, how much must be done with extralogicals, and how much could be done with data structures and rules in RDF/RDFS ?
+01:54 < stoopkid> for example, section 5.5 of programming in martin lof's
+01:54 < stoopkid> "substitution rules"
+01:57 < stoopkid> seems like this somewhat overlaps with the regular inferencing process itself
+01:58 < stoopkid> other things like the rules surrounding sum types and pair types and other simple things like that seem like they could be done by having hard-coded n3
+01:59 < stoopkid> and then other things like the rules surrounding function types, pi types and sigma types seems like it needs extralogical builtins
+02:24 < stoopkid> ok so the substitution rules in section 5.5 overlap with the standard inferencing substitution except for the ones that speak about judgemental equality
+02:26 < stoopkid> so there's a rule here:
+02:27 < stoopkid> {C(x) set [x : A] ,  a : A } => {C(a) set}
+02:29 < stoopkid> this corresponds to saying that given a context under type assumptions, and proof that an object is of that assumed type, then we can make that substitution into the context, and use the context with the substitution in our proof
+02:29 < stoopkid> which just corresponds to regular inferencing + type checking
+02:31 < stoopkid> idk what it means to say two contexts are equal, or when we compare contexts
+02:31 < stoopkid> in MLTT sure, in RDF inferencing no
+02:33 < stoopkid> in any case the multi-variable substitution just corresponds to the same multivariable substitution we use in inferencing
+02:36 < stoopkid> judgemental equality is basically unification?
+02:40 < stoopkid> so the equalities that make constraints are basically the judgemental equalities
+02:42 < stoopkid> so then our unification inferencing process does cover all of section 5, minus the type-checking
+02:53 < stoopkid> so, the enumeration types must be extralogical it seems
+03:06 -!- mnk [~mnk4@93.51.17.178] has quit [Ping timeout: 244 seconds]
+03:10 < stoopkid> HMCa_: is the fact that all this extralogical stuff must be going on the reason you say this uf-constraints-dna approach won't work out?
+03:12 < stoopkid> i.e. the dna would be trimming info that will be needed in the extralogical mltt (and other) steps?
+
+
+
+
+
+03:16 < HMCa_> i see a few confusions there, i think
+03:17 < HMCa_> first, what mltt calls contexts are not quite thr same as what we/rdf call contexts
+03:18 < HMCa_> second, we need more than just implication from n3, we also need naf
+03:19 < HMCa_> third, nothing of our typesystem need be extralogical (leaving aside effect types for the moment, anyway)
+03:20 < stoopkid> it won't be extralogical to rdf/rdfs?
+03:21 < stoopkid> rdf/rdfs/n3
+03:30 < stoopkid>  \(b) is a canonical element in pi (A,B) if b(x) : B(x) [x : A]
+03:30 < stoopkid> i'm not sure i understand how to express dependent types here
+03:43 < stoopkid> specifically, if rdfs:domain & rdfs:range represent the components of the function-type of a pred, but the return-type of a dependent function is parameterized by the input value, then what goes in rdfs:range
+03:43 -!- Risky2 [~Risky2@unaffiliated/risky2] has quit [Quit: Leaving]
+03:44 -!- icocountdown [d598a12d@gateway/web/cgi-irc/kiwiirc.com/ip.213.152.161.45] has quit [Quit: http://www.kiwiirc.com/ - A hand crafted IRC client]
+03:53 -!- maybekoo2 [~kook@236.152.broadband3.iol.cz] has quit [Ping timeout: 276 seconds]
+03:53 < stoopkid> {A set ,  B(x) set [ x : A] } => { pi (A,B) set}
+04:12 < HMCa_> stoopkid: not sure what you see as a problem...
+04:13 < stoopkid> well, how do i express that as triples
+04:13 < HMCa_> p63 uses no extralogical and has everything you need...
+04:14 < stoopkid> i've never seen that this is the case
+04:14 < HMCa_> which?
+04:15 < stoopkid> {A set ,  B(x) set [ x : A] } => { pi (A,B) set}
+04:15 < HMCa_> it has some extralogical, or it is missing some deptype representation?
+04:15 < stoopkid> i have no idea how to express most of the mltt rules as triples
+04:16 < stoopkid> nor have i ever seen any of them expressed as triples
+04:19 < HMCa_> the rules are just implications between structures of expressions
+04:19 < HMCa_> do you have an idea how to structure expressions?
+04:19 < HMCa_> i.e. fig 1
+04:20 < stoopkid> p63 still doesn't make any sense to me
+04:21 < stoopkid> i can come up with ways to structure expressions
+04:21 < stoopkid> for dependent functions i can't come up with anything that doesn't require an extralogical
+04:23 < stoopkid> for everything else i can make structures for expressions and express n3 rules according to the MLTT
+04:23 < stoopkid> under the assumption that section 5 is basically just describing unification and back-chaining inferencing
+04:23 < stoopkid> (section 5 of programming in martin lof's)
+04:24 < HMCa_> :21 < stoopkid> for dependent functions i can't come up with anything that doesn't require an extralogical
+04:25 < HMCa_> what do you think requires the extralogical?
+04:25 < HMCa_> meaning
+04:25 < HMCa_> "what" extralogical, and why?
+04:26 < stoopkid> {
+04:26 < stoopkid>   ?pred rdfs:domain ?A
+04:26 < stoopkid>   ?pred rdfs:range Type
+04:26 < stoopkid>   
+04:26 < stoopkid>   "forall ?a in ?A
+04:26 < stoopkid>   if ?a ?pred ?b
+04:26 < stoopkid>   and ?a ?B ?t
+04:26 < stoopkid>   then ?b a ?t
+04:26 < stoopkid> }
+04:26 < stoopkid> => { ?pred a (pi ?A ?B)}
+04:27 < stoopkid> disregard the two ?pred rdfs:domain/range at the top
+04:28 < HMCa_> this doesn't seem to answer anything about my question :-P
+04:28 < stoopkid> i understand how to do the dependent pair because it just asks for some ?a in ?A
+04:29 < stoopkid> i'm not sure what to do for this forall
+04:29 < stoopkid> our queries don't go " 'forall' at a time"
+04:29 < HMCa_> ?
+04:30 < HMCa_> ok wait
+04:30 < HMCa_> what are you trying to acomplish here?
+04:30 < HMCa_> type inference?
+04:31 < HMCa_> yes, clearly
+04:31 < stoopkid> sure
+04:31 < HMCa_> a) why?
+04:31 < HMCa_> b) why not build type check before type if/nerence?
+04:31 < HMCa_> *inference
+04:32 < stoopkid> actually this would be type-checking
+04:32 < HMCa_> no
+04:32 < HMCa_> here you ifer a type assignment
+04:32 < HMCa_> *infer
+04:33 < HMCa_> of ?pred
+04:33 < stoopkid> hrm i'm not sure what a type-checking rule would look like then
+04:33 < HMCa_> so is type inference, a typr check would match the type assinment in body against the expressions being checked
+04:34 < HMCa_> *type
+04:34 < stoopkid> hrm
+04:34 < HMCa_> *assignment
+04:34 < HMCa_> so
+04:34 < HMCa_> i would start there
+04:35 < HMCa_> just wel-formedness constraints and simple (no termination assertion) typecheck 
+04:35 < stoopkid> and this isn't extralogical?
+04:35 < HMCa_> *well
+04:35 < HMCa_> NAF is itself trchnically extralogical
+04:35 < HMCa_> but otherwise no
+04:36 < stoopkid> hrm
+04:36 < HMCa_> shouldn't need anything more 
+04:36 < HMCa_> so
+04:36 < HMCa_> yah
+04:36 < HMCa_> back to fig1
+04:36 < HMCa_> typecheck it. ;-)
+04:37 < HMCa_> worry about type inference later, after you have a solid grasp on both expression structure and the decision procedure :-)
+04:38 < stoopkid> i don't see where this solid grasp is going to come from, i've just been making all this up as i go along
+04:38 < HMCa_> right, i'd stop doing that :-P
+04:38 < stoopkid> i just don't understand what p63 is telling me to do
+04:39 < stoopkid> for months now
+04:39 < HMCa_> back to p63, build some simple theoriee in their drt structure and walk through their typechecks on pen&paper
+04:39 < stoopkid> mm
+04:39 < stoopkid> i don't understand their structure
+04:40 < HMCa_> what, in particular?
+04:40 < stoopkid> hmm
+04:40 < stoopkid> it's kind of like if you were speaking chinese and asked me what in particular i didn't understand
+04:41 < stoopkid> i don't even know where to start with that diagram
+04:41 < stoopkid> i start with simple types and it immediately falls apart as soon as i move to any other node in the diagram
+04:42 < stoopkid> otoh, i think i have a perfectly clear picture how to make an MLTT reasoner now
+04:43 < HMCa_> so forget fig1 except as a structural reference
+04:43 < HMCa_> just take their explanation of their drt and build out some simple signatures
+04:44 < HMCa_> start with dumb stuff like bool and nat, then vec/fin and such...
+04:45 < stoopkid> well DRTs aren't really a problem it's only the dependent function that's confusing me
+04:46 < stoopkid> well actually that's not true
+04:46 < stoopkid> i don't have NAF worked in at all so obviously i'm confused about more stuff
+04:46 < stoopkid> but
+04:46 < HMCa_> ok, so right there
+04:46 < HMCa_> you want to *start* with naf stuff, not "work it in" :-P
+04:47 < HMCa_> before you can typecheck an expression you need to know it is well formed
+04:47 < stoopkid> so, what is being negated and failing here?
+04:47 < HMCa_> ill-formed expressions
+04:48 < stoopkid> hrm
+04:48 < stoopkid> i only know how to express that something is the correct type, idk how to express that it's not the correct type
+04:48 < stoopkid> except maybe through double negation
+04:49 < HMCa_> double negation?
+04:49 < HMCa_> np, only need the one
+04:49 < HMCa_> *no
+04:50 < HMCa_> just a constraint around each ill-formed expression structure
+04:50 < stoopkid> can you do an example?
+04:50 < HMCa_> {?x a pi. ?x a sigma.}=>false.
+04:51 < stoopkid> wait wait
+04:51 < stoopkid> so it's just doing everything it's not by enumeration?
+04:51 < HMCa_> "doing everything"?
+04:51 < HMCa_> this step just rules out any ill formed expression
+04:51 < stoopkid> it's not a pi and it's not a sigma, therefore it's a <something else>
+04:52 < HMCa_> no...
+04:52 < HMCa_> it is not allowed to be *both*
+04:52 < HMCa_> no point in the expression tree ever is
+04:52 < HMCa_> in *any* expression
+04:52 < stoopkid> ah, right
+04:52 < HMCa_> so you need "all of these"....
+04:53 < HMCa_> a set of NAF constraints such that when combined with any expression... the result of consistency check will be false if the expression is ill formed
+04:53 < stoopkid> so you need a => false for every (unique) type combination that it can't be
+04:53 < HMCa_> true otherwise
+04:54 < HMCa_> *then* you can start on the type judgements to actually *check* the expression :-)
+04:55 < stoopkid> so {?x a pi. ?x a DRT} => false
+04:56 < stoopkid> {?x a pi. ?x a simpleType} => false
+04:56 < HMCa_> not every unique type combination, it's just a "syntactic" check, really...
+04:57 < HMCa_> basically just asserts that only well formed signatures are considered, doesn't "yet care" what those signatures "are"
+04:58 < HMCa_> just making sure the structure itself conforms
+04:58 < HMCa_> follow?
+04:58 < stoopkid> sure
+04:59 < HMCa_> further, it is a bit more than just checking syntactic seperation of type elements...
+04:59 < HMCa_> you have to assert *all* of the structure as well formed
+05:00 < HMCa_> so all of the relationships that make up the expression have to be "asserted as in the expression structure"
+05:00 < stoopkid> so if i don't understand p63's expression structure but i've got my own expression structure worked out, i can assert that structure instead?
+05:01 < HMCa_> well
+05:01 < HMCa_> sure, but you probably shouldn't? :-P
+05:02 < stoopkid> btw, p63 makes no mention of identity types
+05:02 < stoopkid> or enumeration types, or nats
+05:03 < HMCa_> "enum types" meaning simple discriminated union?
+05:03 < stoopkid> like false, true, bool, if then else & case
+05:04 < HMCa_> discriminated unions aren't special, just simple sum types
+05:05 < HMCa_> you have in p63 everything needed to define bool, nats, and ite, no?
+05:06 < HMCa_> they don't define them, sure... but they do define everything needed...
+05:06 < HMCa_> so i'd start there... define a bool record and a nat record, and show their well-formedness, then their typecheck
+05:06 < stoopkid> you mean express bool and nat using record types?
+05:07 < HMCa_> yes
+05:07 < stoopkid> hrmm
+05:09 < stoopkid> err, so will all types be defined with record types?
+05:10 < HMCa_> in general? no..
+05:10 < stoopkid> just the ones that aren't present in p63
+05:10 < HMCa_> not sure what you mean by that?
+05:11 < HMCa_> anyway
+05:11 < stoopkid> why are bool and nat defined with record types and not others?
+05:11 < HMCa_> well, is tangental... for now let's just "say they are" for simplicity's sake?
+05:13 < HMCa_> the real answer is that no type itself lives in any record, we just reference them from records, and name the references for re-use within other types in the record
+05:13 < stoopkid> well, i'm not really sure how to structure them as DRTs either
+05:13 < stoopkid> i can make rules
+05:13 < stoopkid> {} => {true a Bool}
+05:14 < stoopkid> {} => {false a Bool}
+05:18 < HMCa_> so you know you need a sum type to start, yes?
+05:18 < HMCa_> and this sum type should "partof" some drt
+05:19 < stoopkid> so should sum also be a DRT?
+05:19 < HMCa_> huh?
+05:19 < HMCa_> no, sum types are sum types
+05:19 < HMCa_> sigma
+05:20 < HMCa_> maybe even start by looking at some other dtlc's expressions for the bool sum type
+05:20 < HMCa_> there's one in that simpler easier blog post
+05:20 < HMCa_> or idris TT
+05:20 < HMCa_> or agda2
+05:21 < HMCa_> they should all three be more or less identical
+05:21 < HMCa_> and your 4th should look more or lees like an "anonymous" rdf expreasion representing the same structure
+05:21 < HMCa_> brb
+05:23 < stoopkid> http://www.cse.chalmers.se/~ulfn/darcs/Agda2/examples/AIM6/Path/Prelude.agda
+05:23 < stoopkid> data Bool : Set where
+05:23 < stoopkid> false : Bool
+05:23 < stoopkid> true : Bool
+05:23 < HMCa_> right, do you understand what that desugars into?
+05:24 < stoopkid> no
+05:24 < HMCa_> well, ok
+05:25 < HMCa_> well rather than muck through agda internal rep or idris TT... i'd go for door number three :-)
+05:25 < HMCa_> idris TT would probably be second easiest to see
+05:25 < HMCa_> agda... you'd pretty much have to study the compiler itself for awhile, blech :-)
+05:26 < HMCa_> brb more
+05:28 < HMCa_> http://augustss.blogspot.com/2007_10_01_archive.html
+05:29 < HMCa_> http://augustss.blogspot.com/2007_11_01_archive.html
+05:29 < HMCa_> reread both while i'm away :-)
+05:51 < stoopkid> alright well i see how to express the enumeration types and nats in terms of the others now
+05:51 < stoopkid> still don't really see how to translate all this into rdf
+05:52 -!- mnk [~mnk4@93.51.17.178] has joined #zennet
+05:53 < stoopkid> btw the author seems to hint that the only reason they're defining these types in terms of other types is due to not wanting to go through the task of ensuring that adding the types doesn't break the nice properties of the system
+05:56 < stoopkid> i should note that at this point the only thing standing between me and a working MLTT inferencer is "proper" triples conformance
+05:56 < HMCa_> well, like list internalization it is still good to understand the strict interpretation
+05:57 < HMCa_> so even with an "ite builtin" understanding the bool sigma expression is important, heh
+05:57 < HMCa_> can't be overstated XD...
+05:57 < stoopkid> well, he's got bool as a pi actually
+05:59 -!- mnk [~mnk4@93.51.17.178] has quit [Ping timeout: 240 seconds]
+05:59 < HMCa_> ah, sorry, yah that is probably confusing for you... by the bool sigma i'm actually referring to something he doesn't show here
+05:59 < HMCa_> i thought he did
+06:00 < HMCa_> anyway if you ever so go digging into agda you migyt see a fourh definition come into play
+06:00 < HMCa_> *might
+06:00 < HMCa_> that is a sigma over the other three
+06:00 < HMCa_> *fourth
+06:02 < stoopkid> not sure what you mean
+06:03 < HMCa_> Eb.True->False->Bool->b->*.
+06:04 < stoopkid> i dont understand, this looks completely different
+06:05 < HMCa_> well, nm about that for now, iirc it is irrelevant if you have records anyway...
+06:07 < HMCa_> basically that "data" keyword you see is both this sugaring and a module (namespacing) sugaring
+06:08 < stoopkid> so what should my bool drt look like
+06:13 < HMCa_> we worked it out roughly once on a pastebin, iirc
+06:16 < HMCa_> but basically it would just be a 1:1 correspondance with this "below" the drt structure, and the drt is just three entries (Bool, True, False) that wrap a sigma around each
+06:18 < stoopkid> what is the sigma quantifying over?
+06:19 < HMCa_> the record
+06:22 < stoopkid> idk, this is all very confusing
+06:23 < stoopkid> i can guarantee that if i'm confused, your users will be as well
+06:24 < HMCa_> the users don't have to implement the typecheck
+06:25 < HMCa_> they'd probably be confused by how sha sponges as well, but that doesn't keep them from using bitcoin
+06:26 < HMCa_> anyway
+06:27 < HMCa_> this isn't really any different from how agda records work
+06:28 < stoopkid> what is different about how agda works is that their devs knew what the goal was
+06:34 < HMCa_> http://wiki.portal.chalmers.se/agda/pmwiki.php?n=ReferenceManual.RecordsTutorial#syntax
+06:34 < HMCa_> our goal isn't any different
+06:36 < stoopkid> that's probably accurate, but the point was less about the goal and more about our understanding thereof
+06:38 < stoopkid> im still at the point that i don't understand p63 or how to conform to triples any better
+06:38 < stoopkid> than i did, say, last august
+06:39 < HMCa_> i still don't know what you're actually stuck on, or what you mean by "conform to triples" now
+06:40 < stoopkid> i don't know what i'm stuck on either, like i said: chinese
+06:40 < stoopkid> p63 is meaningless gibberish to me
+06:41 < stoopkid> our convos usually end with referring me back to "working some examples" from it
+06:41 < stoopkid> and that never gets me anywhere and..
+06:41 < stoopkid> well, here we are 6 months later
+06:41 < HMCa_> well i can't learn it for you?
+06:41 < stoopkid> teaching it is the other option
+06:42 < HMCa_> I've tried, but clearly still not found the missing foundational background, I guess
+06:45 < HMCa_> so what is the earliest part of p63 that you find yourself lost on?
+06:45 < stoopkid> section 3 and figure 1
+06:46 < stoopkid> it goes on just fine until section 3 and then i think the authors had a fire in their building or something
+06:46 < stoopkid> or a zombie apocalypse or some other reason to not put any detail into the most important section
+06:48 < HMCa_> ok, section 3, but morr specifically?
+06:49 < stoopkid> i can't really say i understand anything from section 3
+06:49 < HMCa_> ok
+06:50 < HMCa_> do you understand what they mean by "context"?
+06:50 < stoopkid> a situation
+06:52 < HMCa_> well, more specifically?
+06:53 < stoopkid> not really
+06:53 < HMCa_> it is some signature, yes?
+06:53 < stoopkid> sure
+06:54 < HMCa_> ok, so then you understand what they mean by the sigma projectors?
+06:55 < stoopkid> i understand what pair projection operators are
+06:55 < HMCa_> the sigma projection operators that arise from the elim rules
+06:55 < stoopkid> right
+06:55 < HMCa_> over that signature
+06:56 < HMCa_> so that gets you through definition 1, yes?
+06:56 < HMCa_> *4
+06:57 < HMCa_> i gtg soon btw
+06:57 -!- mnk [~mnk4@93.51.17.178] has joined #zennet
+06:58 < stoopkid> given a DRT, i can describe something using a sigma type quantified over that DRT and having "some type dependent on the dependent record object"
+06:59 < HMCa_> right, this is the same as that "extra sigma" that the data keyword might introduce... the same as the extra sigma the agda record syntax introduces...
+07:00 < stoopkid> so this is basically saying, you can describe some of your types using sigma types quantified over DRTs?
+07:01 < HMCa_> no, it is saying that all of your types in your record are quantified by the record!
+07:01 < HMCa_> so when you make your Bool DRT.....
+07:01 < HMCa_> i could make 5 objects of it, and have 5 kinds of bools.... why not :-)
+07:01 < HMCa_> not very interesting for bools, but
+07:02 < HMCa_> the point is that the drt is not its' records themselves...
+07:02 -!- mnk [~mnk4@93.51.17.178] has quit [Ping timeout: 260 seconds]
+07:02 < HMCa_> it is the type of those records ofc, and implies a constructor of them
+07:02 < HMCa_> follow?
+07:03 < stoopkid> < HMCa_> the point is that the drt is not its' records themselves...
+07:04 < stoopkid> well, sure, it's not its objects
+07:04 < HMCa_> right
+07:04 < HMCa_> but it gives you proof constructors for every one of its objects in the sigma, see?
+07:05 < HMCa_> and that is the end of 3.1. :-)
+07:06 < stoopkid> < HMCa_> no, it is saying that all of your types in your record are  quantified by the record!
+07:06 < stoopkid> not sure what you mean
+07:07 < HMCa_> everything "in" your record gets an existential quantification tacked on from the perspective "outside" the record
+07:08 < HMCa_> so if i have some a->b in the record it becomes an ({r:R},a->b)...
+07:09 < stoopkid> R is just the previous fields in the record?
+07:09 < HMCa_> R is the drt, r is the object of the drt
+07:10 < HMCa_> the particular Bool out of my 5 Bools that i use when i call True...
+07:10 < HMCa_> (if R is Bool)
+07:10 < stoopkid> hrm
+07:11 < HMCa_> the record object itself is r, and every entry of R is quantified by an r:R sigma from the outside
+07:12 < HMCa_> given this combined with the dependencies within the record (entries can refer to earlier entries)....
+07:12 < HMCa_> and you see why this is like a "package" as they say
+07:13 < HMCa_> the "IC"... this "extra intent" that we shove into the proof structuring... turns out to be a powerfully tricky thing in all of this...
+07:15 < HMCa_> nearly as powerfully tricky as tau's "one new invention" and deeply related in some ways, heh... taus "one new thing" is just this same concept applied to universes, as modules, in a proper mltt *hierarchy* instead of linear set levels...
+07:15 < HMCa_> but that is an even more confusing thing for another day ;-)
+07:16 < HMCa_> for now... it is enough that it seems that you *do* understand section 3.1 in the end
+07:16 < HMCa_> so maybe i've not been such a terrible teacher after all?
+07:16 < stoopkid> well, almost
+07:16 < stoopkid> i don't really understand what this means that it "looks its quantified from the outside perspective"
+07:17 < stoopkid> looks like*
+07:17 < HMCa_> ok, back to that agda page
+07:17 < HMCa_> and the agda record syntax
+07:18 < HMCa_> you see much like the 'data' keyword it desugars into a set of cons/case definitions, and a sigma
+07:19 < HMCa_> gtr, but see there about opening records, and read on about modules (and module parameterization, which gets into wven crazier quantification tricks, heh)
+07:19 < HMCa_> *even
+07:20 < stoopkid> ok will do
+07:20 < HMCa_> anyway, what they mean here is that this 'open' is the same for this IC sigma as for a module, so this IC sigma serves as a package relating the entries of the drt
+
+
+
+May 8
+
+19:17 < HMCa_> st0opkid: ready for section 3.2? :-)
+19:18  * st0opkid pulls up section 3.2
+19:23 < HMCa_> ok, so I think everything through the first mention of "is-of-type" is pretty clear, so we'll jump to just after that?
+19:23 < HMCa_> then we have this "Type constructors, are objects related to the
+19:23 < HMCa_> subject "Type" with the same predicate "is-of-type" as above. In such a way,
+19:23 < HMCa_> we get a single relation for both types and meta-types (i.e., sorts). "
+19:26 < HMCa_> so we see right away that they leave things a bit ambiguous as to the top of their typesystem... they don't explicitly say that they are mltt, but they also don't explicitly say that they are type-in-type
+19:27 < HMCa_> but for our purposes we can proceed under an assumption of mltt, and imagine that these sorts are further related to higher sorts via the same is-of-type relation, to establish an mltt hierarchy
+19:27 < HMCa_> follow?
+19:28 < st0opkid> sure
+19:29 < HMCa_> cool, so we're already 3/4 through 3.2 and it still seems you knew it after all? :-)
+19:30 < HMCa_> ok, so now we get to the objects themselves
+19:30 -!- tau-git [~tau-git@192.30.252.45] has joined #zennet
+19:30 -tau-git:#zennet- [tauchain] naturalog pushed 1 new commit to master: https://github.com/naturalog/tauchain/commit/e2cc691a639f7d3ae6c2ccecce3c5590cce81550
+19:30 -tau-git:#zennet- tauchain/master e2cc691 naturalog: misc
+19:30 -!- tau-git [~tau-git@192.30.252.45] has left #zennet []
+19:31 < HMCa_> although they don't elaborate much, probably becauae they assume you're already well familiar with rdf, they point out that the structure of objects' properties is kept consistent with an xml tree structure
+19:34 < HMCa_> basically they're just explicating that they don't introduce any "more" object structure than this xml representative expression tree
+19:35 < HMCa_> and finally they go on to point out that preserving such a structure in objects allows for a natural extension of this structure to indicate subtyping "above" our objects
+19:36 < HMCa_> in other wordsm that we can te rhese object trees and use the same ancestor relation for the type hierarchy above the objects
+19:37 < HMCa_> we can attach our object instance expression trees into our type hierarchy expression trees
+19:37 < HMCa_> follow?
+19:38 < HMCa_> *words that we can take these object...
+19:43 < HMCa_> brb
+19:50 < st0opkid> sorry had to go afk a bit
+19:50 < st0opkid> but no i don't really understand
+19:54 < HMCa_> ok, which part?
+19:55  * HMCa_ still semi-afk for a bit though, but i'll do my best to answer questions as i can
+20:21 -!- sifar [~sifar@unaffiliated/sifar] has quit [Ping timeout: 265 seconds]
+20:22 -!- sifar [~sifar@59.99.96.45] has joined #zennet
+20:22 -!- sifar [~sifar@59.99.96.45] has quit [Changing host]
+20:22 -!- sifar [~sifar@unaffiliated/sifar] has joined #zennet
+20:42 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has quit [Ping timeout: 260 seconds]
+20:58 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has joined #zennet
+21:02 < stoopkid> what is this XML tree structure?
+21:03 < stoopkid> sorry, keep getting pulled away from the computer and am about to have to head off again
+21:26 -!- st0opkid [~stoopkid@unaffiliated/stoopkid] has quit [Read error: Connection reset by peer]
+21:27 -!- st0opkid [~stoopkid@unaffiliated/stoopkid] has joined #zennet
+22:25 -!- sifar [~sifar@unaffiliated/sifar] has quit [Quit: Leaving]
+22:25 -!- icocountdown [d598a1b5@gateway/web/cgi-irc/kiwiirc.com/ip.213.152.161.181] has quit [Quit: http://www.kiwiirc.com/ - A hand crafted IRC client]
+22:29 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has quit [Ping timeout: 276 seconds]
+22:46 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has joined #zennet
+22:55 < HMCa_> st0opkid: just whatever the xml rrpresentation of the object is
+22:56 -!- koo7 [~kook@210.14.broadband15.iol.cz] has quit [Ping timeout: 260 seconds]
+23:09 < st0opkid> "object" being some MLTT expression?
+23:13 < HMCa_> well
+23:14 < HMCa_> specifically some inhabitent
+23:14 < HMCa_> the data structure instance itself
+23:16 -!- koo7 [~kook@210.14.broadband15.iol.cz] has joined #zennet
+23:16 < HMCa_> <person><name><fname>john</fname><lname>doe</lname></name><location><building> ..... </person>
+23:20 < HMCa_> in lisp s-exp: (person (name (fname "john") (lname "doe")) (location (building.... )))
+23:21 < HMCa_> err, thats not quite right
+23:24 < HMCa_> well, it could work but you'd probably more commonly see it as something closer to: (person ("name" (name ("fname "john") ("lname" "doe"))) ("location" (location ("building".... )))
+23:25 < HMCa_> in rdf: [a person; name [fname "john"; lname "doe"]; location [a building;...]]
+23:27 < HMCa_> the point they make is that these are all equivalent property tree structure representations of the same object, and we treat them as such
+23:29 < HMCa_> "The ?-types
+23:29 < HMCa_> are mapped into XML descriptions which themselves describe RDF resources in
+23:29 < HMCa_> order to support sharing and reuse. The XML Schema structures are isomorphic
+23:29 < HMCa_> to Lisp expressions and allow type inferences within the Theorem Prover."
+23:30 -!- st0opkid [~stoopkid@unaffiliated/stoopkid] has quit [Read error: Connection reset by peer]
+23:30 -!- st0opkid [~stoopkid@unaffiliated/stoopkid] has joined #zennet
+23:30 < HMCa_> so this is just a fancy way of pointing out that sum types, rdf/xml, and lisp s-exp share this common structure
+23:32 < HMCa_> this is "self-evident" between sum types and s-expr, and rdf/xml may be non-obvious but is simply the case
+23:33 < HMCa_> and finally they conclude with
+23:34 < HMCa_> "The
+23:34 < HMCa_> relations referred to as "has-part-of" predicate arrange ?-types and DRTs into
+23:34 < HMCa_> a hierarchical structure which model easily sub-typing relations (see figure 1)."
+23:34 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has quit [Ping timeout: 252 seconds]
+23:36 < HMCa_> so here they just point out that the second "upper" type hierarchy can use the same structure "above" the objects, with the secondary hiearchy structure (type *references*) being denoted by a new predicate "part-of"
+23:36 -!- mnk [~mnk4@93-40-190-225.ip40.fastwebnet.it] has quit [Ping timeout: 276 seconds]
+23:38 < HMCa_> so we have object property trees "below" (that cross-reference to form a graph)...
+23:39 < HMCa_> and we have type hierarchy trees "above" (that cross-reference along a second tree to form a graph)...
+23:39 -!- koo7 [~kook@210.14.broadband15.iol.cz] has quit [Ping timeout: 246 seconds]
+23:41 < HMCa_> "above" that we have the signature of top level type constructors (namings and sorts)
+23:44 < HMCa_> "above" that, the universe (here p63 stops, leaving the type-in-type option on the table.  tau goes further, up into a universe hierarchy, which is a little different, but let's not worry about that for now...)
+23:46 -!- icocountdown [d598a14a@gateway/web/cgi-irc/kiwiirc.com/ip.213.152.161.74] has joined #zennet
+23:46 < HMCa_> so that leads on from sec 3 to fig 1 a bit...
+23:46 < HMCa_> so i'll stop for a moment.  other questions about sec 3?
+
+
+May 10
+
+
+17:56 < HMCa_> :01 < stoopkid> what godel showed is that if your theory is sufficiently powerful (to express arithmetic) then it's either consistent and incomplete, or inconsistent and complete
+17:56 < HMCa_> almost...
+17:57 < HMCa_> it says that if the logic is sufficient to express arith, then it can be only one of consistent or complete
+17:57 < HMCa_> your explanation leaves out the third case: neither. ;-)
+17:57 < stoopkid> ah, right, i forgot about the neither case
+17:58 < HMCa_> :07 < stoopkid> HMCa_: so, if sigma-types look like "[a person; name [fname "john"; lname "doe"]; location [a building;...]]", then what do pi-types look like?
+17:58 < HMCa_> first, stop confusing objects and their types :-P
+17:58 < HMCa_> *objects* of sigma types look like that
+17:58 < HMCa_> the type definitions themselves look like as in fig 1
+17:59 < HMCa_> so pi types... also look as in fig 1
+17:59 < HMCa_> so your question is probably actually "what do objects of pi types look like?"?
+17:59 < HMCa_> and the answer to that is just "a proposition"
+18:00 < stoopkid> well, arg-1 for the sigma-type for this object would be "Person", i'm not sure what arg-2 would be though
+18:00 < HMCa_> well
+18:00 < HMCa_> sigmas of sigmas of sigmas of.... :-)
+18:01 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has quit [Quit: Leaving.]
+18:01 < HMCa_> is non-linear
+18:01 < HMCa_> is a tree
+18:02 < stoopkid> still not sure what arg-2 would be
+18:04 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has joined #zennet
+18:04 < stoopkid> if you just had [a person; name [fname "john"; lname "doe"]], then i'd say that maybe the pred "name" is our arg-2
+18:05 < stoopkid> name : Person -> Type, it kinda fits
+18:06 < HMCa_> the args of a sigma are other types
+18:06 -!- Guest89406 [~socrates1@li175-104.members.linode.com] has quit [Changing host]
+18:06 -!- Guest89406 [~socrates1@unaffiliated/socrates1024] has joined #zennet
+18:06 -!- Guest89406 is now known as amiller
+18:07 < stoopkid> so i'd say "Person part-of ThisSigma. ?? part-of ThisSigma"
+18:07 < HMCa_> so the arg1 is not person, but this 'name' type... 
+18:07 < HMCa_> "person" is the "thissigma"
+18:08 < stoopkid> so "thissigma" is defining what it means to be a person, rather than specifying what it means to be "a person meeting such-and-such requirements" ?
+18:09 < HMCa_> i don't see a difference
+18:10 < stoopkid> the former is specifying the requirements an "object" must have in order to be a person
+18:10 < stoopkid> the latter is specifying the requirements a "person" must have in order to meet such-and-such requirements
+18:10 < HMCa_> maybe this "person" example is not the best to start with, heh
+18:10 < HMCa_> it is the former, tho
+18:11 < HMCa_> a type (here person) defines the structure of tye objects of thaat type (here our example bnode)
+18:13 -!- icocountdown [d598a12d@gateway/web/cgi-irc/kiwiirc.com/ip.213.152.161.45] has quit [Quit: http://www.kiwiirc.com/ - A hand crafted IRC client]
+18:13 < stoopkid> so, "name part-of Person. ?? part-of Person"
+18:13 < stoopkid> (i don't really see the intuition behind saying that the sigma-type is quantifying over "name")
+18:26 < HMCa_> that's part of why i say this is probably not the best example to start from, since it is a sigma of a single pi
+18:27 < HMCa_> there *is* no arg-2 in this example :-P
+18:27 < HMCa_> (of the sigma)
+18:30 < stoopkid> what about location?
+18:30 -!- sifar [~sifar@unaffiliated/sifar] has quit [Quit: Leaving]
+18:30 < stoopkid> or is this like "sigma x : Name*Location . <nothing>"
+18:31 < stoopkid> perhaps "sigma x : Name*Location . True"
+18:32 < HMCa_> name/location/etc will be the arguments to the pi type
+18:32 < stoopkid> pi types have arguments?
+18:33 < stoopkid> i don't see any part-of relationship pointing at pi-types
+18:33 < HMCa_> is what the prop ranges over...
+18:34 < HMCa_> all types have arguments :-P
+18:34 < HMCa_> *all non-simple types have arguments
+18:34 < stoopkid> non-simple == dependent?
+18:35 < HMCa_> non-simple == pi, sigma, or drt
+18:35 < HMCa_> so yes :-)
+18:36 < stoopkid> well, i see DRTs and sigmas have a part-of relationship pointing to them
+18:36 < stoopkid> not pis though
+18:36 < stoopkid> not prop either
+18:39 < HMCa_> right, part-of is only necessary for sigma types (incl drt) because props "already" have a domain
+18:39 < HMCa_> so
+18:39 < HMCa_> it seems that maybe when you said that you understood section 2, you were mistaken?
+18:40 < stoopkid> definitely, heh
+18:40 < stoopkid> i understood something
+18:40 < stoopkid> but apparently it wasn't section 2
+18:40 < stoopkid> err, 3*
+18:42 < HMCa_> no, i do mean sect 2
+18:43  * stoopkid reads over section 2 again to see if anything jumps out
+18:43 < HMCa_> the titi has wings.  This is an object of a pi type.  See its argument, x:bird?  See that it is just the domain of has_wings?
+18:44 < stoopkid> well, ok let's go over their titi example real quick
+18:45 < HMCa_> i gtr in a sec
+18:45 < HMCa_> well actually i gtr ~15 min ago, but.... heh...
+18:46 < stoopkid> "An instance of the pi-type would be has_wings(titi) : P(x)"
+18:46 < stoopkid> this does not make any sense to my understanding of type theory
+18:47 < stoopkid> moreover, if it did make sense, it would be "has_wings(titi) : P(titi)"
+18:47 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has quit [Quit: Leaving.]
+18:47 < stoopkid> but an instance of a Pi-type is a dependent function
+18:48 < stoopkid> has_wings(titi) is not (or at least not phrased as) being a dependent function
+18:48 < stoopkid> has_wings(titi) is an element of the type family P(x) at index x := titi
+18:48 < stoopkid> not phrased as being)*
+18:49 < HMCa_> the proposition is the same predicate for any object, so P(x) and P(titi) are the same thing...
+18:49 < HMCa_> (any object in the domain of the prop)
+18:50 < HMCa_> has_wings is the depdent function here
+18:50 < stoopkid> so has_wings is the instance of the pi-type
+18:50 < HMCa_> correct
+18:51 < stoopkid> so i'm correct to say that their sentence their is entirely incorrect
+18:51 < stoopkid> there*
+18:51 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has joined #zennet
+18:51 < HMCa_> no?
+18:51 < rszeno> where is the separation beteen normal functilons and type functions?
+18:52 < HMCa_> rszeno: what seperation?
+18:52 < stoopkid> you say i'm correct to say that "has_wings" is the instance of the pi-type
+18:52 < stoopkid> they has "has_wings(titi)" is the instance of the pi-type
+18:52 < stoopkid> they have*
+18:54 < stoopkid> has_wings(titi) is only being applied to titi, it can't possibly be universally quantifying over "bird"
+18:54 < rszeno> you have has_wings(titi) a type functions, right?
+18:54 < stoopkid> therefore i hold that they are incorrect
+18:55 < rszeno> a func defined on types with types as values
+18:55 < HMCa_> stoopkid: an instance of a pi type does not quantify... the instance substitutes, the abstraction goes away...
+18:55 < HMCa_> the *type* quantifies
+18:55 < stoopkid> so "instance of a pi-type =/= object of a pi-type"
+18:56 < stoopkid> lambdas quantify as well
+18:56 < HMCa_> ??
+18:56 < stoopkid> an object of a pi type is a dependent function
+18:56 < stoopkid> not the result of that dependent function being applied to some object in that dependent function's domain
+18:56 < HMCa_> has_wings qutifies over bird, has_wings(titi) quantifies over nothing, it is not an abstraction 
+18:57 < stoopkid> that's what i'm saying
+18:57 < rszeno> so titi is type or instance of a type?
+18:58 < stoopkid> titi is an instance of type bird
+18:58 < HMCa_> rszeno: titi is an instance of bird
+18:58 < stoopkid> has_wings(titi) is *not* an instance of pi (x:bird).P(x)
+18:58 < rszeno> subtype/variant
+18:59 < stoopkid> if has_wings := \x:bird.e[x], where e[x] : P(x), then has_wings is an instance of pi(x:bird).P(x)
+19:00 < stoopkid> either Martin-Lof is correct or Dapoigny & Barlatier are, but not both :)
+19:00 < rszeno> is e or P, :)
+19:01 < stoopkid> well, lemme rephrase: they're not necessarily "wrong", but they are making up a definition of "instance of" that i'm unfamiliar with
+19:01 < stoopkid> and this definition does not correspond to "object of"
+19:01 < HMCa_> i think you're confused by the seperation of the type and the prop, maybe
+19:01 < rszeno> ok, :)
+19:02 < rszeno> me?
+19:02 < HMCa_> no, stoopkid 
+19:03 < HMCa_> what they say there is neither incorrect nor contradictory with mltt
+19:04  * rszeno what about sorts and kinds
+19:04 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has quit [Quit: Leaving.]
+19:05 < stoopkid> well, i agree that has_wings(titi) : P(x)
+19:05 < stoopkid> you'll have to give me a definition of "instance of" if i'm to agree with the first half of the sentence though
+19:05 < HMCa_> rszeno: no, we are mltt, so we have stratified universes in a heirarchy instead
+19:06 < rszeno> ok, i don't like but... let it be, :)
+19:06 < HMCa_> maybe s/the following pi-type/the following pi type and single instance/ ?
+19:07 < HMCa_> that is the only thing they are ambiguous about there
+19:07 < HMCa_> rszeno: 
+19:07 < HMCa_> a) whats not to like
+19:07 -!- scippio [~scippio@ip-89-176-233-239.net.upcbroadband.cz] has joined #zennet
+19:07 < HMCa_> b) our goal is not "use things rszenp enjoys" :-)
+19:07 < rszeno> usualy naothing
+19:07 < HMCa_> *rszeno
+19:08 < rszeno> is about a), :)
+19:08 < stoopkid> i'll just pretend they didn't write that sentence and go with the assumption that has_wings : pi(x:bird).P(x), and has_wings(titi) : P(titi)
+19:09 < HMCa_> surr, as long as you can agree that P(x) and P(titi) are the same thing, then we're good with that :-)
+19:09 < stoopkid> they're the same thing under the assumption that x and titi are the same thing, sure, and if you want to say that has_wings(titi) forces that to be the case, then sure
+19:10 < HMCa_> i do, because it does!  And it is important... because that is exactly our defined prop...
+19:10 < stoopkid> P(x) ?
+19:10 < HMCa_> Pi types are whwt associate our sigma structures back to our actual rules (incl facts)
+19:10 < HMCa_> *what
+19:12 < stoopkid> not sure what you mean by that
+19:12 < HMCa_> this pi instance has_wings gives the type constraint to P.
+19:12 < HMCa_> it's what will ultimately prevent us from being able to say that some particular pig instance has wings
+19:13 < HMCa_> unless we first also make a type instance like "has_wings:Pi x:dog.P(x)"
+19:13 < HMCa_> err
+19:13 < HMCa_> s/dog/pig/
+19:13 < HMCa_> sorry, distracted
+19:13 < HMCa_> and gtr
+19:14 < HMCa_> running very late now XD
+
+
+
+May 12
+
+18:56 < HMCa_> stoopkid: no... the domain/range of the prop and it's pi type are seperate
+18:57 < stoopkid> hrm
+18:57 < stoopkid> pi x:bird . P(x)
+18:57 < HMCa_> the pi type should "match" the domain/range though, as that is ultimately what the typechecking checks... usages
+18:57 < stoopkid> P(x) is the proposition, correct?
+18:58 < stoopkid> hrm
+18:59 < stoopkid> so what would domain/range be for both the pi-type and prop in this example?
+19:00 < stoopkid> i have one of the 4: domain of the pi-type is bird
+19:08 < HMCa_> yes, and range would be Type (the "Type_i")
+
+
+
+
+
+21:24 < HMCa_> stoopkid: the domain/range of has_wings and of P are the same
+21:24 < HMCa_> that is kind of "the point" of this whole thing... 
+21:25 < HMCa_> it's what makes P be "typed" by the whole drt "mess" that is "around" P in the signature
+21:26 < HMCa_> P is just some simple proposition, has_wings carries that proposition into the deptype signatures
+21:28 < HMCa_> that's why that big dark grey 'Prop' box is so important, that is where the abstractions that we are typing over actually "live"... in those propositional definitions...
+21:29 < HMCa_> that is where the rules that we are typing are, and how they get "connected to" their types
+21:30 < HMCa_> if the domain/range of a Pi and the domain/range of its' P do not align, that is the very definition of a failure to typecheck! ;-)
