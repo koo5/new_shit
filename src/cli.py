@@ -40,24 +40,30 @@ def handle(text=None):
 		print (len(msg.results), "results")
 		return msg.results
 
-def lc1(text):
-	#this just prints the characters you got from stdin?
+def parse(text):
+	#this just prints the characters you got from stdin
 	#prefixed by their position in the string
 	for i,x in enumerate(text):
 		print(i, x)
 	m.enqueue_precomputation(None)
 	return handle(text)
 
+
+mod="lc1-test",nodes.lc1
+mod="lc2-test",nodes.lc2
+
+
+
 #so this runs before the __main__ is called
 r = nodes.make_root()
-scope = r["lc1-test"].scope()
-m.collect_grammar(scope,nodes.lc1.exp)
+scope = r[mod[0]].scope()
+m.collect_grammar(scope,mod[1].exp)
 
 #the condition is true when you do like python ./cli.py,
 #false when you run ipython and just import cli
 if __name__=='__main__':
 	text = sys.stdin.read()[:-1]
-	p=lc1(text)[0]
+	p=parse(text)[0]
 	print (p.eval())
 	#reads stdin, cuts off last char
 
