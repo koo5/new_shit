@@ -37,12 +37,13 @@ from frontend_events import *
 
 
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
-if True:#False:#hasattr(sys, 'pypy_version_info'):
+if False:#hasattr(sys, 'pypy_version_info'):
 	print ("trying to load pygame_cffi, adding pygame_cffi to sys.path")
 	try:
 		sys.path.append("pygame_cffi")
 		import pygame
-	except:
+	except e:
+		print(e)
 		sys.path.remove("pygame_cffi")
 import pygame
 if hasattr(pygame, 'cffi'):
