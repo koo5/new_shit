@@ -24,7 +24,7 @@ log=logger.debug
 
 import nodes
 from tags import *
-from element import Element
+from element import Element, _collect_tags
 from menu_items import InfoItem
 import widgets
 import elements_keybindings
@@ -618,6 +618,3 @@ def load(name):
 	editor.render()
 	try_move_cursor(root.root['loaded program'])
 
-
-def _collect_tags(elem, tags):
-	return elem._collect_tags(tags)

@@ -3277,7 +3277,7 @@ def build_in_lemon_language():
 
 	build_in([
 		SyntaxedNodecl(WorksAs,
-					   [ChildTag("sub"), TextTag("works as"), ChildTag("sup")],
+					   [ChildTag("sub"), TextTag(" works as "), ChildTag("sup")],
 					   {'sub': 'type', 'sup': 'type'}),
 
 		SyntacticCategory({'name': Text("expression")})
@@ -3843,7 +3843,7 @@ def build_in_lc1(r):
 	build_in(WorksAs.b(lc1.var, lc1.exp), False, lc1)
 
 
-	r["lc1"].ch.statements.items = list(itervalues(lc1._dict))
+	r["lc1"].ch.statements.items.extend(list(itervalues(lc1._dict)))
 	
 
 
@@ -4017,7 +4017,7 @@ lc2._dict = odict()
 def build_in_lc2(r):
 	r["lc2"] = new_module()
 	r["lc2"].ch.statements.items = [
-		Comment("""simply lambda calculus""")]
+		Comment("""simply typed lambda calculus""")]
 
 	r["lc2-test"] = new_module()
 	r["lc2-test"].special_scope = [r["lc2"], B.number];
@@ -4153,7 +4153,7 @@ App := Expr " " Expr
 	build_in(WorksAs.b(lc2.var, lc2.exp), False, lc2)
 
 
-	r["lc2"].ch.statements.items = list(itervalues(lc2._dict))
+	r["lc2"].ch.statements.items.extend(list(itervalues(lc2._dict)))
 	
 
 

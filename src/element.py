@@ -128,36 +128,38 @@ class Element():
 
 
 	def collect_tags(s):
-		for t in s._collect_tags(s.tags()):
+		for t in _collect_tags(s, s.tags()):
 			yield t
 
-	def _collect_tags(elem, tags):
-		"""make a flat list, expanding child elements"""
-		for tag in tags:
-			if type(tag) in (GeneratorType, list):
-				for i in elem._collect_tags(tag):
-					yield i
 
-			elif type(tag) == TextTag:
-				yield tag.text
+def _collect_tags(elem, tags):
+	"""make a flat list, expanding child elements"""
+	for tag in tags:
+		if type(tag) in (GeneratorType, list):
+			#recurse
+			for i in _collect_tags(elem, tag):
+				yield i
 
-			elif type(tag) == ChildTag:
-				e = elem.ch[tag.name]
-				for i in e.collect_tags():
-					yield i
+		elif type(tag) == TextTag:
+			yield tag.text
 
-			elif type(tag) == MemberTag:
-				e = elem.__dict__[tag.name] #get the element as an attribute #i think this should be getattr, but it seems to work
-				for i in e.collect_tags():
-					yield i
+		elif type(tag) == ChildTag:
+			e = elem.ch[tag.name]
+			for i in e.collect_tags():
+				yield i
 
-			elif type(tag) == ElementTag:
-				e = tag.element
-				for i in e.collect_tags():
-					yield i
+		elif type(tag) == MemberTag:
+			e = elem.__dict__[tag.name] #get the element as an attribute #i think this should be getattr, but it seems to work
+			for i in e.collect_tags():
+				yield i
 
-			else:
-				yield tag
+		elif type(tag) == ElementTag:
+			e = tag.element
+			for i in e.collect_tags():
+				yield i
+
+		else:
+			yield tag
 
 
 

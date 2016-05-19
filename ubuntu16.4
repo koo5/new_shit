@@ -5,10 +5,12 @@ sudo apt-get install  -y   cwebx texinfo  git  mercurial python3-dev python3-num
         build-essential autoconf automake libtool
 
 
-pip3 install \
- --user cffi \
+pip3 install --user \
+  cffi \
   fuzzywuzzy  
 
+pip3 install --user pygame
+#?
 
 git clone https://github.com/jeffreykegler/libmarpa.git       
 cd libmarpa;    
