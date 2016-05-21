@@ -6,13 +6,23 @@ from cli import parse
 
 
 def do(t):
-	for i,r in enumerate(parse(t)):
-		print (i, ":", r)
-		print(r.tostr())
-		#r = r.unparen()
+	p = parse(t)
+	#or,
+	if (len(p) > 1):
+		for i,r in enumerate(p):
+			print (i, ":", r)
+			print(r.tostr())
+		print( "we couldnt prove that our grammar isnt ambiguous, but we can tell that your program is!")
+	else:
+
+		for i,r in enumerate(p):
+			print (i, ":", r)
+			print(r.tostr())
+			#r = r.unparen()
 		
-		print("type check:",r.type_check().tostr())
-		print("eval:",r.eval().tostr())
+			#type-check it before evaluating:
+			print("type check:",r.type_check().tostr())
+			print("eval:",r.eval().tostr())
 
 for t in [
 #"(\\a.b) c",
