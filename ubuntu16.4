@@ -1,16 +1,15 @@
 sudo apt-get install  -y   cwebx texinfo  git  mercurial python3-dev python3-numpy libav-tools \
     libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
     libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
-        libfreetype6-dev   python3-pip   python-levenshtein   \
-        build-essential autoconf automake libtool
+        libfreetype6-dev   python3-pip   python3-levenshtein   \
+        build-essential autoconf automake libtool libffi-dev
 
 
 pip3 install --user \
   cffi \
-  fuzzywuzzy  
-
-pip3 install --user pygame
-#?
+  fuzzywuzzy \
+  hg+http://bitbucket.org/pygame/pygame
+  
 
 git clone https://github.com/jeffreykegler/libmarpa.git       
 cd libmarpa;    
