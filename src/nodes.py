@@ -4483,7 +4483,66 @@ App := Expr " " Expr
 		
 		
 		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 cube = Dotdict() #a helper dict to hold the nodes being built in and to refe
 cube._dict = odict()
 
@@ -4545,14 +4604,6 @@ def build_in_cube(r):
 		{'exp': cube.exp}), None, cube)
 	build_in(WorksAs.b(cube.parexp, cube.exp), False, cube)
 
-
-"""
-:)
-so i guess we'll just replace type with expression?
-well, thats what the cube says, no?
-i cant tell if there's any subtle distinction going on
-there probably isn't though	
-"""
 
 
 	class PiType(Syntaxed):
@@ -4688,7 +4739,7 @@ there probably isn't though
 				
 				#func_t := ((\t:*.t->t) int) -> ((\t:*.t->t) int)
 				#arg_t := int->int 
-				if (not (betaEq(func_t.ch.type,arg_t)):
+				if (not (betaEq(func_t.ch.type,arg_t))):
 					print("Error: bad argument type")
 					assert False
 				
