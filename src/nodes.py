@@ -4479,10 +4479,6 @@ App := Expr " " Expr
 	for x in [Var, App, Abs]:
 		x.type_check = tc
 		
-		
-		
-		
-		
 
 
 
@@ -4495,46 +4491,30 @@ App := Expr " " Expr
 
 
 
+"""
+    	 _________________________
+        / _____________________  /|
+       / / ___________________/ / |
+      / / /| |               / /  |
+     / / / | |              / / . |
+    / / /| | |             / / /| |
+   / / / | | |            / / / | |
+  / / /  | | |           / / /| | |
+ / /_/__________________/ / / | | |
+/________________________/ /  | | |
+| ______________________ | |  | | |
+| | |    | | |_________| | |__| | |
+| | |    | |___________| | |____| |
+| | |   / / ___________| | |_  / /
+| | |  / / /           | | |/ / /
+| | | / / /            | | | / /
+| | |/ / /             | | |/ /
+| | | / /              | | ' /
+| | |/_/_______________| |  /
+| |____________________| | /
+|________________________|/
 
-
-
-
-
-
-
-
-
-
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"""
 
 
 
@@ -4615,10 +4595,10 @@ def build_in_cube(r):
 		"""]
 	build_in(SyntaxedNodecl(FunType,
 		[
-		[ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("return")],
+		[ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("ret")],
 		["function from ", ChildTag("from"), " to ", ChildTag("to")]
 		],
-		{'arg': cube.var, 'type': cube.exp, 'return': cube.exp}), None, cube)
+		{'arg': cube.var, 'type': cube.exp, 'ret': cube.exp}), None, cube)
 	build_in(WorksAs.b(cube.pitype, cube.exp), False, cube)
 
 
@@ -4744,7 +4724,7 @@ def build_in_cube(r):
 					assert False
 				
 				else:
-					return subst(func_t.ch.return, func_t.ch.arg, expr.ch.e2)
+					return subst(func_t.ch.ret, func_t.ch.arg, expr.ch.e2)
 			
 			else:
 				print("Error: trying to apply(call) something that's not a function")
@@ -4772,7 +4752,7 @@ def build_in_cube(r):
 			#expr.ch.exp to be able to potentially return a type expression
 			#that depends on 'expr.ch.var' ?
 			
-			rt = PiType({'arg':expr.ch.var,'type':expr.ch.type,'return':expr_t})
+			rt = PiType({'arg':expr.ch.var,'type':expr.ch.type,'ret':expr_t})
 			
 			#now that we've constructed the pi-type for our lambda abstraction,
 			#we're going to type-check the pi-type itself and make sure it
@@ -4795,7 +4775,7 @@ def build_in_cube(r):
 			
 			#type-check-reduce the body of the abstraction
 			#using the new set of type assumptions
-			t = whnf(type_check(expr.ch.return,tmp_env))
+			t = whnf(type_check(expr.ch.ret,tmp_env))
 			
 			
 			#both s and t should be either * or []
@@ -4808,7 +4788,7 @@ def build_in_cube(r):
 			#we control what corner what of the cube
 			#we're using
 			if ( (s,t) not in allowedKinds):
-				print "Bad abstraction"
+				print ("Bad abstraction")
 				assert False
 			
 			#the type of a pi-type is the type of it's body?
@@ -4879,7 +4859,7 @@ def build_in_cube(r):
 		#with the bound variable removed
 		if isinstance(expr,PiType):
 			free_t = FreeVars(expr.ch.type,vars)
-			free_e = FreeVars(expr.ch.return,vars)
+			free_e = FreeVars(expr.ch.ret,vars)
 			free_e.remove(expr.ch.arg.varName)
 			return free_t.union(free_e)
 		
@@ -4934,7 +4914,7 @@ def build_in_cube(r):
 			#fresh variable so that it won't interfere with the
 			#free variables in 'by'. then substitute 'by' for 'what'
 			#in both the input-type and the abstraction body
-			else if (where.ch.var.varName in FreeVars(by)):
+			elif (where.ch.var.varName in FreeVars(by)):
 				z = genFreshVarName()
 				t1 = subst(where.ch.exp,where.ch.var,z)
 				return Abs({
@@ -4958,24 +4938,24 @@ def build_in_cube(r):
 			if (where.ch.arg.varName == what.varName):
 				return PiType({
 					'arg':where.ch.arg,
-					'type':subst(where.ch.type,what,by)
-					'return':where.ch.exp
+					'type':subst(where.ch.type,what,by),
+					'ret':where.ch.exp
 					})
 			
-			else if (where.ch.arg.varName in FreeVars(by)):
+			elif (where.ch.arg.varName in FreeVars(by)):
 				z = genFreshVarName()
-				t1 = subst(where.ch.return,where.ch.arg,z)
+				t1 = subst(where.ch.ret,where.ch.arg,z)
 				return PiType({
 					'arg':z,
-					'type':subst(where.ch.type,what,by)
-					'return':subst(t1,what,by)
+					'type':subst(where.ch.type,what,by),
+					'ret':subst(t1,what,by)
 					})
 			
 			else:
 				return PiType({
 					'arg':where.ch.arg,
-					'type':subst(where.ch.type,what,by)
-					'return':subst(where.ch.return,what,by)
+					'type':subst(where.ch.type,what,by),
+					'ret':subst(where.ch.ret,what,by)
 					})
 		
 		#* and [] both don't contain any vars so you're not gonna
@@ -5046,8 +5026,8 @@ def build_in_cube(r):
 		if (type(expr1) == PiType):
 			return (alphaEq(expr1.ch.type,expr2.ch.type)
 				and alphaEq(
-					expr1.ch.return,
-					subst(expr2.ch.return,expr2.ch.arg,expr1.ch.arg)
+					expr1.ch.ret,
+					subst(expr2.ch.ret,expr2.ch.arg,expr1.ch.arg)
 					)
 				)
 		#there's only one * and there's only one [], and we know
@@ -5104,7 +5084,7 @@ def build_in_cube(r):
 			return Abs({'var':expr.ch.var,'type':nf(expr.ch.type),'exp':nf(expr.ch.exp)})
 		
 		if isinstance(expr,PiType):
-			return PiType({'arg'.expr.ch.arg, 'type':nf(expr.ch.type),'return':nf(expr.ch.return)})
+			return PiType({'arg':expr.ch.arg, 'type':nf(expr.ch.type),'ret':nf(expr.ch.ret)})
 	
 	
 	
@@ -5119,7 +5099,7 @@ def build_in_cube(r):
 	#spine (Lam s e) (a:as) = spine (subst s a e) as
 	#spine f as = foldl App f as
 	
-	def whnf(expr)
+	def whnf(expr):
 		#variables, abstractions, and pi-types are already in weak-head normal form
 		#so just return them
 		if type(expr) in [Var,Abs,PiType,StarKind,BoxKind]:
