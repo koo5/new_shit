@@ -3163,7 +3163,7 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	
 	build_in_lc1(r)
 	build_in_lc2(r)
-
+	build_in_cube(r)
 
 
 
@@ -4243,6 +4243,7 @@ App := Expr " " Expr
 
 
 
+#?
 	for x in [BoolTrue, BoolFalse]:
 		x._eval = lambda s:s.copy()
 
@@ -4534,7 +4535,7 @@ def build_in_cube(r):
 
 	r["cube-test"] = new_module()
 	r["cube-test"].special_scope = [
-		r["cube"], 
+		r["cube"]
 		#B.number
 	];
 	
@@ -4590,16 +4591,179 @@ def build_in_cube(r):
 		help = ["""function type
 		
 		is this equivalent to FunType? whats the var there for?
+		yea this is the new function type, it's actually a 
+		generalization of function types: it's *dependent* function
+		types, meaning the return type can depend on the input
+		*value*, meaning the return type can be given as an
+		expression in terms of the input value (which is what the
+		var is there for)
+		\\x:t -> (x -> x)
+		so (x -> x) is a type of an identity function?
+		the identity function for type x happens to be of type x -> x
+		but there are other functions besides the identity function
+		which have this as their type
+		any function that takes an x and returns an x is of type x -> x
+		sure
+		this takes args of type 't', calls them 'x', and
+		for any arg 'x', returns a value of type 'x->x'
+		't' as in a type variable?
+		
+		well, this was a bad example because the only way
+		i could actually do something like this is if i used
+		* instead of t
+		
+		\\t : * . (t -> t)
+		
+		^ because i have to know that my 't' is a type in order
+		to use "->" to construct a function/pi-type with it
+		like, for example, \\x : bool . (x -> x) doesn't make
+		any sense
+		
+		\\(arg)x:(type)t -> (ret)(x -> x)?
+		right, and (ret) itself is a PiType
+		\\_:x -> x
+		\\arg:type -> ret
+		  ^ this is just pretending it's quantified over the terms in
+		  the type x, using some var "_" that doesn't appear in the
+		  return type
+		so..ret is an expression...
+		not just ret but also type
+		
+		x -> x?
+		hrm actually that's not a good example because "->" requires
+		two types to construct another type
+		
+		need an example that uses terms to construct types
+		the identity type works, but we don't really have this represented
+		yet
+		
+		\\x:t -> (x ==_t x)
+		
+		this one makes sense whatever we use for 't', but you'll have
+		to use your imagination a bit because we don't have anything like
+		identity types implemented
+		
+		in fact afaict we don't have anything implemented that can take
+		terms as arguments and construct types
+		
+		"->" is a 'type operator', it takes two *types* as arguments and
+		returns a type, you can't necessarily pass it two *terms* and
+		have it construct a meaningful function type, like
+		\\x:bool -> (x -> x) doesn't make sense but
+		\\t:* -> (t -> t) does make sense
+		
+		==_t otoh can take two terms of type t and construct a type from
+		them
+		
+		
+		function type is recovered as a special case of these
+		namely a standard function type is any pi-type where
+		the expression representing the return type doesn't
+		depend on the input value
+		
+		\\x:bool -> int
+		this is a function that takes args of type 'bool', refers
+		to them as 'x', and returns an 'int'
+		
+		this looks like ret holds the type,
+		while the x'es look like ret holds ..i dunno what, a type of an expression that you evaluate to get the return type
+		
+		
+		
+		
+		"int" is a constant, it's not an expression in terms
+		of "x", so this is equivalent to the standard
+		function type "bool -> int"
+		
+		\\x:* -> (x -> int)
+		
+		the return type "(x -> int)" is an expression in terms of x
+		
+		
+		
+		
+		maybe we should move onto some example code?
+		so 'type' is an expression but not just any expression..
+		
+		
+		
+		
+so, we cant have a function taking an argument of any type and returning it,
+we need to basically pass it the type too? yea
+allowing ourselves to range over our types (i.e. t:*) for the input of
+our function is polymorphism, and we use it here to get a polymorphic identity
+function, and yea making our functions polymorphic like this is handled by
+basically extending their definition to take a type and return the desired
+function/type/expression
+
+and why cant we do \\x:*.x?
+^this looks like given a value return a value?
+a value of type *, aka a value of type Type, aka a type
+so the 'type' field in Pi is the return type?
+the input type, same as the 'type' field in the Abs
+to be proper about it, we'd call it "domain", because it's
+quite literally the domain of any function of that function-type
+
+\\arg : domain -> range
+
+err
+yeah i see what you mean here, but
+\\x:_.x
+what about this identity function?
+we don't have anything to allow this syntax
+we don't even have anything to allow this syntax:
+\\_:x. <something>
+well, _ is a valid identifier name
+hrm
+or what about \\x:y.x
+cant this be a function that just ignores y?
+this function has type y -> y
+
+so, if we had the := syntax, i could write
+identity := \\x:y.x
+and it would typecheck?
+well, our type_check() function (which is really more of a type-inferencer
+than a type-checker) would return a valid type for this
+i.e. y -> y
+if you had like haskell syntax:
+
+identity :: y -> y
+identity := \\x:y.x
+
+then yea the function definition would type-check against the function
+declaration
+
+and y would be..what?
+i'm just assuming here that "y" is just short-hand we're
+using to express some specific (but unsaid) type
+well i was thinking it would be i guess a variable
+
+so it would kinda be a type variable
+in the simply typed lambda and beyond, we can't realy
+use a variable except inside a function
+this also holds for type variables
+
+\\t : * . (\\x : t . x)
+
+okay
+so, the argument type of a function 
+
+
+we can but that's saying something different
+namely: given any type, return this type
+rather than, given any type, and a value of that type, return that value
+
+		
+		
 		
 		
 		"""]
-	build_in(SyntaxedNodecl(FunType,
+	build_in(SyntaxedNodecl(PiType,
 		[
 		[ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("ret")],
-		["function from ", ChildTag("from"), " to ", ChildTag("to")]
+#		["function from ", ChildTag("from"), " to ", ChildTag("to")]
 		],
 		{'arg': cube.var, 'type': cube.exp, 'ret': cube.exp}), None, cube)
-	build_in(WorksAs.b(cube.pitype, cube.exp), False, cube)
 
 
 
@@ -4610,7 +4774,8 @@ def build_in_cube(r):
 		
 	build_in(SyntaxedNodecl(Abs,
 		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
-		[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]],
+#		[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]
+		],
 		{'var': cube.var, 'type': cube.exp, 'exp': cube.exp}), None, cube)
 
 
@@ -4622,7 +4787,8 @@ def build_in_cube(r):
 		
 	build_in(SyntaxedNodecl(App,
 		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
-		[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]],
+#		[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]
+		],
 		{'e1': cube.exp, 'e2': cube.exp}), None, cube)
 
 	#hrm, i think Kind is supposed to be SyntacticCategory instead
@@ -4641,7 +4807,7 @@ def build_in_cube(r):
 		whats this?
 		"""]
 	build_in(SyntaxedNodecl(StarKind,
-		[TextTag("star")], #[TextTag("*")],
+		[TextTag("*")], #[TextTag("*")],
 		{}), None, cube)
 		
 	class BoxKind(Syntaxed): 
@@ -4661,7 +4827,7 @@ def build_in_cube(r):
 
 
 	#whoever came up with "pi", "box" and "star" must have had psychological problems
-
+	#yes
 
 
 
@@ -4787,8 +4953,9 @@ def build_in_cube(r):
 			#if not, fail type-checking. this is how
 			#we control what corner what of the cube
 			#we're using
-			if ( (s,t) not in allowedKinds):
-				print ("Bad abstraction")
+			if ( (s.__class__,t.__class__) not in allowedKinds):
+				print ("Bad abstraction, AllowedKinds=", 
+				[(x.__name__, y.__name__) for x,y in allowedKinds], ", argtype, bodytype = ", (s.__class__.__name__,t.__class__.__name__))
 				assert False
 			
 			#the type of a pi-type is the type of it's body?
@@ -4812,7 +4979,7 @@ def build_in_cube(r):
 			print("Error: found a box")
 			assert False
 	
-	allowedKinds = [...]
+	allowedKinds = [(StarKind, StarKind), (BoxKind, StarKind)]
 	
 	
 	#The FreeVars function is still straight-forward
@@ -5131,6 +5298,42 @@ def build_in_cube(r):
 		else:
 			print("What are you trying to normalize here?")
 			assert False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	ParExp.unparen = lambda s: s.ch.exp.unparen()
+
+	def eval(e):
+		x = e.copy().unparen()
+		#print (x.tostr())
+		n = nf(x)
+		assert n
+		return n.copy()
+
+	for x in [ParExp, App, Abs, Var, PiType, StarKind, BoxKind]: x._eval = eval
+	for x in [ParExp, App, Abs, Var, PiType, StarKind, BoxKind]: x.type_check = type_check
+
+
+
+
+
+
 	
 	"""
         class IntType(Syntaxed):

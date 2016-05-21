@@ -18,7 +18,7 @@ def do(t):
 		for i,r in enumerate(p):
 			print (i, ":", r)
 			print(r.tostr())
-			#r = r.unparen()
+			r = r.unparen()
 		
 			#type-check it before evaluating:
 			print("type check:",r.type_check().tostr())
@@ -50,7 +50,22 @@ for t in [
 #nice
 #"(\\x:bool->(bool->bool).x) (\\x:bool.(\\y:bool.y))"
 #"(((\\x:bool->(bool->bool).x) (\\x:bool.(\\y:bool.y))) true!) false!"
-"(((\\x:bool->(bool->bool).x) (\\x:bool.(\\y:bool.x))) true!) false!"
+#"(((\\x:bool->(bool->bool).x) (\\x:bool.(\\y:bool.x))) true!) false!"
+
+
+#cube
+#   e-------f
+#  /|      /|
+# / |     / |
+#a--|----b  |
+#|  g----|--h
+#| /     | /
+#c-------d
+
+# i guess we need some base types in there, not sure
+"(\\t:*.(\\x:t.x))"
+
+
 ]:
 	do(t)
 
