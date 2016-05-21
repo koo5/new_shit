@@ -7,10 +7,7 @@ import sys
 
 
 import lemon_utils.lemon_logging
-import marpa_cffi.graphing_wrapper as graphing_wrapper
 from marpa_cffi.marpa_cffi import lib
-lib.rule_new = graphing_wrapper.rule_new
-graphing_wrapper.start()
 
 
 import nodes
@@ -19,7 +16,6 @@ from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 nodes.m = m = ThreadedMarpa(print, True)
 
 
-graphing_wrapper.symid2name = m.symbol2debug_name
 
 
 
@@ -29,12 +25,7 @@ def handle(text=None):
 		ts = m.string2tokens(text)
 		print ("tokens", ts)
 		m.enqueue_parsing([ts, text])
-		
-
-		graphing_wrapper.generate_png()
-		graphing_wrapper.generate_gv()
-		
-		
+		#recurse to wait for 'parsed'
 		return handle()
 	elif msg.message == 'parsed':
 		print (len(msg.results), "results")

@@ -1,3 +1,5 @@
+#in the end i hadnt made it a rpc client, it just spawns a thread
+
 import sys, traceback
 import operator
 import types
@@ -26,6 +28,10 @@ if marpa == True:
 	import marpa_cffi.marpa_codes
 	import marpa_cffi.graphing_wrapper as graphing_wrapper
 	from marpa_cffi.marpa import *
+		
+
+	
+	
 else:
 	log(marpa)
 	log('no marpa, no parsing!')
@@ -49,6 +55,13 @@ class ThreadedMarpa(object):
 		s.t = MarpaThread(send_thread_message)
 		s.t.start()
 		s.cancel = False
+		if args.graph_grammar:
+			
+			graphing_wrapper.start()
+			graphing_wrapper.symid2name = s.symbol2debug_name
+			lib.rule_new = graphing_wrapper.rule_new
+
+
 
 	def clear(s):
 		if s.debug:
@@ -147,11 +160,13 @@ class ThreadedMarpa(object):
 	#---------
 
 
-	def collect_grammar(s,scope:list,start=None):
+	def collect_grammar(s,  scope:list,  start=None):
 		assert scope == uniq(scope)
 
 		s.clear()
 		print("grammar clear")
+
+
 
 
 		s.named_symbol('nonspecial_char')
@@ -176,13 +191,13 @@ class ThreadedMarpa(object):
 
 		if anything:
 			for i in scope:
-				if sym != None:
+				if i.symbol != None:
 					if args.log_parsing:
-						log(sym)
-						rulename = 'start is %s' % s.symbol2debug_name(sym)
+						log(i.symbol)
+						rulename = 'start is %s' % s.symbol2debug_name(i.symbol)
 					else:
 						rulename = ""
-					s.rule(rulename , s.start, sym)
+					s.rule(rulename , s.start, i.symbol)
 
 
 	def enqueue_precomputation(s, for_node):
@@ -251,6 +266,10 @@ class MarpaThread(threading.Thread):
 			else:
 				_, _, lhs, rhs, _ = rule
 				s.c_rules.append(s.g.rule_new(lhs, rhs))
+
+		if args.graph_grammar:
+			graphing_wrapper.generate_png()
+			#graphing_wrapper.generate_gv()
 
 		s.g.precompute()
 		#check_accessibility()
@@ -432,12 +451,8 @@ parse_result = [i for i in parse_result if not i in nope]
 <jeffreykegler> By the way, a Marpa parser within a Marpa parser is a strategy pioneered by Andrew Rodland (hobbs) and it is the way that the SLIF does its lexing -- the SLIF lexes by repeatedly creating Marpa subgrammars, getting the lexeme, and throwing away the subgrammar.
 """
 """
-		if args.graph_grammar:
-			graphing_wrapper.start()
-			graphing_wrapper.symid2name = m.symbol2debug_name
+			
 
-		if args.graph_grammar:
-			graphing_wrapper.generate_gv()
 			graphing_wrapper.stop()
 
 		if args.log_parsing:
