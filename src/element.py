@@ -124,7 +124,22 @@ class Element():
 			return []
 
 	def tostr(s):
-		return "".join([x for x in s.collect_tags() if isinstance(x,unicode)])
+		#return "".join([x for x in s.collect_tags() if isinstance(x,unicode)])
+		indent = 0
+		r = ""
+		for x in s.collect_tags():
+			if isinstance(x,unicode):
+				for ch in x:
+					r += ch
+					
+					if ch == "\n":
+						for i in range(indent):
+							r += "  "
+			if x == IndentTag():
+				indent += 1
+			if x == DedentTag():
+				indent -= 1
+		return r
 
 
 	def collect_tags(s):

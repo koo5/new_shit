@@ -784,10 +784,12 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
 	brackets = ("<", ">")
 	#brackets = ("", "")
+	default_syntax_index = 0
+
 	def __init__(s, children):
 		super(Syntaxed, s).__init__()
 		s.check_slots(s.slots)
-		s.syntax_index = 0
+		s.syntax_index = s.__class__.default_syntax_index
 		s.ch = Children()
 
 		assert len(children) == len(s.slots), (children, s.slots)
@@ -1378,6 +1380,7 @@ class Banana(Node):
 		return "runtime error"
 
 class Bananas(Node):
+	"""https://www.youtube.com/watch?v=EAmChFTLP4w&feature=youtu.be&t=2m19s"""
 	help=["parsing error. your code is bananas."]
 	def __init__(s, contents=[]):
 		super(Bananas, s).__init__()
@@ -4066,7 +4069,9 @@ def build_in_lc2(r):
 	class FunType(Syntaxed): 
 		help = ["function type"]
 	build_in(SyntaxedNodecl(FunType,
+		[
 		[ChildTag("from"), TextTag("->"), ChildTag("to")],
+		["function from ", ChildTag("from"), " to ", ChildTag("to")]],
 		{'from': lc2.type, 'to': lc2.type}), None, lc2)
 	build_in(WorksAs.b(lc2.funtype, lc2.type), False, lc2)
 
@@ -4129,24 +4134,28 @@ Abs := "\\" Var ":" Type "." Expr
 App := Expr " " Expr
 	"""
 
-
+	
 	class Abs(Syntaxed): 
 		help = ["abstraction, a lambda"]
 		
 	build_in(SyntaxedNodecl(Abs,
-		[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
+		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
+		[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]],
 		{'var': lc2.var, 'type': lc2.type, 'exp': lc2.exp}), None, lc2)
 
 
 
-
+	#"do" <function> "to" <argument>
+	#"run" <function> "on" <argument>
 	class App(Syntaxed): 
 		help = ["function application, a call"]
 		
 	build_in(SyntaxedNodecl(App,
-		[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
+		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
+		[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]],
 		{'e1': lc2.exp, 'e2': lc2.exp}), None, lc2)
 
+	for x in [App, Abs, FunType]: x.default_syntax_index = 1
 
 	build_in(WorksAs.b(lc2.app, lc2.exp), False, lc2)
 	build_in(WorksAs.b(lc2.abs, lc2.exp), False, lc2)
@@ -4469,6 +4478,642 @@ App := Expr " " Expr
 		
 	for x in [Var, App, Abs]:
 		x.type_check = tc
+		
+		
+		
+		
+		
+		
+cube = Dotdict() #a helper dict to hold the nodes being built in and to refe
+cube._dict = odict()
+
+
+def build_in_cube(r):
+	r["cube"] = new_module()
+	r["cube"].ch.statements.items = [
+		Comment("""The lambda cube""")]
+
+	r["cube-test"] = new_module()
+	r["cube-test"].special_scope = [
+		r["cube"], 
+		#B.number
+	];
+	
+	build_in(SyntacticCategory({'name': Text("exp")}), None, cube)
+	cube.exp.help = ["a lambda expression"]
+
+
+	class Var(Syntaxed):
+		brackets = ("", "")
+		help = ["a variable"]
+		@property
+		def varName(s):
+			return s.ch.name.pyval
+		@varName.setter
+		def varName(s, v):
+			s.ch.name.pyval = v
+		def __init__(s, children):
+			super(Var, s).__init__(children)
+			#if s.varName in ["box", 'star']:
+				#assert False, s.varName
+			#alright for now we'll take this assert out just to make sure we'll make it to the
+			#parse we want
+			#well it will kill the whole thing 
+			#well...this approach isnt good in that we will have multiple parses, and processing some of those will abort
+			#well..gets the job done?
+#if we should discuss how this should be handled in lemon eventually, i dont know,
+#i think in some cases we want the ambiguity...is all i know, i mean eventually in some big lemon lang
+#ah sure, in a more extensive lang we might want to allow ambiguity in some cases
+#for this though the only reason we have any ambiguity is because we have things as
+#text instead of haskell inductive data types
+#ill think about it some more, for now let's just avoid using any ambiguous examples
+
+
+#btw...whitespace...python...spaces..and tabs dont mix
+#ah, cause everything's based off indendation level?yea
+#ok i'll fix it up as we go along and keep in mind ok
+
+	build_in(SyntaxedNodecl(Var,
+		[ChildTag("name")],
+		{'name': B.restrictedidentifier}), None, cube)
+	class ParExp(Syntaxed):
+		help = ["a parenthesized expression"]
+		brackets = ("", "")
+
+	build_in(SyntaxedNodecl(ParExp,
+		[TextTag("("), ChildTag("exp"), TextTag(")")],
+		{'exp': cube.exp}), None, cube)
+	build_in(WorksAs.b(cube.parexp, cube.exp), False, cube)
+
+
+"""
+:)
+so i guess we'll just replace type with expression?
+well, thats what the cube says, no?
+i cant tell if there's any subtle distinction going on
+there probably isn't though	
+"""
+
+
+	class PiType(Syntaxed):
+		help = ["""function type
+		
+		is this equivalent to FunType? whats the var there for?
+		
+		
+		"""]
+	build_in(SyntaxedNodecl(FunType,
+		[
+		[ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("return")],
+		["function from ", ChildTag("from"), " to ", ChildTag("to")]
+		],
+		{'arg': cube.var, 'type': cube.exp, 'return': cube.exp}), None, cube)
+	build_in(WorksAs.b(cube.pitype, cube.exp), False, cube)
+
+
+
+
+
+	class Abs(Syntaxed): 
+		help = ["abstraction, a lambda"]
+		
+	build_in(SyntaxedNodecl(Abs,
+		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
+		[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]],
+		{'var': cube.var, 'type': cube.exp, 'exp': cube.exp}), None, cube)
+
+
+
+	#"do" <function> "to" <argument>
+	#"run" <function> "on" <argument>
+	class App(Syntaxed): 
+		help = ["function application, a call"]
+		
+	build_in(SyntaxedNodecl(App,
+		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
+		[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]],
+		{'e1': cube.exp, 'e2': cube.exp}), None, cube)
+
+	#hrm, i think Kind is supposed to be SyntacticCategory instead
+	#gotta run now tho, back in a bit
+	#hrm, speaking of these types and kinds like "int" "bool" "box"
+	#is there any syntactic ambiguity with standard identifiers like
+	#for named vars?no idea, i think there is, but we can do something
+	#like make these key words so that you can't use them for var names
+	#alternatively we could disambiguate them syntactically
+	#if we use the symbols there shouldn't be any interference
+	#if we use the text we should make it a parsing error to use
+	#the tags for anything else
+
+	class StarKind(Syntaxed):
+		help = ["""star kind
+		whats this?
+		"""]
+	build_in(SyntaxedNodecl(StarKind,
+		[TextTag("star")], #[TextTag("*")],
+		{}), None, cube)
+		
+	class BoxKind(Syntaxed): 
+		help = ["""box kind
+		whats this?
+		"""]
+	build_in(SyntaxedNodecl(BoxKind,
+		[TextTag("box")], #[TextTag("[]")],
+		{}), None, cube)
+
+	build_in(SyntacticCategory({'name': Text("kind")}), None, cube)
+	cube.kind.help = ["kind, like a type of types"]
+
+	build_in(WorksAs.b(cube.starkind, cube.kind), False, cube)
+	build_in(WorksAs.b(cube.boxkind, cube.kind), False, cube)
+
+
+
+	#whoever came up with "pi", "box" and "star" must have had psychological problems
+
+
+
+
+	build_in(WorksAs.b(cube.app, cube.exp), False, cube)
+	build_in(WorksAs.b(cube.abs, cube.exp), False, cube)
+	build_in(WorksAs.b(cube.var, cube.exp), False, cube)
+	build_in(WorksAs.b(cube.pitype, cube.exp), False, cube)
+	build_in(WorksAs.b(cube.kind, cube.exp), False, cube)
+
+	
+	r["cube"].ch.statements.items.extend(list(itervalues(cube._dict)))
+
+	#i need to think a bit if we need to do anything different for our base types
+	#but, not sure, maybe we should just start working on the logic and it might
+	#become more clear
+	#in tau HMC doesn't even want to have these types explicitly,
+	#apparently everything can be made with pi's and sigmas
+	#the article also doesn't give any mention to these so... need to think it over a bit
+	#i would guess they wont be a problem but no idea
+	#i'm gonna assume that if the article doesn't use them then they're unnecessary
+	#cause he does use base types in the simply typed lambda, but then they seem to
+	#mysteriously disappear in the lambda cube section, and his example expressions
+	#don't make any use of anything except the syntax we've already got laid out above
+	#mm, then lets get it working without i guess
+	
+	def type_check(expr,env=None):
+		#set up an empty list of type assumptions
+		if (env == None) : env = {}
+		
+		#just like normally, we look up the type assumption for the variable
+		#in the environment
+		if isinstance(expr,Var):
+			return env[expr.varName]
+		
+		
+		if isinstance(expr,App):
+			#type-check-reduce the function using the current
+			#environment
+			func_t = whnf(type_check(expr.ch.e1,env))
+			
+			#functions are supposed to have pi-types. we only
+			#allow functions to appear in function-position in
+			#applications. so make sure it's type is a pi-type:
+			if isinstance(func_t, PiType):
+				#if so, type-check the argument expression
+				#using the current environment
+				arg_t = type_check(expr.ch.e2,env)
+				
+				#so, we're expecting that the type of the bound
+				#variable in the function could potentially be
+				#expressed by the application of a type operator
+				#or dependent type
+				
+				#(\x:((\t:*.t->t) int).x) (\x:int.5)
+				
+				#func_t := ((\t:*.t->t) int) -> ((\t:*.t->t) int)
+				#arg_t := int->int 
+				if (not (betaEq(func_t.ch.type,arg_t)):
+					print("Error: bad argument type")
+					assert False
+				
+				else:
+					return subst(func_t.ch.return, func_t.ch.arg, expr.ch.e2)
+			
+			else:
+				print("Error: trying to apply(call) something that's not a function")
+				assert False
+		
+		if isinstance(expr,Abs):
+			#make sure the type of the bound var passes a type-check
+			#with the current environment. what does "pass" really
+			#mean here?
+			type_check(expr.ch.type,env)
+			
+			#copy the set of type assumptions into a new set
+			tmp_env = dict(env)
+			
+			#add a type assumption for the bound variable to the
+			#new set
+			tmp_env[expr.ch.var.varName] = expr.ch.type
+			
+			#type-check the body of the abstraction using the new
+			#set of type assumptions
+			expr_t = type_check(expr.ch.exp,tmp_env)
+			
+			#abstractions have Pi-types as their types
+			#so we're expecting the result of running type_check on
+			#expr.ch.exp to be able to potentially return a type expression
+			#that depends on 'expr.ch.var' ?
+			
+			rt = PiType({'arg':expr.ch.var,'type':expr.ch.type,'return':expr_t})
+			
+			#now that we've constructed the pi-type for our lambda abstraction,
+			#we're going to type-check the pi-type itself and make sure it
+			#passes. what does "pass" really mean here?
+			type_check(rt,env)
+			
+			#return the pi-type if it passes the type-check
+			return rt
+		
+		if isinstance(expr,PiType):
+			#type-check-reduce the input type
+			s = whnf(type_check(expr.ch.type,env))
+			
+			#copy the set of type assumptions into a new set
+			tmp_env = dict(env)
+			
+			#add a type assumption for the bound variable to
+			#the new set
+			tmp_env[expr.ch.arg.varName] = expr.ch.type
+			
+			#type-check-reduce the body of the abstraction
+			#using the new set of type assumptions
+			t = whnf(type_check(expr.ch.return,tmp_env))
+			
+			
+			#both s and t should be either * or []
+			#at least if they're expected to *maybe* be
+			#in "allowedKinds".
+			
+			#check if the particular combination is
+			#allowed by the cube-configuration:
+			#if not, fail type-checking. this is how
+			#we control what corner what of the cube
+			#we're using
+			if ( (s,t) not in allowedKinds):
+				print "Bad abstraction"
+				assert False
+			
+			#the type of a pi-type is the type of it's body?
+			#
+			#why?
+			return t
+		
+		
+		#single 'axiom' of our type theory, star's type is box:
+		# "* : []"
+		#
+		#why?
+		if isinstance(expr,StarKind):
+			return BoxKind({}) 
+		
+		#box has no type. if we end up having to type-inference
+		#for a box, then fail. 
+		#
+		#why?
+		if isinstance(expr,BoxKind):
+			print("Error: found a box")
+			assert False
+	
+	allowedKinds = [...]
+	
+	
+	#The FreeVars function is still straight-forward
+	#enough. What's less straight-forward to understand is
+	#the mechanics of the language when the extra lambda
+	#cube dependencies are added in.
+	def FreeVars(expr, vars=None) -> set:
+		if (vars == None): vars = set()
+		
+		#if the expression is a variable, add it
+		#to the list of free variables. so what
+		#happens to bound variables? they get removed
+		#from the list in the abstraction case.
+		if isinstance(expr,Var):
+			vars.add(expr.ch.var.varName)
+			return vars
+		
+		#the free variables of an application is
+		#the union of the free variables in each
+		#of its components (function and argument)
+		if isinstance(expr,App):
+			free_e1 = FreeVars(expr.ch.e1,vars)
+			return free_e1.union(FreeVars(expr.ch.e2,vars))
+		
+		#we don't care whether the variables are occurring
+		#in an expression or its type, we just care where
+		#variables are occurring, cause when we get into
+		#the full lambda cube dependencies, things can be
+		#going everywhere
+		
+		#the free variables of a typed abstraction is
+		#the union of the free variables in it's input-type
+		#component with the free variables in it's body
+		#component, with the bound variable removed
+		if isinstance(expr,Abs):
+			free_t = FreeVars(expr.ch.type,vars)
+			free_e = FreeVars(expr.ch.exp,vars)
+			free_e.remove(expr.ch.var.varName)
+			return free_t.union(free_e)
+		
+		#the free variables of a pi-type is the union
+		#of the free variables in it's input-type component
+		#with the free variables in it's body component,
+		#with the bound variable removed
+		if isinstance(expr,PiType):
+			free_t = FreeVars(expr.ch.type,vars)
+			free_e = FreeVars(expr.ch.return,vars)
+			free_e.remove(expr.ch.arg.varName)
+			return free_t.union(free_e)
+		
+		#the expressions "*" and "[]" don't contain
+		#any variables, just return the current list of
+		#free vars
+		if type(expr) in [StarKind,BoxKind]:
+			return vars
+	
+	
+	
+	#substitute "what" with "by" in "where"
+	#he says his is is subst(what,where,by)
+	#or                subst(v,   x,    e)
+	#
+	#but it's really   subst(what,by,where)
+	def subst(where,what,by):
+		#if the 'where' expression is the var that we're
+		#substituting, then make the substitution, otherwise
+		#just return 'where'.
+		if isinstance(where,Var):
+			if(where.varName == what.varName):
+				return by
+			else:
+				return where
+		
+		#make the substitution into both the function and the argument
+		#in an application
+		if isinstance(where,App):
+			return App({'e1':subst(where.ch.e1,what,by),'e2':subst(where.ch.e2,what,by)})
+		
+		
+		
+		if isinstance(where,Abs):
+			#if the bound variable of the abstraction is the var
+			#we're supposed to be substituting, then i guess we
+			#say this new occurrence of a bound variable with the
+			#same name shadows the substitution-variable in the
+			#body expression. however, we still might be making the
+			#substitution in the expression for the input-type of
+			#the abstraction (i.e. dependent types & type operators)
+			if(where.ch.var.varName == what.varName):
+				return Abs({
+					'var':where.ch.var.varName,
+					'type':subst(where.ch.type,what,by),
+					'exp':where.ch.exp
+					})
+			
+			#else if the bound variable of the abstraction is in
+			#the free variables of the 'by' expression, then 
+			#replace the bound variable in the abstraction with a
+			#fresh variable so that it won't interfere with the
+			#free variables in 'by'. then substitute 'by' for 'what'
+			#in both the input-type and the abstraction body
+			else if (where.ch.var.varName in FreeVars(by)):
+				z = genFreshVarName()
+				t1 = subst(where.ch.exp,where.ch.var,z)
+				return Abs({
+					'var':z,
+					'type':subst(where.ch.type,what,by),
+					'exp':subst(t1,what,by)
+					})
+			
+			#else we can just make the substitution directly since
+			#there's no free-variable interference or scoping/shadowing
+			#issues:
+			else:
+				return Abs({
+					'var':where.ch.var,
+					'type':subst(where.ch.type,what,by),
+					'exp':subst(where.ch.exp,what,by)
+					})
+		
+		#Pi's should work just like Abs
+		if isinstance(where,PiType):
+			if (where.ch.arg.varName == what.varName):
+				return PiType({
+					'arg':where.ch.arg,
+					'type':subst(where.ch.type,what,by)
+					'return':where.ch.exp
+					})
+			
+			else if (where.ch.arg.varName in FreeVars(by)):
+				z = genFreshVarName()
+				t1 = subst(where.ch.return,where.ch.arg,z)
+				return PiType({
+					'arg':z,
+					'type':subst(where.ch.type,what,by)
+					'return':subst(t1,what,by)
+					})
+			
+			else:
+				return PiType({
+					'arg':where.ch.arg,
+					'type':subst(where.ch.type,what,by)
+					'return':subst(where.ch.return,what,by)
+					})
+		
+		#* and [] both don't contain any vars so you're not gonna
+		#substitute anything into them. return the expression as is.
+		if isinstance(where,Kind):
+			return where
+	
+	#Alpha equivalence: check if the two expressions are
+	#equivalent under variable renaming.
+	def alphaEq(expr1,expr2):
+		if (type(expr1) != type(expr2)): return False
+		
+		#ok, so this looks like it's explicitly *not* checking
+		#if it's equivalent under renaming, since it's checking
+		#if the names are equal.
+		
+		#this is accounted for by the rest of the function
+		#when we encounter lambdas, we transform the 2nd expression
+		#so that it's bound variable matches that of the 1st
+		
+		#that being said, i noticed some people in the comments
+		#were pointing out small mistakes here and there, so once
+		#we have it all down we might be on our own in ensuring that
+		#it's 100% correct (not just this function but the whole thing)
+		
+		#what happens if it just gets two variables as the argument
+		#expressions? no renaming happens so we'd fail alphaEq
+		#in untyped lambda calculus we can have vars outside of
+		#abstractions
+		if (type(expr1) == Var):
+			return (expr1.varName == expr2.varName)
+		
+		#App is simple enough, just check if both the functions
+		#are alpha equivalent and if both the arguments are
+		#alpha equivalent
+		if (type(expr1) == App):
+			return (alphaEq(expr1.ch.e1,expr2.ch.e1) 
+				and alphaEq(expr1.ch.e2,expr2.ch.e2)
+				)
+		
+		#Two abstractions with different bound variables can
+		#mean the same thing, i.e. they would be the same
+		#under a suitable variable renaming.
+		
+		#check if the input types are alpha equivalent, then
+		#replace the bound variable in the second abstraction 
+		#with the bound variable from the first lambda abstraction
+		#and see if their bodies are syntactically equal
+		
+		#the syntactic equality is enforced by recursing down to the 
+		#Var case above
+		if (type(expr1) == Abs):
+			return (alphaEq(expr1.ch.type,expr2.ch.type)
+				and alphaEq(
+					expr1.ch.exp,
+					subst(expr2.ch.exp,expr2.ch.var,expr1.ch.var)
+					)
+				)
+		
+		#dependent function types
+		#\x:t.x->x. 
+		#not sure how to construct a type using terms.
+		#
+		#check if the input types are equal
+		#replace the bound variable in the second pi-type
+		#with the bound variable from the first and check
+		#if their bodies are alpha-equivalent.
+		if (type(expr1) == PiType):
+			return (alphaEq(expr1.ch.type,expr2.ch.type)
+				and alphaEq(
+					expr1.ch.return,
+					subst(expr2.ch.return,expr2.ch.arg,expr1.ch.arg)
+					)
+				)
+		#there's only one * and there's only one [], and we know
+		#by this point that the type()'s must be equal, so if
+		#one of the expressions is * or [], then they both are,
+		#and they're the same
+		if (type(expr1) == StarKind):
+			return True
+		if (type(expr1) == BoxKind):
+			return True
+	
+	
+	
+	#reduce both expressions to normal form and then check if they are
+	#alpha-equivalent
+	def betaEq(expr1,expr2):
+		return alphaEq(nf(expr1),nf(expr2))
+	
+	
+	
+	#no idea wth is going on with nf() and whnf() here.
+	#return the normal form of the expression
+	#aka normalize()
+	#aka evaluate()
+	#aka beta-reduce()
+	#... people should stop making new names for this thing
+	#def nf(expr):
+	#	return nf_spine(expr,[])
+	
+	#nf :: Expr -> Expr
+	#nf ee = spine ee []
+	#where spine (App f a) as = spine f (a:as)
+	#spine (Lam s t e) [] = Lam s (nf t) (nf e)
+	#spine (Lam s _ e) (a:as) = spine (subst s a e) as
+	#spine (Pi s k t) as = app (Pi s (nf k) (nf t)) as
+	#spine f as = app f as
+	#app f as = foldl App f (map nf as)
+	
+	#dehaskellified
+	def nf(expr):
+		if type(expr) in [Var,StarKind,BoxKind]:
+			return expr
+		
+		if isinstance(expr,App):
+			nf1 = nf(expr.ch.e1)
+			if isinstance(nf1,Abs):
+				return nf(subst(nf1.ch.exp,nf1.ch.var,expr.ch.e2))
+			
+			else:
+				print("What are you trying to normalize here?")
+				assert False
+		
+		if isinstance(expr,Abs):
+			return Abs({'var':expr.ch.var,'type':nf(expr.ch.type),'exp':nf(expr.ch.exp)})
+		
+		if isinstance(expr,PiType):
+			return PiType({'arg'.expr.ch.arg, 'type':nf(expr.ch.type),'return':nf(expr.ch.return)})
+	
+	
+	
+	
+	
+	
+	#return the "weak head normal form" of the expression
+	
+	#whnf :: Expr -> Expr
+	#whnf ee = spine ee []
+	#where spine (App f a) as = spine f (a:as)
+	#spine (Lam s e) (a:as) = spine (subst s a e) as
+	#spine f as = foldl App f as
+	
+	def whnf(expr)
+		#variables, abstractions, and pi-types are already in weak-head normal form
+		#so just return them
+		if type(expr) in [Var,Abs,PiType,StarKind,BoxKind]:
+			return expr
+		
+		#if it's an application then we check whether there's an
+		#application or an abstraction in the function position
+		#(it shouldn't be anything else)
+		if isinstance(expr,App):
+			#if it's an abstraction in function position, then
+			#we apply it to the argument. 
+			#need to make sure the value we get as a result of this
+			#is also in weak-head normal form.
+			#i don't think he does this in "simpler, easier"
+			if isinstance(expr.ch.e1,Abs):
+				return whnf(subst(expr.ch.e1.ch.exp,expr.ch.var,expr.ch.e2))
+			
+			#if it's an application in function position, then
+			#we whnf() that application and return a new application
+			#that has this new expression as e1, but the same argument
+			#for e2
+			if isinstance(expr.ch.e1,App):
+				return App({'e1':whnf(expr.ch.e1),'e2':expr.ch.e2})
+			
+			else:
+				print("What are you trying to normalize here?")
+				assert False
+		
+		else:
+			print("What are you trying to normalize here?")
+			assert False
+	
+	"""
+        class IntType(Syntaxed):
+                help = ["integer type"]
+        build_in(SyntaxedNodecl(IntType,
+                [TextTag("int")],
+                {}), None, lc2)
+        class BoolType(Syntaxed):
+                help = ["bool type"]
+        build_in(SyntaxedNodecl(BoolType,
+                [TextTag("bool")],
+                {}), None, lc2)
+
+	"""
 """
 
 Expr 		:=	Expr1 | "(" Expr ")"
