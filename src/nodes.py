@@ -4593,26 +4593,18 @@ def build_in_cube(r):
 #for this though the only reason we have any ambiguity is because we have things as
 #text instead of haskell inductive data types
 #ill think about it some more, for now let's just avoid using any ambiguous examples
-
-
-#btw...whitespace...python...spaces..and tabs dont mix
-#ah, cause everything's based off indendation level?yea
-#ok i'll fix it up as we go along and keep in mind ok
-
 	build_in(SyntaxedNodecl(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, cube)
 	class ParExp(Syntaxed):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
-
+	
 	build_in(SyntaxedNodecl(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
 		{'exp': cube.exp}), None, cube)
 	build_in(WorksAs.b(cube.parexp, cube.exp), False, cube)
-
-
-
+	
 	class PiType(Syntaxed):
 		help = ["""function type
 		
@@ -4787,48 +4779,31 @@ rather than, given any type, and a value of that type, return that value
 	build_in(SyntaxedNodecl(PiType,
 		[
 		[ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("ret")],
-#		["function from ", ChildTag("from"), " to ", ChildTag("to")]
+		#["function from ", ChildTag("from"), " to ", ChildTag("to")]
 		],
 		{'arg': cube.var, 'type': cube.exp, 'ret': cube.exp}), None, cube)
-
-
-
-
-
+	
 	class Abs(Syntaxed): 
 		help = ["abstraction, a lambda"]
-		rank = -1200
-		
 	build_in(SyntaxedNodecl(Abs,
 		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
-#		[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]
+		#[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]
 		],
 		{'var': cube.var, 'type': cube.exp, 'exp': cube.exp}), None, cube)
-
-
-
-	#"do" <function> "to" <argument>
-	#"run" <function> "on" <argument>
+	
 	class App(Syntaxed): 
-		help = ["function application, a call"]
+		help = ["""function application, a call
+			#"do" <function> "to" <argument>
+			#"run" <function> "on" <argument>
+		"""]
 		
 	build_in(SyntaxedNodecl(App,
 		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
-#		[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]
+		#[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]
 		],
 		{'e1': cube.exp, 'e2': cube.exp}), None, cube)
-
-	#hrm, i think Kind is supposed to be SyntacticCategory instead
-	#gotta run now tho, back in a bit
-	#hrm, speaking of these types and kinds like "int" "bool" "box"
-	#is there any syntactic ambiguity with standard identifiers like
-	#for named vars?no idea, i think there is, but we can do something
-	#like make these key words so that you can't use them for var names
-	#alternatively we could disambiguate them syntactically
-	#if we use the symbols there shouldn't be any interference
-	#if we use the text we should make it a parsing error to use
-	#the tags for anything else
-
+	
+	
 	class StarKind(Syntaxed):
 		help = ["""star kind
 		whats this?
@@ -4844,41 +4819,29 @@ rather than, given any type, and a value of that type, return that value
 	build_in(SyntaxedNodecl(BoxKind,
 		[TextTag("box")], #[TextTag("[]")],
 		{}), None, cube)
-
+	
 	build_in(SyntacticCategory({'name': Text("kind")}), None, cube)
 	cube.kind.help = ["kind, like a type of types"]
-
+	
 	build_in(WorksAs.b(cube.starkind, cube.kind), False, cube)
 	build_in(WorksAs.b(cube.boxkind, cube.kind), False, cube)
-
-
-
+	
+	
+	
 	#whoever came up with "pi", "box" and "star" must have had psychological problems
 	#yes
-
-
-
+	
+	
+	
 	build_in(WorksAs.b(cube.app, cube.exp), False, cube)
 	build_in(WorksAs.b(cube.abs, cube.exp), False, cube)
 	build_in(WorksAs.b(cube.var, cube.exp), False, cube)
 	build_in(WorksAs.b(cube.pitype, cube.exp), False, cube)
 	build_in(WorksAs.b(cube.kind, cube.exp), False, cube)
-
+	
 	
 	r["cube"].ch.statements.items.extend(list(itervalues(cube._dict)))
-
-	#i need to think a bit if we need to do anything different for our base types
-	#but, not sure, maybe we should just start working on the logic and it might
-	#become more clear
-	#in tau HMC doesn't even want to have these types explicitly,
-	#apparently everything can be made with pi's and sigmas
-	#the article also doesn't give any mention to these so... need to think it over a bit
-	#i would guess they wont be a problem but no idea
-	#i'm gonna assume that if the article doesn't use them then they're unnecessary
-	#cause he does use base types in the simply typed lambda, but then they seem to
-	#mysteriously disappear in the lambda cube section, and his example expressions
-	#don't make any use of anything except the syntax we've already got laid out above
-	#mm, then lets get it working without i guess
+	
 	
 	def type_check(expr,env=None):
 		#set up an empty list of type assumptions
@@ -5928,4 +5891,28 @@ this is the grammar of the particular node type
 it has to go over this list
 ah it goes over the list to generate a grammar for marpa
 yeah to call marpa .symbol and .rule functions
+
+
+
+
+
+
+
+
+-       #i need to think a bit if we need to do anything different for our base types
+-       #but, not sure, maybe we should just start working on the logic and it might
+-       #become more clear
+-       #in tau HMC doesn't even want to have these types explicitly,
+-       #apparently everything can be made with pi's and sigmas
+-       #the article also doesn't give any mention to these so... need to think it over a bit
+-       #i would guess they wont be a problem but no idea
+-       #i'm gonna assume that if the article doesn't use them then they're unnecessary
+-       #cause he does use base types in the simply typed lambda, but then they seem to
+-       #mysteriously disappear in the lambda cube section, and his example expressions
+-       #don't make any use of anything except the syntax we've already got laid out above
+-       #mm, then lets get it working without i guess
+
+
+
+
 """
