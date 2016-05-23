@@ -24,3 +24,48 @@ to move cursor left:
 	move cursor left by one character
 
 to move cursor left by <number> character(s):
+
+
+
+
+
+
+
+what's the time?
+
+
+user says
+"time."
+this isnt a clear input.
+->probabilities/disambiguation/fulltext->
+
+
+------------
+
+to clarify an input
+	
+----------
+
+module stuff
+	functionalities:
+		getting time of day
+			invoked by question: what's the time?
+		
+	
+
+
+
+function definition:
+	"to", (text or )*
+				
+so this is just recursively defined bnf - 
+text works as sigpart 
+arg works as sigpart
+sigpart works as sigpart
+
+
+-----------
+
+module lemon
+	functionality is a type
+	
