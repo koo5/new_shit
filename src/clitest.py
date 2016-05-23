@@ -23,6 +23,10 @@ def do(t):
 			#type-check it before evaluating:
 			print("type check:",r.type_check().tostr())
 			print("eval:",r.eval().tostr())
+			#what do we do up here is it like while(r.prove()) ?
+			#but if it also has returns it will screw it up
+			for x in r.prove():
+				print("prove:",x.tostr())
 
 for t in [
 #"(\\a.b) c",
@@ -66,7 +70,44 @@ for t in [
 #"\\t:*.\\x:t.x rrrr"
 
 
-"(\\t:*.(\\x:t.x))"
+#"(\\t:(*->*).(\\x:t.x)) \\a:*.a"
+
+#these work for the prover
+#"t:*->(x:t->t)"
+#"t:*->(x:(y:t->t)->(y:t->t))"
+#"t:*->(x:(y:t->t)->t)"
+#"t:*->t"
+
+
+#parsing issues:
+#this one was just testing the syntax
+#"t:*->t"#is this supposed to be a PiType?
+#yea, i'm not sure this syntax is necessary though
+#im sure it wont work,
+
+#this is the one i'm really having trouble with
+"t:(*)->(x:(y:(t)->t)->(y:(t)->(z:(t)->t)))"
+# i dont think i understood initially
+
+#see how we kind of need it syntactically here
+#nope im lost
+#"t:*->(x:y:t->t->(y:t->(z:t->t)))"
+#well, actually i haven't tried this one maybe it works
+#so whatss a simpler failing case?
+#i dont have one so far
+#x:y:t->t
+# vs
+#x:(y:t->t)
+
+#i.e. x should be an object of the pi-type (y:t->t)
+#or consider:
+
+#t:* -> (x:((\s:*.s) t)->t)
+
+#here x should be an object of the type ((\s:*.s) t)
+
+#"t:*->((x:(y:t->t))->((y:t)->((z:t)->t)))"
+
 
 ]:
 	do(t)

@@ -1569,7 +1569,7 @@ class RestrictedIdentifier(WidgetedValue):
 
 		allowed = []
 		for rng in ['az', 'AZ']:
-			allowed.extend([chr(x) for x in range(ord(rng[0]),ord(rng[1]))])
+			allowed.extend([chr(x) for x in range(ord(rng[0]),ord(rng[1])+1)])
 		allowed.extend([ch for ch in '_-'])
 		for ch in allowed:
 			m.rule('restricted_identifier_body_part_is_', body_part, m.known_char(ch))
@@ -4704,7 +4704,8 @@ def build_in_cube(r):
 		so 'type' is an expression but not just any expression..
 		
 		
-		
+	i was confused by expecting subtyping
+
 		
 so, we cant have a function taking an argument of any type and returning it,
 we need to basically pass it the type too? yea
@@ -4777,10 +4778,17 @@ rather than, given any type, and a value of that type, return that value
 		
 		"""]
 	build_in(SyntaxedNodecl(PiType,
-		[
+		[#look..a parenthesized expression cant subsume "type->ret", subsume?
+		#you cant have <var>:<parenthetised expression> parse as a Pi
+		#can we fix it so that we can?
+		#im just guessing is this really the problem?
+		#seems to be
+		#we can break our examples but fix the problem by just adding the parentheses into
+		#the TextTags here
 		[ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("ret")],
 		#["function from ", ChildTag("from"), " to ", ChildTag("to")]
 		],
+		#a parenthesized expression wouldn't work here?
 		{'arg': cube.var, 'type': cube.exp, 'ret': cube.exp}), None, cube)
 	
 	class Abs(Syntaxed): 
@@ -4817,7 +4825,7 @@ rather than, given any type, and a value of that type, return that value
 		whats this?
 		"""]
 	build_in(SyntaxedNodecl(BoxKind,
-		[TextTag("box")], #[TextTag("[]")],
+		[TextTag("[]")], #[TextTag("[]")],
 		{}), None, cube)
 	
 	build_in(SyntacticCategory({'name': Text("kind")}), None, cube)
@@ -4843,6 +4851,75 @@ rather than, given any type, and a value of that type, return that value
 	r["cube"].ch.statements.items.extend(list(itervalues(cube._dict)))
 	
 	
+	#before theorem proving we probably want to type_check our prop and
+	#make sure it type_checks to either * or [], then we won't have to
+	#deal with the cases where our expression doesn't actually represent
+	#a type/prop. (theorem proving is not applicable for anything except
+	# propositions/types)
+	
+	#yes our proving process returns at most 1 result (but it should return
+	#at least 1 result as long it has one!) we could fix this
+	#with coroutines or some other inferencing process
+	def prove(in_prop,env1=None,env2=None):
+		if (env1 == None) : env1 = []
+		if (env2 == None) : env2 = {}
+		#if we had to pass this through type-checking then it would
+		#fail cause it's a BoxKind, but we know it's a type, and
+		#we know it's only term
+		if isinstance(in_prop,BoxKind):
+			yield StarKind({})#yep all these returns would just be yields instead
+		#lol, yea something like that no really right hence the lol
+		#so, then it resumes right here
+		
+		#i dunno, maybe we need some elifs instead of ifs?
+		#just a bit i'm explaining to my bro
+		
+		elif (not type(type_check(in_prop,env2)) in [StarKind,BoxKind]):
+			print("Can't prove something that's not a proposition/type")
+			assert False
+		
+		#normalize it to reduce the number of different expression classes
+		#we have to consider
+		prop = nf(in_prop)
+		
+		#look up the prop in the 'env' 
+		#if you find it, then return the associated bound variable
+		#if you don't, then proceed to try the PiType case, where
+		#we'll actually attempt to construct an Abs as our proof
+		#term
+		got_something = False
+		for i in env1:
+			if(betaEq(prop, i[0])):
+				got_something = True
+				yield i[1]
+		
+		if isinstance(prop,StarKind):
+			print("Proving the proposition * is not yet implemented aside from in the case that it can be satisfied by the 'env' look-up.")
+			assert False 
+		
+		
+		elif isinstance(prop,PiType):
+			tmp_env1 = env1[:]
+			tmp_env1.append([prop.ch.type,prop.ch.arg])
+			tmp_env2 = dict(env2)
+			tmp_env2[prop.ch.arg.varName] = prop.ch.type
+
+			#so i guess this should really loop over the recursive call's results?
+			for ppp in prove(prop.ch.ret,tmp_env1,tmp_env2):
+				yield Abs({
+					'var':prop.ch.arg, 
+					'type': prop.ch.type, 
+					'exp':  ppp
+					})
+				
+		#we will get here as well
+		#or we need to specify what case should fail
+		
+		#well i could hack this up but it would be better if you change the control flow appropriately instead
+		elif not got_something:
+			print ("What exactly are you telling me to prove here? " + prop.toStr())
+			assert False
+	
 	def type_check(expr,env=None):
 		#set up an empty list of type assumptions
 		if (env == None) : env = {}
@@ -4850,9 +4927,8 @@ rather than, given any type, and a value of that type, return that value
 		#just like normally, we look up the type assumption for the variable
 		#in the environment
 		if isinstance(expr,Var):
-			return env[expr.varName]
-		
-		
+			return env[expr.varName]	
+	
 		if isinstance(expr,App):
 			#type-check-reduce the function using the current
 			#environment
@@ -4969,7 +5045,7 @@ rather than, given any type, and a value of that type, return that value
 			print("Error: found a box")
 			assert False
 	
-	allowedKinds = [(StarKind, StarKind), (BoxKind, StarKind)]
+	allowedKinds = [(StarKind, StarKind), (BoxKind, StarKind), (BoxKind, BoxKind)]
 	
 	
 	#The FreeVars function is still straight-forward
@@ -5318,7 +5394,7 @@ rather than, given any type, and a value of that type, return that value
 
 	for x in [ParExp, App, Abs, Var, PiType, StarKind, BoxKind]: x._eval = eval
 	for x in [ParExp, App, Abs, Var, PiType, StarKind, BoxKind]: x.type_check = type_check
-
+	for x in [ParExp, App, Abs, Var, PiType, StarKind, BoxKind]: x.prove = prove
 
 
 
