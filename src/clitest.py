@@ -23,6 +23,10 @@ def do(t):
 			#type-check it before evaluating:
 			print("type check:",r.type_check().tostr())
 			print("eval:",r.eval().tostr())
+			#what do we do up here is it like while(r.prove()) ?
+			#but if it also has returns it will screw it up
+			for x in r.prove():
+				print("prove:",x.tostr())
 
 for t in [
 #"(\\a.b) c",
@@ -66,7 +70,34 @@ for t in [
 #"\\t:*.\\x:t.x rrrr"
 
 
+
 #"\\t:*.\\x:t.x"
+
+#"(\\t:(*->*).(\\x:t.x)) \\a:*.a"
+
+#these work for the prover
+#"t:*->(x:t->t)"
+#"t:*->(x:(y:t->t)->(y:t->t))"
+#"t:*->(x:(y:t->t)->t)"
+#"t:*->t"
+
+
+"t:(*)->(x:(y:(t)->t)->(y:(t)->(z:(t)->t)))"
+
+#"t:*->(x:y:t->t->(y:t->(z:t->t)))"
+#x:y:t->t
+# vs
+#x:(y:t->t)
+
+#i.e. x should be an object of the pi-type (y:t->t)
+#or consider:
+
+#t:* -> (x:((\s:*.s) t)->t)
+
+#here x should be an object of the type ((\s:*.s) t)
+
+#"t:*->((x:(y:t->t))->((y:t)->((z:t)->t)))"
+
 
 ]:
 	do(t)
