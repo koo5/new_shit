@@ -811,7 +811,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	def register_class_symbol(cls):
 		#this is the grand-top-starting symbol for this node type
 		r = m.symbol(cls.__name__)
-		
+		m.set_symbol_rank(r, cls.rank)
 		
 		#since we have like class Var(Syntaxed)
 		#the Var's decl is the SyntaxedNodecl that actually holds the syntaxes and sits in the declaring module
@@ -823,6 +823,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		
 		for sy in ddecl.instance_syntaxes:
 			cls.rule_for_syntax(r, sy, ddecl)
+				
 		return r
 
 
@@ -830,7 +831,12 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	@classmethod
 	def rule_for_syntax(cls, cls_sym, syntax, ddecl):
 		syms = []
+		
+		
 		for i in syntax:
+		#we build up syms child after child, char after char
+		#if autocomplete is on, we create a rule after each addition
+		#otherwise we only create a rule for the final, complete, syms
 
 			ti = type(i)
 
@@ -839,7 +845,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 					syms = syms[:]
 					syms.append(m.known_char(ch))
 					if autocomplete:
-						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax), rank=cls.rank)
+						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
 			elif ti == ChildTag:
 				child_type = ddecl.instance_slots[i.name]
 				if type(child_type) == Exp:
@@ -853,10 +859,10 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 				syms = syms[:]
 				syms.append(x)
 				if autocomplete:
-					m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax), rank = cls.rank)
+					m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
 		assert len(syms) != 0
 		if not autocomplete:
-			m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax), rank=cls.rank)
+			m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
 
 	@classmethod
 	def from_parse(cls, p, sy):
@@ -4785,6 +4791,7 @@ rather than, given any type, and a value of that type, return that value
 	
 	class Abs(Syntaxed): 
 		help = ["abstraction, a lambda"]
+		#rank = -2000000
 	build_in(SyntaxedNodecl(Abs,
 		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
 		#[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]
@@ -4792,6 +4799,7 @@ rather than, given any type, and a value of that type, return that value
 		{'var': cube.var, 'type': cube.exp, 'exp': cube.exp}), None, cube)
 	
 	class App(Syntaxed): 
+		#rank = 2000000
 		help = ["""function application, a call
 			#"do" <function> "to" <argument>
 			#"run" <function> "on" <argument>

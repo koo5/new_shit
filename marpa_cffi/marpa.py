@@ -80,7 +80,10 @@ class Grammar(object):
 		assert r != -1
 		return r
 		
-	def set_rank(s, rule, rank):
+	def symbol_rank_set(s, sym, rank):
+		return s.check_int(lib.marpa_g_symbol_rank_set(s.g, sym, rank))
+
+	def rule_rank_set(s, rule, rank):
 		return s.check_int(lib.marpa_g_rule_rank_set(s.g, rule, rank))
 
 	def rule_new(s, lhs, rhs):

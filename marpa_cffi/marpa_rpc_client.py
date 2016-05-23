@@ -17,7 +17,7 @@ logger.info("python")
 logger.debug("!")
 
 from lemon_utils.dotdict import Dotdict
-from lemon_utils.lemon_six import unicode, itervalues
+from lemon_utils.lemon_six import unicode, itervalues, iteritems
 from lemon_utils.utils import uniq
 from lemon_args import args
 from marpa_cffi.marpa_misc import *
@@ -70,7 +70,11 @@ class ThreadedMarpa(object):
 		s.num_syms = 0
 		s.known_chars = {}
 		s.rules = []
+		s.symbol_ranks = {}
 
+	def set_symbol_rank(s, sy, r):
+		s.symbol_ranks[sy] = r
+		
 
 	def named_symbol(s,name):
 		"""create a symbol and save it in syms with the name as key"""
@@ -204,6 +208,7 @@ class ThreadedMarpa(object):
 		s.t.input.put(Dotdict(
 			task = 'feed',
 			num_syms = s.num_syms,
+			symbol_ranks = s.symbol_ranks,
 			rules = s.rules[:],
 			for_node = for_node,
 			start=s.start))
@@ -255,6 +260,10 @@ class MarpaThread(threading.Thread):
 		# this calls symbol_new() repeatedly inp.num_syms times, and gathers the
 		# results in a list # this is too smart. also, todo: make symbol_new throw exceptions
 		s.c_syms = list(starmap(s.g.symbol_new, repeat(tuple(), inp.num_syms)))
+		for k,v in iteritems(inp.symbol_ranks):
+			s.g.symbol_rank_set(k,v)
+			print ("symbol rank:", k, v)
+		
 		if args.log_parsing:
 			log('s.c_syms:%s',s.c_syms)
 		s.g.start_symbol_set(s.c_syms[inp.start])
@@ -268,7 +277,8 @@ class MarpaThread(threading.Thread):
 				cr = s.g.rule_new(lhs, rhs)
 				if cr != -2:
 					s.c_rules.append(cr)
-					s.g.set_rank(cr, rank)
+					if rank != 0:
+						s.g.rule_rank_set(cr, rank)
 					print("rank ", rule, rank)
 
 		if args.graph_grammar:
@@ -333,7 +343,6 @@ class MarpaThread(threading.Thread):
 
 		o = Order(b)
 		s.g.check_int(lib.marpa_o_rank(o.o))
-		
 		tree = Tree(o)
 
 		for _ in tree.nxt():
