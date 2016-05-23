@@ -94,7 +94,7 @@ class ThreadedMarpa(object):
 		assert s.debug
 		return s.rules[r]
 
-	def rule(s,debug_name, lhs,rhs,action=ident):
+	def rule(s,debug_name, lhs,rhs,action=ident, rank=0):
 		if type(rhs) != list:
 			rhs = [rhs]
 
@@ -105,9 +105,9 @@ class ThreadedMarpa(object):
 			assert type(debug_name) == unicode
 			assert type(action) in (tuple, types.FunctionType, types.MethodType)
 
-		info((debug_name, lhs, rhs, action))
+		info((debug_name, lhs, rhs, action, rank))
 
-		s.rules.append((False, debug_name, lhs, rhs, action))
+		s.rules.append((False, debug_name, lhs, rhs, action, rank))
 
 	def sequence(s,debug_name, lhs, rhs, action=ident, separator=-1, min=1, proper=False):
 		assert type(lhs) == symbol_int
@@ -264,8 +264,12 @@ class MarpaThread(threading.Thread):
 				_, _, lhs, rhs, action, sep, min, prop = rule
 				s.c_rules.append(s.g.sequence_new(lhs, rhs, sep, min, prop))
 			else:
-				_, _, lhs, rhs, _ = rule
-				s.c_rules.append(s.g.rule_new(lhs, rhs))
+				_, _, lhs, rhs, _, rank = rule
+				cr = s.g.rule_new(lhs, rhs)
+				if cr != -2:
+					s.c_rules.append(cr)
+					s.g.set_rank(cr, rank)
+					print("rank ", rule, rank)
 
 		if args.graph_grammar:
 			graphing_wrapper.generate_png()
@@ -328,6 +332,8 @@ class MarpaThread(threading.Thread):
 			return # no parse
 
 		o = Order(b)
+		s.g.check_int(lib.marpa_o_rank(o.o))
+		
 		tree = Tree(o)
 
 		for _ in tree.nxt():

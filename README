@@ -6,10 +6,53 @@ info: http://goo.gl/1XilSW
 irc: [irc://irc.freenode.net/lemonparty](irc://irc.freenode.net/lemonparty)
 
 
-dependencies
+
+
+getting it to run - ubuntu16.4
+===
+sudo apt-get install  -y git \
+  cwebx texinfo  git  mercurial python3-dev python3-numpy libav-tools \
+    libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
+    libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
+        libfreetype6-dev   python3-pip   python3-levenshtein   \
+        build-essential autoconf automake libtool libffi-dev
+
+
+pip3 install --user \
+  cffi \
+  fuzzywuzzy \
+  hg+http://bitbucket.org/pygame/pygame
+
+
+git clone https://github.com/jeffreykegler/libmarpa.git
+cd libmarpa;
+make dist;
+cd dist;
+./configure;
+make;
+sudo make install ;
+cd ../../
+
+
+git clone https://github.com/koo5/new_shit.git
+cd new_shit
+
+
+LD_PRELOAD=/usr/local/lib/libmarpa.so ./src/sdl_client.py
+
+
+
+
+
+
+
+
+
+
+getting it to run - old
 ===
 needed:
-python3.4 (?)
+python3.4, 3.5 (?)
 fuzzywuzzy - for basic ordering of the menu
 
 recommended:
@@ -17,6 +60,7 @@ cffi and libmarpa - needed for parsing
 apt-get install python3-cffi
 or
 pip3 install --user cffi
+build and install
 https://github.com/jeffreykegler/libmarpa.git
 or run with --lame
 
@@ -27,12 +71,14 @@ the pygame frontend requires pygame, obviously
 python3 pygame:
 https://packages.debian.org/experimental/python3-pygame
 http://pygame.org/wiki/CompileUbuntu
+^this seems to work well
 https://launchpad.net/~thopiekar/+archive/ubuntu/pygame <- seems to not include freetype
 
 
 running it
 ===
-src/sdl_client.py
+LD_PRELOAD=/usr/local/lib/libmarpa.so ./src/sdl_client.py
+
 
 if the latest commit doesnt run, git checkout HEAD^ until you find one that does:)
 
@@ -42,34 +88,6 @@ getting started
 some context sensitive help is in the sidebar. Press F1 to toggle between menu and help. Move the cursor a bit. 
 Stop by in the irc channel. 
 
-
-
-help wanted
-===
-here are some (random and possibly outdated) things that i think would help lemon further, sometimes directly, sometimes by making it more
-accesible/interesting to other people. Some understanding of lemon is usually
-necessary though. I will be more than happy to explain every detail, but be prepared that it takes some time.
-some (messy) notes are also notes1, and search for "todo" in the source files..
-
-* add more standard library functions, operators for strings and lists
-
-* help developing the license
-
-* look into runnig lemon in pypyjs or compiling it to asm.js
-
-* improve the curses frontend, figure out what keys to use
-
-* do more research on or write comparisons of related projects (projectured, cedalion, MPS, eastwest..)
-
-* figure out how to have a better font in pygame (for mathy expressions, for example) compatible with lemon license (search notes1 for 'font')
-
-* improve logging, use: (todo)
-
-* integrate some test framework
-
-* lemon needs a better data model for the ast nodes. Looking into oldman, or pure rdflib, or a rewrite in another language. Or into graph libraries. And inferencers..
-
-* alternatively, lets try to do with what we have now and use lemon for user shell-like features or editing triples or narsesse or anything
 
 
 files

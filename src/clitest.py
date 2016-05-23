@@ -63,7 +63,8 @@ for t in [
 #c-------d
 
 # i guess we need some base types in there, not sure
-"(\\t:*.(\\x:t.x))"
+"\\t:*.x rrrr"
+#"\\t:*.\\x:t.x rrrr"
 
 
 ]:

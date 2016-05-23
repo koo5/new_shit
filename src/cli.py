@@ -11,6 +11,8 @@ from marpa_cffi.marpa_cffi import lib
 
 
 import nodes
+nodes.autocomplete  = False
+
 
 from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 nodes.m = m = ThreadedMarpa(print, True)

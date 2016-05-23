@@ -646,3 +646,11 @@ May 12
 21:28 < HMCa_> that's why that big dark grey 'Prop' box is so important, that is where the abstractions that we are typing over actually "live"... in those propositional definitions...
 21:29 < HMCa_> that is where the rules that we are typing are, and how they get "connected to" their types
 21:30 < HMCa_> if the domain/range of a Pi and the domain/range of its' P do not align, that is the very definition of a failure to typecheck! ;-)
+
+
+
+
+
+
+
+

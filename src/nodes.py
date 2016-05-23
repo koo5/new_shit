@@ -11,6 +11,8 @@ good luck.
 
 """
 
+autocomplete = True
+
 # region imports
 from copy import copy
 import json
@@ -785,6 +787,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	brackets = ("<", ">")
 	#brackets = ("", "")
 	default_syntax_index = 0
+	rank = 0
 
 	def __init__(s, children):
 		super().__init__()
@@ -825,13 +828,18 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 
 	@classmethod
-	def rule_for_syntax(cls,r,sy,ddecl):
+	def rule_for_syntax(cls, cls_sym, syntax, ddecl):
 		syms = []
-		for i in sy:
+		for i in syntax:
+
 			ti = type(i)
 
 			if ti == unicode:
-				syms.append(m.known_string(i))
+				for ch in i:
+					syms = syms[:]
+					syms.append(m.known_char(ch))
+					if autocomplete:
+						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax), rank=cls.rank)
 			elif ti == ChildTag:
 				child_type = ddecl.instance_slots[i.name]
 				if type(child_type) == Exp:
@@ -842,28 +850,46 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 					log("no type:" + str(i))
 					return None
 				assert x, child_type
+				syms = syms[:]
 				syms.append(x)
+				if autocomplete:
+					m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax), rank = cls.rank)
 		assert len(syms) != 0
-		m.rule(cls.__name__, r, syms, action=lambda x: cls.from_parse(x, sy))
-		#the marpa rule gets a callback function for constructing what we want from the parsed parts and texts
+		if not autocomplete:
+			m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax), rank=cls.rank)
 
 	@classmethod
 	def from_parse(cls, p, sy):
-		log('from_parse:%s',p)
+		print('from_parse:%s',p)
+
 		r = cls.fresh()
-		info((p, cls, sy))
-		j = 0
+		#info((p, cls, sy))
+
+		s2 = []
 		for i in sy:
-			ti = type(i)
-			tpj = type(p[j])
-			if ti == unicode:
-				assert tpj == unicode
-			elif ti == ChildTag:
-				r.ch[i.name] = p[j]
+			if type(i) == unicode:
+				for ch in i:
+					s2.append(ch)
 			else:
-				continue
-			j+=1
-			if j == len(p): break
+				s2.append(i)
+
+
+		print(sy)
+		print(s2)
+
+		si = 0#syntax_item_index
+
+		for i in p:
+			if type(i) == unicode:
+				assert type(s2[si] == unicode)
+			else:
+				assert isinstance(i, Element)
+				r.ch[s2[si].name] = i
+
+			si+=1
+
+
+			#if j == len(p): break
 
 		r.fix_parents()
 		return r
@@ -2483,7 +2509,7 @@ class ParserMenuItem(MenuItem):
 class PaletteMenuItem(ParserMenuItem):
 	def __init__(s, value, score=0):
 		super().__init__(value, score)
-		s.brackets_color = (255,255,0)
+		s.brackets_color = (0,0,0)
 
 class DefaultParserMenuItem(MenuItem):
 	def __init__(s, text):
@@ -4771,6 +4797,7 @@ rather than, given any type, and a value of that type, return that value
 
 	class Abs(Syntaxed): 
 		help = ["abstraction, a lambda"]
+		rank = -1200
 		
 	build_in(SyntaxedNodecl(Abs,
 		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
