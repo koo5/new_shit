@@ -302,7 +302,7 @@ class Menu(SidebarFrame):
 				return
 			s.update_current_text()
 			s.prepare_grammar(scope)
-			#s.create_palette(scope, s.editor.atts, s.current_parser_node)
+			s.create_palette(scope, s.editor.atts, s.current_parser_node)
 			s.signal_change()
 
 	def prepare_grammar(s, scope):

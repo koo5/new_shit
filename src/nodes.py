@@ -605,7 +605,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	def set_parent(s, v):
 		assert v or isinstance(s, Root) or s.isroot,  s
-		super(Node, s).set_parent(v)
+		super().set_parent(v)
 		if "value" in s.runtime._dict: #crap
 			s.runtime.value.parent = s.parent
 
@@ -787,7 +787,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	default_syntax_index = 0
 
 	def __init__(s, children):
-		super(Syntaxed, s).__init__()
+		super().__init__()
 		s.check_slots(s.slots)
 		s.syntax_index = s.__class__.default_syntax_index
 		s.ch = Children()
@@ -1008,7 +1008,7 @@ class Collapsible(Node):
 	vm_multiline = 2
 
 	def __init__(s):
-		super(Collapsible, s).__init__()
+		super().__init__()
 		s.view_mode_widget = widgets.NState(s, 0, ("+","v","-"))
 
 	@property
@@ -1048,7 +1048,7 @@ def replace_thing_in_odict(d:odict, old, new):
 
 class Dict(Collapsible):
 	def __init__(s):
-		super(Dict, s).__init__()
+		super().__init__()
 		s.items = odict()
 
 	def replace_child(s, old, new):
@@ -1094,7 +1094,7 @@ class Dict(Collapsible):
 		val.parent = s
 
 	def fix_parents(s):
-		super(Dict, s).fix_parents()
+		super().fix_parents()
 		s._fix_parents(list(s.items.values()))
 		s._fix_parents(list(s.items.keys())) # why so complicated?
 
@@ -1133,7 +1133,7 @@ class List(ListPersistenceStuff, Collapsible):
 	easily_instantiable = True
 	#todo: view sorting:how and why? separate view objects?
 	def __init__(s):
-		super(List, s).__init__()
+		super().__init__()
 		s.items = []
 		s.decl = Ref(B.list_of_anything)
 
@@ -1598,6 +1598,7 @@ class Module(Syntaxed):
 	def __init__(s, kids):
 		super(Module, s).__init__(kids)
 		#s.sortedview = SortableStatements(s)
+		s.ch.statements.view_mode = Collapsible.vm_collapsed
 
 	def add(s, item):
 		s.ch.statements.add(item)
@@ -2460,7 +2461,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
 class ParserMenuItem(MenuItem):
-	def __init__(s, value, score = 0):
+	def __init__(s, value:Node, score = 0):
 		super(ParserMenuItem, s).__init__()
 		s.value = value
 		value.parent = s
@@ -2481,15 +2482,14 @@ class ParserMenuItem(MenuItem):
 
 class PaletteMenuItem(ParserMenuItem):
 	def __init__(s, value, score=0):
-		super(ParserMenuItem, s).__init__()
+		super().__init__(value, score)
 		s.brackets_color = (255,255,0)
 
 class DefaultParserMenuItem(MenuItem):
 	def __init__(s, text):
-		super(DefaultParserMenuItem, s).__init__()
+		super().__init__()
 		s.text = text
 		s.brackets_color = colors.default_parser_menu_item_brackets
-
 
 	def tags(s):
 		return [TextTag(s.text)]
