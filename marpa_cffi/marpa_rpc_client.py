@@ -172,12 +172,12 @@ class ThreadedMarpa(object):
 
 
 
-
+		#we dont have a separate tokenizer
 		s.named_symbol('nonspecial_char')
 		s.named_symbol('known_char')
+		#maybe just convenience
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
-
 
 
 
@@ -202,6 +202,74 @@ class ThreadedMarpa(object):
 					else:
 						rulename = ""
 					s.rule(rulename , s.start, i.symbol)
+
+		#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
+		#ok here we're gonna walk thru WorkAssess and BindsTighters and do the precedence and associativity magic
+
+		sups = DefaultDict(list)
+		pris = DefaultDict(list)
+		asoc = DefaultDict(-1)
+
+		for i in scope:
+			#sub._losers = []
+			if i.__class__.__name__ == 'WorksAs':
+				#sub WorksAS sup, these are Refs
+				sups[i.ch.sup.target].append(i.ch.sub.target)
+
+		for k,v in sups:
+			for sub in v:
+				for n in scope:
+					if n.__class__.__name__ == 'HasPriority':
+						pris[n.ch.value.pyval].append(n.ch.node)
+					if n.__class__.__name__ == 'HasAssociativity':
+						asoc[n.ch.value.pyval].append(n.ch.node)
+
+
+
+		for k,v in sups:
+			for sub in v:
+				pri = pris[sub]
+				if not pri in level_syms[sup]:
+					level_syms[sup][pri] = s.symbol(sup.name + pri)
+				lhs = level_syms[sup][pri]
+				rhs =
+				pris[sub]
+
+
+
+
+
+
+
+
+		"""
+		for k,v in sups:
+			for sub in v:
+				for n in scope:
+					if n.__class__.__name__ == 'BindsTighterThan':
+						if n.ch.b.target == sub:
+							sub._tighter_ones.append(n.ch.a.target)
+
+		for k, v in sups:
+			for sub in v:
+				level = 0
+				while sub._losers
+		"""
+
+
+
+	def register_symbol(s):
+		if s._rule != None:
+			return
+		lhs = s.ch.sup.target.symbol
+		rhs = s.ch.sub.target.symbol
+		if args.log_parsing:
+			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
+		if lhs != None and rhs != None:
+			r = m.rule(str(s), lhs, rhs)
+			s._rule = r
+
+
 
 
 	def enqueue_precomputation(s, for_node):
