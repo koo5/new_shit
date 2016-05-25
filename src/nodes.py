@@ -2096,21 +2096,6 @@ class WorksAs(Syntaxed):
 	def __init__(s, children):
 		super(WorksAs, s).__init__(children)
 
-	def forget_symbols(s):
-		super(WorksAs, s).forget_symbols()
-		s._rule = None
-
-	def register_symbol(s):
-		if s._rule != None:
-			return
-		lhs = s.ch.sup.target.symbol
-		rhs = s.ch.sub.target.symbol
-		if args.log_parsing:
-			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
-		if lhs != None and rhs != None:
-			r = m.rule(str(s), lhs, rhs)
-			s._rule = r
-
 	@classmethod
 	def b(cls, sub, sup):
 		"""building-in helper"""
@@ -2121,6 +2106,10 @@ class WorksAs(Syntaxed):
 			sup = B[sup]
 			
 		return cls({'sub': Ref(sub), 'sup': Ref(sup)})
+
+class BindsTighterThan(Syntaxed):
+	help = "has higher precedence, goes lower in the parse tree"
+
 
 class Definition(Syntaxed):
 	"""should have type functionality (work as a type)"""
@@ -3311,6 +3300,14 @@ def build_in_lemon_language():
 
 		SyntacticCategory({'name': Text("expression")})
 	])
+
+
+	build_in(SyntaxedNodecl(BindsTighterThan,
+				[[ChildTag("a"), " binds tighter than ",  ChildTag("b")]],
+				{'a': 'type', 'b': 'type'}))
+
+
+
 
 	build_in(WorksAs.b("statement", "anything"), False)
 	build_in(WorksAs.b("expression", "statement"), False)
@@ -4549,7 +4546,6 @@ App := Expr " " Expr
 
 
 
-
 cube = Dotdict() #a helper dict to hold the nodes being built in and to refe
 cube._dict = odict()
 
@@ -4603,7 +4599,7 @@ def build_in_cube(r):
 	build_in(SyntaxedNodecl(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
 		{'exp': cube.exp}), None, cube)
-	build_in(WorksAs.b(cube.parexp, cube.exp), False, cube)
+
 	
 	class PiType(Syntaxed):
 		help = ["""function type
@@ -4816,6 +4812,9 @@ rather than, given any type, and a value of that type, return that value
 		help = ["""star kind
 		whats this?
 		"""]
+		def toStr(s):
+			return "*"
+			
 	build_in(SyntaxedNodecl(StarKind,
 		[TextTag("*")], #[TextTag("*")],
 		{}), None, cube)
@@ -4824,6 +4823,8 @@ rather than, given any type, and a value of that type, return that value
 		help = ["""box kind
 		whats this?
 		"""]
+		def toStr(s):
+			return "[]"
 	build_in(SyntaxedNodecl(BoxKind,
 		[TextTag("[]")], #[TextTag("[]")],
 		{}), None, cube)
@@ -4841,11 +4842,17 @@ rather than, given any type, and a value of that type, return that value
 	
 	
 	
-	build_in(WorksAs.b(cube.app, cube.exp), False, cube)
-	build_in(WorksAs.b(cube.abs, cube.exp), False, cube)
-	build_in(WorksAs.b(cube.var, cube.exp), False, cube)
-	build_in(WorksAs.b(cube.pitype, cube.exp), False, cube)
-	build_in(WorksAs.b(cube.kind, cube.exp), False, cube)
+	for a,b in [
+	
+	(cube.parexp, cube.exp),
+	(cube.app, cube.exp), 
+	(cube.abs, cube.exp), 
+	(cube.var, cube.exp), 
+	(cube.pitype, cube.exp),
+	(cube.kind, cube.exp)
+	
+	]:build_in(WorksAs.b(a,b), False, cube)
+	
 	
 	
 	r["cube"].ch.statements.items.extend(list(itervalues(cube._dict)))
@@ -4895,7 +4902,7 @@ rather than, given any type, and a value of that type, return that value
 		
 		if isinstance(prop,StarKind):
 			print("Proving the proposition * is not yet implemented aside from in the case that it can be satisfied by the 'env' look-up.")
-			assert False 
+			#assert False 
 		
 		
 		elif isinstance(prop,PiType):
@@ -5019,6 +5026,7 @@ rather than, given any type, and a value of that type, return that value
 			#if not, fail type-checking. this is how
 			#we control what corner what of the cube
 			#we're using
+			#print("PiType: (" + s.toStr() + ", " + t.toStr() + ")")
 			if ( (s.__class__,t.__class__) not in allowedKinds):
 				print ("Bad abstraction, AllowedKinds=", 
 				[(x.__name__, y.__name__) for x,y in allowedKinds], ", argtype, bodytype = ", (s.__class__.__name__,t.__class__.__name__))
@@ -5045,7 +5053,7 @@ rather than, given any type, and a value of that type, return that value
 			print("Error: found a box")
 			assert False
 	
-	allowedKinds = [(StarKind, StarKind), (BoxKind, StarKind), (BoxKind, BoxKind)]
+	allowedKinds = [(StarKind, StarKind), (StarKind, BoxKind), (BoxKind, StarKind), (BoxKind, BoxKind)]
 	
 	
 	#The FreeVars function is still straight-forward
@@ -5060,7 +5068,7 @@ rather than, given any type, and a value of that type, return that value
 		#happens to bound variables? they get removed
 		#from the list in the abstraction case.
 		if isinstance(expr,Var):
-			vars.add(expr.ch.var.varName)
+			vars.add(expr.varName)
 			return vars
 		
 		#the free variables of an application is
@@ -5083,7 +5091,9 @@ rather than, given any type, and a value of that type, return that value
 		if isinstance(expr,Abs):
 			free_t = FreeVars(expr.ch.type,vars)
 			free_e = FreeVars(expr.ch.exp,vars)
-			free_e.remove(expr.ch.var.varName)
+			
+			if(expr.ch.var.varName in free_e):
+				free_e.remove(expr.ch.var.varName)
 			return free_t.union(free_e)
 		
 		#the free variables of a pi-type is the union
@@ -5093,7 +5103,9 @@ rather than, given any type, and a value of that type, return that value
 		if isinstance(expr,PiType):
 			free_t = FreeVars(expr.ch.type,vars)
 			free_e = FreeVars(expr.ch.ret,vars)
-			free_e.remove(expr.ch.arg.varName)
+			
+			if(expr.ch.arg.varName in free_e):
+				free_e.remove(expr.ch.arg.varName)
 			return free_t.union(free_e)
 		
 		#the expressions "*" and "[]" don't contain
@@ -5193,7 +5205,7 @@ rather than, given any type, and a value of that type, return that value
 		
 		#* and [] both don't contain any vars so you're not gonna
 		#substitute anything into them. return the expression as is.
-		if isinstance(where,Kind):
+		if type(where) in [StarKind,BoxKind]:
 			return where
 	
 	#Alpha equivalence: check if the two expressions are

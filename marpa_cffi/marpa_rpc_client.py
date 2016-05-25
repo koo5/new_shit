@@ -168,11 +168,30 @@ class ThreadedMarpa(object):
 
 
 
-
+		#we dont have a separate tokenizer
 		s.named_symbol('nonspecial_char')
 		s.named_symbol('known_char')
+		#maybe just convenience
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
+
+
+
+	def forget_symbols(s):
+		super(WorksAs, s).forget_symbols()
+		s._rule = None
+
+	def register_symbol(s):
+		if s._rule != None:
+			return
+		lhs = s.ch.sup.target.symbol
+		rhs = s.ch.sub.target.symbol
+		if args.log_parsing:
+			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
+		if lhs != None and rhs != None:
+			r = m.rule(str(s), lhs, rhs)
+			s._rule = r
+
 
 
 

@@ -86,7 +86,7 @@ for t in [
 #im sure it wont work,
 
 #this is the one i'm really having trouble with
-"t:(*)->(x:(y:(t)->t)->(y:(t)->(z:(t)->t)))"
+#"t:(*)->(x:(y:(t)->t)->(y:(t)->(z:(t)->t)))"
 # i dont think i understood initially
 
 #see how we kind of need it syntactically here
@@ -108,7 +108,10 @@ for t in [
 
 #"t:*->((x:(y:t->t))->((y:t)->((z:t)->t)))"
 
-
+#"(\\t:*.(x:t->t)) (t:*->(x:t->t))"
+#"(\\t:*.(x:t->t)) (t:*->*)"
+#"t:*->*"
+"t:*->(x:t->*)"
 ]:
 	do(t)
 
