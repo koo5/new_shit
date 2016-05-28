@@ -177,22 +177,6 @@ class ThreadedMarpa(object):
 
 
 
-	def forget_symbols(s):
-		super(WorksAs, s).forget_symbols()
-		s._rule = None
-
-	def register_symbol(s):
-		if s._rule != None:
-			return
-		lhs = s.ch.sup.target.symbol
-		rhs = s.ch.sub.target.symbol
-		if args.log_parsing:
-			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
-		if lhs != None and rhs != None:
-			r = m.rule(str(s), lhs, rhs)
-			s._rule = r
-
-
 
 
 

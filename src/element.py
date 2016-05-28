@@ -123,10 +123,13 @@ class Element():
 		else:
 			return []
 
-	def tostr(s):
+	def tostr(s, c=False):
 		#return "".join([x for x in s.collect_tags() if isinstance(x,unicode)])
 		indent = 0
-		r = ""
+		if c:
+			r = s.__class__.__name__
+		else:
+			r = ""
 		for x in s.collect_tags():
 			if isinstance(x,unicode):
 				for ch in x:
