@@ -1,0 +1,73 @@
+"The universe-polymorphic identity function is a function that takes a Level, n, and returns
+a function that takes a Set n, t, and returns a function that takes a t and returns a t."
+
+that's not usually how we would say this.
+
+first, in natural language, we don't have "universe hierarchies". the utility of universe
+hierarchies is something we come up with after literally hundreds of thousands of years into
+the existence of natural language. how do we scrap that without losing anything? 
+
+typical ambiguity: we infer the set level, and just say Set. there's no longer really a
+point in specifying it as the "universe-polymorphic" identity function, either, so:
+
+"The identity function is a function that takes a Set, t, and returns a function that takes
+a t and returns a t."
+
+well, in natural language we also don't *any* form of explicit polymorphism (on purpose); we
+infer everything from context, and we tend to assume functions are "as polymorphic as possible"
+until we have a reason to start differentiating. Haskell basically does this with
+type-variables to get polymorphic types, and that's what we'll do.
+
+"The identity function is a function that takes a t, x, and returns a t."
+
+it's kind of redundant to say "The identity function is a function", i'd think, so, let's
+look a little closer at "The identity function" here. Why do we have the redundancy in the
+first place? because "the identity function" refers to an object, and we say that that object
+is "a function" (that takes a t, x, ....). "The" in some sense specifies that there is
+only one of it, though it's not always obvious what set it's the only member of. In this
+sentence, is it the only object of type "function that takes a t, x, ..." or is it just the
+only one you're talking about?
+
+Notice also how this is a type declaration, and not a function definition. If we write
+it as a function definition instead, then:
+
+"The identity function is a function that takes a t, x, and returns x."
+
+Notice how the only thing distinguishing this sentence as a function definition from the
+previous sentence as a type declaration is "a t." vs "x". If we had said "returns a x", it'd
+be a type declaration. 
+
+"The identity function is the function that takes a t, x, and returns x."
+
+remember the assumption that we assume functions are as polymorphic as possible, so, we
+drop the "t", and just infer the type of x when we need it, maybe saying that x is just
+some generic "object"
+
+"The identity function is the function that takes an object, x, and returns x."
+
+if we can assume object names can encode type information, then we can extrapolate
+that the identity function is a function, and write
+
+"The identity function takes an object, x, and returns x."
+
+in the context where we say "returns x", we could use "it" to reference some object
+previously specified. the only object previously specified that's applicable here is
+indeed "x", so we could say
+
+"The identity function takes an object, x, and returns it."
+
+Well, now we have this object that we name, but we never use the name, we reference it
+indirectly using "it", so we might just omit the unnecessary name
+
+"The identity function takes an object and returns it."
+
+this is about as simple as you can express the identity function in natural language.
+it can be made equivalent to the very first universe-polymorphic and unwieldy expression
+in this document.
+
+that's just possibilities for reducing and humanizing the type theory expressions, given
+one fairly rigid form for writing them.
+
+
+
+

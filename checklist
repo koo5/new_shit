@@ -1,0 +1,91 @@
+tau prototype
+	correct RDF inferencer
+	RDFS builtins
+	NAF/graph queries/retractions
+	MLTT over RDF
+	lambda-auth
+	DHT
+	block-chain
+	OWA/CWA cycle	(the "cycle" can be trivial, to start with, i.e. just CWA/typed)
+
+genesis blocks
+^ yea we have to make genesis blocks
+
+smart contracts
+
+crypto-currencies
+
+decentralized/distributed data storage
+
+decentralized/distributed computing
+
+look-up proofs of propositions on DHT
+
+
+
+cnl interface to type theory
+voice-to-code
+
+latex interface to type theory
+
+atlas project object interface w/ DRTs
+
+proof-wiki w/ type-theory on DHT
+
+lemon
+
+math flash-card system in type theory
+
+
+
+theoretical:
+--------------------------------
+what to do about church encoding
+how to handle higher inductive types
+
+
+understand relation between monoids and monoidal categories
+	check
+
+understand coherence theorems (particularly for monoidal categories)
+	in order to understand what's necessary to make sure natural isomorphisms
+	work out as a notion of equality
+
+understand relation between monads and bicategories
+	in order to understand monads and continue on the idea of
+	monoidal categories
+
+understand relation between dependent types and fibrations
+	in order to understand the category theory interpretation of dependent type theory
+
+understand relation between syntactic categories and internal logics
+	in order to understand the category theory interpretation of logic in general
+
+fibrations/fiber bundles in topology/geometry/calculus
+
+higher inductive types as cell complexes
+	*could go towards a foundation for the geometric data-types in atlas
+
+description of machine code in terms of algebraic topology over homotopy type theory
+
+how to prove consistency/inconsistency of theories
+how to prove godel-completeness/incompleteness of theories
+relation between godel-completeness and turing-completeness
+how to prove turing-completeness/incompleteness of systems
+why actually is turing-completeness bad for ethereum?
+	undecidable contracts must be limited by gas?
+		in which undecidable contracts will default?
+		in which case the logic can't find an answer?
+			in which case it can't know whether to accept the next block or not?
+				this is more like, why is turing-completeness bad for tau, per-block
+
+relation between combinatorics, topology, complexity, information theory
+	combinatorics is about rearranging expressions into equivalent forms (topology)
+	which compute the same thing but faster/smaller/better (complexity & information theory)
+
+
+	
+
+
+
+

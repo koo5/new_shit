@@ -1,0 +1,42 @@
+-- a comment (optional), saying what the module is doing
+-- a "Hello World" grammar
+
+-- a module header indicating that it is an abstract syntax module named Hello
+abstract Hello = 
+
+-- a module body in braces, consisting of:
+{
+ -- a startcat flag declaration stating that Greeting is the default start category
+ -- for parsing and generation
+ flags startcat = Greeting ;
+
+ -- category declarations introducing two categories, i.e. types of meanings
+ cat Greeting ; Recipient ;
+
+ -- function declarations introducing three meaning-building functions
+ -- "three" ?
+ fun
+  Hello : Recipient -> Greeting ;
+  World, Mum, Friends : Recipient ;
+}
+
+
+-- a module header indicating that it is a concrete syntax of the abstract syntax Hello
+-- itself named HelloEng
+concrete HelloEng of Hello = 
+
+-- a module body in curly brackets, consisting of:
+{
+
+-- linearization type definitions, stating that Greeting and Recipient are
+-- records with a string s
+ lincat Greeting, Recipient = {s : Str} ;
+
+-- linearization definitions telling what records are assigned to each of the
+-- meanings defined in the abstract syntax
+ lin
+  Hello recip = {s = "hello" ++ recip.s} ;
+  World = {s = "world"} ;
+  Mum = {s = "mum"} ;
+  Friends = {s = "friends"} ;
+}

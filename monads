@@ -1,0 +1,139 @@
+2-category
+weak 2-category
+hom-object
+hom-category
+enriched category
+coherence theorems
+higher category theory
+bicategory
+	A bicategory is a particular algebraic notion of a weak 2-category
+	The idea is that a bicategory is a category weakly enriched over Cat: the hom-objects
+	of a bicategory are hom-categories, but the associativity and unity laws of enriched
+	categories only hold up to coherent isomorphism.
+
+	A bicategory B consists of:
+	*A collection of objects x,y,z, 0-cells
+	*For each pair of 0-cells x,y, a category B(x,y) whose objects are called morphisms or
+	 1-cells and whose morphisms are called 2-morphisms, or 2-cells
+	*For each 0-cell x, a distinguished 1-cell 1_x : B(x,x) called the identity morphism at x
+	*For each triple of 0-cells x,y,z, a functor o:B(y,z)*B(x,y) -> (Bx,z) called horizontal composition
+	*For each pair of 0-cells x,y, natural isomorphisms called "unitors":
+	  id_B(x,y) o const_1_x ~ id_B(x,y) ~ const_1_x o id_B(x,y) : B(x,y) -> (Bx,y), and
+	*For each quadruple of 0-cells w,x,y,z, a natural isomorphism called the associator between
+	 the two functors from B(y,z)*B(x,y)*B(w,x) to B(w,z) such that
+		
+	   * The pentagon identity is satisfied by the associators
+	   * The triangle identity is satisfied by the unitors
+	
+(infinity,2)-category
+tricategory
+tetracategory
+n-category
+(infinity,n)-category
+monoid
+	A monoid is a set M equipped with
+	1. A binary operation
+		+ : M*M -> M
+	   (let's just call this the "tensor product")
+	2. An object
+		0 : C
+	   called the unit object (or maybe tensor unit)
+	3. An equality for the associative law for +
+		(x+y)+z = x+(y+z)
+	4. Two equalities called the left and right unit laws
+		0 + x = x
+		x + 0 = x
+monoidal category
+	A monoidal category is a category equipped with some notion of 'tensor product'. A good
+	example is the category Vect, where we can take the tensor product not only of vector spaces
+	but also of linear maps: given linear maps f:V -> W and f':V' -> W', we get a linear map
+	f # f' : V # V' -> W # W'
+
+	A monoidal category is a category C equipped with
+	1. A functor
+		+ : C*C -> C
+	   called the tensor product
+
+	2. An object
+		0 : C
+	   called the unit object or tensor unit
+
+	3. A natural isomorphism
+		a : ((_ + _) + _) ~ (_ + (_ + _))	<-- these are functors?
+	   with components of the form
+		a_(x,y,z) : (x+y)+z -> x+(y+z)
+	   called the associator.
+
+	4. A natural isomorphism
+		L : 0 + _ ~ _				<-- these are functors?
+	   called the left unitor, and a natural isomorphism
+		R : _ + 0 ~ _		
+	   called the right unitor.
+
+	such that (C,+) obeys the triangle identity and the pentagon identity.
+	 
+	So, when we defined a monoid, we had a built-in notion of equality between terms/objects.
+	Here, in the definition of a monoidal category, this notion of equality between terms/objects
+	is emulated by these natural isomorphisms. We need natural isomorphisms that represent
+	the equalities for associativity, and we need natural isomorphisms that represent the
+	equalities for identity. That's what these "associator" and "unitors" are.
+	When we defined the monoid, equality was just equality, and it doesn't matter how you got
+	the equality. Now, in the definition of a monoidal category, we're using these sets of
+	functions called natural isomorphisms instead. We have one set for the associativity, and
+	other sets for the identity equalities, and we have to make sure that these two equalities
+	work with each other in the appropriate way. That's what these "coherence rules" are all
+	about, i.e. the triangle identity and the pentagon identity. 
+
+
+braiding
+string diagram	
+horizontal categorification
+monad
+	A monad is a structure that is a lot like a monoid, but that lives in a bicategory
+	rather than a monoidal category. In other words, the concept of a monad is the
+	horizontal categorification of that of a monoid.
+
+	It is a map that sends every type X of some given programming language to a new
+	type T(X) (called the "type of T-computations with values in X"), equipped with
+	a rule for composing two functions of the form f:X -> T(Y) (called Kleisli functions)
+	and g: Y -> T(Z) to a function g.f : X -> T(Z) (their Kleisli composition), in a way
+	that is associative and unital with respect to a given unit function called
+	pure_X : X -> T(X)
+
+	In computer science, a programming language may be formalized or studied by means of
+	a category, called the syntactic category C, whose
+	  * objects X : C are the types of the languages
+	  * morphisms X -> Y are the terms or programs that take values of type X as input and
+	    return values of type Y as output.
+base change
+essential geometric morphism
+topos
+slice category; "over category" C/c of a category C over an object c:C has
+	* objects that are all arrows f:C such that cod(f) = c, and
+	* morphisms g: X -> X' : C from f : X -> c to f': X' -> c such that f'.g = f
+
+	The assignment of slice categories C/c to objects c:C extends to a functor
+		C/(_): C -> Cat
+	Under the "Grothendieck construction", this functor corresponds to the codomain
+	fibration
+		cod:[I,C] -> C
+	from the arrow category of C.
+Kleisli category
+Kleisli function
+Kleisli composition
+comonads
+Eilenberg-Moore category
+
+
+fiber bundles
+fibrations
+fiber integration
+cohomology
+Thom space
+Thom isomorphism
+de Rham cohomology
+Pontryagin-Thom collapse maps
+cobordism
+homotopy groups
+Brown representability theorem
+Thom spectrum

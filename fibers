@@ -1,0 +1,43 @@
+pullback P:
+
+	P = Sigma a:A . (Sigma b:B .(f(a) = g(b)))
+
+Homotopy fiber of f:X->Y wrt y:Y
+	Sigma x:X . (f(x) = y)
+
+
+Fibration
+
+fibrant object
+
+Cartesian closed
+Model category
+
+presheaf on C:
+	a functor F: C^op -> Set
+
+representable presheaf
+	a presheaf on C is representable if it is naturally isomorphic to a 
+	hom-functor h_X := hom_C(_,X):C^op -> Set, which sends an object U : C
+	to the hom-set Hom_C(U,X) in C, and which sends a morphism
+	a:U'->U in C to the function which sends each morphism f:U->X to the
+	composite a.f
+	
+	The object X is determined uniquely up to isomorphism in C, and is called
+	the representing object for the presheaf.
+
+Let C be a locally cartesian closed model category
+A dependent type
+	b : B |- E(b) : Type
+corresponds to a morphism E -> B in C that is a fibration between fibrant objects
+(this morphism is the projection operator).
+
+Dependent function type
+	b1,b2: B |- E(b1) -> E(b2)):Type
+is interpreted as the internal hom [_,_]_C/B*B in the slice category C/B*B after
+extending E to the context B*B by pulling back along the two projections p1,p2:B*B->B,
+respectively.
+
+Now we talk about "univalent fibrations"
+
+

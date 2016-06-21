@@ -74,3 +74,181 @@ todo:pip search hjson
 #todo:xiki style terminal, standard terminal. Both favoring UserCommands
 #first user command: commit all and push;)
 
+
+Universes
+---------------------
+universes
+universe cumulativity
+universe polymorphism
+universe polymorphism without SetOmega
+record types and modules
+typical ambiguity
+universe-level irrelevance
+
+
+Tau-related
+----------------------
+HMC's DRTs/Universes thing
+translate into natural deduction
+translate into triples
+fix the RDF reasoner
+
+
+Named Expressions, Recursion & Inductive types
+----------------------
+named expressions
+recursion
+corecursion
+productivity
+totality
+codata
+fixed-point combinators
+inductive types
+inductive families of types
+coinductive types?
+higher inductive types
+identity types / paths
+path induction
+univalence
+function extensionality
+algebraic data types
+parametric algebraic data types
+generalized algebraic data types
+
+
+Impurity
+------------------
+monads
+side-effects
+type providers
+
+
+Misc
+------------------
+polarity
+subterm irrelevance
+record subtyping
+intersection types
+dependent intersection types
+eta-equality
+implicit arguments (inferred by system)
+
+
+
+Optimization
+----------------
+*Optimize by erasing unnecessary information
+*Optimize in either time / space relative to an instruction set architecture
+
+De Bruijn indexing
+Compiled lambda expressions
+
+*Supercompilation as theorem proving?
+
+
+
+Beyond
+-------------------
+HOAS
+PHOAS
+categories defined with dependent types
+identity within categories defined as isomorphism           
+functors relating objects at different levels of abstraction 
+theoretical: embed the system into the untyped lambda calculus
+theoretical: embed the system within a self-interpreter
+expand the CoC to a pure type system, taking an SAR triple
+  and matching data-types & methods for them
+
+
+
+Applications (besides Tau & everything we already know Tau will be used for)
+---------------------
+*If we make a tech product, then the programmer should find it logical but the
+ customer should find it magical.
+
+
+
+Human-Computer Interface
+-----------------------------
+Controlled natural language
+  Voice-to-code; code-to-voice
+Natural language processing
+Personal assistant
+Personal semantic wiki
+Public semantic wiki (aka Atlas Project?)
+
+
+
+Mathematical applications
+--------------------------
+Automated theorem proving (but I mean more specifically, like for particular applications)
+Geometric reasoning
+Topological reasoning
+
+
+
+
+Programming applications
+---------------------------
+Automated language-to-language program/logic translation
+Typed machine code
+
+Program verification according to formal specifications (we've already done this! crazy!)
+Hardware verification according to formal specifications (ultimately this is just a very
+  special & sophisticated case of the same activity as program verification)
+Verification of engineering design according to formal specifications relative to a formally
+  specified framework of physics (yet another very sophisticated case of the same activity as
+    program verification)
+
+Determine time & space complexity of programs
+Find minimal program matching specifications
+
+
+
+AI & Expert systems
+--------------------------
+Artificial intelligence
+Medical diagnostics
+ cf. agfa
+
+
+
+Tau-ish applications
+-----------------------
+* Guess we need to start with the basics here: 
+   DHTs, 
+   block-chains, 
+   side-chains, 
+   smart-contracts, 
+   cryptocurrencies
+   nomics
+
+DAOs
+decentralized <insert financial thing>
+decentralized <insert governance thing>
+decentralized <insert major online application service that is currently centralized>
+
+
+Real-time decentralized online video gaming?
+
+
+
+
+
+
+*Apparently this system in particular is used as the basis
+ of many implementations of MLTT-like systems
+Zhenhui Luo's extended calculus of constructions
+
+
+
+(Real) systems using type theory / lambda calculus
+------------------------------------------
+Agda2
+Alf
+Automath
+Coq
+Haskell
+Idris
+Matita
+Twelf

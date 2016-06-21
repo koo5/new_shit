@@ -1,0 +1,1206 @@
+categories
+
+objects
+sets
+spaces
+
+functions / morphisms
+homomorphism
+endomorphisms			monoids
+	a morphism between an object and itself
+
+monomorphism
+epimorphism
+isomorphisms			groupoids
+	an invertible morphism
+
+automorphisms			groups
+	a morphism that is both an endomorphism and an isomorphism
+
+identity morphisms
+	
+
+functor
+	a functor between two categories C and D is a mapping between them
+	which associates to every object X in C an object F(X) in D, and for
+	every morphism f : X -> Y in C, a morphism F(f) : F(X) -> F(Y) in D
+	(if it is covariant).
+
+covariant vs. contravariant functor
+	a functor between two categories C and D is called contravariant if
+	instead of associating to each morphism f : X -> Y in C, a morphism
+	F(f) : F(X) -> F(Y) in D, it associates to each morphism f : X -> Y 
+	in C a morphism F(f) : F(Y) -> F(X) in D. functors defined the standard
+	way are called covariant.
+
+
+endofunctor			monoids again
+	a (contravariant or covariant) functor between a category and itself
+
+isofunctor			groupoids again
+	an invertible functor
+
+autofunctors			groups again
+	a functor that is both an endofunctor and an isofunctor.
+
+identity functors
+	an autofunctor on a category C is called the identity functor if
+	F(X) = X and F(f) = f, for all objects X and all morphisms f in C.
+
+full functor
+faithful functor
+essentially surjective functor
+exact functor
+
+functor categories
+
+natural transformations
+natural endomorphisms		monoids yet again
+natural isomorphisms		groupoids yet again
+natural automorphisms		groups yet again
+
+
+isomorphism of categories
+	two categories C and D are isomorphic if there exist functors
+	F : C -> D and G : D -> C which are mutually inverse to each
+	other.
+
+	"for all practical purposes, they are identical and differ only
+	in the notation of their objects and morphisms"
+
+equivalence of categories
+	given two categories, C and D, an equivalence of categories
+	consists of a functor F : C -> D, a functor G : D -> C, and
+	two natural isomorphisms a : F.G -> I_D, and b : I_C -> G.F
+
+
+comma category
+	suppose A, B and C are categories
+	suppose S : A -> C and T : B -> C
+	then the comma category (S;T) is defined as:
+	* objects : all triples (a,b,f), with a : A, b : B, and f : S(a) -> T(b) a morphism in C.
+	* the morphisms from (a,b,f) to (a',b',f') are all pairs (g,h) where g : a->a' and h: b -> b'
+	* such that:
+		f'.S(g) = T(h).f
+	
+	* and where morphisms are composed by taking (g,h).(g',h') to be (g.g',h.h'), and the identity
+	  morphism on an object (a,b,f) is (id_a,id_b)
+
+slice category
+	a comma category where A = C, S is the identity functor, and B = 1 (the category with one object *
+	and one morphism).
+
+	T(*) = a, for some object a in A.
+	
+coslice category
+arrow category
+
+domain functor
+codomain functor
+arrow functor
+
+category of sets
+pointed sets
+pointed spaces
+
+category of graphs
+
+terminal object
+initial object
+
+cartesian closed category			simply typed lambda calculus
+	a category C is called Cartesian closed if and only if it satisfies:
+	* it has a terminal object
+	* any two objects X and Y of C have a product X*Y in C
+	* any two objects Y and Z of C have an exponential Z^Y in C.
+
+locally cartesian closed category		
+closed monoidal category			linear type systems
+bicartesian closed category
+
+initial morphism
+	suppose that U : D->C is a functor from the category D to the category C,
+	and let X be an object of C.
+
+	An initial morphism from X to U is an initial object in the category 
+terminal morphism
+universal property
+
+adjoint functors
+	A functor F : D -> C is a left-adjoint functor if for
+	each object X in C, there exists a terminal morphisms from F to X.
+	
+hom-set adjunction
+counit-unit adjunction
+the first counit-unit equation	
+the second counit-unit equation
+forgetful functors
+free functors
+
+monad
+	If F and G are a pair of adjoint functors, with F left-adjoint to G,
+	then the composition G.F is a monad.
+
+
+Kleisli category
+
+Eilenberg-Moore category
+
+
+
+universal objects
+initial objects
+terminal objects
+zero objects
+
+limit
+equalizer
+product
+coproduct
+
+kernel
+cokernel
+pullback
+pushout
+free objects
+free group
+free lattices
+direct prodocut
+direct sum
+Grothendieck group
+Dedekind-MacNeille completion
+product topology
+Stone-Cech compactification
+tensor product
+
+
+comma category
+slice category
+
+
+preadditive category
+additive category
+abelian category
+
+partially ordered sets
+	closure operators
+Galois connections
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ok so. we're given two abstract mathematical data-types, and an abstract
+mathematical function between them. 
+
+	X, Y, f:X->Y
+
+in our category C of abstract mathematical data-types and abstract functions
+between them.
+
+we can consider some machine / system / other category, D, on/in which we
+want to implement our function.
+
+an implementation of your abstract mathematical data-types is an encoding of
+them. an implementation of your abstract mathematical function is a sequence
+of machine instructions which implements the function.
+
+normally we have many data-types in a program, and many functions between
+them. this is a category: a set of objects (data-types), and arrows (functions)
+between them, such that arrows may be "composed" tip-to-tail, i.e. the first
+function's range is the same as the second function's domain. there is an
+"identity function" for each data-type, and composition of functions is an 
+associative binary operation.
+
+an implementation of a set of data-types and a set of functions is then a
+functor between one category (the reference category) and another (the
+implementation category). you can consider the identity functor on the
+reference category to be the "reference implementation"
+
+ok so, why?
+
+well. let's go back to the beginning. given a processor, we want to know what
+is the optimal sequence of instructions that will implement a given function.
+
+this obviously sounds crazy. not necessarily that it couldn't be done, but that...
+where would you even begin?
+
+ok so. we want a step in that direction, so, given a processor, can we determine
+whether two sequences of instructions (can be said to) implement the same logical 
+function?
+ 
+this seems of course a necessary requirement to being able to find an optimal
+implementation. if we can find a supposedly optimal sequence of instructions, but
+we can't prove that it implements the same logical function as what we're trying
+to implement, then that kind of defeats the whole point right?
+
+so, being able to do this also probably still sounds crazy. i mean, where to
+even begin?
+
+well, we already have some crude beginnings. crude beginnings that we've even
+implemented! enter alpha & beta equivalence of lambda expressions.
+
+alpha equivalence says two functions are equal if they are syntactically equal.
+well, we'd say, "ofc you can tell if two functions are equal if they're
+syntactically equal, but how likely is it that you're gonna be presented with
+two syntactically equal functions to compare?"
+
+so, we certainly need a weaker notion of equality between functions if we're
+gonna capture the idea of equality of functions that we're looking for. but, we
+can see that there is at least *some* way to compare functions for equality, even
+if it's quite rigid and limiting. so, let's see if we can increase it's power.
+
+there's also beta-equivalence. two functions are equal if their normal forms
+are syntactically equal. this expands our power quite a bit. it even starts
+showing us ways to optimize. computing the normal form is the same as evaluation,
+this is just going through steps that any evaluation of the function would've
+had to go through in the first place. the normal form of a function is thus in
+some sense an optimal implementation of it within the lambda calculus.
+
+so, hmm. it's maybe starting to look like our original goals at least aren't
+totally far-fetched.
+
+there's probably a lot of details left to explore with these results about alpha
+and beta-equivalence in the lambda calculus, but let's just keep going with
+common sense for now.
+
+both alpha and beta-equivalence ultimately amount to a syntactic equality between
+the *definitions* of the functions. but, this isn't really how we think of a
+function mathematically. when we think of abstract logical functions, we consider
+them the same if they map the same inputs to the same outputs, regardless of how
+they do it along the way.
+
+enter function extensionality. we say that two functions are equal if they map
+the same inputs to the same outputs. that is the "principle of function extensionality"
+HoTT has the univalence axiom and the result "univalence implies function extensionality"
+i'll get into the details of that later but for now just assume that MLTT can't
+treat functions as being equal solely on the basis of mapping same inputs to same outputs.
+HoTT can, via the univalence axiom. the implications of all this on a formal level
+are still something i'm trying to work my mind around, all i know is that we want
+to be able to employ the principle of function extensionality, so HoTT should be noted.
+
+ok so, let's just assume we're working in HoTT so that we can take the principle of
+function extensionality for granted. we can treat functions as being equal if they are
+alpha equivalent, beta equivalent, eta-equivalent even (which i didn't cover before but
+it's just a special case of beta-equivalence), or extensionally equivalent
+
+we know we can implement the first 3, but we have yet to implement an equality checker
+that can use the notion of extensional equality successfully. i think we can safely
+assume that HoTT would allow us to achieve this for at least some definition of "successfully".
+
+in any case, continuing with the common sense line of reasoning, this form of
+extensional equality is still too strict to capture what we mean when we say that two
+sequences of instructions implement the same logical function.
+
+why is that? because of our data-types. HoTT's notion of equality between functions assumes
+that we're talking about two functions with the same domain and the same range, meaning their
+input data-types have the same encoding, and their range types have the same encoding. (the
+two functions are probably also implemented on the same instruction set as well. consider that
+so far we haven't even allowed ourselves to consider comparing a function within the lambda 
+calculus to a function outside of it).
+
+ok so, obviously we need to be able to compare functions implemented in different ways, i.e.
+different encodings of data-types, and potentially running on different instruction sets. so,
+what do we do about it? 
+
+well, let's think about our common sense criteria for comparing two functions that might operate
+over different encodings of the same information, and might be implemented on different
+instruction sets.
+
+first, let's look at the domains of the two functions. if these two functions are to be the
+same function, then obviously their domains must, in some sense, at least *be able* to hold
+the same information. how do we show that two different data-types can be taken as different
+encodings or different representations of the same abstract data-type? 
+
+this is pretty much what isomorphism is all about. a recurring and powerful concept in mathematics
+is that you can compare spaces / objects by the use of "probing functions" between them. anyway,
+i don't need to get into the details of that too much, just assume for now that you can compare
+data-types on a *structural* level by showing the existence of these "isomorphism" probing functions
+between them. 
+
+good exercises to see exactly how isomorphisms imply structural equivalence, start with isomorphisms
+between sets, which are just invertible functions. see why an invertible function between two sets
+guarantees that the two sets are structurally equivalent, i.e. equivalent up to relabeling the
+objects in the set. test: what are the structural invariants which characterize sets? 
+i.e. what do invertible functions between sets preserve? after you're comfortable with sets, 
+try graphs. what does it mean to be an isomorphism between two graphs? what
+does it mean for two graphs to be structurally equivalent? how do we encode this concept of structural
+equivalence between graphs through the use of functions between graphs? how would we extend this to
+more complex spaces like categories and groups? bonus points: make up your own mathematical space
+and define what it means to be an isomorphism on it. what rules do you have to impose on your functions
+in order to make them capture your definition of equivalence between these the objects of this
+mathematical space you've created? now that you've convinced yourself that you can use functions with
+rules imposed on them in order to test structural equivalence between different types, how can you
+encode these isomorphisms in type theory? (think using dependent types in order to write the complex
+criteria you want to enforce). 
+
+ok, now that you've convinced yourself that we can use isomorphisms to test structural equality 
+between different types, and that we can use dependent types to specify the complex criteria you
+want to impose on your isomorphisms to make sure that the structural equality they test for is
+the structural equality you're aiming for, let's continue
+
+ok, so, before we tangented off into isomorphisms, our last goal was to find a way to compare functions
+acting on different encodings of the same information, and potentially implemented using different
+instruction sets. it seemed a natural assumption to say that if these functions are going to be considered
+equal, then their domains must be "structurally equivalent", in some sense, and their ranges must be
+"structurally equivalent", in some sense. we then showed how to make this notion of structural equivalence 
+precise & even computer-friendly using the notion of isomorphisms between the types being compared, 
+specifying the criteria for the isomorphisms (and therefore of the structural equivalence we want) using
+dependent types, which can be expressed in MLTT.
+
+ok, so, so far it seems as though we should be able to get away with at least comparing their domains
+and ranges for structural equivalence, to make sure they're not just blatantly doing different things,
+so, what's left?
+
+well, now that we know that there is at least some context in which we can say the functions are
+acting on the same information, we need to determine that both functions actually act on the information
+in the same way (in an extensional sense). how do we test this? well, it's not necessarily too far out
+of reach now.
+
+        fA
+    A ------> A'
+   | ^       |  ^
+DL | |UL   DR|  |UR
+   | |       |  |	the isomorphism pairs
+   v |       v  |
+    B ------> B'
+        fB
+
+A  = encoding of input type
+A' = encoding of return type
+fA = implementation of the function f, over the encoded types A and A'
+B  = second encoding of input type
+B' = second encoding of return type
+fB = implementation of the function f, over the encoded types B and B'
+
+DL & UL = isomorphism pair between the domain types
+DR & UR = isomorphism pair between the range types
+
+example, DL takes a possible input value in the A encoding and maps
+it to a possible input value in the B encoding.
+
+
+ok, so, we'd say that fA and fB implement the same function if:
+
+1)
+	DL then fB then UR = fA
+
+and, 2)
+	UL then fA then DR = fB
+
+
+This seems to be an extremely general notion of equality between functions operating
+over potentially wildly different looking types (but somehow, from some perspective,
+exhibiting the same structure). It's general to the point that it's now becoming less
+trivial to come up with cases where we would consider two functions to be equivalent
+in a way that this notion of equivalence wouldn't capture, and it seems that something
+along these lines has potential to be implemented using MLTT (perhaps extended with
+the power of HoTT). so, now it's really seeming not-so-far-fetched that we should be
+able to mechanically compare different sequences of instructions in order to test whether 
+they can be said to implement the same function.
+
+Let's go back to the fact that in a normal code-base, you'll have multiple data-types
+and multiple functions between them. This forms a category (I outlined how at the
+beginning of this rant). Another implementation of your category should be considered
+a different category (different set of data-types, different set of functions).
+
+Instead of just considering one implementation of your category and another implementation
+of your category, we can consider the method by which you construct an implementation
+of your category. What does this mean exactly? Well, the method would take your data-types
+and give you back an encoding of them (given as an object in the implementation-category),
+and it would take your functions in your first category and give you back functions in your
+implementation category. We'd also make sure that these functions "connect together" the
+same way (in a sense made precise below), and that our encoding of our data-type actual
+provides a proper representation of it, i.e. encodes all the same structural information
+(in the sense made precise above, wrt isomorphism). A function between categories that
+acts this way is called a functor. This makes precise what i mean by saying that implementations
+of an abstract set of data-types and functions can be interpreted as a functor; now here's the
+formal definition of functor just for the notes:
+
+Formal defintion:
+Functor, F, between two categories C and D is a function that assigns to each object
+X in C, an object F(X) in D, and to each function f: X -> Y in C, a function
+F(f) : F(X) -> F(Y) in D.
+
+
+An isofunctor F is an invertible functor. It's an isomorphism between categories. Invertible
+means that there is a functor G: D -> C, such that G . F = Id_C, and F . G = Id_D, where
+"." means composition of functions, i.e. G . F means "do F, then do G on the result", and
+Id_C means the identity functor on C. The identity functor Id_X on a category X simply
+maps each object and function in X back to itself. Convince yourself that all this stuff
+means that an isofunctor between two categories implies a structural equivalence between
+them (which can be made stronger or weaker by extending the structural equivalence check
+into the objects of the category or not, respectively).
+
+
+So, a structural equivalence between two categories can be taken to mean that they implement
+essentially the same code-base, or at least implement a code-base which carries all the
+structural properties of the original (in both its structure & behavior). For every data-type
+A in one of my categories, i have a corresponding & structurally equivalent data-type in
+my other category. For every function f in one of my categories, i have a corresponding
+and structurally extensionally equivalent function in my other category.
+
+So, let's look a bit deeper at our categories real quick. We say our code-base (a set of
+data-types and a set of functions between them) makes a category, but our category is
+more than just this code-base. You can consider your code-base like a directed graph, or
+a binary relation. The nodes in your graph are your data-types, and the arrows
+in your graph are the functions you defined explicitly in your code-base (and maybe
+also built-in functions that are implicitly available). Your category can also be visualized
+as a directed graph. It can be said to be "generated" by the graph/relation given by
+your code-base:
+
+1) If we don't have to explicitly write identity functions for each data-type, then we have 
+to automatically add them in. This is called taking the reflexive closure, because if you
+interpret your category like a relation between the nodes, then this turns it into a reflexive
+relation. Interpreted as a graph, it means every node has an edge going directly back to itself.
+
+2) If we have a function f : X -> Y, and a function g : Y -> Z, then we also have a function
+g . f : X -> Z. These are not specified in your code-base, but they are functions that exist
+in your category (and even though they don't exist in your code-base, the type-checker understands
+their existence on some level). This is called taking the transitive closure, because if you
+interpret your category like a relation between the nodes, then this turns it into a transitive
+relation. 
+
+
+
+
+
+
+
+So, let's think about expressing a finite turing machine here, i.e. one of our processors + some
+amount of memory, and some initial state. We have N bits of memory, meaning 2^N possible states.
+We have a k-bit instruction set architecture, so our memory is a sequence of N/k instructions.
+We can assume N = 0 mod k. There's 2^k op-codes for a k-bit instruction set architecture. It may
+or may not have a function defined for all of them. For those that don't have an operation 
+defined for them, we'll consider them to be no-ops, thus all 2^k op-codes correspond to some
+operation, even it's a trivial no-op. A program is considered halted if the state + current
+instruction is an idempotent pair (i.e. if the next state + next instruction is the same as
+the current state + current instruction).
+
+So, we'll consider our set-up is as follows:
+We have:
+
+State:
+	x : Vec Bit n
+
+An instruction set:
+	i1 : Vec Bit n -> Vec Bit n
+	i2 : Vec Bit n -> Vec Bit n
+	.
+	.
+	.
+	i2^k : Vec Bit n -> Vec Bit n
+
+
+(N/k)*2^k choices for initial sequence of instructions.
+
+So. The action of our functions can modify the state of memory, which means they can
+modify what the sequence of instructions present in memory is. This seems to suggest
+that we shouldn't interpret it as a sequence of instructions in the first place, but
+just N bits of data and a single function that acts on them to get the next N bits of
+data.
+
+So, we have:
+
+CPU : Vec Bit n -> Vec Bit n
+
+We can interpret it as a function which finds the instruction pointer in the n input bits,
+then follows that pointer to find the command to run, and then runs it to produce the next
+state. 
+
+So, how do abstract functions and abstract data-types translate to this setting?
+Our data-types are encoded as configurations of bit-strings. Our sequences of instructions
+are also encoded as configurations of bit-strings. An "implementation" of our abstract
+function on this CPU is given by a bit-string of length n. This implicitly defines a sequence
+of actual machine instructions to be followed. This is not necessarily the sequence of op-codes
+written in memory, as these may be subject to change after execution of any instruction.
+
+We must specify some subset of the bits to represent our input. Which subset this is may vary
+depending on which input it is. What we know is that we will need to be able to demonstrate
+an isomorphism between our abstract data-types and our binary encoding of them.
+
+So, we need to be able to account for multiple different inputs, so that means we must leave
+some number of bits unspecified. These bits will be instantiated with values when we generate 
+the encoding of a particular input. Once all our bits are initialized, then we can say that we
+have an algorithm and input to run it on. The CPU will be set in motion. The CPU will eventually
+fall into either a non-trivial repeating loop, or a trivial no-op loop. If it's the former, we
+say that the machine failed to halt for this input, and if it's the latter, then we say that the
+machine halted for this input. In other words, we say that the machine halted if it falls into
+a repeating loop of length 1, and fails to halt if it falls into a repeating loop of length
+greater than 1.
+
+Ok, how do we say that the program (initial state of memory) implements our abstract function?
+
+For each data-type, we need to have a function which maps its objects to their encodings; this
+function must be an isomorphism, then we can say that our data-type and its encoding are
+structurally equal. Let's assume we're able to prove this for both our input type & its encoding
+and our return type & its encoding. Then, what's left to demonstrate?
+
+Now we have to analyze the behavior of the machine & its state of memory as it carries out
+CPU operations. If i choose an input value from my abstract data-type, map it into it's
+encoding, and run the CPU, then what are the criteria for saying that it successfully carried
+out the transformation specified by our abstract function? Well, one thing we know about
+abstract mathematical functions: for every input, they specify an output, and you can get
+from input to output in a finite number of steps (in the abstract setting of mathematics, this
+is generally "just one step"), i.e. they succeed and terminate.
+
+So, let's consider the brute-force approach. For every possible choice X of input value, if
+i map X to its binary encoding, and then run the CPU, then the CPU must reach a halting state,
+i.e. a repeating loop of length 1. If the machine falls into a repeating loop of length > 1, then
+we say it fails to implement the function. Why? Because mathematical functions always halt, and
+this machine / initial-memory-state combination fails to halt (under our current definitions,
+which, even though they're fairly natural definitions, they're not necessarily the only possible
+choices; for example, the machine could be defined as having explicit halt-states; i chose this
+definition of halting in order to make as few assumptions as possible about the nature of the
+machine, while still doing a decent job at approximating what it means for a sequence of machine
+instructions to be interpreted as an implementation of a mathematical function).
+
+Ok so, there's only a finite number of possible input values, and each one will fall into a 
+repeating loop in a finite number of steps, and we can determine the length of each loop. Thus
+we can tell in finite time whether the machine will halt or fall into an infinite loop for
+any given choice of input. So, the first criteria of our program being a successful implementation
+of our mathematical function (in this case; we'll generalize beyond this later) is that for
+each input, the machine falls into a repeating loop of length exactly 1. The second (and only other)
+criteria is that for each input, if we follow the machine until it falls into a repeating loop
+of length 1, and then map the encoding of the return value back into the abstract return data type,
+then our resulting object should be the same as if we had just run the abstract function on the
+abstract input.
+
+Thus, all possible behaviors of the program can be found in finite time. The problem can be brute-forced.
+Allowing ourselves to consider brute-forcing to be an option, we can see that, at least in theory, there
+isn't anything stopping us from taking two arbitrary programs and determining if one can be said to be
+an implementation of the other.
+
+In practice though, we do have some barriers in the way. We've shown that the problem can be solved
+by brute-force, but it's quite easy to see that this doesn't help much in practice because of the
+astronomical size of the search space.
+
+Each input, i, has a number, Ni, of applications of the CPU function in order to reach a no-op.
+
+
+So, the goal is, given a function, a CPU, and N bits of memory, find a configuration of memory which
+can be said to implement your function. How can this be done?
+
+Well, to start with, we know how to find a configuration of memory which can be said to encode our
+data-types: we find an isomorphism between our data-types and bit-strings. We also know that for
+any object in our input data-type, it's encoding must go somewhere in memory for the function
+to use. 
+
+So, our "function" is essentially our CPU combined with a family of bit-strings: one for
+each input. each bit-string in the family should contain an encoding of the corresponding input
+value. execution of the function on some input selects the bit-string associated with that input
+and runs the CPU on it until hitting a halt state. the return value is then decoded from the
+bit-string into an object of our return type.
+
+So, you've made an encoding for your input type. Now for any instance of function application to
+a particular input, the encoding of that input will be present in memory. Now you have to assign
+values to the bits in the rest of memory in such a way that when the CPU is run successively on
+this memory, it will reach a no-op state, and the encoding of the return value of the function
+will be present in memory.
+
+Instead of assigning values to all the bits in memory in order to define your function, you could
+choose some subset of bits to leave unspecified. These unspecified bits are basically like what
+we typically call "state". The behavior of the CPU may be different depending on the choice of
+values to instantiate the unspecified bits with. This "stateful" function is actually a family of
+2^k functions, where k is the number of unspecified bits. We can call a function "mathematical" if
+it halts for every input, and does not depend on state (assignment of values to the unspecified bits).
+Mathematical functions are nice because they allow us to drop the state for the purposes of reasoning,
+thus reducing problem size. 
+
+note that this set-up so far does not make the assumption that input values, functions, and return
+values exist at distinct locations or are non-overlapping sections of memory, or that the input
+values, functions, and return values each represent sequential sections of memory; they could be
+broken up across memory, overlapping with other things. note also that this overlapping does not
+necessarily lose any information of anything, because we add extra bits with the information of
+*when* we're accessing the memory. 
+
+ok so, now we get to the thick of it. how do we choose an assignment of bits to our (non-state) memory
+such that for every input value, the CPU operating on the memory will result in a no-op state where
+the correct encoded return value exists in memory.
+
+how do we brute-force the problem? loop through all possible memory configurations, 
+and for each configuration, loop through all possible inputs, run the machine on each configuration 
+until reaching the repeating loop state; make sure it's a no-op state (if not then fail), 
+and then attempt to extract the return value from memory. if you can't extract a return value 
+from memory, or if the return value you extracted doesn't match the one expected for this input, 
+then fail. if you don't fail for any input, then this memory configuration is an implementation 
+of your function.
+
+we want to avoid the brute-force approach, so, we need to know how to lift the problem into
+a higher level of logic. this is where the machine instruction set comes into play. the computers
+we use follow a particular structure that let's us know what the computer will do for any given
+memory configuration. some piece of memory is designated as an instruction pointer. another piece
+of memory is the piece pointed at by the instruction pointer. the instruction set is a table of
+functions that tells us how the computer will update the memory configuration for each different
+instruction.
+
+
+One thing we do in order to reduce complexity of reasoning is that we focus only on the
+part of memory that gets used (read/written to), and assume the rest of memory could be
+anything and is irrelevant for the purposes of reasoning about the behavior of the program.
+
+
+
+What does this look like in type theory?
+Bit strings might look something like
+
+"Vec Bit n"
+
+What do the boolean operations look like? like AND, OR, XOR?
+
+It gets complicated but suffice it to say, everything just looks like functions of
+type "(Vec Bit n) -> (Vec Bit n)", satisfying certain criteria which ensures that
+they actually encode the logical operation properly. This is can be captured through
+dependent types to encode the criteria, specifically through sigma types, whose
+objects are pairs of the thing you want and a proof that it satisfies your criteria.
+
+"myOperation = Sigma f : (Vec Bit n) -> (Vec Bit n) . <criteria>"
+
+the first component of an object of this sigma-type will be a function in the lambda
+calculus which expresses the logical operation specified by your criteria. the
+criteria should (probably) specify one function up to extensional/homotopy equivalence.
+however these might correspond to multiple different lambda expressions. doesn't
+matter, the point is that any of these f's will work as our logical operation.
+
+There is an obvious number-theoretic interpretation to everything going on on the computer.
+Each instruction maps a vector of n bits to a vector of n bits; like mapping one binary
+number to another binary number. i.e. it's just math base 2
+
+A lot can be afforded if you can assume that none of your operations can ever modify
+a section of memory that can be used as code by the machine. If you can make that
+assumption, then you can consider your code as distinct from data, and you can present
+it as a set of sequences of op-codes in memory. If you can't make that assumption,
+then your code is not distinct from data, and if you lay out a program as a sequence
+of instructions, only the first instruction is special. The rest of your program is
+just laying out a series of bits that may or may not be able to be interpreted as
+instructions at any point during the program, and which might not even be there by the
+time execution hits a state where the instruction pointer points to that section of
+memory (if it ever even does). In this case we're not guaranteed to be able to treat
+the situation as anything but a single function on n-bit integers, which is idempotent
+at a point which is supposed to be our halt state, where the number will contain our
+return value through some specified decoding procedure.
+
+Why do I differentiate between these two cases? They are mainly different in that
+in the first one (where code is separate from data), you can reason over the entire
+program prior to running it, because it's present in the initial memory state. In the
+second one (where code is not separate from data), you're not always guaranteed that
+you don't have to run the program in order to find what code you will eventually have
+to run.
+
+If we want to be most general about our results, we should restrict ourselves to the second
+case. So, some subset of the bits is used to encode the input value. Some subset of the bits
+will be used to encode the output value. Some number of iterations of our CPU takes us
+from the one to the other. The machine instructions are still used by us as a reference for
+how the machine will act on any given memory configuration, we just don't necessarily know
+a priori to execution what the instructions will be, except for the first instruction (given
+by the initial memory state).
+
+Ok so, we want to condense possibilities, and track a "cumulative" history over our possibilities.
+Conditionals over variables introduce non-determinism, which means multiple possible histories
+(depending on your choice of initial value). Each history corresponds to deterministic execution
+of a sub-function of the function on some *narrowing* choice of input values. I guess this interpretation
+only works out at a particular level of abstraction. If I look deeper into the details of the
+execution of this sub-function on the bits in this choice of input values, i'll find the same 
+non-determinism again, but now all wrapped up somehow. (It's all about that hierarchy of abstractions)
+
+
+Ok so, the execution of programs can be interpreted as a particular kind of graph in space-time.
+The nodes of the graph are possible states of memory, and the edges point to the next-state. Let's
+consider the jump table. Let's say each jump instruction is k-bits long, and there's N bits of memory,
+then, there's N/k jump instructions. Each k-bits can specify up to 2^k different locations in memory,
+so, if we want everywhere in memory to be accessible by a jump, we get N <= 2^k, and it probably makes
+sense to have N = (2^k)*k. So, there's 2^((2^k)*k) possible states of memory. Within any particular 
+program though, due to the structure of the computer, there are only 2^k possible program states,
+corresponding to the 2^k different possible values for the instruction pointer.
+
+Ok so, our instruction pointer is the only thing that can change during the course of the program, 
+so, instead of interpreting our space-time graph as edges between the possible states of the entire
+memory, we can interpret it as edges between the possible states of the instruction pointer and
+interpret the rest as information attached onto the graph.
+
+Let's say you want to produce a series of k-bit numbers in your instruction pointer, over time.
+We know that eventually the jump-table falls into a repeating loop. So if you consider the
+set of infinite sequences generated by appending the instruction pointer to the end at each
+step of computation, then, the only numbers you can generate are the rational numbers. Maybe 
+*exactly* the rational numbers. So, you can even say that every possible sequence of jumps
+corresponds to a rational number. You could maybe even interpret the execution over time
+as a wave-form. I point out the fact that the possible sequences generated this way are rational
+numbers because this puts emphasize on the decidability of problems about them in a mathematical
+setting. Equality of two rational numbers is decidable.
+
+One can consider what rational numbers can be generated by a jump-table.
+
+Given any finite turing machine (or any "CPU" defined as i've been defining it so far), and
+for any deterministic process for extracting a value from memory and appending it to an
+accumulating bit-vector at every step of operation, then any bit-vector formed this way
+will correspond to the binary representation of some rational number. Results about one
+can be translated into results about the other, somewhat naturally. The interpretation
+as rational numbers seems to have number-theoretic implications on computational complexity
+theory.
+
+Ok, let's move beyond the jump table to a more generalized computational setting. Instead of
+just the jump-table, we can consider an arbitrary computer. It's instruction set still defines
+a graph in space-time, where the nodes are memory configurations, and the edges point from
+one state to the next state. In the jump table, we tracked the trajectory of a "point" moving
+along the graph. We will do the same here, kind of, except the "point" is essentially the
+section of memory that gets modified over the course of the program. (This analogy will of
+course start to break down once we consider programs that can then read the modified data
+as code). 
+
+For example, let's consider a program that does:
+
+0000: xor ax, 1111
+0001: jump 0000
+
+so, the pieces of memory that change here are the instruction pointer and the ax register.
+let's assume we start with 0000 in the ax register. we can handle more cases at once
+by considering variable bits and doing algebraic calculations instead of arithmetic
+calculations.
+
+Non-variable			Variable
+State 1:			
+IP = 0000
+AX = 0000			?b1    ?b2    ?b3    ?b4
+
+State 2:
+IP = 0001
+AX = 1111			!(?b1) !(?b2) !(?b3) !(?b4)
+
+State 3:
+IP = 0000
+AX = 1111			!(?b1) !(?b2) !(?b3) !(?b4)
+
+State 4:
+IP = 0001
+AX = 0000			?b1    ?b2    ?b3    ?b4
+
+
+the AX register has a cycle, and the IP register has a cycle.
+A cycle in what? A graph between these states. This example starts to demonstrate how the programs 
+on any computer can be given a structural interpretation even before making any specific assumptions 
+about their operation. Instead of XOR, i could have chosen add, sub, mov, etc... they make graphs
+between states of memory no differently than we did for the pure jump-table machine. 
+
+So, you can see that the cycles here are not just one cycle for the AX register, it's a whole
+family of cycles, parameterized by the value of the AX register. Let's say we want to find an
+encoding of something that behaves as a family of cycles......
+
+(Some) fundamental theorem of computation: every execution can be described as sequences of memory
+configurations falling into cycles of memory configurations, aka "attractors", such that "falling
+into the same attractor" is an equivalence relation on memory configurations that partitions the
+space of possible memory configurations.
+
+This is a fully generalized interpretation of the computations that can be performed by finite,
+bit-vector-based turing machines, which doesn't rely on the bit-vector mechanics, and gives them
+a *structural*/topological description which has good likelihood of being suitable for yielding even
+higher degrees of abstraction, fairly naturally, for example: parameterized families of cycles vs 
+single cycles of memory configurations. These graph structures also lend easily to interpretation
+as monoids from abstract algebra. If you take just the set of attractors, this lends itself easily
+to interpretation as a group from abstract algebra. Information about what the program "is" as well
+as what it "*might* be representing" falls quite naturally out of this interpretation, and carries us
+nearly up to a level of higher-level compatibility with MLTT expressions. For example.. I can specify
+what it means to be a monoid, and rules & theorems about monoids in MLTT, and same for groups, and other
+mathematical structures from abstract algebra, which corresponds to results about the behavior of my 
+possible programs on the finite turing machine.
+
+
+
+
+Every "closed" program corresponds to a set of closed loops, each corresponding to different inputs.
+
+https://en.wikipedia.org/wiki/Semiautomaton
+
+The function defining the CPU is a function from Vec Bit n -> Vec Bit n.
+
+Let's consider identity functions.
+
+0000:  jmp 0000
+
+This is a fixed-point in the state-space. A trivial loop.
+
+
+
+mv
+add
+jmp
+xor
+
+
+So, we know how the CPU is a function acting on memory states to produce their next memory states.
+The next step is inspecting how the memory states combined with the instruction set determines the
+outcome of the function. Somewhere in memory we have an instruction pointer. The instruction pointer
+determines where in memory to get the instruction from. The ISA then determines what this instruction
+means in terms of getting the next memory state. So, there are moves which change the instruction
+pointer in a way other than incrementing it, and ones that just increment it. Changing the instruction
+pointer is the only way to get loops. If you increment beyond the edge of memory, we assume a rollover.
+
+We assume that the instruction pointer is changed except in the case of fixed-points or other
+trivial cases.
+
+So, computers will head towards a fixed point or closed-cycle to remain there indefinitely, unless
+execution is *interrupted*; for example by pressing a key. Every computer remains in the same
+partition of state-space unless interrupted.
+
+So we've got a k-bit instruction pointer, and 2^k * k bits of memory, or 2^k * k + k if you count
+the instruction pointer. For each of the 2^k contiguous sets of k bits, we can consider all the
+possible instructions we could have there. There's 2^k possible instructions for a k-bit architecture.
+It's rather unlikely that we'd have that many instructions. We have some number, n, of instructions.
+The rest can be considered no-ops (i.e. fixed points) by the machine, or some other action can be
+taken, in which case i'd really consider them an instruction anyway (that's all a matter of how you
+separate "good" states from "error" states, rather than just considering "states").
+
+
+# of bits in arch		k
+# of instructions		2^k
+# of bits in memory		2^k * k
+# of possible memory states	2^(2^k * k)
+# of op instructions		n
+# of no-ops instructions	(2^k - n)
+# of no-op states		(2^k - n)^(2^k)
+
+
+Equiv(A,B) := Sigma(f:A->B).(Pi(y:B).IsContr(HomFib(f,y)))
+
+
+
+
+In category theory, semiautomata are essentially functors.
+
+
+
+
+
+
+
+
+
+For a locally small category, its hom-functor is the functor
+
+hom : C^op * C -> Set
+
+from the product category of the category C with it's opposite category to the category Set
+of sets, which sends
+
+* an object (c,c') in C^op * C, i.e. a pair of objects in C, to the hom-set Hom_C(c,c') in C,
+the set of morphisms q : c -> c', in C.
+
+* a morphism (c,c') -> (d,d'), i.e. a pair of morphisms f : d -> c, and g : c' -> d', in C
+to the function Hom_C(c,c') -> Hom_C(d,d'), which sends
+
+(q : c -> c') -> ( g . q . f : d -> c -> c' -> d')
+
+
+
+
+We say two functors L : C -> D and R : D -> C are adjoint if they form an adjunction
+L -| R in the 2-category Cat of categories. This means that they are equipped with
+natural transformations A : 1_C -> R . L, (the unit), and B: L . R -> 1_D, (the counit),
+satisfying the triangle identities, i.e. L -> LRL -> L
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Order isomorphism
+Order embeddings
+Galois connections
+
+
+
+Diagram
+	A diagram of type J in a category C is a (covariant) functor
+	D : J -> C. The category J is called the index category or the
+	scheme of the diagram D; J-shaped diagram in C.
+
+Constant diagram
+	
+
+Cone
+Limit
+Colimit
+Span
+Pullback
+Pushout
+
+
+
+Topological space
+
+
+Bundle
+	A bundle over an object B in a category C is simply an object E of C equipped
+	with a morphism p:E->B in C.
+
+	For x in B a generalized element of B, the "fiber" E_x of the bundle over x
+	is the pullback x*E.
+
+Pullback; aka Fibered product
+	Given two functions f : A->C and g : B->C with the same codomain, the pullback 
+	of these two functions is the subset X in A*B consisting of pairs (a,b) such
+	that the equation f(a) = g(b) holds.
+	
+	"A pullback is therefore the categorical semantics of an equation" ?
+
+	In type theory, a pullback p (between two functions f and g?) is given by:
+	Sigma a:A . (Sigma b:B . (f(a) = g(b))).
+
+	The two projection functions, along with f and g, give the four edges of the
+	commutative square usually associated with a pullback.
+
+	Moreover, the pullback must be universal with respect to this diagram. That is,
+	for any other type Q, with projection functions into A and B, there must exist
+	a unique u : Q -> P (called a mediating morphism) such that p2.u = q2 and p1.u = q1
+
+	The pull-back, if it exists, is unique up to isomorphism. 
+
+
+We think of a type family P: A->U as a fibration with base space A, with P(x) being the
+fiber over x, and with Sigma x:A . P(x) being the total space of the fibration, with
+first projection p1: (Sigma x:A . P(x)) -> A.
+
+The defining property of a fibration is that given a path p:x=y in the base space A, and
+a point u:P(x) in the fiber over x, we may lift the path p to a path in the total space
+starting at u
+
+Path lifting property
+
+Product
+	Let C be a category with some objects X1 and X2. A product of X1 and X2 is an object
+	X (often denoted X1 * X2) together with a pair of morphisms p1: X -> 
+Coproduct 
+Equalizer
+Coequalizer
+Cokernels
+Inverse limits
+Topological limits
+Direct limits
+Pushout
+	The colimit of a span.
+
+Limit of a diagram
+Span
+Cospan
+Category of fractions
+Cobordism
+Diagrams
+	A diagram of type J in C is a functor from J to C
+	F: J -> C
+
+	The category J is thought of as an index category, and the diagram F is thought of as
+	indexing a collection of objects and morphisms in C, patterned on J.
+
+Cone
+	Let N be an object of C. A cone from N to F is a family of morphisms
+	g_x : N -> F(x), for each object x:J such that for every morphism f:X->Y in J,
+	
+	F(f).g_X = g_Y
+Comma category
+Natural transformation
+Universal morphism
+Univalence axiom
+Locally cartesian closed model category
+
+Dependent types b:B |- E(b):Type correspond to morphisms E -> B in the underlying category
+which is a fibration between fibrant objects. In type theory, a dependent type or type in context
+is a family or bundle of types which vary over the elements (terms) of some other type. It can
+be regarded as a formalization of the notion of "indexed family". 
+
+A dependent type x:A |- B(x):Type is represented by a particular morphism p:B->A, the intended
+meaning is that each type B(x) is the fiber of p over x in A. 
+
+A display map is a morphism p:B->A in a category which represents a dependent type under some
+categorical semantics of type theory valued in that category.
+
+B represents a type dependent on a variable of type A. The intended intuition is that B(x) is the
+fiber of the map p over x : A
+	Sigma b:B . (sigma x:* . (p(b) = pt(x)))
+
+
+A dependent type corresponds to a morphism E -> B in C that is a fibration between fibrant objects.
+So in p:B->A, B is the total space, and A is the base space. This make sense because we think of the
+total space as being parameterized by the base space, but having a projection mapping from the total
+space into the base-space (i.e. projecting all the points in any fiber down to the point in the base
+space that they're attached to). Idk what fibration and fibrant object mean though.
+
+An object such that the unique morphism to the terminal object is a fibration is called a "fibrant object"
+
+Space
+Connected space
+	A topological space X is connected if the representable functor
+		hom(X,-):Top -> Set
+	preserves coproducts.
+Connected components
+Locally connected space
+Parallel transport
+Connection on a bundle
+G-principal bundle
+Discrete fibration
+Pseudofunctor
+Grothendieck fibration; fibered categories.
+	A functor p:E->B such that the fibers E_b = p^-1(b) depend "pseudofunctorially" on b:B.
+	One also says that E is a fibered category over B.
+
+	Let f:e'->e be an arrow in E. We say that f is cartesian if for any arrow f':e''->e in E
+	and g:p(e'')->p(e') in B such that p(f).g = p(f'), then there exists a unique g':e''->e'
+	such that f' = f.g' and p(g') = g.
+
+	We say that p:E->B is a fibration if for any e:E and f:b->p(e), there is a cartesian arrow
+	q:e'->e with p(q) = f. Such an arrow is called a "cartesian lifting" of f to e, and a choice
+	of cartesian lifting for every e and f is called a cleavage.
+
+	If p is equipped with a cleavage, it is said to be cloven. Assuming the axiom of choice,
+	every fibered category has a cleavage.
+
+	
+Grothendieck construction
+Property-like structure
+Internal categories
+Discrete fibration of internal categories
+Covering space
+	A covering space is a bundle p: E->B in Top which is locally trivial and with discrete fiber.
+	That is, a map p:E->B is a covering space over B if for each point x:B, there exists an 
+	"open neighborhood" U of x, evenly covered by p.
+
+Fundamental group
+Fundamental groupoid
+Representation theory
+
+Quillen adjunction
+Locally cartesian closed category
+	A category C whose slice categories C/x are all cartesian closed.
+
+Model category; aka Quillen model categories
+	A model category is a context for doing homotopy theory. Quillen developed model categories
+	to formalize the similarities between homotopy theory and homological algebra.
+Fibrant object
+	In a model category, an object X is said to be fibrant if the unique map X -> 1 to
+	the terminal object is a fibration.
+
+Product of two manifolds
+Product topology
+Cartesian product
+Right lifting property
+Homotopy lifting property
+Serre fibration
+Hurewicz fibration
+Pointed object
+	In a category C with a terminal object, a pointed object is an object X
+	equipped with a global element 1 -> X, often called it's "basepoint".
+
+	Pointed objects are the "algebras over a monad" of the maybe monad.
+Adjoint functors
+Monads
+Maybe monads
+Algebra over a monad
+Fiber of f over x
+	The collection of elements of E that are mapped by f to x.
+	
+	For f:A->B a morphism in a category, and B equipped with the structure of a
+	pointed object pt: * -> B, the fiber of f is the fiber product of f with pt:
+
+	Sigma a:A . (Sigma b:* . (f(a) = pt(b)))
+
+
+In the internal language of any category C, a morphism f : B -> A is a term
+f(x) of type A where x is a free variable of type B, which in type-theoretic symbols
+is given by x:B |- f(x):A. Substitution of one term into another term is interpreted
+by composition of the relevant morphisms. 
+
+	
+Long exact sequences
+Homotopy fiber sequence
+Homotopy pullback
+	The homotopy pullback of a term of function type f : A -> C along a term of
+	function type g : B -> C is given formally by
+Fiber bundle
+	A fiber bundle is a space that is "locally" a product space, but "globally"
+	may have different topological structure. Specifically, the similarity between
+	a space E and a product space B*F is defined using a continuous surjective
+	map
+		
+
+		p : E -> B
+
+	that in small regions of E behaves just like a projection from the corresponding
+	regions of B*F to B. The map p, called the projection or submersion of the
+	bundle, is regarded as part of the structure of the bundle. The space E is
+	known as the total space of the fiber bundle, B as the base space and F the
+	fiber.
+
+	A fiber bundle is a structure (E,B,p,F), where E, B, and F are topological spaces
+	and p : E -> B is a continuous surjection satisfying a "local triviality" condition
+	outlined below.
+
+	For every x in E, there is an open neighborhood U in B of p(x) such that there is
+	a homeomorphism h : p^-1(U) -> U*F, such that
+
+
+	* Any product B*F -> B (which is a bundle over B with fiber F)
+	* The mobius strip (which is a fiber bundle over the circle with fiber given by
+		the unit interval, [0,1]).
+	* 
+
+The homotopy fiber is part of a construction that associates a fibration to an arbitrary
+continuous function of topological spaces f : A -> B.
+In type theory: the homotopy fiber is part of a construction that associates a fibration to
+an arbitrary function f : A -> B.
+
+Given such a map, define the mapping path space E_f to be the set of pairs (a,p) where a in A
+and p : [0,1]->B is a path such that p(0) = f(a).
+
+
+ncatlab: "The fiber of a morphism or bundle", f:E->B over a point of B is the collection of
+elements of E that are mapped by f to this point.
+
+For f : A->B a morphism in a category and B equipped with the structure of a pointed object
+pt : * -> B, the fiber of f is the fiber product of f with pt.
+
+A fiber bundle is a bundle in which every fiber is isomorphic, in some coherent way, to a
+standard fiber. "One may say that fiber bundles are fibrations" by the Milnor slide trick.
+
+Generalized elements
+	Given an object x in a category C, a morphism a -> x in C is regarded as a
+	"generalized element", with "stage of definition" a.
+
+Global elements
+	If a category C has a terminal object 1, then a global element of another object
+	x is a morphism 1 -> x, i.e. a generalized element with stage of definition 1.
+
+Yoneda embedding
+Presheaf category
+Representable functor
+
+"Dependent sum" aka sigma type is a universal construction. It is the left adjoint to
+the base change functor between slice categories.
+
+In homotopy type theory, homotopy fiber of f at y is just the same thing as the fiber of
+f at y (or vice versa).
+
+
+Fibration
+Homotopy lifting property
