@@ -1,0 +1,95 @@
+Only by assuming the univalence axiom can we prove that the loop space of
+the circle is equivalent to the integers. This is a typical proof in algebraic
+topology. 
+
+
+
+Inductive (Nat : Type) :=
+  | 0 : Nat
+  | suc : Nat -> Nat
+
+*From this definition, Coq automatically generates a recursor/eliminator for Nat.
+
+Inductive (circle : Type) :=
+  | base : circle
+  | loop : base ~ base
+
+* Coq doesn't accept this inductive definition; in normal inductive types, the
+  constructors have to output elements of the type itself.
+
+#Coq has no higher inductive types, but you can sort
+#of make them using these "Axioms" (which are apparently just like RDF facts)
+
+Axiom Circle : Type
+
+Axiom base : Circle
+Axiom loop : base ~ base
+
+Axiom circle_rec1 : forall (X : Type) (a : X) (l : a ~ a) -> Circle -> X
+
+Axiom circle_rec2 : forall (P : Circle -> Type) (a : P base) (l : a ~ a) . forall( x : Circle) . P x
+
+Axiom circle_rec : forall ( P : Circle -> Type) (a : P base) (l : (transport loop a) ~ a) . forall (x : Circle) . P x
+
+Lemma transport : forall {X:Type}{P:X->Type}{x,x':X}(p:x~x').(P x) -> (P x')
+
+Inductive nat : Type :=
+  | z : nat
+  | succ : nat -> nat
+
+Inductive int : Type :=
+  | pos : nat -> int
+  | zero : int
+  | neg : nat -> int
+
+HomotopyFiber := {A B : Type} -> f:(A->B) -> sigma(a:A) . Path (f a) b
+Contractible := X:Type -> sigma(x:X).forall(x':X). Path x x'
+Equivalent := A B:Type -> sigma(f:A->B) . forall (b : B) . Contractible (HomotopyFiber f b)
+
+Theorem int_equiv_loopcirc : Equivalent( int, Path base base)
+
+
+xor_ax : Vec Bit k -> Vec Bit n
+
+
+ip
+jmp ->
+jmp ->
+
+
+?rest of memory
+{?this ip ?ip. ?ip points_to ?x. ?x decode ?y. ?y run ?next} => {?this next ?next}
+
+
+sequenced operations:
+
+do{
+	?x = command1(?something)
+	?y = command2(?x)
+}
+
+= do {
+	?y = command2(command1(?something))
+}
+
+	?y = command2(command1(?something))
+}
+
+imperative can probably be treated as sugar for functional in some kind of way
+
+45/10 = 4 + 5/10 = 4.5
+1/3 = 0.3333..
+
+1/3 = sum i=1^inf 3 * (1/10)^i
+
+they get a repeating part if they have factors that aren't factors of the base
+they get a non-repeating part if they have factors that are factors of the base
+corollary: any number that is coprime to the base will get no fixed part to it's decimal expansion,
+any number that shares all factors with the base will have a finite, non-repeating decimal expansion,
+and any number which has factors shared with the base along with factors coprime to the base will have
+a fixed prefix followed by an infinite repeating part.
+
+x+1 is coprime to x, for all x
+
+
+

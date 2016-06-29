@@ -318,7 +318,7 @@ or migration to CL for libraries? can use java and c libraries
 need metadata in ast nodes - wrapping of nodes
  - another option is ast nodes as objects, and rolling our own eval loop
 another layer of objects are the gui objects hierarchy
-
+	
 
 #frontend to picolisp, once again?
 PicolispParser

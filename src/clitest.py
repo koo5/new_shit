@@ -102,7 +102,16 @@ for t in [
 #"(\\t:*.(x:t->t)) (t:*->(x:t->t))"
 #"(\\t:*.(x:t->t)) (t:*->*)"
 #"t:*->*"
-"t:*->(x:t->*)"
+#"t:*->(x:t->*)"
+
+#hrm, around what tho
+"t:(* 0)->(* 0)"
+
+"n:#->(t:(* n)->(x:t->t))"
+
+#which is not being able to prove a pitype?
+#it does though
+
 ]:
 	do(t)
 

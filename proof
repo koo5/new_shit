@@ -1,0 +1,96 @@
+Crypto-Logic-GameTheory-Science-Networking-Physics-Complexity
+
+
+
+Proof of correct
+	Given by logical proof. Correct according to abstract rules
+	and definitions. No relation to the physical world at all.
+	Pure reasoning.
+
+Proof of work, aka time spent
+	A computer is given a problem with an assumed time-complexity.
+	If the computer gives back the answer to this problem, then it
+	is assumed that the computer went through some sequence of
+	steps necessary to solve the problem.
+
+Proof of relative time-line
+	Proving that B came after A, in time. 
+	Find a function acting on A, which produces a value, for which
+	the problem of finding an object A' such that the function acting
+	on A' produces the same value serves as a proof of an *unfathomable*
+	amount of work.	
+
+Proof of semi-secured time-line
+	A relative timeline with the added requirement that a solution to
+	a proof-of-work problem of suitable complexity be added to each
+	appended item in the timeline.	
+
+Proof of current time-line
+	A semi-secured time-line with items being added in the present
+	moment, such that the time-span claimed to be spanned by the 
+	time-line is approximately equal to the number of items in
+	the timeline multiplied by the assumed average time to solve
+	the proof of work in each block.
+
+Proof of secure time-line
+	A current time-line along with "proof" (probably by current consensus) 
+	that this current time-line has not been under 51% attack for some
+	duration long enough for it to be considered stabilized.
+
+
+Proof of space
+	This is the same as proof of work but for space-complexity instead.
+	A problem with an assumed space-complexity is given to a computer,
+	and if it computes the solution to that problem, then we assume the
+	computer to have had that much space available, at least at the
+	necessary points during course of execution.
+
+
+Proof of store
+	This is basically generating a problem with unfathomable time-complexity,
+	such that a solution to this problem is found easily if you have the
+	data being stored, but such that a false solution to the problem cannot
+	likely be found without an "unfathomable amount of work".
+	
+
+Proof of executed
+	You can prove that you executed a function in a specific way by doing
+	a combination of proof of correct, and proof of relative timeline over your 
+	execution trace. 
+	
+	Use proof of correct to show that your execution steps are correct.
+	Use proof of relative timeline to show what order they came in.
+
+Proof of execution
+	Find a secured time-line to serve as a clock. When the next item in the time-line
+	arrives, use homomorphic encryption on the function so that they can't fathomably 
+	have stored the execution trace before-hand, and make sure they return the result
+	within some number of clock-ticks of the time-line.
+
+
+Proof of "didn't see before"
+	Fresh pseudo-random value, in a large enough state space.
+
+Proof of "can't know the value"
+	Encryption
+
+Proof of going to a place you've visited
+	Let's say i make a message; something nobody else could have written,
+	and I leave it somewhere. If somebody ever sends me that message, I know
+	that they'll either have looked at the spot I left it, or somebody else
+	will have looked there and told it somebody who told it somebody who ...
+	who told it to the person who told me.
+
+
+Proof of network topology?
+	
+
+Can we make a system that reasons about systems built on these types of proofs in order
+to come up with more sophisticated things?
+
+
+
+
+
+
+Proof by consensus

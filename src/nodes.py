@@ -1573,6 +1573,7 @@ class RestrictedIdentifier(WidgetedValue):
 		log("registering restricted identifier grammar")
 		body_part = m.symbol('body_part')
 
+		#ok doesnt seem we allow nubmers, perfect
 		allowed = []
 		for rng in ['az', 'AZ']:
 			allowed.extend([chr(x) for x in range(ord(rng[0]),ord(rng[1])+1)])
@@ -1810,7 +1811,19 @@ class NodeclBase(Node):
 	def __init__(s, instance_class):
 		super(NodeclBase, s).__init__()
 		s.instance_class = instance_class
+		
 		instance_class.decl = Ref(s)
+		#so any Number has a .decl which is a Ref with the nodecl as a .target
+		#so, the idea is that when you want to refer to a type, you use Ref
+		#aaand shrug... its more like the lemonish way should be built properly the MLTT way
+		#hrm, not sure what you mean
+		
+		
+		
+		
+		
+		
+		
 		s.decl = None
 		s.example = None
 
@@ -2102,6 +2115,24 @@ class WorksAs(Syntaxed):
 	def __init__(s, children):
 		super(WorksAs, s).__init__(children)
 
+
+	def forget_symbols(s):
+		super(WorksAs, s).forget_symbols()
+		s._rule = None
+
+	def register_symbol(s):
+		if s._rule != None:
+			return
+		lhs = s.ch.sup.target.symbol
+		rhs = s.ch.sub.target.symbol
+		if args.log_parsing:
+			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
+		if lhs != None and rhs != None:
+			r = m.rule(str(s), lhs, rhs)
+			s._rule = r
+
+
+
 	@classmethod
 	def b(cls, sub, sup):
 		"""building-in helper"""
@@ -2112,6 +2143,7 @@ class WorksAs(Syntaxed):
 			sup = B[sup]
 			
 		return cls({'sub': Ref(sub), 'sup': Ref(sup)})
+
 
 class BindsTighterThan(Syntaxed):
 	help = "has higher precedence, goes lower in the parse tree"
@@ -3182,10 +3214,10 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 
 	
-	build_in_lc1(r)
-	build_in_lc2(r)
-	build_in_cube(r)
-
+#	build_in_lc1(r)
+#	build_in_lc2(r)
+#	build_in_cube(r)
+	build_in_MLTT(r)
 
 
 
@@ -3739,7 +3771,12 @@ def build_in_misc():
 		b_lemon_load_file, [Text("load"), str_arg()], Ref(B.text), "load file", "open").pass_root = True
 
 
-#BuiltinMenuItem..
+"""
+BuiltinMenuItem..
+class: based on customnode, one level,
+how to do views?
+add python_env to Module?
+"""
 
 
 """
@@ -3754,21 +3791,22 @@ build_in(SyntaxedNodecl(NodeSyntax,
 
 
 
+
+
+
+
+
+
+
+
+"""PiType is a kind of node.
+PiType has var - a Var
+PiType has type - a Exp
+PiType has ret - a Exp
+PiType has syntax: [Child("var"), ":"
 """
 
 
-class: based on customnode, one level,
-
-how to do views best?
-
-
-
-"""
-
-
-
-"""
-add python_env to Module?
 
 
 
@@ -3779,797 +3817,54 @@ add python_env to Module?
 
 
 
-"""
 
 
-lc1 = Dotdict() #a helper dict to hold the nodes being built in and to reference them easily
-lc1._dict = odict()
 
 
-#interesting vim glitch made it look like it was commented out
-#if i search "/def build_in_lc(" from the top, i guess it doesn't
-#parse the whole file but sees this \"\"\" above
-#scroll up and back down and it goes away
-def build_in_lc1(r):
-	"""creates a new module with definitions for a language separate from
-	the lemon stuff
-	eventually, this would all be just data in lemon,
-	but for now, we "build it in"
-	"""
+
+MLTT = Dotdict()
+MLTT._dict = odict()
+
+def build_in_MLTT(r):
 	
+	r["MLTT"] = new_module()
+	r["MLTT"].ch.statements.items = [
+		Comment("""MLTT""")]
 
-	r["lc1"] = new_module()
-	r["lc1"].ch.statements.items = [
-		Comment("""untyped lambda calculus""")]
+	r["MLTT-test"] = new_module()
+	r["MLTT-test"].special_scope = [r["MLTT"]];
 
-	""" whats the lc1-test for """
-	#well the gui shows a "root", a tree with a couple of entries,
-	#so thats like where you would type in your lambda calculus program	
-	r["lc1-test"] = new_module()
-	r["lc1-test"].special_scope = [r["lc1"], 
-		#B.restrictedidentifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
-		];
-		
-		
-
-	build_in(SyntacticCategory({'name': Text("exp")}), None, lc1)
-	lc1.exp.help = ["a lambda expression"]
 	
+	freshvarid = [0]
+	def genFreshVarName():
+		freshvarid[0] += 1
+		return Var({'name':RestrictedIdentifier("var" + str(freshvarid[0]))})
+	
+	build_in(SyntacticCategory({'name': Text("exp")}), None, MLTT)
+	MLTT.exp.help = ["a lambda expression"]
 
-	class Var(Syntaxed):
-		brackets = ("", "")
-		help = ["a variable"]
+
+	class DebVar(Syntaxed):
+		help = ["a De Brujin-ized variable"]
+		@property
+		def dist(s):
+			return s.ch.dist.pyval
+			
 		@property
 		def varName(s):
 			return s.ch.name.pyval
 		@varName.setter
 		def varName(s, v):
 			s.ch.name.pyval = v
-		
-	build_in(SyntaxedNodecl(Var,
-		[ChildTag("name")],
-		{'name': B.restrictedidentifier}), None, lc1)
-	#what's B.identifier
-	#like we use the lc1 here, B is the main global builtins
-	#ah, and i guess identifier is just what we want a name to be?yea
-
-	lc1.var.example = lc1.var.inst_fresh()
-	lc1.var.example.ch.name.text = "x"
+		def __init__(s, children):
+			super(Var, s).__init__(children)
+	build_in(SyntaxedNodecl(DebVar,
+		[ChildTag("name"), ChildTag('dist')],
+		{'name': B.restrictedidentifier, 'dist': B.number}))
 
 
 
-	class ParExp(Syntaxed): 
-		help = ["a parenthesized expression"]
-		brackets = ("", "")
-		
-	build_in(SyntaxedNodecl(ParExp,
-		[TextTag("("), ChildTag("exp"), TextTag(")")],
-		{'exp': lc1.exp}), None, lc1)
-	build_in(WorksAs.b(lc1.parexp, lc1.exp), False, lc1)
-
-
-
-	class Abs(Syntaxed): 
-		help = ["abstraction, a lambda"]
-		#def eval(s):
-		
-		
-		
-	build_in(SyntaxedNodecl(Abs,
-		[TextTag("\\"), ChildTag("var"), TextTag("."), ChildTag("exp")],
-		{'var': lc1.var, 'exp': lc1.exp}), None, lc1)
-
-
-
-
-	class App(Syntaxed): 
-		help = ["function application, a call"]
-		pass
-	build_in(SyntaxedNodecl(App,
-		[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
-		{'e1': lc1.exp, 'e2': lc1.exp}), None, lc1)
-
-
-	build_in(WorksAs.b(lc1.app, lc1.exp), False, lc1)
-	build_in(WorksAs.b(lc1.abs, lc1.exp), False, lc1)
-	build_in(WorksAs.b(lc1.var, lc1.exp), False, lc1)
-
-
-	r["lc1"].ch.statements.items.extend(list(itervalues(lc1._dict)))
-	
-
-
-
-
-	Var.unparen = lambda s: s
-	App.unparen = Abs.unparen = lambda s: s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
-	ParExp.unparen = lambda s: s.ch.exp.unparen()
-	
-	
-	#//aka evaluate
-	#//Normal order:
-	def normalize (e) :
-		if isinstance(e, Var):
-			return e
 			
-		if isinstance(e, Abs):
-			#return Abs({'var': e.ch.var.copy(), e.ch.exp.eval()})
-			return Abs({'var': e.ch.var, 'exp': e.ch.exp.eval()})
-			
-		if isinstance(e, App):
-			if isinstance(e.ch.e1, Abs):
-				#//one-step evaluation:
-				
-				#return subst(e.ch.e1.ch.e2, e.ch.e1.ch.e1, e.ch.e2)
-				return subst(e.ch.e1.ch.exp, e.ch.e1.ch.var, e.ch.e2)
-				
-				#//full evaluation:
-				#return subst(e3,x,e2).eval()
-				#return subst(e.ch.e1.ch.exp, e.ch.e1.ch.var, e.ch.e2).eval()
-				
-			if isinstance(e.ch.e1, App):
-				#//one step eval or no-op
-				tmp = e.ch.e1.eval()
-				return App({'e1': tmp, 'e2' : e.ch.e2})
-				
-				#//definite one step evaluation:
-				#not a no-op unless it's in normal form
-				#tmp = e.ch.e1.eval()
-				#if(tmp == e.ch.e1)
-				#	return App({'e1': e.ch.e1, 'e2': e.ch.e2.eval()})
-				#else
-				#	return App({'e1': tmp, 'e2': e.ch.e2})
-				
-				
-				#//full evaluation:
-				#tmp = e.ch.e1.eval()
-				
-				#only run subst if tmp is an Abs
-				
-				#if isinstance(tmp, Abs):
-				#	return subst(tmp.ch.exp,tmp.ch.var,e.ch.e2).eval()
-				#else
-				#	return App({'e1': tmp, 'e2': e.ch.e2.eval()})
-					
-			return e
-		assert False, "normalize"
-
-
-	def eval(e):
-		x = e.copy().unparen()
-		print (x.tostr())
-		n = normalize(x)
-		assert n
-		return n.copy()
-
-	ParExp.eval = App.eval = Abs.eval = Var.eval = eval
-
-
-	freshvarid = [0]
-	def genFreshVarName():
-		freshvarid[0] += 1
-		return "var" + freshvarid[0]
-
-
-	def subst( where, what:Var, by):#e1,x,e2):
-		print ("subst where", where.tostr(), "what", what.tostr(), "by", by.tostr())
-		if isinstance(where, Var):
-			#(Var x)[x := r]         = r
-			if (where.varName == what.varName):
-				return by
-			#(Var y)[x := r]         = y 
-			#i'm thinking more like this case
-			else:
-				return where
-		if isinstance(where, App):
-			#(App t s)[x := r]       = (t[x:=r])(s[x:=r])
-			return App({'e1': subst(where.ch.e1, what, by), 'e2': subst(where.ch.e2, what, by)})
-		if isinstance(where, Abs):
-			#(Abs x t)[x := r]       = (Abs x t).
-			#i think this should be where.ch.var.varName?
-			#ah, yea
-			# guess we never called an example that used it
-			#name would be "RestrictedIdentifier" i think
-			#i'm actually still a bit confused about this
-			#case myself, but it's what the capture-avoiding
-			#substitution rules say to do, *shrug*
-			if(where.ch.var.varName == what.varName):
-				print ("where is what so fuck you")
-			#this would happen in a case like:
-			#(\x.(\x.x)) y
-			#to evaluate this we're gonna "replace all
-			#occurences of 'x' in (\x.x) with 'y'"
-			#but i guess the inner \x is taken to be
-			# a different var than the outer \x
-			
-				return where
-			else:
-				#(Abs y t)[x := r]                                                                
-				#if(y not in FreeVars(r))
-				
-				print("where.var:", where.ch.var.varName, "FreeVars(by):",FreeVars(by))
-				if(where.ch.var.varName not in FreeVars(by)):
-					print ("var not in freevars")
-					#(Abs y subst(t,x,r))
-					return Abs({'var':where.ch.var, 'exp': subst(where.ch.exp, what, by)}) 
-				else:
-					print ("var in freevars")
-					z = genFreshVarName()
-
-					#t' = subst(t,y,z)
-					t1 = subst(where.ch.exp,where.ch.var,z)
-
-					#t'' = subst(t',x,r)
-					t2 = subst(t1,what,by)
-
-					#return (Abs z t'')
-					return Abs({'var': z, 'exp': t2})
-		assert False, ("subst", where, what, by)
-		
-		
-	
-	def FreeVars(expr,vars=None) -> set:
-		#shall we save varNames only?
-		#we could do that, name is all the structure they have
-		#otherwise this set magic wont work so magically
-		#standard implementations would do something like
-		#de bruijn indexes, i.e. just replace them with numbers
-
-		if vars==None: vars = set()
-		print("freevars", expr.tostr(), "vars:", vars)
-		
-		if isinstance(expr,Var):
-			vars.add(expr.varName)
-			return vars
-
-		#if (e is a Abs var exp)
-		if isinstance(expr,Abs):
-			free = FreeVars(expr.ch.exp, vars)
-			free.remove(expr.ch.var.varName)#because it's bound by this abstraction
-			#how would it be bound by the abstraction if it didnt actually appear in the body?
-			#well, *if* it appears in the body then we remove it but i hope this
-			#set routine already handles that
-			return free
-		#if (e is a App e1 e2)
-		if isinstance(expr,App):
-			free_e1 = FreeVars(e1, vars)
-			free_e2 = FreeVars(e2, vars)
-			return free_e1.union(free_e2)
-#a var X appearing in an expression is free, 
-#unless it is used in the .ch.exp of an abstraction
-#whose .ch.var is that var, unless unless the expression
-#is an application and X is free in the other half
-#hrm good point, lemme see what the wiki says
-
-#"The set of free variables of (a b) is the union of the set
-#of free variables of a and the set of free variables of b"
-
-lc2 = Dotdict() 
-lc2._dict = odict()
-def build_in_lc2(r):
-	r["lc2"] = new_module()
-	r["lc2"].ch.statements.items = [
-		Comment("""simply typed lambda calculus""")]
-
-	r["lc2-test"] = new_module()
-	r["lc2-test"].special_scope = [r["lc2"], B.number];
-		
-	
-
-	build_in(SyntacticCategory({'name': Text("exp")}), None, lc2)
-	lc2.exp.help = ["a lambda expression"]
-	
-
-	class Var(Syntaxed):
-		brackets = ("", "")
-		help = ["a variable"]
-		@property
-		def varName(s):
-			return s.ch.name.pyval
-		@varName.setter
-		def varName(s, v):
-			s.ch.name.pyval = v
-		
-	build_in(SyntaxedNodecl(Var,
-		[ChildTag("name")],
-		{'name': B.restrictedidentifier}), None, lc2)
-
-	class ParExp(Syntaxed): 
-		help = ["a parenthesized expression"]
-		brackets = ("", "")
-		
-	build_in(SyntaxedNodecl(ParExp,
-		[TextTag("("), ChildTag("exp"), TextTag(")")],
-		{'exp': lc2.exp}), None, lc2)
-	build_in(WorksAs.b(lc2.parexp, lc2.exp), False, lc2)
-
-
-	build_in(SyntacticCategory({'name': Text('type')}), None, lc2)
-
-	class ParType(Syntaxed): 
-		help = ["a parenthesized type"]
-		brackets = ("", "")
-	build_in(SyntaxedNodecl(ParType,
-		[TextTag("("), ChildTag("type"), TextTag(")")],
-		{'type': lc2.type}), None, lc2)
-	build_in(WorksAs.b(lc2.partype, lc2.type), False, lc2)
-
-
-	class FunType(Syntaxed): 
-		help = ["function type"]
-	build_in(SyntaxedNodecl(FunType,
-		[
-		[ChildTag("from"), TextTag("->"), ChildTag("to")],
-		["function from ", ChildTag("from"), " to ", ChildTag("to")]],
-		{'from': lc2.type, 'to': lc2.type}), None, lc2)
-	build_in(WorksAs.b(lc2.funtype, lc2.type), False, lc2)
-
-	class IntType(Syntaxed): 
-		help = ["integer type"]
-	build_in(SyntaxedNodecl(IntType,
-		[TextTag("int")],
-		{}), None, lc2)
-	class BoolType(Syntaxed): 
-		help = ["bool type"]
-	build_in(SyntaxedNodecl(BoolType,
-		[TextTag("bool")],
-		{}), None, lc2)
-
-
-	build_in(SyntacticCategory({'name': Text('basetype')}), None, lc2)
-	build_in(WorksAs.b(lc2.basetype, lc2.type), False, lc2)
-	build_in(WorksAs.b(lc2.booltype, lc2.basetype), False, lc2)
-	build_in(WorksAs.b(lc2.inttype,  lc2.basetype), False, lc2)
-
-
-
-	build_in(SyntacticCategory({'name': Text('constant')}), None, lc2)
-	build_in(SyntacticCategory({'name': Text('bool')}), None, lc2)
-	build_in(WorksAs.b(lc2.bool, lc2.constant), False, lc2)
-	build_in(WorksAs.b(B.number,  lc2.constant), False, lc2)
-	build_in(WorksAs.b(lc2.constant, lc2.exp), False, lc2)
-
-
-
-	class BoolTrue(Syntaxed): 
-		help = ["..."]
-	build_in(SyntaxedNodecl(BoolTrue,
-		[TextTag("true!")],
-		{}), None, lc2)
-	build_in(WorksAs.b(lc2.booltrue, lc2.bool), False, lc2)
-	class BoolFalse(Syntaxed): 
-		help = ["..."]
-	build_in(SyntaxedNodecl(BoolFalse,
-		[TextTag("false!")],
-		{}), None, lc2)
-	build_in(WorksAs.b(lc2.boolfalse, lc2.bool), False, lc2)
-
-
-
-
-	"""
-Type := FunType | BaseType
-FunType := Type -> Type
-BaseType := "Int" | "Bool"
-Constant := Number | Bool
-
-ParType := "(" Type ")"
-Type := ParType
-ParExpr := "(" Expr ")"
-
-Expr := Var | Abs | App | Constant
-Var := Identifier
-Abs := "\\" Var ":" Type "." Expr
-App := Expr " " Expr
-	"""
-
-	
-	class Abs(Syntaxed): 
-		help = ["abstraction, a lambda"]
-		
-	build_in(SyntaxedNodecl(Abs,
-		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
-		[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]],
-		{'var': lc2.var, 'type': lc2.type, 'exp': lc2.exp}), None, lc2)
-
-
-
-	#"do" <function> "to" <argument>
-	#"run" <function> "on" <argument>
-	class App(Syntaxed): 
-		help = ["function application, a call"]
-		
-	build_in(SyntaxedNodecl(App,
-		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
-		[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]],
-		{'e1': lc2.exp, 'e2': lc2.exp}), None, lc2)
-
-	for x in [App, Abs, FunType]: x.default_syntax_index = 1
-
-	build_in(WorksAs.b(lc2.app, lc2.exp), False, lc2)
-	build_in(WorksAs.b(lc2.abs, lc2.exp), False, lc2)
-	build_in(WorksAs.b(lc2.var, lc2.exp), False, lc2)
-
-
-	r["lc2"].ch.statements.items.extend(list(itervalues(lc2._dict)))
-	
-
-
-
-
-	ParExp.unparen = lambda s: s.ch.exp.unparen()
-	ParType.unparen = lambda s: s.ch.type.unparen()
-
-
-
-	
-
-	
-	#//aka evaluate
-	#//Normal order:
-	def normalize (e) :
-		if type(e) in [BoolTrue, BoolFalse, Number]:
-			return e
-		if isinstance(e, Var):
-			#yea this isnt the top-level-only normalize()
-			#print("Your type-checking sucks")
-			#assert False
-			return e
-			
-		if isinstance(e, Abs):
-			#return Abs({'var': e.ch.var.copy(), e.ch.exp.eval()})
-			return Abs({'var': e.ch.var, 'type': e.ch.type, 'exp': e.ch.exp.eval()})
-			
-		if isinstance(e, App):
-			if isinstance(e.ch.e1, Abs):
-				#//one-step evaluation:
-				
-				#return subst(e.ch.e1.ch.e2, e.ch.e1.ch.e1, e.ch.e2)
-				#return subst(e.ch.e1.ch.exp, e.ch.e1.ch.var, e.ch.e2)
-				
-				#//full evaluation:
-				#return subst(e3,x,e2).eval()
-				return subst(e.ch.e1.ch.exp, e.ch.e1.ch.var, e.ch.e2).eval()
-				
-			if isinstance(e.ch.e1, App):
-				#//one step eval or no-op
-				#tmp = e.ch.e1.eval()
-				#return App({'e1': tmp, 'e2' : e.ch.e2})
-				
-				#//definite one step evaluation:
-				#not a no-op unless it's in normal form
-				#tmp = e.ch.e1.eval()
-				#if(tmp == e.ch.e1)
-				#	return App({'e1': e.ch.e1, 'e2': e.ch.e2.eval()})
-				#else
-				#	return App({'e1': tmp, 'e2': e.ch.e2})
-				
-				
-				#//full evaluation:
-				tmp = e.ch.e1.eval()
-				
-				#only run subst if tmp is an Abs
-				
-				if isinstance(tmp, Abs):
-					return subst(tmp.ch.exp,tmp.ch.var,e.ch.e2).eval()
-				else:
-					print("Your type-checking sucks")
-					assert false
-					#return App({'e1': tmp, 'e2': e.ch.e2.eval()})
-					
-			return e
-		assert False, "normalize"
-
-
-	def eval(e):
-		x = e.copy().unparen()
-		print (x.tostr())
-		n = normalize(x)
-		assert n
-		return n.copy()
-
-	ParExp.eval = App.eval = Abs.eval = Var.eval = eval
-
-
-
-#?
-	for x in [BoolTrue, BoolFalse]:
-		x._eval = lambda s:s.copy()
-
-
-
-	freshvarid = [0]
-	def genFreshVarName():
-		freshvarid[0] += 1
-		return "var" + freshvarid[0]
-
-
-	def subst( where, what:Var, by):#e1,x,e2):
-		print ("subst where", where.tostr(), "what", what.tostr(), "by", by.tostr())
-		if type(where) in [BoolTrue, BoolFalse, Number]:
-			return where
-		if isinstance(where, Var):
-			#(Var x)[x := r]         = r
-			if (where.varName == what.varName):
-				return by
-			#(Var y)[x := r]         = y 
-			#i'm thinking more like this case
-			else:
-				return where
-		if isinstance(where, App):
-			#(App t s)[x := r]       = (t[x:=r])(s[x:=r])
-			
-			#right, what type?
-			#types are irrelevant by the time we get to eval
-			return App({'e1': subst(where.ch.e1, what, by), 'e2': subst(where.ch.e2, what, by)})
-		if isinstance(where, Abs):
-			#(Abs x t)[x := r]       = (Abs x t).
-			#i think this should be where.ch.var.varName?
-			#ah, yea
-			# guess we never called an example that used it
-			#name would be "RestrictedIdentifier" i think
-			#i'm actually still a bit confused about this
-			#case myself, but it's what the capture-avoiding
-			#substitution rules say to do, *shrug*
-			if(where.ch.var.varName == what.varName):
-				print ("where is what so fuck you")
-			#this would happen in a case like:
-			#(\x.(\x.x)) y
-			#to evaluate this we're gonna "replace all
-			#occurences of 'x' in (\x.x) with 'y'"
-			#but i guess the inner \x is taken to be
-			# a different var than the outer \x
-			
-				return where
-			else:
-				#(Abs y t)[x := r]                                                                
-				#if(y not in FreeVars(r))
-				
-				print("where.var:", where.ch.var.varName, "FreeVars(by):",FreeVars(by))
-				if(where.ch.var.varName not in FreeVars(by)):
-					print ("var not in freevars")
-					#(Abs y subst(t,x,r))
-					#i guess not completely irrelevant
-					return Abs({'var':where.ch.var, 'type': where.ch.type, 'exp': subst(where.ch.exp, what, by)}) 
-				else:
-					print ("var in freevars")
-					z = genFreshVarName()
-
-					#t' = subst(t,y,z)
-					t1 = subst(where.ch.exp,where.ch.var,z)
-
-					#t'' = subst(t',x,r)
-					t2 = subst(t1,what,by)
-
-					#return (Abs z t'')
-					return Abs({'var': z, 'type': where.ch.type, 'exp': t2})
-		assert False, ("subst", where, what, by)
-		
-		
-	
-	def FreeVars(expr,vars=None) -> set:
-		#shall we save varNames only?
-		#we could do that, name is all the structure they have
-		#otherwise this set magic wont work so magically
-		#standard implementations would do something like
-		#de bruijn indexes, i.e. just replace them with numbers
-
-		if vars==None: vars = set()
-		print("freevars", expr.tostr(), "vars:", vars)
-		if type(expr) in [BoolTrue, BoolFalse, Number]:
-			return vars
-		if isinstance(expr,Var):
-			vars.add(expr.varName)
-			return vars
-
-		#if (e is a Abs var exp)
-		if isinstance(expr,Abs):
-			free = FreeVars(expr.ch.exp, vars)
-			free.remove(expr.ch.var.varName)#because it's bound by this abstraction
-			#how would it be bound by the abstraction if it didnt actually appear in the body?
-			#well, *if* it appears in the body then we remove it but i hope this
-			#set routine already handles that
-			return free
-		#if (e is a App e1 e2)
-		if isinstance(expr,App):
-			free_e1 = FreeVars(e1, vars)
-			free_e2 = FreeVars(e2, vars)
-			return free_e1.union(free_e2)
-
-		assert None, expr
-#a var X appearing in an expression is free, 
-#unless it is used in the .ch.exp of an abstraction
-#whose .ch.var is that var, unless unless the expression
-#is an application and X is free in the other half
-#hrm good point, lemme see what the wiki says
-
-#"The set of free variables of (a b) is the union of the set
-#of free variables of a and the set of free variables of b"
-
-	#so we call type_check with the expression
-	#to be type-checked and a list of "type-assumptions"
-	
-	#for the top-level expression that we intend to
-	#evaluate, we'll be calling this with the default,
-	#i.e. an empty set of type-assumptions.
-	
-	#the set of type-assumptions is a map from vars
-	#to their types
-	def type_check(expr,env=None):
-		if env==None: env = {}
-		#so if our 'e' was a Var, then we're
-		#just gonna grab it's type-assumption
-		#from the list
-		
-		#if the type-assumption isn't there, then
-		#we'll get a KeyError, which is fine cause
-		#we're supposed to fail anyway in that case
-		
-		#if the type-assumption isn't there, then
-		#it's basically like i just give you:
-		
-		# "x"
-		#and ask you what's the type
-		#there's no answer to that, it's untyped
-		if isinstance(expr,Var):
-			return env[expr.varName]
-			"""
-			check if expr is in env
-			if so return the type associated
-			with it, otherwise fail
-			(if it's not there then python
-			will fail for us, i hope)
-		
-			all vars must have a type-assumption
-			by the time we get to them.
-			type assumptions are given by abstractions,
-			i.e. if we have '\\x:t.e', then when we go to
-			type-check 'e', then env will contain 'x:t'
-			"""
-		#type-assumptions get added to the list from
-		#abstractions
-		
-		#\\x:t.e, <-- "x:t" is a type-assumption
-		#we'll add this type assumption to the list
-		#before checking "e". 
-		if isinstance(expr,Abs):
-			#copy our current list of type-assumptions
-			tmp_env = dict(env)
-			
-			#add the type assumption
-			#if it's a repeated occurrence of a
-			#var in an inner lambda like
-			#\x:bool.\x:bool.x, then the inner
-			#should shadow the outer
-			
-			#actually for a real lang we would
-			#probably want to just disallow that
-			#syntactically hrrm
-			
-			#\x:bool.\x:int.x
-			#which x are we referring to?
-			#the inner:p
-			#our type-assumption will be the
-			#inner one, that's ensured by this
-			#next line, but how about for
-			#normalization, substitution, etc?
-			
-			#so normalize doesnt deal with this as expected?
-			#well, i think it's more that "expected" isnt
-			#even really well-defined yet (for us)
-			#well..lexical scope, i.e. the inner should
-			#shadow the outer?yea ok we'll check over it in
-			#a minute
-			
-			#it's not a big deal though, we
-			#can just avoid those for now and
-			#nit-pick at it later
-			tmp_env[expr.ch.var.varName] = expr.ch.type
-			return FunType({
-				#this is just 't'
-				"from": expr.ch.type,
-				#\\x:t.e
-				#so here we're type-checking the 'e'
-				#using the new set of type-assumptions
-				"to": type_check(expr.ch.exp,tmp_env)
-				})
-			#alright i think thats clear
-			
-		if isinstance(expr,App):
-			func_t = type_check(expr.ch.e1, env)
-			if isinstance(func_t,FunType):
-				arg_t = type_check(expr.ch.e2, env)
-				if arg_t.eq_by_value_and_python_class(func_t.ch._dict["from"]):
-					return func_t.ch.to
-				else:
-					print("Bad argument type")
-					assert False
-			else:
-				print("Application using non-function-type")
-				assert False
-
-		if type(expr) in [BoolTrue, BoolFalse]:
-			return BoolType({})
-		if isinstance(expr, Number):
-			return IntType({})
-		assert False
-		#ok!
-		#cool, make sense now?yeah thx np
-		#and that's it, simply typed is done
-		
-		#ok time for a break i guess
-	def tc(e):
-		x = e.copy().unparen()
-		print (x.tostr())
-		n = type_check(x)
-		assert n
-		return n.copy()
-
-		
-	for x in [Var, App, Abs]:
-		x.type_check = tc
-		
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-    	 _________________________
-        / _____________________  /|
-       / / ___________________/ / |
-      / / /| |               / /  |
-     / / / | |              / / . |
-    / / /| | |             / / /| |
-   / / / | | |            / / / | |
-  / / /  | | |           / / /| | |
- / /_/__________________/ / / | | |
-/________________________/ /  | | |
-| ______________________ | |  | | |
-| | |    | | |_________| | |__| | |
-| | |    | |___________| | |____| |
-| | |   / / ___________| | |_  / /
-| | |  / / /           | | |/ / /
-| | | / / /            | | | / /
-| | |/ / /             | | |/ /
-| | | / /              | | ' /
-| | |/_/_______________| |  /
-| |____________________| | /
-|________________________|/
-
-"""
-
-
-
-
-
-
-
-cube = Dotdict() #a helper dict to hold the nodes being built in and to refe
-cube._dict = odict()
-
-
-def build_in_cube(r):
-	r["cube"] = new_module()
-	r["cube"].ch.statements.items = [
-		Comment("""The lambda cube""")]
-
-	r["cube-test"] = new_module()
-	r["cube-test"].special_scope = [
-		r["cube"]
-		#B.number
-	];
-	
-	build_in(SyntacticCategory({'name': Text("exp")}), None, cube)
-	cube.exp.help = ["a lambda expression"]
-
 
 	class Var(Syntaxed):
 		brackets = ("", "")
@@ -4582,112 +3877,149 @@ def build_in_cube(r):
 			s.ch.name.pyval = v
 		def __init__(s, children):
 			super(Var, s).__init__(children)
-			#if s.varName in ["box", 'star']:
-				#assert False, s.varName
-			#alright for now we'll take this assert out just to make sure we'll make it to the
-			#parse we want
-			#well it will kill the whole thing 
-			#well...this approach isnt good in that we will have multiple parses, and processing some of those will abort
-			#well..gets the job done?
-#if we should discuss how this should be handled in lemon eventually, i dont know,
-#i think in some cases we want the ambiguity...is all i know, i mean eventually in some big lemon lang
-#ah sure, in a more extensive lang we might want to allow ambiguity in some cases
-#for this though the only reason we have any ambiguity is because we have things as
-#text instead of haskell inductive data types
-#ill think about it some more, for now let's just avoid using any ambiguous examples
+			
 	build_in(SyntaxedNodecl(Var,
 		[ChildTag("name")],
-		{'name': B.restrictedidentifier}), None, cube)
+		{'name': B.restrictedidentifier}), None, MLTT)
+
 	class ParExp(Syntaxed):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 	
 	build_in(SyntaxedNodecl(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
-		{'exp': cube.exp}), None, cube)
+		{'exp': MLTT.exp}), None, MLTT)
 
 	
 	class PiType(Syntaxed):
-		help = ["""function type
+		help = ["""function type		"""]
 		
-		is this equivalent to FunType? whats the var there for?
-		yea this is the new function type, it's actually a 
-		generalization of function types: it's *dependent* function
-		types, meaning the return type can depend on the input
-		*value*, meaning the return type can be given as an
-		expression in terms of the input value (which is what the
-		var is there for)
-		\\x:t -> (x -> x)
-		so (x -> x) is a type of an identity function?
-		the identity function for type x happens to be of type x -> x
-		but there are other functions besides the identity function
-		which have this as their type
-		any function that takes an x and returns an x is of type x -> x
-		sure
-		this takes args of type 't', calls them 'x', and
-		for any arg 'x', returns a value of type 'x->x'
-		't' as in a type variable?
+	build_in(SyntaxedNodecl(PiType,
+		[
+		[ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("ret")],
+		],
+		{'arg': MLTT.var, 'type': MLTT.exp, 'ret': MLTT.exp}), None, MLTT)
+	
+	class Abs(Syntaxed): 
+		help = ["abstraction, a lambda"]
+	build_in(SyntaxedNodecl(Abs,
+		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")]
+		],
+		{'var': MLTT.var, 'type': MLTT.exp, 'exp': MLTT.exp}), None, MLTT)
+	
+	class App(Syntaxed): 
+		help = ["""function application, a call
+			#"do" <function> "to" <argument>
+			#"run" <function> "on" <argument>
+		"""]
 		
-		well, this was a bad example because the only way
-		i could actually do something like this is if i used
-		* instead of t
+	build_in(SyntaxedNodecl(App,
+		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")]
+		],
+		{'e1': MLTT.exp, 'e2': MLTT.exp}), None, MLTT)
+	
+	class Level(Syntaxed):
+		pass
+	build_in(SyntaxedNodecl(Level,
+		[TextTag("#")],
+		{}), None, MLTT)
+	
+	class Succ(Syntaxed):
+		help = ["""the successor of a level"""]
+	
+	build_in(SyntaxedNodecl(
+			Succ,
+			[[TextTag("+")]],
+			{}),
+			None,
+			MLTT)
+	
+	class Set(Syntaxed):
+		help = ["""the function constructing an MLTT universe from an element of Level"""]
+	
+	build_in(SyntaxedNodecl(
+			Set,
+			[[TextTag("*")]],
+			{}),
+			None,
+			MLTT
+		)
+	
+	
+	class SetOmega(Syntaxed):
+		help = ["""the 'kind' of MLTT universes"""]
+	build_in(SyntaxedNodecl(
+			SetOmega,
+			
+			#eventually instead of TextTag we should extend this into
+			#a mechanism for users to customize their display more generally
+			
+			[[TextTag("* Omega")]]
+			,{}),None,MLTT
+		)
+	
+	
+	#In this version where (Set Omega) would be interpreted as an App of a function Set,
+	#then it kinda makes more sense to interpret Omega as an inaccessible level, and 
+	#(Set Omega) as the corresponding inaccessible universe, with no type of its own.
+	
+	
+	for a,b in [
+	
+	(MLTT.parexp, MLTT.exp),
+	(MLTT.app, MLTT.exp), 
+	(MLTT.abs, MLTT.exp), 
+	(MLTT.var, MLTT.exp), 
+	(MLTT.pitype, MLTT.exp),
+	(MLTT.set, MLTT.exp),
+	(MLTT.level, MLTT.exp),
+	(B.number, MLTT.exp),
+	(MLTT.setomega, MLTT.exp),
+	(MLTT.succ,MLTT.exp)
+	
+	]:build_in(WorksAs.b(a,b), False, MLTT)
+	
+	r["MLTT"].ch.statements.items.extend(list(itervalues(MLTT._dict)))
+	
+	
+	def debrujin(node, ctx):
+		if type(node) == Var:
+			if node.varName in ctx:
+				return DebVar(ctx.index(name), name)
+			else:
+				raise "var is not in scope"
+		if type(node) == App:
+			return App({'e1':debrujin(node.ch.e1, ctx), 'e2':debrujin(node.ch.e2, ctx)})
+
+		if type(node) == Abs:
+			ctx = [node.ch.var.varName] + ctx
+			return    Abs({'var':debrujin(node.ch.var, ctx), 'type':debrujin(node.ch.type, ctx), 'exp':debrujin(node.ch.exp, ctx)})
+		if type(node) == PiType:
+			ctx = [node.ch.var.varName] + ctx
+			return PiType({'var':debrujin(node.ch.var, ctx), 'type':debrujin(node.ch.type, ctx), 'exp':debrujin(node.ch.exp, ctx)})
+
+		return node
+	
+	
+	#Just need to analyze the control flow here.
+	def prove(in_prop,env1=None,env2=None):
+		if (env1 == None) : env1 = []
+		if (env2 == None) : env2 = {}
 		
-		\\t : * . (t -> t)
+		#Make sure it passes a type-check, and it's type is (Set n), for
+		#some Level, n. (Otherwise it's not a proposition!)
+		t = nf(type_check(in_prop,env2))
 		
-		^ because i have to know that my 't' is a type in order
-		to use "->" to construct a function/pi-type with it
-		like, for example, \\x : bool . (x -> x) doesn't make
-		any sense
-		
-		\\(arg)x:(type)t -> (ret)(x -> x)?
-		right, and (ret) itself is a PiType
-		\\_:x -> x
-		\\arg:type -> ret
-		  ^ this is just pretending it's quantified over the terms in
-		  the type x, using some var "_" that doesn't appear in the
-		  return type
-		so..ret is an expression...
-		not just ret but also type
-		
-		x -> x?
-		hrm actually that's not a good example because "->" requires
-		two types to construct another type
-		
-		need an example that uses terms to construct types
-		the identity type works, but we don't really have this represented
-		yet
-		
-		\\x:t -> (x ==_t x)
-		
-		this one makes sense whatever we use for 't', but you'll have
-		to use your imagination a bit because we don't have anything like
-		identity types implemented
-		
-		in fact afaict we don't have anything implemented that can take
-		terms as arguments and construct types
-		
-		"->" is a 'type operator', it takes two *types* as arguments and
-		returns a type, you can't necessarily pass it two *terms* and
-		have it construct a meaningful function type, like
-		\\x:bool -> (x -> x) doesn't make sense but
-		\\t:* -> (t -> t) does make sense
-		
-		==_t otoh can take two terms of type t and construct a type from
-		them
+		if (not isinstance(t,SetOmega)):
+			if (not isinstance(t, App)): 
+				print("Can't be a proposition/type if it's not an App")
+				assert False
 		
 		
-		function type is recovered as a special case of these
-		namely a standard function type is any pi-type where
-		the expression representing the return type doesn't
-		depend on the input value
-		
-		\\x:bool -> int
-		this is a function that takes args of type 'bool', refers
-		to them as 'x', and returns an 'int'
-		
-		this looks like ret holds the type,
-		while the x'es look like ret holds ..i dunno what, a type of an expression that you evaluate to get the return type
-		
+			#ah, i think we need a more liberal definition of Number here
+			if ((not isinstance(t.ch.e1,Set)) or (not (isinstance(type_check(t.ch.e2),Level)))):
+				print("Can't be a proposition/type if it's not a Set <number>")
+				assert False
 		
 		
 		
@@ -4902,51 +4234,85 @@ rather than, given any type, and a value of that type, return that value
 		#if you don't, then proceed to try the PiType case, where
 		#we'll actually attempt to construct an Abs as our proof
 		#term
+		
 		got_something = False
 		for i in env1:
 			if(betaEq(prop, i[0])):
 				got_something = True
-				yield i[1]
+				yield i[1] 
 		
-		if isinstance(prop,StarKind):
-			print("Proving the proposition * is not yet implemented aside from in the case that it can be satisfied by the 'env' look-up.")
-			#assert False 
+		#Ok we didn't find it in the 'env', so we attempt to
+		#construct a proof term directly.
 		
-		
-		elif isinstance(prop,PiType):
+		#A proof of a PiType is a function with the same
+		#domain and range. We get the domain component of the
+		#function for free. If the pi-type is (x:X)->_, then
+		#automatically our function will be \(x:X).proof(_),
+		#if proof(_) exists.
+		if isinstance(prop,PiType):
+			got_something = True
 			tmp_env1 = env1[:]
 			tmp_env1.append([prop.ch.type,prop.ch.arg])
 			tmp_env2 = dict(env2)
 			tmp_env2[prop.ch.arg.varName] = prop.ch.type
-
-			#so i guess this should really loop over the recursive call's results?
+		
 			for ppp in prove(prop.ch.ret,tmp_env1,tmp_env2):
 				yield Abs({
 					'var':prop.ch.arg, 
 					'type': prop.ch.type, 
 					'exp':  ppp
 					})
+		
+		#A proof of a (Set n) is (Set (n-1)) if n > 0.
+		#What about in the case where n = 0?
+		#should this be fixed up to "understand" the relation between
+		#Level and Nat ?
+		if isinstance(prop,App):
+			if (prop.ch.e2.pyval == 0):
+				print("Not sure which proof to give you, but there's plenty of them!")
+				got_something = True
+			else:
+				#for type-checking we needed +1, for proving we need -1
+				#still need this
+				got_something = True
+				return App({'e1':Set({}),'e2':(prop.ch.e2-1)})
 				
 		#we will get here as well
 		#or we need to specify what case should fail
 		
 		#well i could hack this up but it would be better if you change the control flow appropriately instead
 		elif not got_something:
-			print ("What exactly are you telling me to prove here? " + prop.toStr())
-			assert False
+			print ("What exactly are you telling me to prove here? " + prop.tostr(True))
 	
-	def type_check(expr,env=None):
+	def set_max(set1,set2):
+		#ok so we're assuming max was called with two things that end in a number
+		#and not a variable or application of succ's to a variable (cause that would
+		#be universe polymorphism and call for set-omega)
+		
+		
+		a = nf(set1).ch.e2
+		#assert 
+		assert type(a) == Number
+		b = nf(set2).ch.e2
+		assert type(b) == Number
+		
+		return max(a.pyval,b.pyval)
+	
+	def type_check(expr:Node,env=None,level_flag=False): #returns Node
 		#set up an empty list of type assumptions
 		if (env == None) : env = {}
 		
 		#just like normally, we look up the type assumption for the variable
 		#in the environment
 		if isinstance(expr,Var):
-			return env[expr.varName]	
-	
+			return env[expr.varName]
+		
 		if isinstance(expr,App):
 			#type-check-reduce the function using the current
 			#environment
+			#why whnf vs nf vs nothing?
+			print("Type-checking an App")
+			print("Type-checking it's function")
 			func_t = whnf(type_check(expr.ch.e1,env))
 			
 			#functions are supposed to have pi-types. we only
@@ -4955,32 +4321,69 @@ rather than, given any type, and a value of that type, return that value
 			if isinstance(func_t, PiType):
 				#if so, type-check the argument expression
 				#using the current environment
+				print("It's a function; type-checking it's arg")
 				arg_t = type_check(expr.ch.e2,env)
 				
-				#so, we're expecting that the type of the bound
-				#variable in the function could potentially be
-				#expressed by the application of a type operator
-				#or dependent type
-				
-				#(\x:((\t:*.t->t) int).x) (\x:int.5)
-				
-				#func_t := ((\t:*.t->t) int) -> ((\t:*.t->t) int)
-				#arg_t := int->int 
+				print("Checking if arg-type matches domain")
 				if (not (betaEq(func_t.ch.type,arg_t))):
 					print("Error: bad argument type")
 					assert False
 				
 				else:
+					print("substitute the argument into the return type")
 					return subst(func_t.ch.ret, func_t.ch.arg, expr.ch.e2)
-			
 			else:
 				print("Error: trying to apply(call) something that's not a function")
 				assert False
+				
+		
+		#Succ is a function that takes a Level and a returns a Level,
+		#so, it's function type is  v:Level -> Level
+		if isinstance(expr,Succ):
+			v = genFreshVarName()#wanna make this return a Var?
+			#probably
+			return PiType({
+				'arg':v,
+				'type':Level({}),
+				'ret':Level({})
+				})
+		
+		#Set itself is a universe-polymorphic function.
+		#it's a function that takes an argument n of type Level
+		#and produces an object of type (Set (n+1)), namely
+		#(Set n).
+		
+		#Any pi-type quantified over Level, and with return-type
+		#actually depending on the input, has type SetOmega
+		
+		#i dont mind digging into it but im getting tired here, gonna go take a shower now
+		#ok sounds good
+		
+		# Set :: v:#->(Set (Succ v))
+		# Set i :: (Set (Succ i))
+		
+		#This rule combines with the rules for App, Succ, Level & Number
+		if isinstance(expr,Set):
+			v = genFreshVarName()
+			#so Var has name Text?
+			#gotta keep in mind we deal with lemon nodes here,
+			#im just not sure what the lc's syntax supposed to be
+			
+			return PiType({
+				'arg':v,
+				'type':Level({}),
+				'ret':App({
+					'e1':Set({}),
+					'e2':App({
+						'e1':Succ({}),
+						'e2':v
+						})
+					})
+				})
 		
 		if isinstance(expr,Abs):
-			#make sure the type of the bound var passes a type-check
-			#with the current environment. what does "pass" really
-			#mean here?
+			#make sure that the type of the bound variable is actually
+			#a type, in this context.
 			type_check(expr.ch.type,env)
 			
 			#copy the set of type assumptions into a new set
@@ -4995,24 +4398,72 @@ rather than, given any type, and a value of that type, return that value
 			expr_t = type_check(expr.ch.exp,tmp_env)
 			
 			#abstractions have Pi-types as their types
-			#so we're expecting the result of running type_check on
-			#expr.ch.exp to be able to potentially return a type expression
-			#that depends on 'expr.ch.var' ?
-			
 			rt = PiType({'arg':expr.ch.var,'type':expr.ch.type,'ret':expr_t})
 			
 			#now that we've constructed the pi-type for our lambda abstraction,
 			#we're going to type-check the pi-type itself and make sure it
-			#passes. what does "pass" really mean here?
+			#passes. 
+			
+			#this probably isn't necessary in full MLTT with universe polymorphism
+			#cause all possibilities are allowed already, and this extra type_check
+			#is just to make sure that the PiType of our Abs fits one of the allowedKinds
+			#(allowedKinds should really be called allowedDependencies)
+			
+			#shouldn't hurt anything to have it though, and if it does, then that will
+			#be indication that we messed something up
 			type_check(rt,env)
 			
 			#return the pi-type if it passes the type-check
 			return rt
 		
 		if isinstance(expr,PiType):
+			
+			print("Pi-type: ", expr.tostr())
 			#type-check-reduce the input type
+			#why whnf vs nf vs nothing?
 			s = whnf(type_check(expr.ch.type,env))
 			
+			print("s = ",s.tostr())
+			#Universe polymorphism always begins when we quantify over
+			#Level.
+			#Not everything that quantifies over Level is necessarily universe-polymorphic
+			#though.
+			#For example "n:Level -> Level"
+			#there's certainly no polymorphism happening here at all
+			#Otoh, "n:Level->(Set n)" is most definitely universe-polymorphic.
+			
+			#What's the difference? a) the return type depends on the level variable n
+			#Moreover, it depends on the level-variable in order to construct (Set n)
+			#
+			#In general: a pi-type represents a universe polymorphism if it quantifies
+			#over Level, and the return type depends on the Level variable n
+			
+			#The only way to construct types from Level's is through "Set" (i think?)
+			#so, if the return type of a pi-type depends on the Level variable n, and
+			#it is actually a type, then n must be used in the form "Set n". (am i sure
+			#there isn't any other possibility?)
+			
+			#We know for a fact:
+			#If the pi-type quantifies over Level, n, and the return type contains
+			#(Set n) as a sub-expression, then our pi-type is universe-polymorphic
+			#and has type SetOmega, (assuming the rest of the expression passes type-checking)
+			
+			#n:#->(t:(* n)->(x:t->t))
+			
+			#type-checking "x:t->t" in the context "{n:#, t:(* n)}"
+			#	s = (* n), t = (* n)
+			
+			#maybe i should add in a symbolic max() function
+			#set_max((* m), (* n)) = (* (max m n))
+			#l = level_flag
+			#if isinstance(expr.ch.type,Level):
+			#	print("Starting universe polymorphism, plase stand by...") 
+			#	l = True
+			#if l:
+				#we know the type is gonna be SetOmega if it's
+				#well-formed, but we still need to check the rest
+				#of the expression to make sure it's well-formed.
+			#	print("Using universe polymorphism")
 			#copy the set of type assumptions into a new set
 			tmp_env = dict(env)
 			
@@ -5022,52 +4473,85 @@ rather than, given any type, and a value of that type, return that value
 			
 			#type-check-reduce the body of the abstraction
 			#using the new set of type assumptions
+			#why whnf vs nf vs nothing?
 			t = whnf(type_check(expr.ch.ret,tmp_env))
-			
-			
-			#both s and t should be either * or []
-			#at least if they're expected to *maybe* be
-			#in "allowedKinds".
-			
-			#check if the particular combination is
-			#allowed by the cube-configuration:
-			#if not, fail type-checking. this is how
-			#we control what corner what of the cube
-			#we're using
-			#print("PiType: (" + s.toStr() + ", " + t.toStr() + ")")
-			if ( (s.__class__,t.__class__) not in allowedKinds):
-				print ("Bad abstraction, AllowedKinds=", 
-				[(x.__name__, y.__name__) for x,y in allowedKinds], ", argtype, bodytype = ", (s.__class__.__name__,t.__class__.__name__))
+			print("t = ",t.tostr())
+			s_level = -1
+			t_level = -1
+			if (isinstance(s, App) and isinstance(s.ch.e1, Set)):
+				print("s.ch.e2: ", s.ch.e2.tostr())
+				nfs = nf(s.ch.e2)
+				print("nfs: ",nfs.tostr())
+				#Set 5
+				if isinstance(nfs,Number):
+					s_level = s.ch.e2.pyval
+				
+				#Set n, or Set (Succ (Succ n))
+				elif type(nfs) in [Var,App]:
+					print("s is universe-polymorphic")
+					return SetOmega({})
+				
+				else:
+					print("What kind of Set is this?",s.ch.e2.tostr())
+					assert False
+			elif isinstance(s, SetOmega):
+				print("s is SetOmega")
+				return SetOmega({})
+			else:
+				print("The type of your type is not a type!")
 				assert False
+				
+			if (isinstance(t, App) and isinstance(t.ch.e1, Set)):
+				print("t.ch.e2: ", t.ch.e2.tostr())
+				nft = nf(t.ch.e2)
+				print("nft: ", nft.tostr())
+				if isinstance(nft,Number):
+					t_level = t.ch.e2.pyval
+				
+				if type(nft) in [Var,App]:
+					print("t is universe-polymorphic")
+					return SetOmega({})
+				else:
+					print("What kind of Set is this?",t.ch.e2.tostr())
+					assert False
+			elif isinstance(t, SetOmega):
+				print("t is SetOmega")
+				return SetOmega({})
+			else:
+				print("The type of your type is not a type!")
+				assert False
+			#n:#->(t:(* n)->(x:t->t)) : [s=(* 0), t=SetOmega]
+				# "#" type-checks to (* 0)
+				# "t:(* n)->(x:t->t) type-checks to SetOmega
 			
-			#the type of a pi-type is the type of it's body?
-			#
-			#why?
-			return t
+			#t:(* n)->(x:t->t) : [s=SetOmega,t=SetOmega]
+				# "(* n)" type-checks to SetOmega
+				# "x:t->t" type-checks to [(* n),(* n)]
+			
+			#x:t->t : [s=SetOmega,t=SetOmega]
+				# "t" type-checks to "(* n)"
+				# "t" type-checks to "(* n)"
+			if (s_level < 0) :
+				print("s: Negative set-level?")
+				assert False
+			if (t_level < 0) :
+				print("t: Negative set-level?")
+				assert False
+			return App({'e1':Set({}),'e2': Number(max(s,t))})
 		
+		if isinstance(expr,Number):
+			print("Type-checking a number")
+			return Level({})
 		
-		#single 'axiom' of our type theory, star's type is box:
-		# "* : []"
-		#
-		#why?
-		if isinstance(expr,StarKind):
-			return BoxKind({}) 
+		if isinstance(expr,Level):
+			#in Agda, Level has type (Set 0)
+			print ("zero it baby")
+			return App({'e1': Set({}), 'e2': Number(0)})
 		
-		#box has no type. if we end up having to type-inference
-		#for a box, then fail. 
-		#
-		#why?
-		if isinstance(expr,BoxKind):
-			print("Error: found a box")
+		if isinstance(expr,SetOmega):
+			print("Error: SetOmega has no type!")
 			assert False
 	
-	allowedKinds = [(StarKind, StarKind), (StarKind, BoxKind), (BoxKind, StarKind), (BoxKind, BoxKind)]
-	
-	
-	#The FreeVars function is still straight-forward
-	#enough. What's less straight-forward to understand is
-	#the mechanics of the language when the extra lambda
-	#cube dependencies are added in.
 	def FreeVars(expr, vars=None) -> set:
 		if (vars == None): vars = set()
 		
@@ -5089,7 +4573,7 @@ rather than, given any type, and a value of that type, return that value
 		#we don't care whether the variables are occurring
 		#in an expression or its type, we just care where
 		#variables are occurring, cause when we get into
-		#the full lambda cube dependencies, things can be
+		#the full lambda MLTT dependencies, things can be
 		#going everywhere
 		
 		#the free variables of a typed abstraction is
@@ -5116,24 +4600,30 @@ rather than, given any type, and a value of that type, return that value
 				free_e.remove(expr.ch.arg.varName)
 			return free_t.union(free_e)
 		
-		#the expressions "*" and "[]" don't contain
-		#any variables, just return the current list of
-		#free vars
-		if type(expr) in [StarKind,BoxKind]:
+		#these are constants and don't contain any variables, 
+		#just return the current list of free vars
+		if type(expr) in [Set, Level, Number]:
 			return vars
-	
-	
+		
+		if isinstance(expr,SetOmega):
+			#this is probably an error, but i'm not 100%
+			print("Is FreeVars(SetOmega) an error? Maybe, so let's crash.")
+			assert False
 	
 	#substitute "what" with "by" in "where"
 	#he says his is is subst(what,where,by)
 	#or                subst(v,   x,    e)
 	#
 	#but it's really   subst(what,by,where)
-	def subst(where,what,by):
+	def subst(where:Node,what:Node,by:Node):
+		print("subst()")
+		for x in where,what,by:
+			assert isinstance(x, Node), x
 		#if the 'where' expression is the var that we're
 		#substituting, then make the substitution, otherwise
 		#just return 'where'.
 		if isinstance(where,Var):
+			print("subst var()")
 			if(where.varName == what.varName):
 				return by
 			else:
@@ -5142,11 +4632,13 @@ rather than, given any type, and a value of that type, return that value
 		#make the substitution into both the function and the argument
 		#in an application
 		if isinstance(where,App):
+			print("subst app()")
 			return App({'e1':subst(where.ch.e1,what,by),'e2':subst(where.ch.e2,what,by)})
 		
 		
 		
 		if isinstance(where,Abs):
+			print("subst abs()")
 			#if the bound variable of the abstraction is the var
 			#we're supposed to be substituting, then i guess we
 			#say this new occurrence of a bound variable with the
@@ -5156,7 +4648,7 @@ rather than, given any type, and a value of that type, return that value
 			#the abstraction (i.e. dependent types & type operators)
 			if(where.ch.var.varName == what.varName):
 				return Abs({
-					'var':where.ch.var.varName,
+					'var':where.ch.var,
 					'type':subst(where.ch.type,what,by),
 					'exp':where.ch.exp
 					})
@@ -5188,6 +4680,7 @@ rather than, given any type, and a value of that type, return that value
 		
 		#Pi's should work just like Abs
 		if isinstance(where,PiType):
+			print("subst pi()")
 			if (where.ch.arg.varName == what.varName):
 				return PiType({
 					'arg':where.ch.arg,
@@ -5213,12 +4706,19 @@ rather than, given any type, and a value of that type, return that value
 		
 		#* and [] both don't contain any vars so you're not gonna
 		#substitute anything into them. return the expression as is.
-		if type(where) in [StarKind,BoxKind]:
+		if type(where) in [Set,Level,Number,Succ]:
+			print("subst constant()")
 			return where
+		if isinstance(where, SetOmega):
+		
+			print("Is subst(SetOmega) an error? Maybe, so let's crash.")
+			assert False
+			#this is probably an error
 	
 	#Alpha equivalence: check if the two expressions are
 	#equivalent under variable renaming.
 	def alphaEq(expr1,expr2):
+		print("alphaEq()")
 		if (type(expr1) != type(expr2)): return False
 		
 		#ok, so this looks like it's explicitly *not* checking
@@ -5283,49 +4783,81 @@ rather than, given any type, and a value of that type, return that value
 					subst(expr2.ch.ret,expr2.ch.arg,expr1.ch.arg)
 					)
 				)
-		#there's only one * and there's only one [], and we know
-		#by this point that the type()'s must be equal, so if
-		#one of the expressions is * or [], then they both are,
-		#and they're the same
-		if (type(expr1) == StarKind):
+		#Singleton classes of Constants
+		if type(expr1) in [Set,Level,SetOmega]:
 			return True
-		if (type(expr1) == BoxKind):
-			return True
+		
+		#hrm, i started setting it up to work with a Succ function
+		#and was thinking of how to get it to ... "understand" the
+		#relation between the numbers defined through Succ, the numbers
+		#defined as B.number, and.. maybe the church-encoded natural
+		#numbers.., but, 
+		#for now i should probably switch that stuff out with just B.number
+		#to keep it simple
+		#but.. i guess the reason i started doing it like that was the
+		#Succ form allowed me to use variable numbers, like, (Set n) and
+		#Set (Succ n), 
+		#in the lc code you mean?
+		#could it be as simple as having Succ evaluate to Number(arg.pyval+1)?
+		#well, it comes up when type-checking universe-polymorphic functions
+		#you have a variable number in the type-checking process, even though
+		#we don't intend to use Succ directly in the lc (at least, allowing that
+		#is an independent issue i guess)
+		if isinstance(expr1,Number):
+			return (expr1.pyval == expr2.pyval)
+			#it is not an error to find SetOmega here
 	
 	
 	
 	#reduce both expressions to normal form and then check if they are
 	#alpha-equivalent
 	def betaEq(expr1,expr2):
-		return alphaEq(nf(expr1),nf(expr2))
+		print("betaEq()")
+		
+		v = alphaEq(nf(expr1),nf(expr2))
+		print(v)
+		return v
 	
 	
 	
-	#no idea wth is going on with nf() and whnf() here.
 	#return the normal form of the expression
-	#aka normalize()
-	#aka evaluate()
-	#aka beta-reduce()
-	#... people should stop making new names for this thing
-	#def nf(expr):
-	#	return nf_spine(expr,[])
-	
-	#nf :: Expr -> Expr
-	#nf ee = spine ee []
-	#where spine (App f a) as = spine f (a:as)
-	#spine (Lam s t e) [] = Lam s (nf t) (nf e)
-	#spine (Lam s _ e) (a:as) = spine (subst s a e) as
-	#spine (Pi s k t) as = app (Pi s (nf k) (nf t)) as
-	#spine f as = app f as
-	#app f as = foldl App f (map nf as)
-	
-	#dehaskellified
 	def nf(expr):
-		if type(expr) in [Var,StarKind,BoxKind]:
+		print("nf", expr.tostr())
+		if type(expr) in [Var,Set,Succ,Level,SetOmega,Number]:
 			return expr
+			
 		
 		if isinstance(expr,App):
 			nf1 = nf(expr.ch.e1)
+			if type(nf1) in [Set]:
+				return App({'e1':Set({}),'e2':nf(expr.ch.e2)})
+			if isinstance(nf1,Succ):
+				nf2 = nf(expr.ch.e2)
+				if type(nf2) == Number:
+					return Number(nf2.pyval + 1)
+				else:
+					return App({'e1': nf1, 'e2': nf2})
+				
+				#the nf of expr.ch.e2 will be either a Number,
+				#a var, or an application of succ's to a var.
+				
+				#we won't have application of succ's to a Number
+				#cause those will be added up by the Number case
+					
+				#if it ends in a var, instead of have succ, succ, succ...
+				#we could condense that into something which keeps track of
+				#how much is supposed to be added to a var, idk
+				#i'm still working through all the details with this bit of it
+				#i guess that would be an application of addition
+				#well, this version should at least work, even if it's not necessarily
+				#a speed demon
+				
+				#so at the end is either:
+				#a Number
+				#a Zero?
+				#something else?
+				#i guess a Var
+				#ok it will crash and burn if we Succ something else
 			if isinstance(nf1,Abs):
 				return nf(subst(nf1.ch.exp,nf1.ch.var,expr.ch.e2))
 			
@@ -5346,16 +4878,11 @@ rather than, given any type, and a value of that type, return that value
 	
 	#return the "weak head normal form" of the expression
 	
-	#whnf :: Expr -> Expr
-	#whnf ee = spine ee []
-	#where spine (App f a) as = spine f (a:as)
-	#spine (Lam s e) (a:as) = spine (subst s a e) as
-	#spine f as = foldl App f as
-	
 	def whnf(expr):
+		print("whnf()")
 		#variables, abstractions, and pi-types are already in weak-head normal form
 		#so just return them
-		if type(expr) in [Var,Abs,PiType,StarKind,BoxKind]:
+		if type(expr) in [Var,Abs,PiType,Set,Level,SetOmega,Number]:
 			return expr
 		
 		#if it's an application then we check whether there's an
@@ -5367,6 +4894,9 @@ rather than, given any type, and a value of that type, return that value
 			#need to make sure the value we get as a result of this
 			#is also in weak-head normal form.
 			#i don't think he does this in "simpler, easier"
+			if type(expr.ch.e1) in [Set,Succ]:
+				return expr
+				
 			if isinstance(expr.ch.e1,Abs):
 				return whnf(subst(expr.ch.e1.ch.exp,expr.ch.var,expr.ch.e2))
 			
@@ -5376,6 +4906,7 @@ rather than, given any type, and a value of that type, return that value
 			#for e2
 			if isinstance(expr.ch.e1,App):
 				return App({'e1':whnf(expr.ch.e1),'e2':expr.ch.e2})
+				
 			
 			else:
 				print("What are you trying to normalize here?")
@@ -5384,23 +4915,6 @@ rather than, given any type, and a value of that type, return that value
 		else:
 			print("What are you trying to normalize here?")
 			assert False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 	ParExp.unparen = lambda s: s.ch.exp.unparen()
@@ -5412,603 +4926,7 @@ rather than, given any type, and a value of that type, return that value
 		assert n
 		return n.copy()
 
-	for x in [ParExp, App, Abs, Var, PiType, StarKind, BoxKind]: x._eval = eval
-	for x in [ParExp, App, Abs, Var, PiType, StarKind, BoxKind]: x.type_check = type_check
-	for x in [ParExp, App, Abs, Var, PiType, StarKind, BoxKind]: x.prove = prove
+	for x in [ParExp, App, Abs, Var, PiType, Set, Level, SetOmega, B.number]: x._eval = eval
+	for x in [ParExp, App, Abs, Var, PiType, Set, Level, SetOmega, B.number]: x.type_check = type_check
+	for x in [ParExp, App, Abs, Var, PiType, Set, Level, SetOmega, B.number]: x.prove = prove
 
-
-
-
-
-	
-	"""
-        class IntType(Syntaxed):
-                help = ["integer type"]
-        build_in(SyntaxedNodecl(IntType,
-                [TextTag("int")],
-                {}), None, lc2)
-        class BoolType(Syntaxed):
-                help = ["bool type"]
-        build_in(SyntaxedNodecl(BoolType,
-                [TextTag("bool")],
-                {}), None, lc2)
-
-	"""
-"""
-
-Expr 		:=	Expr1 | "(" Expr ")"
-Expr1		:=	Var | Abs | App
-Var		:= 	Char Name # Identifier
-Abs		:=	"|" Var "." Expr
-App		:=	Expr " " Expr
-Name		:=	<endword> | Char Name
-Char		:=	"a" | "b" | "c" | ... | 
-			"A" | "B" | ... |
-			"1" | "2" | ... | 
-			"_" ...
-
-//possibly
-NamedExpr	:=	Name ":=" Expr
-
-so i guess the question wrt syntax is how do you tell a named expression
-from a var or do you, if not, 
-i'm thinking you can treat everything that's syntactically the same as
-a var as "potentially a named expression"
-but, it gets kinda syntactically messy when you can have things like
-
-myFunc := ...
-
-myOtherFunc := \\myFunc.myFunc
-		^ for example, myFunc in this expression would be
-		taken as a var, even though myFunc is defined before it
-		
-myThirdFunc := \\x.(myFunc x)
-		  ^ the name doesn't correspond to a bound var, so
-		  treat it as the func
-		  
-it's perhaps slightly contrived, but it is unambiguous at least,
-and rather simple
-
-i don't think  we should make implementing anything contrived be
-a priority tho. to me, the main critical piece is to be able to
-make a full spectrum of logic systems, from the utlc up through
-fully dependently typed lambda calc, i.e. MLTT or even HoTT
-
-secondary for me is sugaring to interface to these logics
-(at least until we've implemented the different logics, then
-this one will become primary for me)
-
-so..we need a table right? like the thunks table
-yea, at the very least we need a table of expression definitions
-so that the evaluator can call them up when needed
-if the expressions in this table can have their definitions updated
-when they get evaluated, and newly-found expressions can be added
-to the table, then we basically have haskell's table of thunks
-and we basically have lazy evaluation
-newly-found? so, once the expression starts evaluating then it
-can generate 'new' expressions over the course of its evaluation
-umm
-you mean it can evaluate to a new expression to be put in its place or
-something else? both, the something else would be evaluating to an
-expression that contains multiple instances of the same sub-expression,
-where these sub-expressions "haven't been seen before", so they'd
-essentially get a new entry in the table
-
-i'm not aware to what extents haskell does the second part
-ahh so this is an optimization only? i mean the repeated expression "elimination"
-yep that's basically all lazy evaluation is hmm
-
-according to wiki "is an evaluation strategy which delays the evaluation
-of an expression until its value is needed (non-strict evaluation), 
-and which also avoids repeated evaluations (sharing)."
-
-so, it's basically the evaluation strategy we have hooked up already,
-combined with this repeated-expressions optimization
-
-ok yea i see kinda...
-im ready to crash
-sounds good, anything else would be too much to get into tonight anyway
-yeah half past two, i should
-i guess tomorrow before i wake up give some thought to what you wanna
-implement next, i'm gonna keep focusing on the plans for the simply
-typed lambda in the meantime tho
-sounds good
-getting an idea of proper typing does sound more important
-for us i think so
-especially cause as we proceed into the dependent typing this
-intersects back with tau, so, killing multiple birds and all that
-alright
-catch you tomorrow later
-
-
-does haskell have different naming schemes?
-well, haskell has the whole typing thing so they get a lot more
-info about what the expression is supposed to be
-
-and then to actually evaluate the expression they use the
-pattern matching thing, and i think that doing these things
-they basically make it completely unambiguous
-
-so..what do you suggest?
-
-one potential unambiguous naming scheme would be to treat
-names that have a corresponding expression as expressions unless
-that name is a bound var
-
-yea we could do that, couple things to figure out with it,
-first thing is getting a complete syntax for it
-
-would this be used like
-it would be like
-"def Name:
-	Expr"
-<some expression using Name>
-more definitions
-more expressions
-
-
-or just like
-
-
-definition 1
-definition 2
-oneandonlyexpression
-
-probably more like
-
-definition 1
-definition 2
-def Main:	<--but yea this is essentially our
-		"one and only expr"
-	...
-
-if you add more expressions to evaluate that's just
-basically running multiple programs in sequence
-(but perhaps reusing definitions between them)
-well, at least that's a "typical interpretation" of the
-situation
-
-could also interpret it as running a sequence of commands, all
-within the same program
-
-but... *shrug*
-
-i think the more critical point is that by introducing named
-expressions we might actually be making it something slightly
-different than 'proper' lambda calculus
-
-notice that a lambda expression cannot be recursive
-the language doesn't even have the capacity to express a recursion
-recursive behavior can be recovered through use of clever arguments
-like
-(\\a.(a a)) (\\a.(a a)) --eval-to--> (\\a.(a a)) (\\a.(a a))
-
-but this is a different mechanism than
-
-def myFunc := \\a.(myFunc a)
-
-ok, so i understand it as a whole new macro language
-that's probably the most appropriate interpretation
-
-*scratches head* wrt anything in particular?
-the motivation i guess, behind lambda calc?
-behind the naming thing
-well, makes it more like a real prog-lang,
-it's something i just thought to add before we really
-got into it and i saw that these kinds of recursions aren't
-actually part of the lambda calc itself
-
-so, can we perhaps look at haskell and define the semantics of this 
-new language? the new language being this utlc + the naming thing?
-kinda just the naming thing separately ah
-yea, could look at just about any lang for this
-haskell is like utlc + naming thing + simple typing + sugar
-
-this naming thing actually has to be mada a part of the evaluator right?
-yea, if we tried to macro expand with essentially recursively defined
-macros, then... yea
-haskell doesn't really have a problem with that because they're already
-storing a bunch of thunks for their lazy evaluation
-hmm not sure what that means but i guess ill see later
-
-i'm not 100% how the details work, but haskell basically stores an
-index to references to partially evaluated expressions, called thunks, 
-so if the same sub-expression is used multiple times in the 
-super-expression, then if you evaluate the first instance of the
-sub-expression, you've evaluated all instances, because the other
-instances are just referencing this thunk that's now been evaluated
-
-so, they're already handling all this stuff at the evaluator level
-anyway just to implement lazy evaluation
-ah
-
-
-
-
-
-//not all applications are function applications, cf. "y y"
-but the var could evaluate to a function
-unless we've reached normal form, i.e. nothing left to evaluate
-so is this a syntax for normal form or nonnormal form?
-could be either one. 
-
-|x.(x x) y  --reduce--> y y, and nothing left to evaluate so this is in normal form
-    ^ also occurs in the original expression here
-
-|y.(|x.(x x) y) |w.w --reduce -->
-|y.(y y) |w.w  --reduce -->
-    ^ here it occurs, but it's not in normal form
-
-lambda calculus is quite hard to follow
-i agree. it's mainly only of theoretical interest until you get
-some relatively sophisticated syntax for it
-i would probably start without the redex/nonredex distinction so we can meaningufully express even nonnormal programs, hrm, i don't think we need the redex/nonredex distinction for the syntax
-|w.w |w.w --reduce-->
-|w.w
-
-
-
-1) Parse query according to BNF above
-
-2) If it parses, then normalize the expression
-
-
-//Need to choose reduction strategy:
-//There are several options:
-/* * Full beta reduction: non-normalizing
-	Any reducible expression can be reduced at any time.
-   	This is essentially the lack of any particular reduction
-	strategy, or equivalently the union of all reduction strategies.
-
-
-   * Applicative order: non-normalizing
-	Rightmost, innermost reducible expression is always reduced first.
-	This means a function's arguments are always reduced before the
-	function itself.
-
-   * Normal order:
-	The leftmost, outermost reducible expression is always reduced first.
-
-   * Call by name:
-	Same as normal order except no reductions are performed inside abstractions.
-	For example: |x.((|x.x) x) would be considered to be in normal form, even
-	though it contains the reducible expression ((|x.x) x). Since this redex
-	occurs inside an abstraction, it is not to be reduced.
-
-   * Call by value:
-	?
-
-   * Call by need:
-	aka "lazy evaluation"
-	Function applications that would duplicate terms will name the argument
-	instead, which is then reduced only "when it is needed", and which will
-	represent all duplicated versions of itself. i.e. if you reduce one of
-	the duplicates, then they are all reduced, as they will just be names
-	referring to an expression that is now reduced.
-
-	This is the one to use, but the tradeoff is it's more complex to
-	implement.	
-
-*/		
-
-//aka evaluate
-//Normal order:
-Normalize (Expr e) :=
-	if (e is a Var x)
-		return e
-	if (e is an Abs x e1)
-		return (Abs x normalize(e1))
-	if (e is an App e1 e2)
-		if(e1 is an Abs x e3)
-			//one-step evaluation:
-			return subst(e3,x,e2)
-		ah so we should pick one here	
-			//full evaluation:
-			return normalize(subst(e3,x,e2))
-		if(e1 is an App e3 e4)
-			
-		else return e
-
-
-
-//applicative order:
-Normalize (Expr e) :=
-	if (e is a Var x)
-		return e
-	if (e is an Abs x e1)
-		return e
-	if (e is an App e1 e2)
-		if(e1 is an Abs x e3)
-			//first check if the rightmost expression is reducible
-			if(isReducible(e2))
-				//one-step evaluation
-				return (App e1 normalize(e2))
-
-				//full evaluation
-				return normalize((App e1 normalize(e2)))
-
-			//if not, then check if the innermost expression is
-			//reducible
-			if(isReducible(e3))
-				//one-step evaluation
-				return (App (Abs x normalize(e3)) e2)
-
-				//full evaluation
-				return normalize((App (Abs x normalize(e3)) e2))
-
-			//neither the rightmost nor innermost expressions are
-			//reducible
-			return subst(e3,x,e2)
-		else return e
-
-
-//call by name
-Normalize (Expr e) :=
-	if (e is a Var x)
-		return e
-	//unlike normal order we don't normalize inside abstractions
-	if (e is an Abs x e1)
-		return e
-	if (e is an App e1 e2)
-		if (e1 is an Abs x e3)
-			//one-step evaluation:
-                        return subst(e3,x,e2)
-
-                        //full evaluation:
-                        return normalize(subst(e3,x,e2))
-                else return e
-
-
-//call by value
-evaluate arguments to functions first before substituting them into
-the function
-
-this actually not one single evaluation strategy but is the family of
-evaluation strategies where the arguments are normalized before substituting
-them into the function. 
-
-here's one example that does this but follows the normal order evaluation
-strategy otherwise
-
-
-Normalize (Expr e) :=
-	if (e is a Var x)
-		return e
-	if (e is an Abs x e1)
-		return e
-	if (e is an App e1 e2)
-		if(isReducible(e2))
-			//one step evaluation
-			return (App e1 normalize(e2))
-
-			//full evaluation
-			return normalize(App e1 normalize(e2))
-		if (e1 is an Abs x e3)
-			//one step evaluation
-			return subst(e3,x,e2)
-		
-			//full evaluation
-			return normalize(subst(e3,x,e2))
-		else return e
-
-
-
-//call by need (aka lazy evaluation)
-need some mechanism for storing and retrieving the thunks
-expressions look different internally: composed of references
-to thunks
-
-
-
-
-//call by reference
-
-//call by sharing
-
-//call by copy-restore
-
-//call by future
-
-//optimistic evaluation
-
-//partial evaluation
-
-
-
-
-An expression is reducible if contains anything that can be reduced.
-The only things that can be reduced are of the form (App (Abs x e1) e2)
-
-//The expression contains a "top-level" reducible expression
-//meaning the reducible expression does not occur inside the body
-//of an abstraction.
-isReducible(Expr e) :=
-	if(e is a Var x) return false
-	if(e is a Abs x e1) return false
-	if(e is a App e1 e2)
-		if(e1 is a Abs x e3) return true
-		if(e1 is a Var x) return false
-		if(isReducible(e1)) return true
-		if(isReducible(e2)) return true
-		else return false
-	
-//The expression contains a reducible expression anywhere,
-//possibly in the body of an abstraction.
-isReducible2(Expr e) :=
-	if(e is a Var x) return false
-	if(e is a Abs x e1) return isReducible2(e1)
-	if(e is a App e1 e2)
-		if(e1 is a Abs x e3) return true
-		if(e1 is a Var x) return false
-		if(isReducible2(e1)) return true
-		if(isReducible2(e2)) return true
-		else return false
-
-
-//capture-avoiding substitution:
-subst(Expr e, Var x, Expr r) :=
-	replace all occurrences of x in e with r, potentially
-	changing variable names to avoid variable capture.
-
-	capture-avoidance:
-	don't let free variables become bound
-	
-/*
-	//This is the var we're substituting, so make
-	//the substitution
-	(Var x)[x := r]		= r
-	
-	//This is a different var than the one we're substituting,
-	//don't substitute anything
-	(Var y)[x := r]		= y
-
-	//Substitute into each component of an application:
-	(App t s)[x := r]	= (t[x:=r])(s[x:=r])
-				= App subst(t,x,r) subst(s,x,r)
-
-	//if the substitution-variable is the same as the bound-variable
-	//of an abstraction, then don't substitute, even in the expression t.
-	//why?
-	//answer 1: just because
-	//answer 2: ??
-	(Abs x t)[x := r]	= (Abs x t).
-
-	
-	//naive version:
-	//if the substitution-variable is *not* the same as the bound-variable
-	//of an abstraction, then substitute [x := r] in t
-	//there is nothing to avoid variable capture here.
-	(Abs y t)[x := r]	= (Abs y subst(t,x,r))
-
-
-	//capture-avoiding version:
-	//if the substitution-variable is *not* the same as the bound-variable
-	//of an abstraction, then if y is not in the FreeVars of r, then
-	//apply the substitution in the body of the abstraction.
-	//if y *is* in the FreeVars of r, then we'll rename y to a
-	//fresh variable name, z, and substitute z for y across the
-	//entire abstraction.
-	//then we will proceed with our usual substitution of r for x,
-	//as defined in the naive version.
-	(Abs y t)[x := r]	= 
-		if(y not in FreeVars(r)) -> (Abs y subst(t,x,r))
-		else
-			z = genFreshVarName()
-			t' = subst(t,y,z)
-			t'' = subst(t',x,r)
-			return (Abs z t'')
-
-
-*/
-
-
-FreeVars(Expr e, List<Var> * ret) :=
-	if (e is a Var x) 
-		ret = set_union(ret,{x})
-		return
-	if (e is a Abs x e1)
-		free_e := FreeVars(e1)
-		remove x from free_e
-		ret = set_union(ret,free_e)
-		return
-	if (e is a App e1 e2)
-		free_e1 := FreeVars(e1)
-		free_e2 := FreeVars(e2)
-		ret = set_union(ret,free_e1,free_e2)
-		return
-
-
-
-//eta-conversion
-
-f == |x.(f x)
-
-//not really necessary. not sure where this would even come up in normal
-//programming with lambdas. for theorem proving otoh, there's reason to use it
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# cool i guess that's everything from the bnf then
-# yeah next i have to finish the parser
-# cool so how does what we have here fit into that
-#well, the gui is set up so that when you go into lc1-test, it
-#collects the grammar from the nodes in its scope
-
-the above module now looks like this in the gui:
-[lc1]:<module[]from[]:
-<<->[ 
-    <syntactic category:[exp]>
-    <var:
-        a variable
-        example: <{}>>
-    <parexp:
-        a parenthesized expression
-        example: <({})>>
-    <<*parexp>works as<*exp>>
-    <abs:
-        abstraction, a lambda
-        example: <|
-        
-        
-        {}.{}>>
-    <app:
-        function application, a call
-        example: <{} {}>>
-    ]>end.>
-
-the "example:"'s dont work very well yet
-it doesnt even display the syntaxes, too
-
-
-
-
-
-
-
-
-
-
-this is the grammar of the particular node type
-		[TextTag("("), ChildTag("exp"), TextTag(")")],
-it has to go over this list
-ah it goes over the list to generate a grammar for marpa
-yeah to call marpa .symbol and .rule functions
-
-
-
-
-
-
-
-
--       #i need to think a bit if we need to do anything different for our base types
--       #but, not sure, maybe we should just start working on the logic and it might
--       #become more clear
--       #in tau HMC doesn't even want to have these types explicitly,
--       #apparently everything can be made with pi's and sigmas
--       #the article also doesn't give any mention to these so... need to think it over a bit
--       #i would guess they wont be a problem but no idea
--       #i'm gonna assume that if the article doesn't use them then they're unnecessary
--       #cause he does use base types in the simply typed lambda, but then they seem to
--       #mysteriously disappear in the lambda cube section, and his example expressions
--       #don't make any use of anything except the syntax we've already got laid out above
--       #mm, then lets get it working without i guess
-
-
-
-
-"""

@@ -1,0 +1,72 @@
+Set
+Succ
+Max
+pi-type
+sigma-type
+DRT
+abstraction
+application
+var
+
+DRT = nested sigmas = nested existentials
+[a Person; has [a dog; named Fido]]
+
+
+
+ 
+{(?x ?s) list:in ?G} => {?G derives (?x ?s)}
+{?c a ?t} => {?G derives (?c ?t)}
+
+{(?G (?x ?s)) list:append ?G2. ?G2 derives (?e ?t)} => {?G2 derives ((lambda ?x ?s ?e) (pi ?x ?s ?t))}
+{?G derives (?e1 (pi ?x ?s1 ?t)). ?G derives (?e2 ?s2). ?s1 nf ?s. ?s2 nf ?s. (?t ?x ?s) subst ?t2} => {?G derives ((app ?e1 ?e2) ?t2)}
+
+{?G derives (?a ?A). ?G derives (?b ?B)} => {?G derives ((pair ?a ?b) (product ?A ?B))} 
+
+{?G derives (?a ?A)} => {?G derives (?a (sum ?A ?B))}
+{?G derives (?b ?B)} => {?G derives (?b (sum ?A ?B))}
+
+{?e nf ?e1. (?e1 ?x ?e2) subst ?nf} => {(app (lambda ?x ?s ?e) ?e2) nf ?nf}
+{(app ?e1 ?e2) nf ?in. (app ?in ?e3) nf ?nf} => {(app (app ?e1 ?e2) ?e3) nf ?nf}
+{?s nf ?s2. ?e nf ?e2} => {(lambda ?x ?s ?e) nf (lambda ?x ?s2 ?e2)}
+
+etc..
+
+#Dependently typed is harder
+
+
+
+
+
+
+record R : Set where
+  constructor r
+  field
+    f1 : Bool
+    f2 : Nat
+
+rA : R
+rA = record {
+	f1 = b,
+	f2 = n
+	}
+
+R.f1 : R -> Bool
+R.f2 : R -> Nat
+
+rB : R
+rB = r b n
+
+
+#defining sigma types with records
+record Sigma (A: Set) (B: A -> Set) : Set where
+  constructor _,_
+  field
+	proj1 : A
+	proj2 : B proj1
+
+
+_,_ : (proj1 : A) -> B proj1 -> Sigma A B
+
+
+
+

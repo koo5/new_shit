@@ -1,0 +1,467 @@
+polymorphic identity:
+poly_id_t = t:*->(x:t->t)		;	a -> a
+poly_id :: poly_id_t
+poly_id = \t:*.\x:t.x
+
+It's almost hard to imagine restricting it to non-universe-polymorphic now..
+so, universe-polymorphic should probably be the default and get the easier syntax.
+
+
+universe-polymorphic identity:
+up_id_t = n:Level->(t:(Set n)->(x:t->t))
+up_id :: up_id_t
+up_id = \n:Level.(\t:(Set n).(\x:t.x))
+
+
+match this up with identity types, equivalence, contractibility, homotopy, and isomorphism?
+
+
+
+Universe-polymorphic identity function & its type in CNL:
+"The identity function takes an object and returns it"
+
+	how do we infer that "it" is the object?
+	in the context of the function, there's only one thing
+	it could be referring to, and that's the object which
+	is the argument to the function.
+
+	the function? there's only one function specified here: "the identity function"
+	how do we know there's only one? idk
+	let's prove the space is contractible
+	but we don't have identity types yet!
+	
+
+"The identity function takes an object, x, and returns x."
+
+
+
+_:b a object.
+[a function; name identity; takes _:b; returns _:b]
+
+_:b id _:b
+id rdf:domain object.
+id rdf:range object.
+
+id rdf:domain object.
+id rdf:range object.
+{?x a object} => {?x id ?x}
+
+sugar for:
+
+{?n a Level. ?x a ?g. ?g a App. ?g func Set. ?g arg ?n.} => {?x id ?x}
+
+
+
+
+
+-Identity takes an object and returns it.
+-The identity is the function that takes an object and returns it.
+
+Key-words:
+
+The <type>		references an anonymous object of a given type									
+			implies there's only one object of this type
+			sometimes this means that there's only one in the type
+			sometimes it means that there's only one that i'm talking about right now.
+			the criteria of my focus of attention can be added in to create a more
+			specific type, based on inferencing from the context built up by the history
+			of the "conversation"
+			in either case, it's always used by the speaker to express either intention or
+			belief that there is only one object satisfying the criteria corresponding to
+			this type,
+
+function		pi-type; "function" = "pi"
+
+is			a delimiter between an expression representing something being defined and an
+			expression representing a (possibly partial) definition
+
+			"Joe is the guy that works on my car"
+			"The guy that works on my car is Joe"
+			
+			(i'd hope this is just a partial definition, for Joe's sake anyway)
+			(does this definition conflict with any other partial definition for Joe or the
+			guy that works on my car?)
+			(which Joe are we talking about? who's the speaker for this sentence? i.e. who does
+			"my" refer to, and which car of theirs?)
+			
+
+takes			represents the start of specifying the input(s) of a function
+						 
+an <type>		references an anonymous object of a given type.			
+
+object			n:Level->(o:(Set n) -> _) ...
+			"object" is basically "o" in this expression
+		
+and			i.e. the function that takes a Level A _and_ a Level B
+			     the function that takes two Levels, A _and_ B
+
+			     the funcion that takes a Level, A, _and_ returns a Level		
+
+
+returns			used to specify the start of the body/return value of a function in 
+			a sentence fragment representing a function definition
+
+it			references an object specified somewhere else in the expression (sentence).
+
+that			represents the beginning of a definition that will specify an object/type
+			by a description of it's properties/ behavior (i.e. takes / returns / has)
+			
+
+
+we can interpret these "interpretations" of words as rules of a game
+
+the game of trying to understand something being communicated via this medium of
+communication.
+
+these rules are up for grabs! nomic game!
+
+for a real-world agent system, you aren't guaranteed to know the rules before playing the game, or
+even guarantee of being able to access the rules accept through players who may or may not wish to 
+reveal the rules to you! mao game!
+
+a real-world agent attempting to communicate with or understand the communications of another
+real-world agent must therefore be prepared to adjust to the changing dynamics of the game, and
+the potential for lacking a complete knowledge of the rules at any given moment.
+
+in order to compensate for this very real-world dilemma, humans rely on "natural reasoning" (not to
+be confused with natural deduction) which transcends any choice of formal language game.
+
+this is the level where we reason about the structure of the physical world itself, using our builtin
+mental constructs which have evolved to handle this kind of reasoning. fuzzy reasoning over topological
+continuums, and generally any arbitrary data-space we can imagine (literally?), with a general HoTT-like
+framework mapped over the fuzzy topological reasoning (automatically port mathematical reasoning into any
+space, even fuzzy spaces; recognize the same structure no matter what carrier type it occurs in), 
+and goal-orientedness, i.e. game semantics, along with game theoretical reasoning, applied to its own behavior.
+will it also ask the questions: "what does it mean to improve?"
+
+
+
+
+
+
+Non key-words:
+
+
+
+bool type
+ bool = t:*->(x:t->(y:t->t))		;	a -> a -> a
+
+universe polymorphic 2-arg projections
+up_bool = n:Level->(t:(Set n)->(x:t->(y:t->t)))
+
+
+something = m:Level->(n:Level->(o:Level->(A:(Set m)->(B:(Set n)->(C:(Set n)->(x:A->(y:B->
+
+
+
+true :: bool
+true = \t:*.(\x:t.(\y:t.x))
+
+false :: bool
+true = \t:*.(\x:t.(\y:t.y))
+
+
+up_true :: up_bool
+up_true = \n:Level.(\t:(Set n).(\x:t.(\y:t.x)))
+
+up_false :: up_bool
+up_false = \n:Level.(\t:(Set n).(\x:t.(\y:t.y)))
+
+
+
+
+
+three type
+three = t:*->(x:t->(y:t->(z:t->t)))	;	a -> a -> a -> a
+
+one_third :: three
+one_third = \t:*.(\x:t.(\y:t.(\z:t.x)))
+
+two_thirds :: three
+two_thirds = \t:*.(\x:t.(\y:t.(\z:t.y)))
+
+three_thirds :: three
+three_thirds = \t:*.(\x:t.(\y:t.(\z:t.z)))
+
+
+
+polymorphic dependent product/pair type
+
+Pair_t = A:(Set 0)->(B:(Set 0)->(Set 0))
+Pair :: pair_t
+Pair = \A:(Set 0).(\B:(Set 0).(C:(Set 0)->(p:(a:A->(b:B->C))->C)))
+
+Pair A B = C:(Set 0)->(proj:(a:A->(b:B->C))->C)
+
+-Pair_t is the type of functions that take two Sets, A and B, and return a Set
+-Pair is a function of type Pair_t.
+-Pair is of type Pair_t.
+-Pair is a function that takes two Sets, A and B, and returns the type of functions
+that take a Set, C, and a function that takes an A, a, and a B, b, and returns a C,
+and return a C.
+
+Ok so, why?
+Well, C is intended to be either A or B,
+and proj is intended to be the argument projection function
+which would return the desired element of the pair, when acting
+on those elements as arguments.
+
+
+pair :: Pair A B
+pair = a function that takes an object, C, of type (Set 0), intended to be either A or B,
+	and returns the action of the argument-projection function applied to the elements
+	of the pair.
+
+
+
+
+
+pair_c_t = A:(Set 0)->(B:(Set 0)->(a:A->(b:B->((pair A) 
+pair_c_t = A:(Set 0)->(B:(Set 0)->(a:A->(b:B->(C:(Set 0)->((a:A->(b:B->C))->C))))))
+pair_c :: pair_c_t
+pair_c = \A:(Set 0).(\B:(Set 0).(\a:A.(\b:B.(\C:(Set 0).(\pair:(a:A->(b:B->C)).((pair a) b))))))
+
+pair_c A B a b :: C:(Set 0)->(pair:(a:A->(b:B->
+pair_c A B a b = \C:(Set 0).(\pair:(a:A->(b:B->C)).((pair a) b))
+
+pair_c A B a b = \C:(Set 0).\pair:(A->B->C).pair a b
+
+
+pair_c A B a b C pair = pair a b
+
+pair_c(
+
+A : Set 0, 
+B : Set 0, 
+a : A, 
+b : B, 
+C : Set 0,
+f : (A,B)->C
+
+) =  f a b
+
+
+universe-polymorphic by default:
+
+pair_c(
+
+A : Set,
+B : Set,
+a : A,
+b : B,
+C : Set,
+f : (A,B)->C
+
+) = f a b
+
+
+Direct: referencing the object representing the type:
+Pair_c_t is the type of functions that take two Sets, A and B, an object, a, of type A, an object
+B, of type B, a third Set, C, a function, f, that takes an A and a B and returns a C, and return
+objects of type C.
+
+Indirect: referencing the object representing the inhabitant of the type
+A pair_c_t is a function that takes takes two Sets, A and B, an object, a, of type A, an object
+B, of type B, a third Set, C, a function, f, that takes an A and a B and returns a C, and returns
+a C.
+
+
+Ok, so, why?
+Well, this is intended to act on the elements of the pair, and an object whose type is the output of Pair A B,
+and return one of the elements.
+
+So, "Pair_c A B a b" is a Pair A B.
+this like, (a,b) is a A*B
+
+"Pair A B" is like "A*B"
+"Pair_c A B a b" is like: "(a,b)" 
+"first A B p"
+"second A B p"
+
+
+
+
+fst_t = A:(Set 0)->(B:(Set 0)->(((pair A) B) -> A))
+fst_t = A:(Set 0)->(B:(Set 0)->(x:(C:(Set 0)->((a:A->(b:B->C))->C))->A)) 
+#beta & alpha equivalent definitions should totally be tolerated (just make sure
+the user is aware of the redundancy)
+fst :: fst_t
+fst = \A:(Set 0).(\B:(Set 0).(\p:(C:(Set 0)->((a:A->(b:B->C))->C)).((p A) (\a:A.(\b:B.a)))
+
+
+returns action of the arg projection function on the two elements of the pair.
+hrm.
+this is predicated on the assumption that there is only one function p that would satisfy
+this type C:(Set 0)->((a:A)->(b:B->C)) when applied to either A or B, and perhaps
+also the assumption that there is no function, in general unless it is applied to one
+of either A or B.
+
+
+
+these structural assumptions when polymorphism is introduced seem to run very deep, 
+and kinda start to hit at the core of the generalized structural reasoning 
+i always refer to informally.
+
+
+
+
+snd_t = A:(Set 0)->(B:(Set 0)->(((pair A) B) -> B))
+snd_t = A:(Set 0)->(B:(Set 0)->(x:(C:(Set 0)->((a:A->(b:B->C))->C))->B))
+snd :: snd_t
+snd = \A:(Set 0).(\B:(Set 0).(\p:(Pair A B).p B (\a:A.(\b:B.b))))
+
+p : (Pair A B) is a pair (a,b) in A*B. It is a function that takes an argument projection 
+function and runs it on the elements in the pair.
+
+snd is a function that takes a pair-function p and runs it on the 2nd-argument projection function
+
+
+ok, so..
+now that we've got pair down, we want dependent pair type..
+dependent product type..
+sigma type..
+
+
+
+
+   
+
+polymorphic disjoint union type
+
+or_t : (Set 1)
+or_t = A:(Set 0)->(B:(Set 0)->(C:(Set 0)->(pa:(a:A->C)->(pb:(b:B->C)->C))))
+or_t A B : C:(Set 0)->(pa:(a:A->C)->(pb:(b:B->C)->C))
+
+or1 : or_t A B
+or1 = \C:(Set 0).(\pa:(a:A->C).(\pb:(b:B->C).pa
+
+or_c_t 
+or_c_t = A:(Set 0)->(B:(Set 0)->(C:(Set 0)->
+
+or : or_t
+or = \A:(Set 0).(\B:(Set 0).(\C:(Set 0).(\pa:(a:A->C).(\pb:(b:B->C). 
+
+
+not_t = C:(Set 0)->(A:(Set 0)->C)
+not : not_t
+not C A = ..
+
+
+exists_t = A:(Set 0)->(B:(Set 0)->(Set 0)
+exists : exists_t
+exists A B = C:(Set 0)->(e:(x:A->(b:B->C)->C))
+
+
+
+universe-polymorphic dependent product type:
+updp_t = m:Level->(n:Level->(A:(Set m)->(B:(Set n)->(Set (succ (max m n))))))
+updp : updp_t
+updp = \m:Level.(\n:Level.(\A:(Set m).(\B:(Set n).(k:Level->(C:(Set k)->(p:(a:A->(b:B->C))->C))))))
+
+updp m n A B = k:Level->(C:(Set k)->(p:(a:A->(b:B->C))->C))
+
+updp_c_t = m:Level->(n:Level->(A:(Set m)->(B:(Set n)->(a:A->(b:B->(updp m n A B))))))
+updp_c : updp_c_t
+updp_c m n A B a b = \k:Level.(\C:(Set k).(\p:(a:A->(b:B->C)).(p a b )))
+
+up_first_t = m:Level->(n:Level->(A:(Set m)->(B:(Set n)->(p:(updp m n A B)->
+A)))
+
+up_first : up_first_t
+up_first m n A B p = p m A (\x:A.(\y:B.x))
+
+up_second_t = m:Level->(n:Level->(A:(Set m)->(B:(Set n)->(p:(updp m n A B)->B))))
+up_second : up_second_t
+up_second m n A B p = p n B (\x:A.(\y:B.y))
+
+
+
+Maybe_t = A:(Set 0)->(Set 0)
+Maybe : Maybe_t
+Maybe A = C:(Set 0)->(c:C->(f:(a:A->C)->C))
+
+Nothing_t = A:(Set 0)->(maybe A)
+Nothing : Nothing_t
+Nothing A = \C:(Set 0).(\nothing:C.(\just:(a:A->C).nothing))
+
+Just_t = A:(Set 0)->(a:A->(maybe A))
+Just : Just_t
+Just A x = \C:(Set 0).(\nothing:C.(\just:(a:A->C).(just x)))
+
+maybe_t = A:(Set 0)->(R:(Set 0)->(r:R->(f:(a:A->R)->(m:(Maybe A)->R))))
+maybe : maybe_t
+maybe a r nothing just s = s r nothing just
+
+ok so, why?
+
+
+
+
+use these instead of our levels.?
+natural numbers
+
+Nat : (Set 0)
+Nat = natT : (Set 0)->(zero:natT->(succ:(n:natT->natT)->natT))
+
+A Nat is a function that a takes a (Set 0), natT, a natT, zero, a function, succ, that takes a natT and
+returns a natT, and returns a natT.
+ 
+
+0 : Nat
+0 = \natT:(Set 0).(\zero:natT.(\succ:(n:natT->natT).zero))
+Zero is a Nat. 
+
+It takes a (Set 0), natT, a natT, zero, a function, succ, that takes a natT and returns a natT, and
+returns zero.
+
+
+Succ : n:Nat -> Nat
+Succ n = \natT:(Set 0).(\zero:natT.(\succ:(n:natT->natT)).(succ (n natT zero succ))
+
+Succ is a function that takes a Nat, and returns a function that takes a (Set 0), natT, a natT, zero,
+a function, succ, that takes a natT, n, and returns a natT, and returns ...
+
+Ok,
+
+Succ 0 = \natT:(Set 0).(\zero:natT.(\succ:(n:natT->natT).(succ ((\natT2:(Set 0).(\zero2:natT.(\succ2:(n:natT2->natT2).zero2))) natT zero succ))))
+
+	= \natT:(Set 0).(\zero:natT.(\succ:(n:natT->natT).(succ zero)))
+
+
+Succ (Succ 0) = \natT:(Set 0).(\zero:natT.(\succ:(n:natT->natT).(succ ((\natT2:(Set 0).(\zero2:natT2.(\succ2:(n:natT2->natT2).(succ zero)))) natT zero succ))))
+
+	= \natT:(Set 0).(\zero:natT.(\succ:(n:natT->natT).(succ (succ 0))))
+
+
+
+
+etc..
+
+#takes a function that takes an argument that acts as the zero, and a function that acts as the successor,
+and returns the n-fold application of the successor to the zero, and returns a function that takes an argument
+that acts as the zero, and a function that acts as the successor, and returns the (n+1)-fold application of
+the successor to zero.
+
+0 is a function taking a zero and a successor function and returning it.
+
+succ takes a function doing n-fold application of a successor function to a zero and
+returns a function doing (n+1)-fold application of a successor function to a zero.
+
+#numbers are functions, succ is a function acting on number-functions to produce the "next" number-function
+#can the natT be any type? 
+
+
+#i guess we should wait with it until i familiarize myself with everything
+#well, i'm gonna use these for testing it
+#fixed a couple more bugs, got to the point that i need to define that max() function
+#so i got back to questioning whether i should use the church-encoding for it, since
+#if we had that we can substitute into expressions easily & it would tie in with the
+#rest of this
+#having a solid understanding of these is probably as or more important than the actual
+#reasoner implementation
+
+
+
+http://web.emn.fr/x-info/ntabareau/papers/universe_polymorphism.pdf
+https://math.stanford.edu/~feferman/papers/Ambiguity.pdf
+https://golem.ph.utexas.edu/category/2012/12/universe_polymorphism_and_typi.html

@@ -1,0 +1,658 @@
+#Parsing
+
+definition := <thing-being-defined> is <expressionA> [where <list-of-definitions for objects used in expressionA> [such that <expressionB>]]
+
+
+the "a pair(G,..)" seems to complicate things, we can remove it, change it, w/e
+any CNL that actually runs will be good enough for me at this stage
+
+
+Example sentence:
+--------------------
+"A binary operation on a set G is a function that takes two Gs and returns a G."
+
+"A binary operation *on* a set G"
+
+"A binary operation on S, +, ..."	maybe, but not really
+"+ is a binary operation on S ..."	yes
+"A binary operation, +, on S"		yes
+
+
+
+The noun-phrase case is relatively straight-forward
+"A <type> is <noun phrase> := <type> := <noun phrase>"
+
+
+The adjective-phrase case is somewhat more complex
+"A <type> is <adjective phrase> := 
+case 1) definitional
+	the constraints specified by the adjective phrase are intended to be translated
+	into dependent types constraining the structure of your type, and structure should
+	be added to account for any constraints that are applied to structure not present
+	in the original definition. for example, in the example below, a color property
+	would be added to dog, if it didn't already have one, and constraints would be
+	added to specify that the value must be "blue".
+	
+"A dog is blue."
+	is this a constraint on the dog?
+	or is it adding more information to the definition of dog, and then
+	constraining it?
+"A function from a set X to a set Y is a X->Y
+	now you can say "A function from X to Y"
+	
+
+we also say "has"
+
+"A <type> has ..."
+	adds structure, if it is not already present
+
+"A pair of a set A and a set B is 
+
+"A group is a pair (G,+), where G is a set and + is a binary operation on G, such that there exists
+an object e in G, called the identity element, such that for all g in G, g + e = e + g = g, and there exists an element h in G, called the inverse of g, such that g + h = h + g = e, and for all g, h, i in G, (g + h) + i = g + (h + i)."
+
+"(Z,+) is a group, where Z is the integers, and + is addition."
+
+given a definition of the integers and a definition of addition on them, maybe it could now even
+prove that this actually satisfies the requirements of a group. is addition associative? is there an
+identity element? does every element have an inverse? maybe it doesn't have enough information to
+prove it, maybe we'd have to give it more
+
+"(Z,+) is a group, where Z is the integers, + is addition, 0 is the identity element, for every x in Z,
+-x is the inverse of x, and addition is associative."
+
+"(Z,+) is a group, where Z is the integers, + is addition, 0 is the identity element, for all x in Z, -x is the inverse of x, and for all x, y, z in Z, (x + y) + z = x + (y + z)."
+
+
+this points out different usage of "is" in natural lang
+
+"X is <noun phrase>", this seems to generally imply that X actually *is* that noun. i.e. that this
+noun represents the totality of X.
+
+"A binary operation, +, on a set S is associative if for all x, y, z in S, (x + y) + z = x + (y + z)."
+
+"Associativity is the property of a binary operation, +, on a set S, that for all x, y, z in S, 
+(x + y) + z = x + (y + z)."
+
+
+
+
+"X is <adjective>", this seems to generally imply that <adjective> is only a property of X.
+
+
+
+"The identity function takes an object and returns it."
+
+"an object" (of any type, at any set-level), implies the function is type- & universe-polymorphic
+
+"it", the last object specified in the sentence
+
+
+
+"[[[A group] is [[a pair] (G,+)]], where [[G] is [a set]] and [[+] is [[a binary operation] on G], such that [there exists
+[[[[an object] e] in G], called [the [identity element]], such that [for all g in G, [[g + e = e + g = g], and [there exists [[[an element] h] in G] such that [[g + h = h + g = e], and [for all g, h, i in G, [(g + h) + i = g + (h + i)]]]]]]]]]]."
+
+
+"[
+  [
+   [
+    A 
+    group
+   ] 
+   is 
+   [
+    [a pair] 
+    (G,+)
+   ]
+  ]
+  , 
+  where
+  [ 
+   [
+    [G] 
+    is 
+    [a set]
+   ] 
+   and 
+   [
+    [+] 
+    is 
+    [
+     [a 
+      [binary operation]
+     ] 
+     on 
+     G
+    ]
+   ]
+  ]
+  such that 
+  [
+   there exists
+   [[[[an object] e] in G], called [the [identity element]], such that [for all g in G, [[g + e = e + g = g], and [there exists [[[an element] h] in G] such that [[g + h = h + g = e], and [for all g, h, i in G, [(g + h) + i = g + (h + i)]]]]]]]]]]."
+
+
+...is a pair(G, )
+"A group is a set G and a binary operation on G, +, such that ...
+id add a third way,
+a group is a class with two members
+or
+
+#with dependent types this basically corresponds to a DRT
+ah no
+err
+whatever lol
+what i meant here is that it isnt a drt, or doesnt correspond to a drt, because here this thing is just naming the two members, its just a syntax to invoke this built-in
+class Group:Pair
+
+hrm, i would think more like
+class Pair:
+	element1
+	element2
+
+	syntax = "(", element1, ",", element2, ")"
+
+and a group is an instance of this according to the logic, but the syntax is just
+pairs syntax, what we really get out of it is the ability to reference the named
+objects from outside
+
+like "A pair (G,+) ... <reference G and + later> ..."
+
+so what would be the agda translation for the sentence?
+sigma types / product types / drts
+
+so a declaration of a data type called Group?
+or a set of constraints that say if something is or isnt a group
+well, both
+
+"A group is a pair (G,+), such that, ... <constraints> ..."
+would group be a subclass of pair?
+group would be a subclass of: 
+	Set
+	Sigma G:Set. G*G -> G
+it would in the following sense:
+
+in agda or something this would translate to (something like)
+
+Group = Sigma (G,+) : Set*(G*G -> G) . <constraints>
+
+which translates more explicitly to:
+
+Group = Sigma G : Set . Sigma + : G*G -> G . <constraints>
+
+now, with these sigma types we get projection operators
+projection1, projection2
+
+if, we have some group, G', and we take projection1(G'), we get G, which is a Set
+so, we can say that it's a subclass of set
+if we take projection1(projection2(G')), we get +, which is a G*G -> G,
+if we put G together with +, we get something of type Pair(G:Set, G*G -> G)
+so, we can say that a group is a subclass of this particular kind of pair
+
+so, you can think of it as a subclass in the sense that you can get literal subsets of
+your type by using the projection operators, and this is more or less what DRT subtyping
+corresponds to (so, essentially sigma types are subtypes of the type of the first object)
+
+in the type theory, Pair/Sigma is less like types and more like functions that make
+types, i.e. type constructors, so, you don't really subtype from them directly, you
+subtype a Pair of an A and a B; for standard Pair, you can say that this subtypes A 
+and subtypes B, in the sense that you can use the projection operators to recover the
+objects of A and the objects of B. however, you can only get express the subtype of A
+that is A itself, or the subtype of B that is B itself, using just the Pair type. you
+need the dependent pair type to actually limit the sets to some subset, and when you
+do that, this is only applying to the type of the first element, i.e. Sigma A . B is
+only a subtype of A
+
+Sigma a:A . Sigma b:B . C
+
+is a subtype of A and a subtype of Sigma A . B
+
+Sigma a:A . Sigma b:B . Sigma c:C . D
+
+subtype of A, a subtype of Sigma A . B, and a subtype of Sigma A. Sigma B . C
+
+and that's more or less what DRT subtyping is
+
+
+ah
+
+well, here i figured we'd have a built-in for pairs and basically be able
+to instantiate a pair with variable elements, and then reference those elements
+later, as short-hand for nested sigmas
+i was thinking that there's probably more complex things you could do here, but
+haven't  thought it through all the way
+
+
+these would ideally all be valid, (as an example), and one approach to cnl building would be that theyd all map to exactly the same abstraction
+that's pretty much the GF approach, maybe we can get something like GF-in-CNL for
+self-extensibility 
+well, i think theres not much to the language itself, its more about the library
+in what sense
+well, youre the one "advocating" that theres no difference between the target languages typesystem and the grammar typesystem, iow, gf has to boil down to agda/something id think
+well, sure, something like a CNL GF over this CNL agda we sort of have worked out here
+probably wouldn't be too hard, if that's what you're saying
+no its just one of my rabbit holes speaking
+
+and what we want of that abstraction is that it names the two members, and possibly that it specifies a superclass for the defined thing
+
+
+
+
+lots of different ways we can write it, 
+the group example is good because if we can write the definition for group, we can
+probably write the definition for pretty much any other structure
+
+if we wanted *really* 1:1 correspondence with the type theory, it'd be more like
+
+"A group is a there exists a set, G, such that there exists a function that takes a G*G
+and returns a G, such that there exists an object e in G such that ..."
+
+since we don't treat "there exists" as an object/type in natural language, we could
+replace this with "dependent product". so, this shows how there should probably be some
+kind of switching between the logic interpretation and the types interpretation
+we want to say say things like "such that there exists ..." not things like "such that
+there is a dependent product", and we want to say things like "is a dependent product",
+not things like "is a there exists ..."
+
+"A group is a dependent pair whose first element is a set, G, and whose second element
+is a function, +, that takes a G*G and a returns a G, such that there exists ..."
+
+its not like i wouldnt have ideas how to go about with this, but i think we should rather review existing work, the only work i really know along these lines is GF and ACE-over-GF
+
+http://www.mat.univie.ac.at/~neum/FMathL.html
+
+yea i'm down to go over some of this stuff before we dive into any of my concoctions heh
+	seems FMathL uses a polymorphic type system
+seems it's not complete, just the idea for the software
+well, they have some stuff, but
+http://www.mat.univie.ac.at/~neum/FMathL/types.pdf
+
+seems more math than CNL
+
+common generalization of context-free grammars and alge-
+braic data types mmmmm our ideas are pretty similar, at a glance anyway
+i'm not sure whether this "generalization" is dependent types or not
+...still so hung up on dependent types until i can find something else that
+does what they do, yea
+whatevers the type system of the language is independent of the type system of the ...prover or whatever, that's true, i've only designed like i have so far cause the dependent type system makes for a reasonable basis for both, we can go beyond that though, in theory, and do different things on either side
+
+this forall & there exists language that comes with dependent types corresponds
+quite directly to typical language used in mathematical texts & definitions, and then
+the dependent type system actually runs the logic
+
+that's just my first attempt at making a CNL though, just seemed like the simplest
+way to go about it
+
+yea a dependent type system is the obvious choice in the end, but for the language we were sketching here i didnt yet see any other use for them except handling the articles "a, an" 
+not sure what you mean, i don't think we'd need to use dependent types there, the dependent
+types are forall and there exists (and maybe DRTs internally but we don't really use those
+in natural lang, and it's just tuples / nested "there exists" with named fields  anyways)
+
+im saying its two independent layers. theres a type system for expressing the syntax of the language
+and then when you have it parsed, you run/check it with some type system
+at least i think of these two separately
+sure, i've only got them the same cause, at least to me that seemed simpler
+way back it seemed simpler to me too, now i have no clue anymore
+its like you once said, everything can be defined in terms of anything else, in these matters
+right, so, at some point you have to pick a foundation, i just picked this one cause it
+seemed closest at hand, and fulfils the majority of my requirements, and i don't think
+i would get much better with any other choice of foundation, except through going down
+more rabbit-holes to even find them, well, especially without testing this one to know
+what short-comings i'd even be trying to overcome
+with respect to defining the syntax itself, that's something i haven't put much thought
+into yet, at this point i was intending to handle it ad hoc unless we had better methods
+i've basically just been trying to write the type theory in english while staying within
+reasonable boundaries and then trying to retroactively formalize it
+or, idk, maybe i'm misunderstanding what you're saying
+
+nah, you got it right with the dependent types and foundations, i should follow your lead there
+and then yeah theres the "syntax", more like the nodes really, and its pretty weird how easy it seems to just go at it adhoc, i seem to have some things figured out/right that you dont, but then i just go down all the rabbit holes and get lost, every time
+maybe i should think about formalizing them, definitely should
+wrt the easiness of going at it adhoc here, i'm kinda a) picking nice examples that should be expected to translate well, b) the logic component of the dependent types makes them
+match up nearly 1:1 with mathematical speech (where i'm getting the 'nice' examples from)
+there's very little to the type theory, so, correspondingly there's very little speech
+that has to be defined beforehand, makes it a bit easier to make it work out coherently
+wrt rabbit holes, i'm always lost in at least a couple
+this dependent types system is the only coherent picture i've been able to come up with
+* at all* so far for CNL though, (not saying there aren't others out there, just that
+this is the only picture i understand so far that could actually maybe do anything
+reasonable) 
+
+also, it seems relatively easy to go ad hoc and get some fairly reasonable CNL
+but, i've worked out different examples with this dependent types - CNL mapping, it
+seems to get progressively harder to make the CNL component nicer, and the 1:1 mapping
+is not particularly nice unless you're writing a math text, *might* be alright for
+a programmer, idk though without actually trying it
+
+i figure that if you pick any particular "logical foundation" which could be just about
+anything, whether it's a type theory, a theory of arrays and pushing/popping, etc..
+anything that we can make specific and precise enough to express on the computer in the
+first place, we can "fairly easily" have a 1:1 mapping between that logical foundation
+and CNL python's like half-way there already for CNL imperative lol
+
+for imperative we'd have something like
+
+<command> and then <command> ..
+aka the do notation yep
+so, it seems to me that 1:1 mapping to any particular system is not particularly
+difficult, it just ends up not particularly nice either once you get into large
+documents, it gets to be not so nice even on small documents i've tried
+with the dependent types though it becomes not much worse than a typical math
+text. honestly might even read a little easier than some
+i haven't tried much with an imperative CNL
+or a logic programming CNL
+
+{ ?x equals ?y } => { ?y equals ?x }
+
+0 equals zero.
+if x equals y then y equals x
+if x equals y and y equals z, then x equals z
+etc..
+
+char* getString(){
+	return 'Hello, world!';
+}
+
+int main(){
+	char* x = getString();
+	cout << x;
+}
+
+"'getString' is a function that returns the string 'Hello, World!'. The main function
+calls getString and puts the result in x, and then sends x to the standard output."
+
+"The main function sends the string 'Hello, World!' to the standard output, and then
+..., and then..."
+
+
+
+
+
+
+
+
+Structure
+-------------------
+The top-level is a document. A set of sentences. The sentences define named objects and
+expressions, which can be used in other sentences. Dependencies are mapped between
+sentences, and composed together based on this using let-abstractions to get a full
+expression for the document (maybe; or we might stick each defined object into a database
+or something, idk). if there is a 'main' expression/object which is meant to be 
+executed, then we definitely pile it up using let-abstractions, as this gets us an
+executable expression; if we're just querying specific objects, maybe it's not the
+best representation.
+
+
+,(is(A group, A pair (G +)),where(is(G,a set),is(+,a binary operation on G)
+
+
+
+
+
+a _
+an _
+the _
+
+_ in _
+_ is _
+_, where _
+_, such that _
+_ and _
+_ or _
+for all _ in _, _.
+there exists _ in _ such that _
+_ = _
+_ that takes _ and returns _
+_ called _
+
+
+
+
+
+basic types
+-------------
+element
+object
+pair
+set
+function
+
+scoping issues
+----------------
+the sentence above can be given unambiguous scoping by "pulling everything as far out as possible"
+
+
+#this is essentially overlaying the inferred scoping onto the example sentence
+[A group] is {
+	[a pair] (G,+) where {
+		G is {
+			[a set]
+		} and
+		+ is {
+			[a binary operation] on G
+		}
+	}, such that {
+		there exists {
+			([an object] e in G), called [the identity element]
+		}, such that {
+			for all g in G {
+				g + e = e + g = g
+			}, and {
+				there exists {
+					[an object] h in G
+				}, such that {
+					g + h = h + g = e
+				}
+			}
+		}
+	}, and {
+		for all g, h, i in G {
+			(g + h) + i = g + (h + i)
+		}
+	}		
+}.
+
+
+
+
+A/an <X> is <Y>
+
+==
+
+<X> : Type
+<X> = <Y>
+A/an <X> : <X>
+
+where did the old text go?
+what old text
+there was something different here
+
+Group : Type
+Group = Exists G : Type.
+		Exists + : G*G -> G .
+			Exists e : G .
+				Forall g : G . 
+					g + e = e + g = g
+
+					*
+	
+					Exists h : G . g + h = h + g = e
+	
+			*
+	
+			Forall g, h, i : G . (g + h) + i = g + (h + i)
+
+
+Group = (G,+) where
+	  G : Set
+	  + : G*G -> G
+        such that
+ 
+this is just kind of some syntax sugar for the two Exists above
+
+so, do you have a newshit-ish ast structure in mind for all this?
+i haven't been able to work it down to a context-free grammar yet
+i see ways to parse this and make it work, but, i'm not sure how to
+get it into a structure compatible with newshit yet, we know the
+logic can be represented in newshit, but, parsing the english might
+be a bit different
+
+
+scoping issues
+---------------------
+the "forall g, h, i : G ... " doesn't use the object "e", so, it's not going to be
+scoped underneath of "Exists e : G ....", because it's an independent statement from the
+statements that use "e". if two statements are independent of each other, then they are
+scoped in parallel. 
+
+this consideration is necessary if we don't want to clutter up the natural language with
+parentheses and brackets and indentation and stuff, until we really need to. how do humans
+resolve these scoping ambiguities? we just simply don't work on the same terms as this. we
+have a more flexible view of the definition, where pieces can be rearranged, and all that matters
+is what statements are dependent on each other.
+
+
+Group = Sigma (G,+)
+		G : Set
+		+ : G*G -> G
+		
+
+"... there exists an object e in G, called the identity element, such that for all g in G,
+g + e = e + g = g, and there exists h in G such that g + h = h + g = e ... "
+
+
+#what about "and"
+
+Possibility 1)
+
+Exists e : G .
+	Forall g : G .
+		g + e = e + g = g
+
+		*
+
+		Exists h : G . g + h = h + g = e
+
+
+
+Possibility 2)
+
+Exists e : G .
+	Forall g : G .
+		g + e = e + g = g
+
+	*
+
+	Exists h : G . g + h + h + g = e
+
+
+Possibility 3)
+
+Exists e : G .
+	Forall g : G .
+		g + e = e + g =g
+
+*
+
+Exists h : G . g + h = h + g = e
+
+
+
+we see that it can only be possibility 1, because the expression "Exists h : G . g + h = h + g = e"
+depends on the object "g", which is only defined in the scope of "Forall g : G"
+
+
+"... and for all g, h, i in G, (g + h) + i = g + (h + i)."
+
+Possibility 1)
+
+Exists e : G .
+	Forall g : G .
+		g + e = e + g = g
+	
+		*
+
+		Exists h : G .
+			g + h = h + g = e
+
+			*
+
+			Forall g, h, i : G . (g + h) + i = g + (h + i)
+
+
+Possibility 2)
+
+Exists e : G .
+	Forall g : G .
+		g + e = e + g =g
+
+		*
+
+		Exists h : G .
+			g + h = h + g = e
+
+		*
+
+		Forall g, h, i : G . (g + h) + i = g + (h + i)
+
+
+Possibility 3)
+
+Exists e : G .
+	Forall g : G .
+		g + e = e + g =g
+
+		*
+
+		Exists h : G .
+			g + h = h + g = e
+
+	*
+
+	Forall g, h, i : G . (g + h) + i = g + (h + i)
+
+
+Possibility 4)
+
+	
+Exists e : G .
+	Forall g : G .
+		g + e = e + g =g
+
+		*
+
+		Exists h : G .
+			g + h = h + g = e
+
+*
+
+Forall g, h, i : G . (g + h) + i = g + (h + i)
+
+
+
+If the expression is independent of any of the variable bindings it's under, then we move it
+outwards as far as possible, therefore, we go with possibility 4. I think this clears up any
+scoping ambiguity and allows us to chain things together using "_ and _".
+
+
+
+Naproche:
+
+Discourse Representation Theory
+Discourse Representation Structures
+Proof Representation Structures
+
+https://korpora-exp.zim.uni-duisburg-essen.de/naproche/downloads/2009/emergingsystems.pdf
+www.naproche.net
+
+
+ForThel
+VeriMathDoc
+Isabelle / Isar
+Mizar
+PLATO program
+
+ACE
+
+uses words like "Axiom", "Theorem", "Lemma", "Proof" and "QED" to structure a document.
+
