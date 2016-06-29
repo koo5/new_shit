@@ -42,9 +42,9 @@ def parse(text):
 	return handle(text)
 
 
-mod="lc1-test",nodes.lc1
-mod="lc2-test",nodes.lc2
-mod="cube-test",nodes.cube
+#mod="lc1-test",nodes.lc1
+#mod="lc2-test",nodes.lc2
+#mod="cube-test",nodes.cube
 mod="MLTT-test",nodes.MLTT
 
 
