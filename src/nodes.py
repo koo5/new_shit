@@ -3838,6 +3838,28 @@ def build_in_MLTT(r):
 	MLTT.exp.help = ["a lambda expression"]
 
 
+	class DebVar(Syntaxed):
+		help = ["a De Brujin-ized variable"]
+		@property
+		def dist(s):
+			return s.ch.dist.pyval
+			
+		@property
+		def varName(s):
+			return s.ch.name.pyval
+		@varName.setter
+		def varName(s, v):
+			s.ch.name.pyval = v
+		def __init__(s, children):
+			super(Var, s).__init__(children)
+	build_in(SyntaxedNodecl(DebVar,
+		[ChildTag("name"), ChildTag('dist')],
+		{'name': B.restrictedidentifier, 'dist': B.number}))
+
+
+
+			
+
 	class Var(Syntaxed):
 		brackets = ("", "")
 		help = ["a variable"]
@@ -3853,6 +3875,7 @@ def build_in_MLTT(r):
 	build_in(SyntaxedNodecl(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, MLTT)
+
 	class ParExp(Syntaxed):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
@@ -3951,6 +3974,26 @@ def build_in_MLTT(r):
 	]:build_in(WorksAs.b(a,b), False, MLTT)
 	
 	r["MLTT"].ch.statements.items.extend(list(itervalues(MLTT._dict)))
+	
+	
+	def debrujin(node, ctx):
+		if type(node) == Var:
+			if node.varName in ctx:
+				return DebVar(ctx.index(name), name)
+			else
+				raise "var is not in scope"
+		if type(node) == App:
+			return App({'e1':debrujin(node.ch.e1, ctx), 'e2':debrujin(node.ch.e2, ctx)})
+
+		if type(node) == Abs:
+			ctx = [node.ch.var.varName] + ctx
+			return    Abs({'var':debrujin(node.ch.var, ctx), 'type':debrujin(node.ch.type, ctx), 'exp':debrujin(node.ch.exp, ctx)})
+		if type(node) == PiType:
+			ctx = [node.ch.var.varName] + ctx
+			return PiType({'var':debrujin(node.ch.var, ctx), 'type':debrujin(node.ch.type, ctx), 'exp':debrujin(node.ch.exp, ctx)})
+
+		return node
+	
 	
 	#Just need to analyze the control flow here.
 	def prove(in_prop,env1=None,env2=None):
