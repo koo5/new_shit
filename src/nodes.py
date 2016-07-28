@@ -305,7 +305,8 @@ class NodePersistenceStuff(object):
 	def serialize(s):
 		#assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
 		r = odict(s.serialize_decl())
-		r.updated_with(s._serialize())
+		r.update(s._serialize())
+		return r
 
 	def serialize_decl(s):
 		if s.decl:
@@ -632,7 +633,9 @@ class Node(NodePersistenceStuff, element.Element):
 		assert s.parent != None, s.long__repr__()
 
 		r += [s.parent]
-		r += s.parent.scope() # note:Root has parent None
+		sc = s.parent.scope()
+		if sc != None:
+			r += sc # note:Root has parent None
 
 		assert(r != None)
 		assert(flatten(r) == r)
