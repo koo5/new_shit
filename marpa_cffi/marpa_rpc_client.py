@@ -206,6 +206,7 @@ class ThreadedMarpa(object):
 		#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
 		#ok here we're gonna walk thru WorkAssess and BindsTighters and do the precedence and associativity magic
 
+		"""
 		sups = DefaultDict(list)
 		pris = DefaultDict(list)
 		asoc = DefaultDict(-1)
@@ -235,14 +236,6 @@ class ThreadedMarpa(object):
 				rhs =
 				pris[sub]
 
-
-
-
-
-
-
-
-		"""
 		for k,v in sups:
 			for sub in v:
 				for n in scope:

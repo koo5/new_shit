@@ -2146,7 +2146,7 @@ class WorksAs(Syntaxed):
 
 
 class BindsTighterThan(Syntaxed):
-	help = "has higher precedence, goes lower in the parse tree"
+	help = ["has higher precedence, goes lower in the parse tree"]
 
 
 class Definition(Syntaxed):
@@ -3822,6 +3822,10 @@ PiType has syntax: [Child("var"), ":"
 
 
 
+
+
+
+
 MLTT = Dotdict()
 MLTT._dict = odict()
 
@@ -4022,208 +4026,6 @@ def build_in_MLTT(r):
 				assert False
 		
 		
-		
-		"int" is a constant, it's not an expression in terms
-		of "x", so this is equivalent to the standard
-		function type "bool -> int"
-		
-		\\x:* -> (x -> int)
-		
-		the return type "(x -> int)" is an expression in terms of x
-		
-		
-		
-		
-		maybe we should move onto some example code?
-		so 'type' is an expression but not just any expression..
-		
-		
-	i was confused by expecting subtyping
-
-		
-so, we cant have a function taking an argument of any type and returning it,
-we need to basically pass it the type too? yea
-allowing ourselves to range over our types (i.e. t:*) for the input of
-our function is polymorphism, and we use it here to get a polymorphic identity
-function, and yea making our functions polymorphic like this is handled by
-basically extending their definition to take a type and return the desired
-function/type/expression
-
-and why cant we do \\x:*.x?
-^this looks like given a value return a value?
-a value of type *, aka a value of type Type, aka a type
-so the 'type' field in Pi is the return type?
-the input type, same as the 'type' field in the Abs
-to be proper about it, we'd call it "domain", because it's
-quite literally the domain of any function of that function-type
-
-\\arg : domain -> range
-
-err
-yeah i see what you mean here, but
-\\x:_.x
-what about this identity function?
-we don't have anything to allow this syntax
-we don't even have anything to allow this syntax:
-\\_:x. <something>
-well, _ is a valid identifier name
-hrm
-or what about \\x:y.x
-cant this be a function that just ignores y?
-this function has type y -> y
-
-so, if we had the := syntax, i could write
-identity := \\x:y.x
-and it would typecheck?
-well, our type_check() function (which is really more of a type-inferencer
-than a type-checker) would return a valid type for this
-i.e. y -> y
-if you had like haskell syntax:
-
-identity :: y -> y
-identity := \\x:y.x
-
-then yea the function definition would type-check against the function
-declaration
-
-and y would be..what?
-i'm just assuming here that "y" is just short-hand we're
-using to express some specific (but unsaid) type
-well i was thinking it would be i guess a variable
-
-so it would kinda be a type variable
-in the simply typed lambda and beyond, we can't realy
-use a variable except inside a function
-this also holds for type variables
-
-\\t : * . (\\x : t . x)
-
-okay
-so, the argument type of a function 
-
-
-we can but that's saying something different
-namely: given any type, return this type
-rather than, given any type, and a value of that type, return that value
-
-		
-		
-		
-		
-		"""]
-	build_in(SyntaxedNodecl(PiType,
-		[#look..a parenthesized expression cant subsume "type->ret", subsume?
-		#you cant have <var>:<parenthetised expression> parse as a Pi
-		#can we fix it so that we can?
-		#im just guessing is this really the problem?
-		#seems to be
-		#we can break our examples but fix the problem by just adding the parentheses into
-		#the TextTags here
-		[ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("ret")],
-		#["function from ", ChildTag("from"), " to ", ChildTag("to")]
-		],
-		#a parenthesized expression wouldn't work here?
-		{'arg': cube.var, 'type': cube.exp, 'ret': cube.exp}), None, cube)
-	
-	class Abs(Syntaxed): 
-		help = ["abstraction, a lambda"]
-		#rank = -2000000
-	build_in(SyntaxedNodecl(Abs,
-		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
-		#[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]
-		],
-		{'var': cube.var, 'type': cube.exp, 'exp': cube.exp}), None, cube)
-	
-	class App(Syntaxed): 
-		#rank = 2000000
-		help = ["""function application, a call
-			#"do" <function> "to" <argument>
-			#"run" <function> "on" <argument>
-		"""]
-		
-	build_in(SyntaxedNodecl(App,
-		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
-		#[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]
-		],
-		{'e1': cube.exp, 'e2': cube.exp}), None, cube)
-	
-	
-	class StarKind(Syntaxed):
-		help = ["""star kind
-		whats this?
-		"""]
-		def toStr(s):
-			return "*"
-			
-	build_in(SyntaxedNodecl(StarKind,
-		[TextTag("*")], #[TextTag("*")],
-		{}), None, cube)
-		
-	class BoxKind(Syntaxed): 
-		help = ["""box kind
-		whats this?
-		"""]
-		def toStr(s):
-			return "[]"
-	build_in(SyntaxedNodecl(BoxKind,
-		[TextTag("[]")], #[TextTag("[]")],
-		{}), None, cube)
-	
-	build_in(SyntacticCategory({'name': Text("kind")}), None, cube)
-	cube.kind.help = ["kind, like a type of types"]
-	
-	build_in(WorksAs.b(cube.starkind, cube.kind), False, cube)
-	build_in(WorksAs.b(cube.boxkind, cube.kind), False, cube)
-	
-	
-	
-	#whoever came up with "pi", "box" and "star" must have had psychological problems
-	#yes
-	
-	
-	
-	for a,b in [
-	
-	(cube.parexp, cube.exp),
-	(cube.app, cube.exp), 
-	(cube.abs, cube.exp), 
-	(cube.var, cube.exp), 
-	(cube.pitype, cube.exp),
-	(cube.kind, cube.exp)
-	
-	]:build_in(WorksAs.b(a,b), False, cube)
-	
-	
-	
-	r["cube"].ch.statements.items.extend(list(itervalues(cube._dict)))
-	
-	
-	#before theorem proving we probably want to type_check our prop and
-	#make sure it type_checks to either * or [], then we won't have to
-	#deal with the cases where our expression doesn't actually represent
-	#a type/prop. (theorem proving is not applicable for anything except
-	# propositions/types)
-	
-	#yes our proving process returns at most 1 result (but it should return
-	#at least 1 result as long it has one!) we could fix this
-	#with coroutines or some other inferencing process
-	def prove(in_prop,env1=None,env2=None):
-		if (env1 == None) : env1 = []
-		if (env2 == None) : env2 = {}
-		#if we had to pass this through type-checking then it would
-		#fail cause it's a BoxKind, but we know it's a type, and
-		#we know it's only term
-		if isinstance(in_prop,BoxKind):
-			yield StarKind({})#yep all these returns would just be yields instead
-		#lol, yea something like that no really right hence the lol
-		#so, then it resumes right here
-		
-		#i dunno, maybe we need some elifs instead of ifs?
-		#just a bit i'm explaining to my bro
-		
-		elif (not type(type_check(in_prop,env2)) in [StarKind,BoxKind]):
-			print("Can't prove something that's not a proposition/type")
-			assert False
 		
 		#normalize it to reduce the number of different expression classes
 		#we have to consider
