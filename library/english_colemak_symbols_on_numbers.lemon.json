@@ -1,0 +1,157 @@
+{
+    "decl": {
+        "target": {
+            "resolve": true,
+            "name": "module",
+            "class": "syntaxednodecl"
+        },
+        "decl": "ref"
+    },
+    "children": {
+        "file": {
+            "decl": {
+                "target": {
+                    "resolve": true,
+                    "name": "text",
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": "library/english_colemak_symbols_on_numbers.lemon.json"
+        },
+        "statements": {
+            "decl": {
+                "target": {
+                    "resolve": true,
+                    "name": "statements",
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "items": [
+                {
+                    "slot": 0,
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "decl": {
+                                "target": {
+                                    "resolve": true,
+                                    "name": "functiondefinition",
+                                    "class": "syntaxednodecl"
+                                },
+                                "decl": "ref"
+                            },
+                            "children": {
+                                "sig": {
+                                    "decl": {
+                                        "target": {
+                                            "resolve": true,
+                                            "name": "function signature list",
+                                            "decl": {
+                                                "target": {
+                                                    "resolve": true,
+                                                    "name": "definition",
+                                                    "class": "syntaxednodecl"
+                                                },
+                                                "decl": "ref"
+                                            }
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "items": [
+                                        {
+                                            "slot": 0,
+                                            "decl": "Parser",
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "text",
+                                                            "class": "nodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "text": "set keyboard layout to colemak with symbols on numbers"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "decl": {
+                                        "target": {
+                                            "resolve": true,
+                                            "name": "statements",
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "items": [
+                                        {
+                                            "slot": 0,
+                                            "decl": "Parser",
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "shellcommand",
+                                                            "class": "syntaxednodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "children": {
+                                                        "command": {
+                                                            "slot": "command",
+                                                            "decl": "Parser",
+                                                            "items": [
+                                                                {
+                                                                    "decl": {
+                                                                        "target": {
+                                                                            "resolve": true,
+                                                                            "name": "text",
+                                                                            "class": "nodecl"
+                                                                        },
+                                                                        "decl": "ref"
+                                                                    },
+                                                                    "text": "cd library/keyboard_layout/english_colemak_symbols_on_numbers; ./remap_numrow"
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "slot": 0,
+                    "decl": "Parser",
+                    "items": []
+                },
+                {
+                    "slot": 0,
+                    "decl": "Parser",
+                    "items": []
+                }
+            ]
+        },
+        "name": {
+            "decl": {
+                "target": {
+                    "resolve": true,
+                    "name": "text",
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": ""
+        }
+    }
+}
