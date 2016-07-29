@@ -1623,7 +1623,7 @@ class Root(Dict):
 
 	def scope(s):
 		# deserialization needs this
-		s.root["builtins"].ch.statements.parsed
+		return s["builtins"].ch.statements.parsed
 
 
 
