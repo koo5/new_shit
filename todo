@@ -1,20 +1,44 @@
-sleep
----
-?:
-* integrate betty
-* experiment with a rdf version
-* sketch out a graph-based version for #nars
-* continue hacking on the mockup language: add Identifier as a fallback for parsing identifiers not in scope
-
----
-subclass module into terminal. make library visible in scope and ...
----
-outdatedness follows...
+* finish the parser
+* finish snipplr integration
 
 
-register grammar if root.reregister is set
-only parse if Parser.reparse?
+* experiment with mycroft skills
+* experiment with storing nodes in a triplestore
+* new gui framework: sseehh's or pyside or whatever
 
+
+* continue hacking on the mockup language: add Identifier as a fallback for parsing identifiers not in scope(?)
+
+
+* subclass module into a repl, move cursor into it upon start
+
+
+* continue work on user-defined syntax, at this point, functions serve that role, completely? (?)
+we have unevaluated arguments, so a function body can be thought of as a rule for
+evaluating the node. there could be other rules: display, debugging..?..
+
+
+* optimize rendering of scrolled frames
+
+* new languages:
+** narsese
+** guisese - for controlling seh's gui
+** editorsese - all actions available in the editor, handle everything thru Action objects, add undo/redo
+
+
+*gui frames:
+#todo: function definition / insight frame? preferably able to float in multiple numbers around the code
+#status / action log window <- with keypresses too
+#toolbar (toolbar.py)
+#settings, the doc?
+
+
+
+
+* make a simplified personal-assistant ui
+* add support for android apis alla commandr and automateit
+* improve lemon language, add a rule system
+* profit
 
 
 
@@ -25,45 +49,14 @@ split Ref and TypeRef
 
 
 
-continue work on user-defined syntax, at this point, functions serve that role, completely?
 
-we have unevaluated arguments, so a function body can be thought of as a rule for
-evaluating the node. there could be other rules: display, debugging..?..
 
 streamline things. what are
 *elementary nodes - text, number, ..,? how can we formalize their definition in terms of a nodecl(?) and python code?
 *nodes that define a language? nodecl, worksas, definition, syntacticcategory, exp.. syntax definition node..
 *nodes of some language itself? customnode?
 
->return a generator that appends each item of collect() to _collected and yields it
-return <value> is a node
-generator is a node
-<node> that <???>  - attribute?
-<node> and <node>
-appends <x> to <y>
-..etc, see ACE and i7 etc
-...then formalize code generation
 
-
-
-
-
-create actions module, handle everything thru Action objects, try undo/redo
-
-
-
-optimize rendering of scrolled frames
-
-
-
-
-
-
-frames:
-#todo: function definition / insight frame? preferably able to float in multiple numbers around the code
-#status / action log window <- with keypresses too
-#toolbar (toolbar.py)
-#settings, the doc?
 
 
 
