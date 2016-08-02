@@ -1,0 +1,147 @@
+{
+    "decl": {
+        "target": {
+            "name": "module",
+            "resolve": true,
+            "class": "syntaxednodecl"
+        },
+        "decl": "ref"
+    },
+    "children": {
+        "file": {
+            "decl": {
+                "target": {
+                    "name": "text",
+                    "resolve": true,
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": "library/layout.lemon.json"
+        },
+        "name": {
+            "decl": {
+                "target": {
+                    "name": "text",
+                    "resolve": true,
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": ""
+        },
+        "statements": {
+            "decl": {
+                "target": {
+                    "name": "statements",
+                    "resolve": true,
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "items": [
+                {
+                    "items": [
+                        {
+                            "decl": {
+                                "target": {
+                                    "name": "functiondefinition",
+                                    "resolve": true,
+                                    "class": "syntaxednodecl"
+                                },
+                                "decl": "ref"
+                            },
+                            "children": {
+                                "sig": {
+                                    "decl": {
+                                        "target": {
+                                            "name": "function signature list",
+                                            "resolve": true,
+                                            "decl": {
+                                                "target": {
+                                                    "name": "definition",
+                                                    "resolve": true,
+                                                    "class": "syntaxednodecl"
+                                                },
+                                                "decl": "ref"
+                                            }
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "items": [
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "name": "text",
+                                                            "resolve": true,
+                                                            "class": "nodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "text": "switch to czech layout, qwerty"
+                                                }
+                                            ],
+                                            "decl": "Parser",
+                                            "slot": 0
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "decl": {
+                                        "target": {
+                                            "name": "statements",
+                                            "resolve": true,
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "items": [
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "name": "shellcommand",
+                                                            "resolve": true,
+                                                            "class": "syntaxednodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "children": {
+                                                        "command": {
+                                                            "items": [
+                                                                {
+                                                                    "decl": {
+                                                                        "target": {
+                                                                            "name": "text",
+                                                                            "resolve": true,
+                                                                            "class": "nodecl"
+                                                                        },
+                                                                        "decl": "ref"
+                                                                    },
+                                                                    "text": "setxkbmap cz qwerty"
+                                                                }
+                                                            ],
+                                                            "decl": "Parser",
+                                                            "slot": "command"
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "decl": "Parser",
+                                            "slot": 0
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    "decl": "Parser",
+                    "slot": 0
+                }
+            ]
+        }
+    }
+}
