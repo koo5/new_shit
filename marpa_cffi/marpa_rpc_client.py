@@ -12,9 +12,6 @@ import logging
 logger=logging.getLogger("marpa")
 log=logger.debug
 info=logger.info
-logger.warn("fuck")
-logger.info("python")
-logger.debug("!")
 
 from lemon_utils.dotdict import Dotdict
 from lemon_utils.lemon_six import unicode, itervalues, iteritems
@@ -373,8 +370,8 @@ class MarpaThread(threading.Thread):
 		#s.print_completions(r)
 		
 		for i, sym in enumerate(tokens):
-			#if args.log_parsing:
-			log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
+			if client.debug:
+				log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
 			#assert type(sym) == symbol_int
 			if sym == None:
 				log("grammar not implemented, skipping this node")

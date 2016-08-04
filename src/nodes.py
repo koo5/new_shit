@@ -129,8 +129,8 @@ def make_dict(key_type_name, val_type_name):
 def make_dict_from_anything_to_anything():
 	return make_dict('anything', 'anything')
 
-#where does .module.inst_fresh() come from?
-#is this a python-ism?
+#where does .module.inst_fresh() come from? #the nodecl
+#is this a python-ism? nope, its a lemon-nodes-ism
 def new_module():
 	return B.module.inst_fresh()
 
@@ -1719,6 +1719,8 @@ class Module(Syntaxed):
 				return r
 
 
+class BuiltinModule(Module):
+	pass
 
 
 # endregion
@@ -3160,7 +3162,7 @@ def make_root():
 
 
 	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
-	r["intro"] = new_module()
+	r["intro"] = B.builtinmodule.inst_fresh()
 	r["intro"].ch.statements.items = [
 		Comment("""
 
@@ -3183,21 +3185,16 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 	r["intro"].ch.statements.view_mode=0
 	#r.add(("lesh", Lesh()))
-	r["some program"] = new_module()
-	r["some program"].ch.statements.newline()
-	r["some program"].ch.statements.view_mode=0
+	r["repl"] = B.builtinmodule.inst_fresh()
+	r["repl"].ch.statements.newline()
+	r["repl"].ch.statements.view_mode=2
 	#r['some program'].ch.statements.items[1].add("12")
-	#r["lemon console"] =b['module'].inst_fresh()
-
-	r["loaded program"] = B.module.inst_fresh()
-	r["loaded program"].ch.name = Text("placeholder")
-	r["loaded program"].ch.statements.view_mode=0
 
 	library = r["library"] = make_list('module')
 	library.view_mode = 0#library.vm_multiline
 
 
-	r["builtins"] = new_module()
+	r["builtins"] = B.builtinmodule.inst_fresh()
 	r["builtins"].ch.statements.items = list(itervalues(B._dict))
 	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
 	log("built in %s nodes",len(r["builtins"].ch.statements.items))
@@ -3205,6 +3202,9 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	r["builtins"].ch.statements.view_mode = 0
 
 
+	r["loaded program"] = B.module.inst_fresh()
+	r["loaded program"].ch.name = Text("placeholder")
+	r["loaded program"].ch.statements.view_mode=0
 
 
 
@@ -3312,11 +3312,18 @@ def build_in_editor_structure_nodes():
 
 	build_in(
 	SyntaxedNodecl(Module,
-				   ["module", ChildTag("name"), 'from', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
+				   ["module", ChildTag("name"), ', from file', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
 				   {'statements': B.statements,
 				    'name': B.text,
 				    'file': B.text
 				    }))
+
+	build_in(
+	SyntaxedNodecl(BuiltinModule,
+				   [ChildTag("statements")],
+				   {'statements': B.statements,
+				    }))
+
 
 def build_in_lemon_language():
 
@@ -3834,11 +3841,11 @@ MLTT._dict = odict()
 
 def build_in_MLTT(r):
 	
-	r["MLTT"] = new_module()
+	r["MLTT"] = B.builtinmodule.inst_fresh()
 	r["MLTT"].ch.statements.items = [
 		Comment("""MLTT""")]
 
-	r["MLTT-test"] = new_module()
+	r["MLTT-test"] = B.builtinmodule.inst_fresh()
 	r["MLTT-test"].special_scope = [r["MLTT"]];
 
 	
