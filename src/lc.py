@@ -1,4 +1,4 @@
-
+from nodes import *
 
 
 
@@ -23,14 +23,14 @@ def build_in_lc1(r):
 	"""
 	
 
-	r["lc1"] = new_module()
+	r["lc1"] = B.builtinmodule.inst_fresh()
 	r["lc1"].ch.statements.items = [
 		Comment("""untyped lambda calculus""")]
 
 	""" whats the lc1-test for """
 	#well the gui shows a "root", a tree with a couple of entries,
 	#so thats like where you would type in your lambda calculus program	
-	r["lc1-test"] = new_module()
+	r["lc1-test"] = B.builtinmodule.inst_fresh()
 	r["lc1-test"].special_scope = [r["lc1"], 
 		#B.restrictedidentifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
 		];
@@ -272,11 +272,11 @@ def build_in_lc1(r):
 lc2 = Dotdict() 
 lc2._dict = odict()
 def build_in_lc2(r):
-	r["lc2"] = new_module()
+	r["lc2"] = B.builtinmodule.inst_fresh()
 	r["lc2"].ch.statements.items = [
 		Comment("""simply typed lambda calculus""")]
 
-	r["lc2-test"] = new_module()
+	r["lc2-test"] = B.builtinmodule.inst_fresh()
 	r["lc2-test"].special_scope = [r["lc2"], B.number];
 		
 	
@@ -785,11 +785,11 @@ cube._dict = odict()
 
 
 def build_in_cube(r):
-	r["cube"] = new_module()
+	r["cube"] = B.builtinmodule.inst_fresh()
 	r["cube"].ch.statements.items = [
 		Comment("""The lambda cube""")]
 
-	r["cube-test"] = new_module()
+	r["cube-test"] = B.builtinmodule.inst_fresh()
 	r["cube-test"].special_scope = [
 		r["cube"]
 		#B.number

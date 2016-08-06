@@ -23,6 +23,8 @@ info=logger.info
 log=logger.debug
 
 import nodes
+import mltt, lc
+
 from tags import *
 from element import Element, _collect_tags
 from menu_items import InfoItem
@@ -59,6 +61,12 @@ class Editor(ServerFrame):
 		super(Editor, s).__init__()
 
 		s.root = nodes.make_root()
+
+		lc.build_in_lc1(s.root)
+		lc.build_in_lc2(s.root)
+		lc.build_in_cube(s.root)
+		mltt.build_in_MLTT(s.root)
+
 		s.root.fix_parents()
 		s.atts = Atts(dict(left={},right={},middle={}))
 		s.on_serverside_change = Signal(1)
