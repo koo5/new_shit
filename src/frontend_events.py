@@ -30,7 +30,7 @@ class KeypressEvent(object):
 				if self.key == K_g:
 					self.key = K_RIGHT
 
-		self.mods = frozenset([x for x in [KMOD_CTRL, KMOD_ALT] if mod & x])
+		self.mods = frozenset([x for x in [KMOD_CTRL, KMOD_ALT] if mod & x]) #, KMOD_SHIFT
 
 	def __repr__(self):
 		return ("KeypressEvent(key=%s, uni=%s, mod=%s)" %

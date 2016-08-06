@@ -63,6 +63,29 @@ def add_keys(node, sup, handlers):
 		else:
 			node.keys[k] = v
 
+
+
+
+
+
+
+def paste():
+	cmd = "xclip -o"# -selection primary"
+	import subprocess
+	try:
+		o = subprocess.check_output(cmd, stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
+	except subprocess.CalledProcessError as e:
+		o = e.output
+
+	return o
+
+
+
+
+
+
+
+
 """
 widgets.py
 """
@@ -80,20 +103,18 @@ def k_delete(s, e):
 	return s.after_edit(0)
 w.Text.k_delete = k_delete
 
-def k_unicode(s, e):
-	atts = e.atts
+def k_unicode(s, atts, uni):
 	pos = atts[Att.char_index]
-	s.text = s.text[:pos] + e.uni + s.text[pos:]
-	return s.after_edit(len(e.uni))
+	s.text = s.text[:pos] + uni + s.text[pos:]
+	return s.after_edit(len(uni))
 w.Text.k_unicode = k_unicode
 
 add_keys(w.Text, None,
 			{
 			K((), K_BACKSPACE):  H(w.Text.k_backspace, None, LEFT),
 			K((), K_DELETE):     H(w.Text.k_delete, None, RIGHT),
-			K((), UNICODE):      H(w.Text.k_unicode)})
-
-
+			K((), UNICODE):      H(lambda s,e: w.Text.k_unicode(s, e.atts, e.uni)),
+			K(KMOD_CTRL, K_v):   H(lambda s,e: w.Text.k_unicode(s, e.atts, paste()))})
 
 
 def press(self, e):
@@ -124,6 +145,14 @@ def toggle(self):
 	self.on_change.emit(self)
 add_keys(w.Toggle, None, {
 	K((), (K_RETURN, K_SPACE)): H(toggle)})
+
+
+
+
+
+
+
+
 
 
 
@@ -219,21 +248,21 @@ def k_delete(s):
 	s.on_edit.emit(s)
 	return CHANGED
 
-def k_unicode(s, e):
-	atts = e.atts
+def k_unicode(s, uni):
 	log("adding first item")
-	s.items.append(w.Text(s, e.uni))
+	s.items.append(w.Text(s, uni))
 	s.root.delayed_cursor_move.node = s.items[0]
-	s.root.delayed_cursor_move.chars = len(e.uni)
+	s.root.delayed_cursor_move.chars = len(uni)
 
 def k_unicode_check(s, _):
 	return len(s.items) == 0
 
+
 add_keys(n.ParserBase, -1, {
 	#H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
 	#H((), K_DELETE, LEFT): k_delete
-	K((), UNICODE): H(k_unicode, k_unicode_check)
-
+	K((         ), UNICODE): H(lambda s,e: k_unicode(s,e.uni), k_unicode_check),
+	K(KMOD_CTRL, K_v): H(lambda s, e: k_unicode(s,paste()), k_unicode_check)
 	})
 
 """
@@ -253,6 +282,6 @@ def step_back(s, e):
 add_keys(n.Kbdbg, None, {
 	K((),           K_F11):       H(step_back),
 	K((),           K_F12):       H(step_fwd),
-	K((),           K_F9):       H(n.Kbdbg.res_back),
+	K((),           K_F9):        H(n.Kbdbg.res_back),
 	K((),           K_F10):       H(n.Kbdbg.res_fwd)
 })

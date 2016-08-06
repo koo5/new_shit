@@ -72,6 +72,8 @@ class Editor(ServerFrame):
 		s.on_serverside_change = Signal(1)
 		s.on_atts_change = Signal(0)
 
+
+
 	def on_elem_mouse_press(s, elem, button):
 		if elem.on_mouse_press(button):
 			s.root.changed = True

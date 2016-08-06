@@ -693,8 +693,6 @@ class Editor(ClientFrame):
 
 
 
-
-
 class SidebarFrame(ClientFrame):
 	def move(s, x):
 		s.counterpart.move(x)

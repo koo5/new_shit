@@ -106,7 +106,7 @@ class ThreadedMarpa(object):
 			assert type(debug_name) == unicode
 			assert type(action) in (tuple, types.FunctionType, types.MethodType)
 
-		info((debug_name, lhs, rhs, action, rank))
+		log((debug_name, lhs, rhs, action, rank))
 
 		s.rules.append((False, debug_name, lhs, rhs, action, rank))
 
@@ -320,7 +320,7 @@ class MarpaThread(threading.Thread):
 		s.c_syms = list(starmap(s.g.symbol_new, repeat(tuple(), inp.num_syms)))
 		for k,v in iteritems(inp.symbol_ranks):
 			s.g.symbol_rank_set(k,v)
-			print ("symbol rank:", k, v)
+			log("symbol rank:", k, v)
 		
 		if args.log_parsing:
 			log('s.c_syms:%s',s.c_syms)
@@ -337,7 +337,7 @@ class MarpaThread(threading.Thread):
 					s.c_rules.append(cr)
 					if rank != 0:
 						s.g.rule_rank_set(cr, rank)
-					print("rank ", rule, rank)
+					log("rank ", rule, rank)
 
 		if args.graph_grammar:
 			graphing_wrapper.generate_png()
@@ -482,11 +482,9 @@ class MarpaThread(threading.Thread):
 		v.unref()#promise me not to use it from now on
 		#print "tada:"+str(stack[0])
 		import json
-		print ("tada:"+json.dumps(stack[0], indent=2))
+		#print ("tada:"+json.dumps(stack[0], indent=2))
 		#log ("tada:"+json.dumps(stack2[0], indent=2))
 		res = stack2[0] # in position 0 is final result
-		if args.log_parsing:
-			log ("tada:"+repr(res))
 		return res
 
 

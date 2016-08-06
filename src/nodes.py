@@ -551,7 +551,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	@property
 	def symbol(s):
-		print("gimme node_symbol for", s)
+		logging.getLogger("marpa").debug("gimme node_symbol for", s)
 		if s._symbol == None:
 			s.register_symbol()
 		return s._symbol

@@ -105,6 +105,10 @@ def setup(client):
 		(K_m,
 			s.menu.menu_dump)])
 
+	#global_keys[frozenset([KMOD_RSHIFT])] = odict([
+	#	(K_INSERT,
+	#	 (lambda: c.cycle_sidebar, 'paste'))])
+
 	if SDL:
 		global_keys[frozenset([KMOD_CTRL])].update(odict([
 			(K_UP,
