@@ -240,7 +240,8 @@ class SidebarFrame(ServerFrame):
 	def __init__(s):
 		super().__init__()
 		s.sel = -1
-
+	def move(s, y):
+		pass
 
 class Menu(SidebarFrame):
 	def __init__(s):
@@ -253,7 +254,8 @@ class Menu(SidebarFrame):
 		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
-		s.sorted_palette = []
+		s.palette_results = []
+		s.sorted_everything = []
 		s.current_text = "yo"
 		s._current_parser_node = None
 		s.must_update = True
@@ -333,6 +335,7 @@ class Menu(SidebarFrame):
 					s.marpa.enqueue_parsing(s.parser_items2tokens(node))
 		elif m.message == 'parsed':
 				s.parse_results = [nodes.ParserMenuItem(x) for x in m.results]
+				s.update_items()
 				#	r.append(ParserMenuItem(i, 333))
 				s.signal_change()
 
@@ -365,8 +368,12 @@ class Menu(SidebarFrame):
 		s.current_text = text
 
 	def create_palette(s, scope, atts, parser):
-		palette = flatten([x.palette(scope, s.current_text, parser) for x in scope])
-		s.sorted_palette = s.sort_palette(palette, s.current_text, s.current_parser_node.type)
+		s.palette_results = flatten([x.palette(scope, s.current_text, parser) for x in scope])
+		s.update_items()
+
+	def update_items(s):
+		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results,
+		                                     s.current_text, s.current_parser_node.type)
 
 	@staticmethod
 	def sort_palette(items, text, decl):
@@ -424,7 +431,7 @@ class Menu(SidebarFrame):
 	@property
 	def items(s):
 		return [#nodes.DefaultParserMenuItem(s.current_text)
-		       ] + s.parse_results + s.sorted_palette
+		       ] + s.sorted_everything
 
 
 	def get_items(s):
