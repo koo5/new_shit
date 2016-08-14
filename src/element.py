@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 
 from weakref import ref as weakref
+from types import GeneratorType
 
-import lemon_platform as platform
+
 import tags
 from tags import *
 from lemon_utils.utils import Evil
 from lemon_colors import colors
-from types import GeneratorType
 
 
 import logging
+
+
 logger=logging.getLogger("root")
 log=logger.debug
 
@@ -33,10 +35,7 @@ class Element():
 	def get_parent(s):
 		#sys.getrefcount
 		if type(s._parent) == weakref:
-			if platform.BRYTHON:
-				r = s._parent.obj.obj # https://github.com/brython-dev/brython/blob/master/src/Lib/_weakref.py (?)
-			else:
-				r = s._parent()
+			r = s._parent()
 			if not r:
 				log("%s.parent is None", s)
 			return r
@@ -67,14 +66,22 @@ class Element():
 	def on_keypress(self, event):
 		log('default handler')
 		return False
-		
+
 	def on_mouse_press(self, button):
 		log('default handler')
 		return False
 
 	def tags(elem):
-		yield [AttTag(Att.elem, elem), AttTag("opening bracket", True), ColorTag(elem.brackets_color), TextTag(elem.brackets[0]), EndTag(), EndTag()]
-		yield [elem.render(), ColorTag(elem.brackets_color), TextTag(elem.brackets[1]), EndTag(), EndTag()]
+		yield [AttTag(Att.elem, elem),
+
+				element_start_graphic_indicator,
+
+		       AttTag("opening bracket", True), ColorTag(elem.brackets_color), elem.brackets[0], EndTag(), EndTag()]
+		yield [elem.render(), ColorTag(elem.brackets_color), elem.brackets[1], EndTag(),
+
+		       element_end_graphic_indicator,
+
+		       EndTag()]
 
 	@property
 	def root(self):

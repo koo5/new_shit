@@ -1,3 +1,4 @@
+from collections import defaultdict
 from math import atan2, cos, sin
 from pprint import pformat as pp
 
@@ -10,6 +11,8 @@ from lemon_colors import colors
 
 
 import logging
+
+
 logger=logging.getLogger("events")
 log=logger.debug
 
@@ -31,10 +34,11 @@ if SDL:
 
 
 class Line():
-	__slots__ = ['font', 'chars']
-	def __init__(s, font, chars):
+	__slots__ = ['font', 'chars', 'graphics']
+	def __init__(s, font, chars, graphics):
 		s.font = font
 		s.chars = chars
+		s.graphics = graphics
 		assert type(font) == Font
 
 class Font():
@@ -142,6 +146,23 @@ class ClientFrame(object):
 
 			s.sdl_draw_line(surf, line.chars, line.font, y, highlight, transparent, just_bg)
 
+			c = colors.menu_rect_selected
+			k = int(line.font.width / 5)
+			width = 1
+			for col, graphics in line.graphics.items():
+				x = line.font.width * col
+				for graphic in graphics:
+					y1 = int(y)
+					y2 = int(y - line.font.height)
+					pygame.draw.line(surf, c, (x,y1),(x,y2), width)
+					if graphic == element_start_graphic_indicator:
+						pygame.draw.line(surf, c, (x+k,y1),(x,y1), width)
+						pygame.draw.line(surf, c, (x+k,y2),(x,y2), width)
+					if graphic == element_end_graphic_indicator:
+						pygame.draw.line(surf, c, (x-k,y1),(x,y1), width)
+						pygame.draw.line(surf, c, (x-k,y2),(x,y2), width)
+
+
 			if row == s.rows + s.scroll_lines:
 				break
 
@@ -152,6 +173,7 @@ class ClientFrame(object):
 
 	@staticmethod
 	def sdl_draw_line(surf, chars, font, y, highlighted_element=None, transparent=False, just_bg=False):
+		y=int(y-font.height/4)
 		for col, char in enumerate(chars):
 			x = font.width * col
 
@@ -170,8 +192,6 @@ class ClientFrame(object):
 					bg = None
 				rect = font.font.get_rect(char[0])
 				font.font.render_to(surf, (x+rect.x,y-rect.y), None, fg, bg)# - ?!
-
-
 
 	if CURSES:
 		def curses_draw_lines(s, win):
@@ -211,6 +231,7 @@ class ClientFrame(object):
 		"""
 		s.zwes = {}
 		chars = []
+		graphics = defaultdict(list)
 		atts = []
 		char_index = 0
 		indentation = 0
@@ -264,8 +285,9 @@ class ClientFrame(object):
 							append(char)
 							char_index += 1
 						if len(chars) == line_cols or char == "\n":
-							yield Line(font, chars)
+							yield Line(font, chars, graphics)
 							chars = []
+							graphics = defaultdict(list)
 							if char == "\n":
 								switch_font()#back to default
 							indent()
@@ -287,21 +309,21 @@ class ClientFrame(object):
 					add_zwe()
 				elif tag == zwe_tag:
 					add_zwe()
+				elif tag == element_start_graphic_indicator or tag == element_end_graphic_indicator:
+					graphics[current_cr()[0]].append(tag)
 
 				elif type(tag) == dict:
 					if 'arrow' in tag:
 						s.arrows.append(current_cr() + (tag['arrow'],tag['style']))
 					elif 'font_level' in tag:
 						switch_font(tag['font_level'])
-					#elif 'long_text' in tag:
-
 					else:
-						wat
+						assert False
 
 				else:
-					raise Exception("is %s a tag?, %s" % (repr(tag)))
+					assert False
 
-		yield Line(font, chars)
+		yield Line(font, chars, graphics)
 
 
 		"""
@@ -534,7 +556,7 @@ class Editor(ClientFrame):
 					assert(Att.char_index in i[1])
 		"""
 	def find_element(s, e):
-		"""return coordinates of element in s.lines"""
+		"""return coordinates of element e in s.lines"""
 		#assert(isinstance(e, int)),  e
 		for l, line in enumerate(s.lines):
 			for c,char in enumerate(line.chars):
@@ -576,7 +598,7 @@ class Editor(ClientFrame):
 
 	@property
 	def atts_triple(s):
-		#lets try moving the cursor to see if theres a char to the cursors left
+		#lets try moving the cursor to see if theres a char to the left
 		if s._move_cursor_h(-1):
 			left = s.atts_at_cursor
 			s._move_cursor_h(1) # undo the test move
@@ -595,6 +617,7 @@ class Editor(ClientFrame):
 			s.sdl_draw_lines(surf, highlight,
 			                 transparent=True)
 			s.sdl_draw_arrows(surf)
+
 		else:
 			s.sdl_draw_lines(surf, highlight, False)
 		s.after_project()
@@ -674,7 +697,11 @@ class Editor(ClientFrame):
 
 	def draw_cursor(s, surf):
 		if s.cursor_blink_phase:
-			x, y, y2 = s.sdl_cursor_xy(s.cursor_c, s.cursor_r)
+			c = s.sdl_cursor_xy(s.cursor_c, s.cursor_r)
+			if c == None:
+				print ("i lost the cursor!")
+				return
+			x, y, y2 = c
 			pygame.draw.rect(surf, colors.cursor, (x, y, args.font_size//8, y2 - y,))
 
 	def toggle_arrows(s):
