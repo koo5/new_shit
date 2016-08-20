@@ -629,13 +629,14 @@ class Editor(ClientFrame):
 
 		right = s.atts_at_cursor
 
-		z = s.line_at_cursor().zwes[s.cursor_c]
-		if len(z):
-			middle = z[0]
-		else:
-			middle = None
 
-		print (z)
+		middle = None
+		li = s.line_at_cursor()
+		if li:
+			z = li.zwes[s.cursor_c]
+			if len(z):
+				middle = z[0]
+				
 
 		return dict(left=left, middle=middle, right=right)
 
