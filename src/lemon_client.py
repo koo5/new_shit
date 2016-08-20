@@ -37,12 +37,10 @@ class Client():
 			s.logframe = rpcing_frames.Log()
 			s.menu = rpcing_frames.Menu(s.editor)
 
-			s.sidebars = [#frames.Intro(root),
-			            #frames.GlobalKeys(root),
+			s.sidebars = [
 			            s.menu,
-			            rpcing_frames.InfoFrame(rpcing_frames.server.node_info)]
-
-			            #frames.ContextInfo(root)]#carry on...
+			            rpcing_frames.InfoFrame(rpcing_frames.server.node_info),
+			            rpcing_frames.InfoFrame(rpcing_frames.server.node_debug)]
 
 			s.allframes = s.sidebars + [s.logframe, s.editor]
 

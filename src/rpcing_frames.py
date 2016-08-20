@@ -34,11 +34,12 @@ if SDL:
 
 
 class Line():
-	__slots__ = ['font', 'chars', 'graphics']
-	def __init__(s, font, chars, graphics):
+	__slots__ = ['font', 'chars', 'graphics', 'zwes']
+	def __init__(s, font, chars, graphics, zwes):
 		s.font = font
 		s.chars = chars
 		s.graphics = graphics
+		s.zwes = zwes
 		assert type(font) == Font
 
 class Font():
@@ -229,9 +230,10 @@ class ClientFrame(object):
 		# indent_tag, dedent_tag,
 		# dict with custom stuff
 		"""
-		s.zwes = {}
+
 		chars = []
 		graphics = defaultdict(list)
+		zwes = defaultdict(list)
 		atts = []
 		char_index = 0
 		indentation = 0
@@ -258,7 +260,7 @@ class ClientFrame(object):
 			return (len(chars), lines_count)
 
 		def add_zwe():
-			s.zwes[current_cr()] = atts_dict()
+			zwes[len(chars)].append(atts_dict())
 
 		def atts_dict():
 			#calling a dict() with atts, which is a list of tuples (key, value)
@@ -285,9 +287,17 @@ class ClientFrame(object):
 							append(char)
 							char_index += 1
 						if len(chars) == line_cols or char == "\n":
-							yield Line(font, chars, graphics)
+
+
+
+							yield Line(font, chars, graphics, zwes)
+
+
 							chars = []
 							graphics = defaultdict(list)
+							zwes = defaultdict(list)
+
+
 							if char == "\n":
 								switch_font()#back to default
 							indent()
@@ -323,7 +333,7 @@ class ClientFrame(object):
 				else:
 					assert False
 
-		yield Line(font, chars, graphics)
+		yield Line(font, chars, graphics, zwes)
 
 
 		"""
@@ -365,6 +375,13 @@ class ClientFrame(object):
 		c,r = cr
 		try:
 			return s.lines[r+s.scroll_lines].chars[c][1]
+		except IndexError:
+			return None
+
+	def line_at_cursor(s):
+		c,r = s.cursor
+		try:
+			return s.lines[r+s.scroll_lines]
 		except IndexError:
 			return None
 
@@ -422,7 +439,6 @@ class Editor(ClientFrame):
 	def __init__(s):
 		super().__init__(server.editor)
 		s.cursor_c = s.cursor_r = 0
-		s.zwes = 666
 		if SDL:
 			s._cursor_blink_phase = True
 			s.arrows_visible = not args.noalpha and args.arrows
@@ -559,6 +575,12 @@ class Editor(ClientFrame):
 		"""return coordinates of element e in s.lines"""
 		#assert(isinstance(e, int)),  e
 		for l, line in enumerate(s.lines):
+			for c, z in line.zwes.items():
+				for i in z:
+					if i[Att.elem] == e:
+						return c, l
+
+
 			for c,char in enumerate(line.chars):
 				if char[1][Att.elem] == e:
 					return c, l
@@ -606,7 +628,14 @@ class Editor(ClientFrame):
 			left = None
 
 		right = s.atts_at_cursor
-		middle = s.zwes.get((s.cursor_c, s.cursor_r+s.scroll_lines))
+
+		z = s.line_at_cursor().zwes[s.cursor_c]
+		if len(z):
+			middle = z[0]
+		else:
+			middle = None
+
+		print (z)
 
 		return dict(left=left, middle=middle, right=right)
 

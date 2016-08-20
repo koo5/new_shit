@@ -77,7 +77,7 @@ class Element():
 				element_start_graphic_indicator,
 
 		       AttTag("opening bracket", True), ColorTag(elem.brackets_color), elem.brackets[0], EndTag(), EndTag()]
-		yield [elem.render(), ColorTag(elem.brackets_color), elem.brackets[1], EndTag(),
+		yield [zwe_tag, elem.render(), ColorTag(elem.brackets_color), elem.brackets[1], EndTag(),
 
 		       element_end_graphic_indicator,
 

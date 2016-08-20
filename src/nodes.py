@@ -788,7 +788,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	syntax is a list of Tags, and it can contain ChildTag
 	"""
 	brackets = ("<", ">")
-	#brackets = ("", "")
+	brackets = ("", "")
 	default_syntax_index = 0
 	rank = 0
 
@@ -2339,7 +2339,7 @@ class ParserBase(Node):
 		s.decl = None
 		s.on_edit = Signal()
 		s.brackets_color = colors.compiler_brackets
-		s.brackets = ('{', '}')
+		#s.brackets = ('{', '}')
 		s.reregister = False
 
 	@property

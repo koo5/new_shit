@@ -514,29 +514,13 @@ class StaticInfoFrame(SidebarFrame):
 			return True
 
 
-class GlobalKeys(StaticInfoFrame):
-	items = ["ctrl + =,- : font size",
-			"f5 : eval",
-			"f4 : clear eval results",
-			"f2 : replay previous session",
-			"ctrl + up, down: menu movement",
-			"space: menu selection",
-	        #"ctrl + d : dump root frame to dump.txt",
-	        #"ctrl + p : dump parents",
-	        #"ctrl + g : generate graph.gif",
-			#"f9 : only valid items in menu - doesnt do much atm",
-			#"f8 : toggle the silly arrows from Refs to their targets, (and current node highlighting, oops)"
-			]
-
 
 class NodeInfo(StaticInfoFrame):
 	def __init__(s, editor):
 		super().__init__()
 		s.editor = editor
-		#editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.on_editor_atts_change)
 		s.items = []
-		#s.global_keys = []
 
 	def on_editor_atts_change(s) -> None:
 		s._changed = True
@@ -547,42 +531,39 @@ class NodeInfo(StaticInfoFrame):
 	def on_editor_change(s, _):
 		s.on_editor_atts_change()
 
-"""
-	def xxx(s):
 
-		uc = editor.under_cursor
+class NodeDebug(StaticInfoFrame):
+	def __init__(s, editor):
+		super().__init__()
+		s.editor = editor
+		editor.on_atts_change.connect(s.on_editor_atts_change)
+		s.items = []
+
+	def on_editor_change(s, _):
+		s.on_editor_atts_change()
+
+	def on_editor_atts_change(s) -> None:
+		s._changed = True
+		s.items = []
+		s.xxx()
+		s.draw_signal.emit()
+
+	def xxx(s):
+		s.items += ["left:", str(editor.atts.left)]
+		s.items += ["middle:", str(editor.atts.middle)]
+		s.items += ["right:", str(editor.atts.right)]
+"""		uc = editor.under_cursor
 		while uc != None:
 			if isinstance(uc, nodes.FunctionCall):
 				s.items.append(InfoItem(["target=", ElementTag(uc.target)]))
-
-
-			if uc.keys_help_items == None:
-				uc.generate_keys_help_items()
-			s.items += uc.keys_help_items
-
 			uc = uc.parent
-
 		uc = s.root.under_cursor
 		while uc != None:
 			s.items.append(InfoItem([
-				str(s.root.cursor_c) + ":"+ str(s.root.cursor_r)+ ":" + 
+				str(s.root.cursor_c) + ":"+ str(s.root.cursor_r)+ ":" +
 				uc.long__repr__()]))
 			uc = uc.parent
 """
-class Intro(StaticInfoFrame):
-	items = ["welcome to lemon!",
-		    "press F1 to cycle this sidebar",
-			"hide help items by clicking the gray X next to each",
-			"unhide all by clicking the dots",
-	        "scrolling with mousewheel is supported",
-	        "",
-			"nodes:",
-			"red <>'s enclose nodes or other widgets",
-			["green [text] are textboxes: ", ElementTag(nodes.Text("banana"))],
-			#["{Parser} looks like this: ", ElementTag(nodes.Parser(nodes.b['type']))],
-			#"(in gray) is the expected type",
-		    "see intro.txt for hopefully more info"]
-
 
 class Log(ServerFrame):
 	def __init__(s):
@@ -610,19 +591,20 @@ class Log(ServerFrame):
 
 
 def init(thread_message_signal_, send_thread_message_):
-	global thread_message_signal, send_thread_message, logframe, intro, editor, menu, node_info
+	global thread_message_signal, send_thread_message, logframe, intro, editor, menu, node_info, node_debug
 
 	thread_message_signal, send_thread_message = thread_message_signal_, send_thread_message_
 
 	logframe = Log()
 
-	intro = Intro()
+	#intro = Intro()
 
 	editor = Editor()
 
 	menu = Menu()
 
 	node_info = NodeInfo(editor)
+	node_debug = NodeDebug(editor)
 
 
 def element_click(element):
