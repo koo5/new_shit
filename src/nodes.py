@@ -2555,6 +2555,8 @@ class Parser(ParserPersistenceStuff, ParserBase):
 class ParserMenuItem(MenuItem):
 	def __init__(s, value:Node, score = 0):
 		super(ParserMenuItem, s).__init__()
+		if isinstance(value, str):
+			value = Text(value)
 		s.value = value
 		value.parent = s
 		s.scores = Dotdict()

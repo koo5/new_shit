@@ -48,6 +48,7 @@ parser.add_argument('--crash', action='store_true')
 parser.add_argument('--line-spacing', type=int,
 				default=4)
 
+parser.add_argument('--ignore_deserialization_errors', action='store_true')
 
 
 args = parser.parse_args([]) # dummy for testing
