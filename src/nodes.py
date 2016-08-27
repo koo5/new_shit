@@ -202,7 +202,7 @@ def deserialize(data, parent):
 		raise DeserializationException("no decl key in %s"%data)
 	decl = data['decl']
 	log("deserializing node with decl %s"%repr(decl))
-	if decl == 'Parser': # ok, some nodes are special, we dont have a type for Parser
+	if decl == 'Parser': # ok, some nodes are special, we dont have a nodecl for Parser
 		return Parser.deserialize(data, parent)
 	elif decl == 'defun': # i dont save the exact class of functions definitions, makes it easier to change functions from BuiltinPythonFunctionDecl to FunctionDefinition, for example
 		return FunctionDefinitionBase.deserialize(data, parent)
@@ -218,11 +218,18 @@ def deserialize(data, parent):
 			raise DeserializationException ("cto takoj " + repr(decl))
 	elif isinstance(decl, dict): # the node comes with a decl as, basically, its child
 		decl = deserialize(decl, parent)
+
+
+
 		try:
 			return deref_decl(decl).instance_class.deserialize(data, parent)
 		except DeserializationException as e:
 			log(e)
+			if not args.ignore_deserialization_errors:
+				raise
 			return failed_deser(data, parent)
+
+
 	else:
 		raise DeserializationException ("cto takoj " + repr(decl))
 
@@ -403,7 +410,6 @@ class VarRefPersistenceStuff(BaseRefPersistenceStuff):
 			target = s.target.unresolvize())
 
 	@classmethod
-
 	def deserialize(cls, data, parent):
 		assert parent
 		placeholder = Text("placeholder")
@@ -644,7 +650,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	@property
 	def nodecls(s):
-		return [i for i in s.scope() if isinstance(i, NodeclBase)] #crap:just NodeclBase? what about EnumType?
+		return [i for i in s.scope() if isinstance(i, (NodeclBase, EnumType))]
 
 	@property
 	def vardecls_in_scope(s):
@@ -788,7 +794,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	syntax is a list of Tags, and it can contain ChildTag
 	"""
 	brackets = ("<", ">")
-	brackets = ("", "")
+	brackets = (" ", " ")
 	default_syntax_index = 0
 	rank = 0
 
@@ -2058,7 +2064,7 @@ class ParametricNodecl(SyntaxedNodecl):
 class EnumVal(Node):
 	def __init__(s, decl, value):
 		super(EnumVal, s).__init__()
-		s.decl = decl
+		s.decl = Ref(decl)
 		s.value = value
 
 	@property
@@ -2073,15 +2079,32 @@ class EnumVal(Node):
 		return [TextTag(s.to_python_str())]
 
 	def to_python_str(s):
-		text = s.decl.ch.options[s.value].parsed
-		assert isinstance(text, Text), text
-		return text.pyval
+		text = deref_decl(s.decl).ch.options[s.value].parsed
+		if isinstance(text, Text):
+			return text.pyval
+		return "errrr"
 
 	def copy(s):
 		return s.eval()
 
 	def _eval(s):
 		return EnumVal(s.decl, s.value)
+
+	@classmethod
+	def deserialize(cls, data, parent):
+		assert parent
+		placeholder = Text("placeholder")
+		placeholder.parent = parent
+		r = cls(deserialize(data['decl'], placeholder), data["value"])
+		r.parent = parent
+		return r
+
+	def _serialize(s):
+		return odict(
+			value = s.value
+		)
+
+
 
 class EnumType(ParametricTypeBase):
 	"""works as a type but doesnt descend from Nodecl. Im just trying stuff..."""
@@ -2098,8 +2121,12 @@ class EnumType(ParametricTypeBase):
 		if s == type: return True
 	def inst_fresh(s):
 		return EnumVal(s, 0)
-#i *could* add register_class_s
 
+	@property
+	def name(s):
+		return s.ch.name.pyval
+
+#i *could* add register_class_s
 
 
 
@@ -2130,8 +2157,13 @@ class WorksAs(Syntaxed):
 	def register_symbol(s):
 		if s._rule != None:
 			return
-		lhs = s.ch.sup.target.symbol
-		rhs = s.ch.sub.target.symbol
+		lhs = s.ch.sup.parsed
+		rhs = s.ch.sub.parsed
+		if not isinstance(lhs, Ref) or not isinstance(rhs, Ref):
+			print ("invalid sub or sup in worksas")
+			return
+		lhs = lhs.target.symbol
+		rhs = rhs.target.symbol
 		if args.log_parsing:
 			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
 		if lhs != None and rhs != None:
@@ -2272,7 +2304,7 @@ class Else(Syntaxed):
 			return Banana("no nodes above me, much less an If")
 		a = above[-1].parsed
 		if not isinstance(a, If):
-			return Banana("whats above me is not an If and that makes me cry")
+			return Banana("whats above me is not an If and that makes me sad")
 		c = a.ch.condition
 		if not 'value' in c.runtime._dict:
 			return Banana("the node above me wasnt evaluated, how am i to know if i should run?")
@@ -2339,7 +2371,7 @@ class ParserBase(Node):
 		s.decl = None
 		s.on_edit = Signal()
 		s.brackets_color = colors.compiler_brackets
-		#s.brackets = ('{', '}')
+		s.brackets = (' ', ' ')
 		s.reregister = False
 
 	@property
@@ -3199,9 +3231,9 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 
 
-	r["loaded program"] = B.module.inst_fresh()
-	r["loaded program"].ch.name = Text("placeholder")
-	r["loaded program"].ch.statements.view_mode=0
+	#r["loaded program"] = B.module.inst_fresh()
+	#r["loaded program"].ch.name = Text("placeholder")
+	#r["loaded program"].ch.statements.view_mode=0
 
 
 
@@ -3213,7 +3245,7 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	for file in glob.glob("library/*.lemon.json"):
 		placeholder = library.add(new_module())
 		placeholder.ch.name.pyval = "placeholder for "+file
-		load_module(file, placeholder)
+		print(load_module(file, placeholder))
 	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
 
 
@@ -3386,7 +3418,8 @@ def build_in_lemon_language():
 	build_in(SyntaxedNodecl(EnumType,
 				   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
 				   {'name': 'text',
-				   'options': list_of('text')}))
+				    'options': B.list_of_anything}))
+				   #'options': list_of('text')}))
 
 	#Definition({'name': Text("bool"), 'type': EnumType({
 	#	'name': Text("bool"),
@@ -3435,7 +3468,7 @@ def build_in_lemon_language():
 
 	build_in(SyntaxedNodecl(If,
 				[
-					[TextTag("if"), ChildTag("condition"), ":\n", ChildTag("statements")],
+					[TextTag("if "), ChildTag("condition"), ":\n", ChildTag("statements")],
 
 				],
 				{'condition': Exp(B.bool),
@@ -3787,6 +3820,19 @@ def build_in_misc():
 
 	BuiltinPythonFunctionDecl.create(
 		b_lemon_load_file, [Text("load"), str_arg()], Ref(B.text), "load file", "open").pass_root = True
+
+
+
+
+
+	class MorningRule(Syntaxed):
+		pass
+
+	build_in(SyntaxedNodecl(MorningRule,
+				   [['every morning at ', ChildTag('hours'), ":", ChildTag('minutes'), ':\n', ChildTag('statements')]],
+				   {'hours': (B.number), 'minutes': Exp(B.number), 'statements': B.statements}))
+
+
 
 
 """

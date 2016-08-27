@@ -38,6 +38,7 @@ class ColorsSettings():
 		s.element_brackets = (200,200,200)
 		s.widget_color = (150,150,255)
 		s.button = (255,150,150)
+		s.outline = (100, 100, 100)
 
 def cache():
 	global invert, mono

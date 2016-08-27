@@ -147,7 +147,7 @@ class ClientFrame(object):
 
 			s.sdl_draw_line(surf, line.chars, line.font, y, highlight, transparent, just_bg)
 
-			c = colors.menu_rect_selected
+			c = colors.outline
 			k = int(line.font.width / 5)
 			width = 1
 			for col, graphics in line.graphics.items():
@@ -634,9 +634,11 @@ class Editor(ClientFrame):
 		li = s.line_at_cursor()
 		if li:
 			z = li.zwes[s.cursor_c]
+			for zz in z:
+				print ("Z", zz)
 			if len(z):
-				middle = z[0]
-				
+				middle = z[-1]
+
 
 		return dict(left=left, middle=middle, right=right)
 
