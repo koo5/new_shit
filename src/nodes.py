@@ -225,8 +225,7 @@ def deserialize(data, parent):
 			return deref_decl(decl).instance_class.deserialize(data, parent)
 		except DeserializationException as e:
 			log(e)
-			if not args.ignore_deserialization_errors:
-				raise
+			#raise
 			return failed_deser(data, parent)
 
 
