@@ -72,7 +72,24 @@ class Editor(ServerFrame):
 		s.on_serverside_change = Signal(1)
 		s.on_atts_change = Signal(0)
 
+	def copy(s):
+		print ("copy")
+		e = s.element_under_cursor
+		if e != None:
+			s.root["clipboard"].ch.statements.add(e.copy())
 
+	def cut(s):
+		print ("cut")
+		s.copy()
+		if e != None:
+			e.parent.delete_child(e)
+
+	def paste(s):
+		print ("paste")
+		e = s.root["clipboard"].ch.statements[:-1]
+		t = s.element_under_cursor
+		if isinstance(t, Parser):
+			t.add(e)
 
 	def on_elem_mouse_press(s, elem, button):
 		if elem.on_mouse_press(button):

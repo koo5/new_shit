@@ -100,10 +100,17 @@ def setup(client):
 			c.editor.cursor_bottom),
 		(K_f,
 			c.editor.dump_to_file),
-		#(K_q,
-		#	s.bye),
+		(K_x,
+			c.editor.counterpart.cut),
+		(K_c,
+			c.editor.counterpart.copy),
+		(K_b,
+			c.editor.counterpart.paste),
 		(K_m,
-			s.menu.menu_dump)])
+			s.menu.menu_dump)
+
+
+	])
 
 	#global_keys[frozenset([KMOD_RSHIFT])] = odict([
 	#	(K_INSERT,

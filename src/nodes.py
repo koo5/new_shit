@@ -1025,10 +1025,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		return True
 
 	def copy(s):
-		if isinstance(s.decl, Ref):
-			decl = s.decl.copy()
-		else:
-			decl = s.decl
+		decl = s.decl.copy()
 		r = s.__class__.fresh(decl)
 		for k,v in iteritems(s.ch._dict):
 			r.ch[k] = v.copy()
@@ -1090,6 +1087,14 @@ class Dict(Collapsible):
 	def __init__(s):
 		super().__init__()
 		s.items = odict()
+
+	def copy(s):
+		r = s.__class__.fresh()
+		r.decl = s.decl.copy()
+		for k,v in iteritems(s.items):
+			r.ch[k.copy()] = v.copy()
+		r.fix_parents()
+		return r
 
 	def replace_child(s, old, new):
 		s.items = replace_thing_in_odict(s.items, old, new)
@@ -1176,6 +1181,15 @@ class List(ListPersistenceStuff, Collapsible):
 		super().__init__()
 		s.items = []
 		s.decl = Ref(B.list_of_anything)
+
+
+	def copy(s):
+		r = s.__class__.fresh()
+		r.decl = s.decl.copy()
+		for v in s.items:
+			r.items.append(v.copy())
+		r.fix_parents()
+		return r
 
 	@classmethod
 	def register_class_symbol(cls):
@@ -3237,6 +3251,9 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	#r["loaded program"].ch.statements.view_mode=0
 
 
+	r["clipboard"] = B.module.inst_fresh()
+	r["clipboard"].ch.name = Text("clipboard")
+	r["clipboard"].ch.statements.view_mode=0
 
 
 	library = r["library"] = make_list('module')
@@ -3510,7 +3527,7 @@ def build_in_lemon_language():
 	#and a custom node syntax type
 	tmp = B.union.inst_fresh()
 	tmp.ch["items"].add(Ref(B.text))
-	tmp.ch["items"].add(Ref(B.type))
+	tmp.ch["items"].add(Ref(B.typedparameter))
 	build_in(Definition({'name': Text('custom syntax node'), 'type': tmp}))
 	tmp = list_of(B.custom_syntax_node)
 	build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
@@ -3848,8 +3865,9 @@ add python_env to Module?
 class NodeSyntax(Syntaxed):
 	pass
 
+
 build_in(SyntaxedNodecl(NodeSyntax,
-			   ["node syntax:", ChildTag("syntax")],
+			   [ChildTag("language"), "syntax:", ChildTag("syntax")],
 			   {'syntax': b['custom syntax list']}))
 """
 

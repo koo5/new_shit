@@ -104,6 +104,7 @@ def k_delete(s, e):
 w.Text.k_delete = k_delete
 
 def k_unicode(s, atts, uni):
+	if uni == '\r': uni = '\n'
 	pos = atts[Att.char_index]
 	s.text = s.text[:pos] + uni + s.text[pos:]
 	return s.after_edit(len(uni))
