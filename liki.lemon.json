@@ -1,29 +1,18 @@
 {
     "decl": {
         "target": {
-            "resolve": true,
             "name": "likimodule",
+            "resolve": true,
             "class": "syntaxednodecl"
         },
         "decl": "ref"
     },
     "children": {
-        "file": {
-            "decl": {
-                "target": {
-                    "resolve": true,
-                    "name": "text",
-                    "class": "nodecl"
-                },
-                "decl": "ref"
-            },
-            "text": "liki.lemon.json"
-        },
         "statements": {
             "decl": {
                 "target": {
-                    "resolve": true,
                     "name": "statements",
+                    "resolve": true,
                     "class": "nodecl"
                 },
                 "decl": "ref"
@@ -39,22 +28,33 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "customnodedef",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
                             },
                             "children": {
+                                "name": {
+                                    "decl": {
+                                        "target": {
+                                            "name": "text",
+                                            "resolve": true,
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "text": "syntax"
+                                },
                                 "syntax": {
                                     "decl": {
                                         "target": {
-                                            "resolve": true,
                                             "name": "custom syntax list",
+                                            "resolve": true,
                                             "decl": {
                                                 "target": {
-                                                    "resolve": true,
                                                     "name": "definition",
+                                                    "resolve": true,
                                                     "class": "syntaxednodecl"
                                                 },
                                                 "decl": "ref"
@@ -68,28 +68,143 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "typedparameter",
+                                                            "resolve": true,
                                                             "class": "syntaxednodecl"
                                                         },
                                                         "decl": "ref"
                                                     },
                                                     "children": {
-                                                        "type": {
-                                                            "items": [],
-                                                            "slot": "type",
-                                                            "decl": "Parser"
-                                                        },
                                                         "name": {
                                                             "decl": {
                                                                 "target": {
-                                                                    "resolve": true,
                                                                     "name": "text",
+                                                                    "resolve": true,
                                                                     "class": "nodecl"
                                                                 },
                                                                 "decl": "ref"
                                                             },
                                                             "text": "language"
+                                                        },
+                                                        "type": {
+                                                            "items": [
+                                                                "*language"
+                                                            ],
+                                                            "slot": "type",
+                                                            "decl": "Parser"
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "name": "text",
+                                                            "resolve": true,
+                                                            "class": "nodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "text": "syntax for node"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "name": "typedparameter",
+                                                            "resolve": true,
+                                                            "class": "syntaxednodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "children": {
+                                                        "name": {
+                                                            "decl": {
+                                                                "target": {
+                                                                    "name": "text",
+                                                                    "resolve": true,
+                                                                    "class": "nodecl"
+                                                                },
+                                                                "decl": "ref"
+                                                            },
+                                                            "text": "node"
+                                                        },
+                                                        "type": {
+                                                            "items": [
+                                                                {
+                                                                    "target": {
+                                                                        "name": "ref",
+                                                                        "resolve": true,
+                                                                        "class": "typenodecl"
+                                                                    },
+                                                                    "decl": "ref"
+                                                                }
+                                                            ],
+                                                            "slot": "type",
+                                                            "decl": "Parser"
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "name": "text",
+                                                            "resolve": true,
+                                                            "class": "nodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "text": ":"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "name": "typedparameter",
+                                                            "resolve": true,
+                                                            "class": "syntaxednodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "children": {
+                                                        "name": {
+                                                            "decl": {
+                                                                "target": {
+                                                                    "name": "text",
+                                                                    "resolve": true,
+                                                                    "class": "nodecl"
+                                                                },
+                                                                "decl": "ref"
+                                                            },
+                                                            "text": "syntax"
+                                                        },
+                                                        "type": {
+                                                            "items": [
+                                                                "list syntax"
+                                                            ],
+                                                            "slot": "type",
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
@@ -98,17 +213,6 @@
                                             "decl": "Parser"
                                         }
                                     ]
-                                },
-                                "name": {
-                                    "decl": {
-                                        "target": {
-                                            "resolve": true,
-                                            "name": "text",
-                                            "class": "nodecl"
-                                        },
-                                        "decl": "ref"
-                                    },
-                                    "text": "syntax"
                                 }
                             }
                         }
@@ -127,7 +231,37 @@
                     "decl": "Parser"
                 },
                 {
-                    "items": [],
+                    "items": [
+                        {
+                            "decl": {
+                                "target": {
+                                    "name": "functioncall",
+                                    "resolve": true,
+                                    "class": "functioncallnodecl"
+                                },
+                                "decl": "ref"
+                            },
+                            "args": {
+                                "number": {
+                                    "items": [],
+                                    "slot": "number",
+                                    "decl": "Parser"
+                                }
+                            },
+                            "target": {
+                                "name": "abs",
+                                "resolve": true,
+                                "decl": {
+                                    "target": {
+                                        "name": "builtinpythonfunctiondecl",
+                                        "resolve": true,
+                                        "class": "syntaxednodecl"
+                                    },
+                                    "decl": "ref"
+                                }
+                            }
+                        }
+                    ],
                     "slot": 0,
                     "decl": "Parser"
                 },
@@ -274,22 +408,33 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "enumtype",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
                             },
                             "children": {
+                                "name": {
+                                    "decl": {
+                                        "target": {
+                                            "name": "text",
+                                            "resolve": true,
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "text": "weekday"
+                                },
                                 "options": {
                                     "decl": {
                                         "target": {
-                                            "resolve": true,
                                             "name": "list of anything",
+                                            "resolve": true,
                                             "decl": {
                                                 "target": {
-                                                    "resolve": true,
                                                     "name": "definition",
+                                                    "resolve": true,
                                                     "class": "syntaxednodecl"
                                                 },
                                                 "decl": "ref"
@@ -303,8 +448,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -320,8 +465,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -337,8 +482,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -354,8 +499,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -371,8 +516,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -388,8 +533,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -405,8 +550,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -418,17 +563,6 @@
                                             "decl": "Parser"
                                         }
                                     ]
-                                },
-                                "name": {
-                                    "decl": {
-                                        "target": {
-                                            "resolve": true,
-                                            "name": "text",
-                                            "class": "nodecl"
-                                        },
-                                        "decl": "ref"
-                                    },
-                                    "text": "weekday"
                                 }
                             }
                         }
@@ -448,46 +582,18 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "morningrule",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
                             },
                             "children": {
-                                "minutes": {
-                                    "items": [
-                                        {
-                                            "decl": {
-                                                "target": {
-                                                    "resolve": true,
-                                                    "name": "number",
-                                                    "class": "nodecl"
-                                                },
-                                                "decl": "ref"
-                                            },
-                                            "text": "30"
-                                        }
-                                    ],
-                                    "slot": "minutes",
-                                    "decl": "Parser"
-                                },
-                                "hours": {
-                                    "decl": {
-                                        "target": {
-                                            "resolve": true,
-                                            "name": "number",
-                                            "class": "nodecl"
-                                        },
-                                        "decl": "ref"
-                                    },
-                                    "text": "6"
-                                },
                                 "statements": {
                                     "decl": {
                                         "target": {
-                                            "resolve": true,
                                             "name": "statements",
+                                            "resolve": true,
                                             "class": "nodecl"
                                         },
                                         "decl": "ref"
@@ -498,8 +604,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "if",
+                                                            "resolve": true,
                                                             "class": "syntaxednodecl"
                                                         },
                                                         "decl": "ref"
@@ -515,8 +621,8 @@
                                                         "statements": {
                                                             "decl": {
                                                                 "target": {
-                                                                    "resolve": true,
                                                                     "name": "statements",
+                                                                    "resolve": true,
                                                                     "class": "nodecl"
                                                                 },
                                                                 "decl": "ref"
@@ -527,8 +633,8 @@
                                                                         {
                                                                             "decl": {
                                                                                 "target": {
-                                                                                    "resolve": true,
                                                                                     "name": "functioncall",
+                                                                                    "resolve": true,
                                                                                     "class": "functioncallnodecl"
                                                                                 },
                                                                                 "decl": "ref"
@@ -543,16 +649,15 @@
                                                                                 }
                                                                             },
                                                                             "target": {
-                                                                                "resolve": true,
                                                                                 "sig": {
                                                                                     "decl": {
                                                                                         "target": {
-                                                                                            "resolve": true,
                                                                                             "name": "function signature list",
+                                                                                            "resolve": true,
                                                                                             "decl": {
                                                                                                 "target": {
-                                                                                                    "resolve": true,
                                                                                                     "name": "definition",
+                                                                                                    "resolve": true,
                                                                                                     "class": "syntaxednodecl"
                                                                                                 },
                                                                                                 "decl": "ref"
@@ -566,8 +671,8 @@
                                                                                                 {
                                                                                                     "decl": {
                                                                                                         "target": {
-                                                                                                            "resolve": true,
                                                                                                             "name": "text",
+                                                                                                            "resolve": true,
                                                                                                             "class": "nodecl"
                                                                                                         },
                                                                                                         "decl": "ref"
@@ -583,19 +688,30 @@
                                                                                                 {
                                                                                                     "decl": {
                                                                                                         "target": {
-                                                                                                            "resolve": true,
                                                                                                             "name": "typedparameter",
+                                                                                                            "resolve": true,
                                                                                                             "class": "syntaxednodecl"
                                                                                                         },
                                                                                                         "decl": "ref"
                                                                                                     },
                                                                                                     "children": {
+                                                                                                        "name": {
+                                                                                                            "decl": {
+                                                                                                                "target": {
+                                                                                                                    "name": "text",
+                                                                                                                    "resolve": true,
+                                                                                                                    "class": "nodecl"
+                                                                                                                },
+                                                                                                                "decl": "ref"
+                                                                                                            },
+                                                                                                            "text": "percent"
+                                                                                                        },
                                                                                                         "type": {
                                                                                                             "items": [
                                                                                                                 {
                                                                                                                     "target": {
-                                                                                                                        "resolve": true,
                                                                                                                         "name": "number",
+                                                                                                                        "resolve": true,
                                                                                                                         "class": "nodecl"
                                                                                                                     },
                                                                                                                     "decl": "ref"
@@ -603,17 +719,6 @@
                                                                                                             ],
                                                                                                             "slot": "type",
                                                                                                             "decl": "Parser"
-                                                                                                        },
-                                                                                                        "name": {
-                                                                                                            "decl": {
-                                                                                                                "target": {
-                                                                                                                    "resolve": true,
-                                                                                                                    "name": "text",
-                                                                                                                    "class": "nodecl"
-                                                                                                                },
-                                                                                                                "decl": "ref"
-                                                                                                            },
-                                                                                                            "text": "percent"
                                                                                                         }
                                                                                                     }
                                                                                                 }
@@ -623,6 +728,7 @@
                                                                                         }
                                                                                     ]
                                                                                 },
+                                                                                "resolve": true,
                                                                                 "decl": "defun"
                                                                             }
                                                                         }
@@ -639,6 +745,34 @@
                                             "decl": "Parser"
                                         }
                                     ]
+                                },
+                                "minutes": {
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "target": {
+                                                    "name": "number",
+                                                    "resolve": true,
+                                                    "class": "nodecl"
+                                                },
+                                                "decl": "ref"
+                                            },
+                                            "text": "30"
+                                        }
+                                    ],
+                                    "slot": "minutes",
+                                    "decl": "Parser"
+                                },
+                                "hours": {
+                                    "decl": {
+                                        "target": {
+                                            "name": "number",
+                                            "resolve": true,
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "text": "6"
                                 }
                             }
                         }
@@ -670,8 +804,8 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "shellcommand",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
@@ -680,8 +814,8 @@
                                 "command": {
                                     "decl": {
                                         "target": {
-                                            "resolve": true,
                                             "name": "text",
+                                            "resolve": true,
                                             "class": "nodecl"
                                         },
                                         "decl": "ref"
@@ -699,24 +833,23 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "functioncall",
+                                    "resolve": true,
                                     "class": "functioncallnodecl"
                                 },
                                 "decl": "ref"
                             },
                             "args": {},
                             "target": {
-                                "resolve": true,
                                 "sig": {
                                     "decl": {
                                         "target": {
-                                            "resolve": true,
                                             "name": "function signature list",
+                                            "resolve": true,
                                             "decl": {
                                                 "target": {
-                                                    "resolve": true,
                                                     "name": "definition",
+                                                    "resolve": true,
                                                     "class": "syntaxednodecl"
                                                 },
                                                 "decl": "ref"
@@ -730,8 +863,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -744,6 +877,7 @@
                                         }
                                     ]
                                 },
+                                "resolve": true,
                                 "decl": "defun"
                             }
                         }
@@ -756,8 +890,8 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "shellcommand",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
@@ -768,8 +902,8 @@
                                         {
                                             "decl": {
                                                 "target": {
-                                                    "resolve": true,
                                                     "name": "text",
+                                                    "resolve": true,
                                                     "class": "nodecl"
                                                 },
                                                 "decl": "ref"
@@ -791,8 +925,8 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "shellcommand",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
@@ -803,8 +937,8 @@
                                         {
                                             "decl": {
                                                 "target": {
-                                                    "resolve": true,
                                                     "name": "text",
+                                                    "resolve": true,
                                                     "class": "nodecl"
                                                 },
                                                 "decl": "ref"
@@ -826,8 +960,8 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "shellcommand",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
@@ -838,8 +972,8 @@
                                         {
                                             "decl": {
                                                 "target": {
-                                                    "resolve": true,
                                                     "name": "text",
+                                                    "resolve": true,
                                                     "class": "nodecl"
                                                 },
                                                 "decl": "ref"
@@ -861,8 +995,8 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "shellcommand",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
@@ -871,8 +1005,8 @@
                                 "command": {
                                     "decl": {
                                         "target": {
-                                            "resolve": true,
                                             "name": "text",
+                                            "resolve": true,
                                             "class": "nodecl"
                                         },
                                         "decl": "ref"
@@ -899,7 +1033,7 @@
                 },
                 {
                     "items": [
-                        "sudo: killall ntpd mission-control-5 goa-daemon goa-identity-service  postgres thunderbird cups-browsed  cron  ofonod  cupsd apache2"
+                        "bash: [sudo: killall ntpd mission-control-5 goa-daemon goa-identity-service  postgres thunderbird cups-browsed  cron  ofonod  cupsd apache2]"
                     ],
                     "slot": 0,
                     "decl": "Parser"
@@ -928,22 +1062,33 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "enumtype",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
                             },
                             "children": {
+                                "name": {
+                                    "decl": {
+                                        "target": {
+                                            "name": "text",
+                                            "resolve": true,
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "text": "language"
+                                },
                                 "options": {
                                     "decl": {
                                         "target": {
-                                            "resolve": true,
                                             "name": "list of anything",
+                                            "resolve": true,
                                             "decl": {
                                                 "target": {
-                                                    "resolve": true,
                                                     "name": "definition",
+                                                    "resolve": true,
                                                     "class": "syntaxednodecl"
                                                 },
                                                 "decl": "ref"
@@ -957,8 +1102,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -974,8 +1119,8 @@
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "resolve": true,
                                                             "name": "text",
+                                                            "resolve": true,
                                                             "class": "nodecl"
                                                         },
                                                         "decl": "ref"
@@ -987,17 +1132,6 @@
                                             "decl": "Parser"
                                         }
                                     ]
-                                },
-                                "name": {
-                                    "decl": {
-                                        "target": {
-                                            "resolve": true,
-                                            "name": "text",
-                                            "class": "nodecl"
-                                        },
-                                        "decl": "ref"
-                                    },
-                                    "text": "language"
                                 }
                             }
                         }
@@ -1020,22 +1154,33 @@
                         {
                             "decl": {
                                 "target": {
-                                    "resolve": true,
                                     "name": "customnodedef",
+                                    "resolve": true,
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"
                             },
                             "children": {
+                                "name": {
+                                    "decl": {
+                                        "target": {
+                                            "name": "text",
+                                            "resolve": true,
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "text": "syntax"
+                                },
                                 "syntax": {
                                     "decl": {
                                         "target": {
-                                            "resolve": true,
                                             "name": "custom syntax list",
+                                            "resolve": true,
                                             "decl": {
                                                 "target": {
-                                                    "resolve": true,
                                                     "name": "definition",
+                                                    "resolve": true,
                                                     "class": "syntaxednodecl"
                                                 },
                                                 "decl": "ref"
@@ -1052,17 +1197,6 @@
                                             "decl": "Parser"
                                         }
                                     ]
-                                },
-                                "name": {
-                                    "decl": {
-                                        "target": {
-                                            "resolve": true,
-                                            "name": "text",
-                                            "class": "nodecl"
-                                        },
-                                        "decl": "ref"
-                                    },
-                                    "text": "syntax"
                                 }
                             }
                         }
@@ -1076,6 +1210,17 @@
                     "decl": "Parser"
                 }
             ]
+        },
+        "file": {
+            "decl": {
+                "target": {
+                    "name": "text",
+                    "resolve": true,
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": "liki.lemon.json"
         }
     }
 }

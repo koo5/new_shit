@@ -33,6 +33,11 @@ class Text(Widget):
 		s.text = text
 		s.brackets = ['','']
 
+	def copy(s):
+		r = s.__class__()
+		r.text = s.text
+		return r
+
 	def render(s):
 		return [editable_start_tag, TextTag(s.text), editable_end_tag]
 
@@ -57,6 +62,11 @@ class Button(Widget):
 		s.color = colors.button
 		s.text = text
 
+	def copy(s):
+		r = s.__class__()
+		r.text = s.text
+		return r
+
 	def on_mouse_press(s, button):
 		s.on_click.emit(s)
 		return CHANGED
@@ -80,6 +90,12 @@ class Number(Widget):
 		s.plus_button. on_text. connect(s.on_widget_text)
 		s.on_change = Signal(1)
 		s.text_widget.on_edit.connect(s._on_text_change) # ^.^
+
+	def copy(s):
+		r = s.__class__()
+		r.text = s.text
+		r.limits = s.limits
+		return r
 
 	def _on_text_change(s, widget):
 		s.on_change.emit(s)
@@ -143,6 +159,12 @@ class NState(Widget):
 		assert(0 <= value < len(texts))
 		s.texts = texts
 		s.color = colors.fg
+
+	def copy(s):
+		r = s.__class__()
+		r.texts = s.texts
+		r.value = s.value
+		return r
 
 	def render(s):
 		return [ColorTag(s.color), TextTag(s.text), EndTag()]

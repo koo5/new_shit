@@ -1014,6 +1014,12 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	def slots(s):
 		return s.ddecl.instance_slots
 
+	def child_type(s, ch):
+		for k,v in iteritems(s.slots):
+			if s.ch[k] == ch:
+				return v
+		assert False
+
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
 
@@ -1235,10 +1241,6 @@ class List(ListPersistenceStuff, Collapsible):
 		super(List, s).fix_parents()
 		s._fix_parents(s.items)
 
-	@property
-	def slots(s):
-		return [s.item_type]
-
 	def item_index(s, atts):
 		li = atts.get(Att.item_index)
 		if li and li[0] == s:
@@ -1397,6 +1399,19 @@ class Statements(List):
 	#	return r
 	#war
 
+	def by_name(s, n):
+		for i in s.items:
+			i = i.parsed
+			print(i)
+			if isinstance(i, Syntaxed):
+				if 'ch' in i.__dict__.keys():
+					print (i.ch)
+					if 'name' in i.ch._dict:
+						print (i.name)
+						if i.name == n:
+							return i
+		assert False
+
 
 """
 class SortedView():
@@ -1423,19 +1438,28 @@ class NoValue(Node):
 	def eq_by_value(a, b):
 		return True
 
-class Banana(Node):
-	help=["runtime error. try not to throw these."]
-	def __init__(s, text="error text"):
-		super(Banana, s).__init__()
-		s.text = text
+class NodeInstance(Node):
+	def __init__(s, decl):
+		super().__init__()
+		assert isinstance(decl, CustomNodeDef)
+		s.decl = decl
 	def render(s):
-		return ["error:", TextTag(s.text)]
-	def to_python_str(s):
-		return "runtime error"
+		for i in s.decl.ch.syntax.items:
+			#Text/TypedParameter
+			if isinstance(i, Text):
+				return i.pyval
+			elif isinstance(i, TypedParameter):
+				return "child"
+
+def banana(text="error text"):
+	return Text(text)#
+	r = NodeInstance(s.root.essentials.banana)
+	r.ch.info = Text(text)
+	return r
 
 class Bananas(Node):
 	"""https://www.youtube.com/watch?v=EAmChFTLP4w&feature=youtu.be&t=2m19s"""
-	help=["parsing error. your code is bananas."]
+	help=["parsing failure. your code is bananas."]
 	def __init__(s, contents=[]):
 		super(Bananas, s).__init__()
 		s.contents = contents
@@ -1626,6 +1650,7 @@ class Root(Dict):
 		## but before re-rendering, it might move it beyond the end of file
 		s.indent_length = 4 #not really used but would be nice to have it variable
 		s.changed = True
+		s.essentials = Dotdict()
 
 	def render(s):
 		#there has to be some default color for everything, the rendering routine looks for it..
@@ -2252,10 +2277,10 @@ class For(Syntaxed):
 	def _eval(s):
 		itemvar = s.ch.item.parsed
 		if not isinstance(itemvar, UntypedVar):
-			return Banana('itemvar isnt UntypedVar')
+			return banana('itemvar isnt UntypedVar')
 		items = s.ch.items.eval()
 		if not isinstance(items, List):
-			return Banana('items isnt List')
+			return banana('items isnt List')
 		#r = b['list'].make_type({'itemtype': Ref(b['statement'])}).make_inst() #just a list of the "anything" type..dunno
 		for item in items:
 			itemvar.append_value(item)
@@ -2290,7 +2315,7 @@ class If(Syntaxed):
 		c = s.ch.condition.eval()
 		#lets just do it by hand here..
 		if c.decl != B.bool:
-			return Banana("%s is of type %s, i cant branch with that"%(c, c.decl))
+			return banana("%s is of type %s, i cant branch with that" % (c, c.decl))
 		if c.pyval == 1:
 			log("condition true")
 			return s.ch.statements.eval()
@@ -2311,16 +2336,16 @@ class Else(Syntaxed):
 			parent = s.parent
 			child = s
 		if not isinstance(parent, Statements):
-			return Banana("parent is not Statements")
+			return banana("parent is not Statements")
 		above = parent.above(child)
 		if not len(above):
-			return Banana("no nodes above me, much less an If")
+			return banana("no nodes above me, much less an If")
 		a = above[-1].parsed
 		if not isinstance(a, If):
-			return Banana("whats above me is not an If and that makes me sad")
+			return banana("whats above me is not an If and that makes me sad")
 		c = a.ch.condition
 		if not 'value' in c.runtime._dict:
-			return Banana("the node above me wasnt evaluated, how am i to know if i should run?")
+			return banana("the node above me wasnt evaluated, how am i to know if i should run?")
 		if c.runtime.value.val.pyval == 0:
 			return s.ch.statements.eval()
 		else:
@@ -2476,12 +2501,20 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 	@property
 	def type(s):
-		return s.parent.slots[s.slot]
+		p = s.parent
+		if isinstance(p, Parser):
+			return p.type
+		elif isinstance(p, (Syntaxed, FunctionCall)):
+			return p.child_type(s)
+		elif isinstance(p, (List,Dict)):
+			return p.item_type
+
+		else: assert False,    p
 
 	def copy(s):
 		r = Parser(s.slot)
 		for i in s.items:
-			if isinstance(i, unicode666):
+			if isinstance(i, unicode):
 				x = i
 			else:
 				x = i.copy()
@@ -2506,7 +2539,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 				if isinstance(s.type, Exp):
 					type = s.type.type
 				if isinstance(type, Ref):
-					type = type.target
+					type = deref_decl(type)
 
 				i0 = i0.text
 #				if type == b['number']:
@@ -2735,12 +2768,12 @@ class FunctionDefinitionBase(Syntaxed):
 		for name, arg in iteritems(args):
 			#if not arg.type.eq(s.arg_types[i])...
 			if not hasattr(arg, 'decl'):
-				return Banana(str(arg) +" ?! ")
+				return banana(str(arg) + " ?! ")
 			expected_type = s.params[name].type
 			if isinstance(expected_type, Ref) and hasattr(arg, 'decl') and isinstance(arg.decl, Ref):
 				if not arg.decl.target == expected_type.target:
 					log("well this is maybe bad, decl %s of %s != %s" % (arg.decl, arg, expected_type))
-					return Banana(str(arg.decl.name) +" != "+str(expected_type.name))
+					return banana(str(arg.decl.name) + " != " + str(expected_type.name))
 		return True
 
 
@@ -2942,6 +2975,13 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		s.args = dict([(name, Parser(name)) for name, v in iteritems(s.target.params)]) #this should go to fresh(?)
 		s.fix_parents()
 
+	def copy(s):
+		r = s.__class__(s.target)
+		for k,v in s.args.items():
+			r.args[k] = v.copy()
+		r.fix_parents()
+		return r
+
 	@classmethod
 	def register_class_symbol(cls):
 		return m.symbol("function_call")
@@ -2949,6 +2989,13 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 	@property
 	def slots(s):
 		return s.target.params
+
+	def child_type(s, ch):
+		for k,v in iteritems(s.slots):
+			if s.args[k] == ch:
+				return v
+		assert False
+
 
 	def fix_parents(s):
 		s._fix_parents(itervalues(s.args))
@@ -3014,176 +3061,6 @@ class FunctionCallNodecl(NodeclBase):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Kbdbg(Node):
-	def __init__(s):
-		super(Kbdbg, s).__init__()
-		s.isroot = True
-		s.parent = None
-		s.decl = None
-		s.delayed_cursor_move = DelayedCursorMove()
-		s.indent_length = 4
-		s.changed = True
-		s.brackets = ("", "")
-		s.items = []
-		s.arrows = []
-		s.loadkb()
-		print (Kbdbg.keys)
-		s.update()
-
-	def render(s):
-		yield ColorTag(colors.fg)
-		print ("RENDER")
-		yield s.items
-		yield EndTag()
-
-	def update(s):
-		#for a in s.arrows:
-			#print (a)
-		print ("UPDATE")
-			
-		s.items.clear()
-		for i in s.kb:
-			#print(i.markup)
-			if len(i.markup) != 0:
-				for a in s.arrows:
-					if i.markup == a[0]["markup"]:
-						#print ("OOO", i.markup, "FFF", a[0]["markup"])
-						for j in s.kb:
-							#print("XXX",  j.markup, a[1]["markup"])
-							if j.markup == a[1]["markup"]:
-								style = a[2]
-								s.items.append(ArrowTag(j, style))
-								s.items.append("o")
-					#if i.markup == a[1]["markup"]:
-					#	s.items.append("x")
-	
-
-			s.items.append(ElementTag(i))
-	
-	def add_step(s):
-		print("adding step")
-		s.steps.append(Dotdict())
-		s.steps[-1].log = []
-		s.steps[-1].vis = []
-
-	def loadkb(s):
-
-		s.steps = []
-		s.add_step()
-		input = json.load(open("kbdbg.json", "r"))
-		s.kb = []
-		for i in input:
-			if isinstance(i, dict):
-				#print (i)
-				if i["type"] == "step":
-					s.add_step()
-				else:
-					s.steps[-1].vis.append(i)
-			elif isinstance(i, unicode):
-				s.steps[-1].log.append(i)
-			elif isinstance(i, list):
-				for x in i:
-					if isinstance(x, str):
-						t = x
-						m = []
-					elif isinstance(x, dict):			
-						t = x["text"]
-						m = x["markup"]
-					w = widgets.Text(s, t)		
-					w.markup = m
-					s.kb.append(w)
-
-		s.arrows = []
-		s.cache = {}
-		s.step = -1
-		s.step_fwd()
-
-	def print_log(s):
-		for line in s.steps[s.step].log:
-			print(line)
-
-	def step_back(s):
-		
-		if s.step != 0:
-			s.step -= 1
-		s.arrows = copy(s.cache[s.step])
-		s.update()
-		if s.step == 0:
-			print()
-			print()
-			print()
-			print()
-			print("START")
-			print()
-			print()
-			print()
-			
-		print ("step:", s.step)
-		s.print_log()
-
-	def step_fwd(s):
-		
-		if s.step < len(s.steps) -1 :
-			s.step += 1
-			if s.step in s.cache:
-				s.arrows = copy(s.cache[s.step])
-			else:
-				s.do_step(s.step)
-				s.cache[s.step] = copy(s.arrows)
-			s.update()
-		print ("step:", s.step)
-		s.print_log()
-
-	def do_step(s, i):
-	
-		for x in s.steps[i].vis:
-			print(x)
-			p = (x["a"], x["b"], x["style"])
-			if x["type"] == "add":
-				print("add" , p)
-				s.arrows.append(p)
-			elif x["type"] == "remove":
-				for y in range(len(s.arrows)):
-					if s.arrows[y] == p:
-						print("remove" , p)
-						s.arrows.remove(p)
-						break
-			else:
-				assert(False)
-
-
-	def has_result(s):
-		for line in s.steps[s.step].log:
-			if line[:6] == "RESULT":
-				return True
-
-
-	def res_back(s,e):
-		while s.step != 0:
-			s.step_back()
-			if s.has_result(): return
-	
-	def res_fwd(s,e):
-		while s.step < len(s.steps) -1 :
-			s.step_fwd()
-			if s.has_result(): return
-			
-
-		
 
 
 
@@ -3253,7 +3130,7 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 	r["clipboard"] = B.module.inst_fresh()
 	r["clipboard"].ch.name = Text("clipboard")
-	r["clipboard"].ch.statements.view_mode=0
+	r["clipboard"].ch.statements.view_mode=1
 
 
 	library = r["library"] = make_list('module')
@@ -3267,9 +3144,8 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
 
 
-
-
-
+	essentials = [x.ch.statements for x in library.items if x.ch.name.pyval == "essentials"][0]
+	r.essentials.banana = essentials.by_name('Banana')
 
 
 
@@ -3395,7 +3271,7 @@ def build_in_lemon_language():
 
 	build_in(VarRefNodecl(), 'varref')
 
-	build_in([Nodecl(x) for x in [Number, Banana, Bananas, Identifier, RestrictedIdentifier]])
+	build_in([Nodecl(x) for x in [Number, Bananas, Identifier, RestrictedIdentifier]])
 
 	build_in(Nodecl(List), "list_literal")
 
@@ -3661,14 +3537,14 @@ def build_in_lemon_language():
 
 
 
-
-	class CustomNodeDef(Syntaxed):
-		pass
-
 	build_in(SyntaxedNodecl(Serialized,
 				   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
 				   {'last_rendering': B.text,
 				    'serialization':dict_from_to('text', 'anything')}))
+
+
+	class CustomNodeDef(Syntaxed):
+		pass
 
 	build_in(SyntaxedNodecl(CustomNodeDef,
 				   ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
@@ -3708,7 +3584,7 @@ class Serialized(Syntaxed):
 		super(Serialized, s).__init__(children)
 
 	def _eval(s):
-		return Banana("deserialize me first")
+		return banana("deserialize me first")
 
 	def on_keypress(s, e):
 		if e.key == K_d and e.mod & KMOD_CTRL:
@@ -3888,6 +3764,176 @@ PiType has type - a Exp
 PiType has ret - a Exp
 PiType has syntax: [Child("var"), ":"
 """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Kbdbg(Node):
+	def __init__(s):
+		super(Kbdbg, s).__init__()
+		s.isroot = True
+		s.parent = None
+		s.decl = None
+		s.delayed_cursor_move = DelayedCursorMove()
+		s.indent_length = 4
+		s.changed = True
+		s.brackets = ("", "")
+		s.items = []
+		s.arrows = []
+		s.loadkb()
+		print (Kbdbg.keys)
+		s.update()
+
+	def render(s):
+		yield ColorTag(colors.fg)
+		print ("RENDER")
+		yield s.items
+		yield EndTag()
+
+	def update(s):
+		#for a in s.arrows:
+			#print (a)
+		print ("UPDATE")
+
+		s.items.clear()
+		for i in s.kb:
+			#print(i.markup)
+			if len(i.markup) != 0:
+				for a in s.arrows:
+					if i.markup == a[0]["markup"]:
+						#print ("OOO", i.markup, "FFF", a[0]["markup"])
+						for j in s.kb:
+							#print("XXX",  j.markup, a[1]["markup"])
+							if j.markup == a[1]["markup"]:
+								style = a[2]
+								s.items.append(ArrowTag(j, style))
+								s.items.append("o")
+					#if i.markup == a[1]["markup"]:
+					#	s.items.append("x")
+
+
+			s.items.append(ElementTag(i))
+
+	def add_step(s):
+		print("adding step")
+		s.steps.append(Dotdict())
+		s.steps[-1].log = []
+		s.steps[-1].vis = []
+
+	def loadkb(s):
+
+		s.steps = []
+		s.add_step()
+		input = json.load(open("kbdbg.json", "r"))
+		s.kb = []
+		for i in input:
+			if isinstance(i, dict):
+				#print (i)
+				if i["type"] == "step":
+					s.add_step()
+				else:
+					s.steps[-1].vis.append(i)
+			elif isinstance(i, unicode):
+				s.steps[-1].log.append(i)
+			elif isinstance(i, list):
+				for x in i:
+					if isinstance(x, str):
+						t = x
+						m = []
+					elif isinstance(x, dict):
+						t = x["text"]
+						m = x["markup"]
+					w = widgets.Text(s, t)
+					w.markup = m
+					s.kb.append(w)
+
+		s.arrows = []
+		s.cache = {}
+		s.step = -1
+		s.step_fwd()
+
+	def print_log(s):
+		for line in s.steps[s.step].log:
+			print(line)
+
+	def step_back(s):
+
+		if s.step != 0:
+			s.step -= 1
+		s.arrows = copy(s.cache[s.step])
+		s.update()
+		if s.step == 0:
+			print()
+			print()
+			print()
+			print()
+			print("START")
+			print()
+			print()
+			print()
+
+		print ("step:", s.step)
+		s.print_log()
+
+	def step_fwd(s):
+
+		if s.step < len(s.steps) -1 :
+			s.step += 1
+			if s.step in s.cache:
+				s.arrows = copy(s.cache[s.step])
+			else:
+				s.do_step(s.step)
+				s.cache[s.step] = copy(s.arrows)
+			s.update()
+		print ("step:", s.step)
+		s.print_log()
+
+	def do_step(s, i):
+
+		for x in s.steps[i].vis:
+			print(x)
+			p = (x["a"], x["b"], x["style"])
+			if x["type"] == "add":
+				print("add" , p)
+				s.arrows.append(p)
+			elif x["type"] == "remove":
+				for y in range(len(s.arrows)):
+					if s.arrows[y] == p:
+						print("remove" , p)
+						s.arrows.remove(p)
+						break
+			else:
+				assert(False)
+
+
+	def has_result(s):
+		for line in s.steps[s.step].log:
+			if line[:6] == "RESULT":
+				return True
+
+
+	def res_back(s,e):
+		while s.step != 0:
+			s.step_back()
+			if s.has_result(): return
+
+	def res_fwd(s,e):
+		while s.step < len(s.steps) -1 :
+			s.step_fwd()
+			if s.has_result(): return
 
 
 

@@ -1,0 +1,246 @@
+{
+    "decl": {
+        "target": {
+            "resolve": true,
+            "name": "module",
+            "class": "syntaxednodecl"
+        },
+        "decl": "ref"
+    },
+    "children": {
+        "statements": {
+            "decl": {
+                "target": {
+                    "resolve": true,
+                    "name": "statements",
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "items": [
+                {
+                    "items": [
+                        {
+                            "decl": {
+                                "target": {
+                                    "resolve": true,
+                                    "name": "customnodedef",
+                                    "class": "syntaxednodecl"
+                                },
+                                "decl": "ref"
+                            },
+                            "children": {
+                                "syntax": {
+                                    "decl": {
+                                        "target": {
+                                            "resolve": true,
+                                            "name": "custom syntax list",
+                                            "decl": {
+                                                "target": {
+                                                    "resolve": true,
+                                                    "name": "definition",
+                                                    "class": "syntaxednodecl"
+                                                },
+                                                "decl": "ref"
+                                            }
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "items": [
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "text",
+                                                            "class": "nodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "text": "runtime error:"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "typedparameter",
+                                                            "class": "syntaxednodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "children": {
+                                                        "type": {
+                                                            "items": [
+                                                                {
+                                                                    "target": {
+                                                                        "resolve": true,
+                                                                        "name": "text",
+                                                                        "class": "nodecl"
+                                                                    },
+                                                                    "decl": "ref"
+                                                                }
+                                                            ],
+                                                            "slot": "type",
+                                                            "decl": "Parser"
+                                                        },
+                                                        "name": {
+                                                            "decl": {
+                                                                "target": {
+                                                                    "resolve": true,
+                                                                    "name": "text",
+                                                                    "class": "nodecl"
+                                                                },
+                                                                "decl": "ref"
+                                                            },
+                                                            "text": "info"
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        }
+                                    ]
+                                },
+                                "name": {
+                                    "decl": {
+                                        "target": {
+                                            "resolve": true,
+                                            "name": "text",
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "text": "Banana"
+                                }
+                            }
+                        }
+                    ],
+                    "slot": 0,
+                    "decl": "Parser"
+                },
+                {
+                    "items": [],
+                    "slot": 0,
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        {
+                            "decl": {
+                                "target": {
+                                    "resolve": true,
+                                    "name": "enumtype",
+                                    "class": "syntaxednodecl"
+                                },
+                                "decl": "ref"
+                            },
+                            "children": {
+                                "options": {
+                                    "decl": {
+                                        "target": {
+                                            "resolve": true,
+                                            "name": "list of anything",
+                                            "decl": {
+                                                "target": {
+                                                    "resolve": true,
+                                                    "name": "definition",
+                                                    "class": "syntaxednodecl"
+                                                },
+                                                "decl": "ref"
+                                            }
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "items": [
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "text",
+                                                            "class": "nodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "text": "czech"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "text",
+                                                            "class": "nodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "text": "english"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        }
+                                    ]
+                                },
+                                "name": {
+                                    "decl": {
+                                        "target": {
+                                            "resolve": true,
+                                            "name": "text",
+                                            "class": "nodecl"
+                                        },
+                                        "decl": "ref"
+                                    },
+                                    "text": "language"
+                                }
+                            }
+                        }
+                    ],
+                    "slot": 0,
+                    "decl": "Parser"
+                },
+                {
+                    "items": [],
+                    "slot": 0,
+                    "decl": "Parser"
+                }
+            ]
+        },
+        "file": {
+            "decl": {
+                "target": {
+                    "resolve": true,
+                    "name": "text",
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": "library/essentials.lemon.json"
+        },
+        "name": {
+            "decl": {
+                "target": {
+                    "resolve": true,
+                    "name": "text",
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": "essentials"
+        }
+    }
+}
