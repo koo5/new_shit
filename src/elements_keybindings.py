@@ -175,9 +175,19 @@ def delete_self(s, e):
 	s.parent.delete_child(s)
 	return AST_CHANGED
 
+def clipboard_cut(s, e):
+	s.clipboard_cut()
+	return AST_CHANGED
+
+def clipboard_copy(s, e):
+	s.clipboard_copy()
+	return AST_CHANGED
+
 add_keys(n.Node, None, {
 	K((),           K_F7):      H(eval),
-	K(KMOD_CTRL,    K_DELETE):  H(delete_self)
+	K(KMOD_CTRL,    K_DELETE):  H(delete_self),
+	K(KMOD_CTRL,    K_x):  H(clipboard_cut),
+	K(KMOD_CTRL,    K_c):  H(clipboard_copy)
 })
 
 add_keys(n.Root, None, {})
@@ -258,13 +268,17 @@ def k_unicode(s, uni):
 def k_unicode_check(s, _):
 	return len(s.items) == 0
 
+def clipboard_paste(s, e):
+	s.clipboard_paste()
+	return AST_CHANGED
 
 add_keys(n.ParserBase, -1, {
 	#H((), K_BACKSPACE, LEFT): (check_backspace, k_backspace),
 	#H((), K_DELETE, LEFT): k_delete
 	K((         ), UNICODE): H(lambda s,e: k_unicode(s,e.uni), k_unicode_check),
-	K(KMOD_CTRL, K_v): H(lambda s, e: k_unicode(s,paste()), k_unicode_check)
-	})
+	K(KMOD_CTRL, K_v): H(lambda s, e: k_unicode(s,paste()), k_unicode_check),
+	K(KMOD_CTRL,    K_b):  H(clipboard_paste)
+})
 
 """
 analogically with delete,

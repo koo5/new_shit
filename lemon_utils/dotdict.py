@@ -36,7 +36,7 @@ class Dotdict(object):
 			try:
 				return s._dict[k]
 			except KeyError:
-				raise AttributeError()
+				raise# AttributeError()
 		# "During handling of the above exception, another exception occurred" is bullshit,
 		# we just have to throw AttributeError instead of KeyError, like a well-behaved object
 	def __setitem__(s, k, v):

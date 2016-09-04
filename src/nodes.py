@@ -101,6 +101,8 @@ def deref_decl(d):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
+	elif isinstance(d, (CustomNodeDef, Union)):
+		return d
 	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
 		return d
 	else:
@@ -550,8 +552,13 @@ class Node(NodePersistenceStuff, element.Element):
 		s.fresh = "i think youre looking for inst_fresh, fresh() is a class method, you called it on an instance"
 		s.forget_symbols()
 
+	def clipboard_cut(s):
+		s.clipboard_copy()
+		s.parent.delete_child(s)
 
-
+	def clipboard_copy(s):
+		print ("copy")
+		s.root["clipboard"].ch.statements.add(s.copy())
 
 	def forget_symbols(s):
 		"""clear marpa symbol ids"""
@@ -779,6 +786,78 @@ class Node(NodePersistenceStuff, element.Element):
 	def unparen(s):
 		return s
 
+
+class NodeInstance(Node):
+	def __init__(s, decl):
+		super().__init__()
+		assert isinstance(decl, CustomNodeDef)
+		s.decl = decl
+		s.create_kids()
+		s.fix_parents()
+
+	@classmethod
+	def deserialize(cls, data, parent):
+		assert parent
+		placeholder = Text("placeholder")
+		placeholder.parent = parent
+		decl = deserialize(data['decl'], placeholder)
+		r = cls(decl)
+		r.parent = parent
+		for k,v in iteritems(data['children']):
+			r.ch[k] = deserialize(v, r)
+		r.fix_parents()
+		return r
+
+	def _serialize(s):
+		return odict(
+			children = s.serialize_children()
+		)
+
+	def serialize_children(s):
+		r = {}
+		for k, v in iteritems(s.ch._dict):
+			r[k] = v.serialize()
+		return r
+
+	def fix_parents(s):
+		s._fix_parents(list(s.ch._dict.values()))
+
+	@property
+	def syntax(s):
+		return deref_decl(s.decl).ch.syntax.parsed.items
+
+	def create_kids(s):
+		s.ch = Dotdict()
+		for i in s.syntax:
+			i = i.parsed
+			if isinstance(i, TypedParameter):
+				p = i.type.parsed
+				if not isinstance(p, Bananas):
+					ch = Parser(deref_decl(p))
+				else:
+					ch = Text("bad decl")
+				s.ch[i.ch.name.parsed.pyval] = ch
+		s.fix_parents()
+
+	def render(s):
+		for i in s.syntax:
+			i = i.parsed
+			if isinstance(i, Text):
+				yield i.pyval
+			elif isinstance(i, TypedParameter):
+				yield ElementTag(s.ch._dict[i.ch.name.parsed.pyval])
+
+	def child_type(s, ch):
+		for name,v in iteritems(s.ch._dict):
+			if v == ch:
+				for i in s.syntax:
+					i = i.parsed
+					if isinstance(i, TypedParameter):
+						if i.ch.name.parsed.pyval == name:
+							return i.ch.type.parsed
+		assert False
+
+
 class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
 	Syntaxed has some named children, kept in s.ch.
@@ -900,7 +979,6 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 		r.fix_parents()
 		return r
-
 
 	@classmethod
 	def fresh(cls, decl=None):
@@ -1431,19 +1509,6 @@ class NoValue(Node):
 	def eq_by_value(a, b):
 		return True
 
-class NodeInstance(Node):
-	def __init__(s, decl):
-		super().__init__()
-		assert isinstance(decl, CustomNodeDef)
-		s.decl = decl
-	def render(s):
-		for i in s.decl.ch.syntax.items:
-			#Text/TypedParameter
-			if isinstance(i, Text):
-				return i.pyval
-			elif isinstance(i, TypedParameter):
-				return "child"
-
 def banana(text="error text"):
 	return Text(text)#
 	r = NodeInstance(s.root.essentials.banana)
@@ -1855,19 +1920,7 @@ class NodeclBase(Node):
 	def __init__(s, instance_class):
 		super(NodeclBase, s).__init__()
 		s.instance_class = instance_class
-		
 		instance_class.decl = Ref(s)
-		#so any Number has a .decl which is a Ref with the nodecl as a .target
-		#so, the idea is that when you want to refer to a type, you use Ref
-		#aaand shrug... its more like the lemonish way should be built properly the MLTT way
-		#hrm, not sure what you mean
-		
-		
-		
-		
-		
-		
-		
 		s.decl = None
 		s.example = None
 
@@ -1879,7 +1932,6 @@ class NodeclBase(Node):
 
 	def render(s):
 		yield [TextTag(s.name), TextTag(":"), IndentTag()]
-
 		h = None
 		if s.help != None:
 			h = s.help
@@ -2143,7 +2195,7 @@ class EnumType(ParametricTypeBase):
 		s.instance_class = EnumVal
 		super(EnumType, s).__init__(children)
 	def palette(s, scope, text, node):
-		r = [PaletteMenuItem(EnumVal(s, i)) for i in range(len(s.ch.options.items))]
+		r = [PaletteMenuItem(EnumVal(s, i)) for i in range(len(s.ch.options.items))] + [PaletteMenuItem(Ref(s))]
 		#print ">",r
 		return r
 	def works_as(s, type):
@@ -2220,7 +2272,7 @@ class BindsTighterThan(Syntaxed):
 
 
 class Definition(Syntaxed):
-	"""should have type functionality (work as a type)"""
+	"""should have type functionality (work as a type)*?*"""
 	help=['used just for types, currently.']
 	def __init__(s, children):
 		super(Definition, s).__init__(children)
@@ -2229,7 +2281,7 @@ class Definition(Syntaxed):
 		return s.ch.type.inst_fresh(s)
 
 	def palette(s, scope, text, node):
-		return s.ch.type.palette(scope, text, None)
+		return s.ch.type.palette(scope, text, None) + [PaletteMenuItem(Ref(s), 0)]
 
 	@property
 	def type(s):
@@ -2405,6 +2457,10 @@ class ParserBase(Node):
 		s.brackets = (' ', ' ')
 		s.reregister = False
 
+	def clipboard_paste(s):
+		print ("paste")
+		s.add(s.root["clipboard"].ch.statements[-1].copy())
+
 	@property
 	def items(s):
 		return s._items
@@ -2497,7 +2553,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		p = s.parent
 		if isinstance(p, Parser):
 			return p.type
-		elif isinstance(p, (Syntaxed, FunctionCall)):
+		elif isinstance(p, (Syntaxed, FunctionCall, NodeInstance)):
 			return p.child_type(s)
 		elif isinstance(p, (List,Dict)):
 			return p.item_type
@@ -2989,7 +3045,6 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 				return v
 		assert False
 
-
 	def fix_parents(s):
 		s._fix_parents(itervalues(s.args))
 
@@ -3051,10 +3106,13 @@ class FunctionCallNodecl(NodeclBase):
 # endregion
 
 
-
-
-
-
+class CustomNodeDef(Syntaxed):
+	instance_class = NodeInstance
+	def palette(s, scope, text, node):
+		return [PaletteMenuItem(NodeInstance(s))]
+	def inst_fresh(s, decl=None):
+		""" fresh creates default children"""
+		return NodeInstance(s)
 
 
 		
@@ -3535,9 +3593,6 @@ def build_in_lemon_language():
 				   {'last_rendering': B.text,
 				    'serialization':dict_from_to('text', 'anything')}))
 
-
-	class CustomNodeDef(Syntaxed):
-		pass
 
 	build_in(SyntaxedNodecl(CustomNodeDef,
 				   ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],

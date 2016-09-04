@@ -76,29 +76,6 @@ class Editor(ServerFrame):
 		s.root.changed = True
 		s.signal_change(True)
 
-	def copy(s):
-		print ("copy")
-		e = s.element_under_cursor
-		if e != None:
-			s.root["clipboard"].ch.statements.add(e.copy())
-			s.changed_dude()
-
-	def cut(s):
-		print ("cut:")
-		e = s.element_under_cursor
-		if e != None:
-			s.copy()
-			e.parent.delete_child(e)
-			s.changed_dude()
-
-	def paste(s):
-		print ("paste")
-		e = s.root["clipboard"].ch.statements[-1].copy()
-		t = s.element_under_cursor
-		if isinstance(t, nodes.Parser):
-			t.add(e)
-			s.changed_dude()
-
 	def on_elem_mouse_press(s, elem, button):
 		if elem.on_mouse_press(button):
 			s.root.changed = True
@@ -411,12 +388,16 @@ class Menu(SidebarFrame):
 		def score_item(item):
 			v = item.value
 			assert type(text) == unicode
+			vname = 888
 			try:
-				#assert type(v.name) == unicode,  v.name
-				item.scores.name = matchf(unicode(v.name), text, False), v.name #0-100
-			except AttributeError as e:
-				# no name
+				try:
+					vname = v.name
+				except KeyError as e:
+					pass
+			except AttributeError:
 				pass
+			if type(vname) == str:
+				item.scores.name = matchf(unicode(vname), text, False), vname #0-100
 
 			assert type(v.decl.name) == unicode
 			item.scores.declname = 3 * matchf(v.decl.name, text, False), v.decl.name #0-100
