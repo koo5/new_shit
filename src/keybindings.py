@@ -107,9 +107,9 @@ def setup(client):
 		(K_b,
 			c.editor.counterpart.paste),
 		(K_m,
-			s.menu.menu_dump)
-
-
+			s.menu.menu_dump),
+		(K_SPACE,
+			s.menu.accept_and_run)
 	])
 
 	#global_keys[frozenset([KMOD_RSHIFT])] = odict([

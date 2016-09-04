@@ -34,7 +34,7 @@ class Text(Widget):
 		s.brackets = ['','']
 
 	def copy(s):
-		r = s.__class__()
+		r = s.__class__(s.parent, s.text)
 		r.text = s.text
 		return r
 

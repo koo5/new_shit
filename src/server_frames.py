@@ -140,7 +140,7 @@ class Editor(ServerFrame):
 		editor.signal_change()
 
 	def run_line(editor):
-		editor.atts.any[Att.elem].module.run_line(editor.atts.any[Att.elem])
+		editor.atts.any[Att.elem].module().run_line(editor.atts.any[Att.elem])
 		editor.signal_change()
 
 	def clear(editor):
@@ -516,6 +516,21 @@ class Menu(SidebarFrame):
 				s.editor.signal_change()
 				s.signal_change()
 				return True
+
+	def accept_and_run(s):
+		if s.sel == -1:
+			s.sel = 0
+
+		if s.current_parser_node.menu_item_selected(s.items[s.sel], s.editor.atts):
+			s.sel = -1
+			s.scroll_lines = 0
+			s.editor.changed_dude()
+			s.signal_change()
+			s.editor.run_line()
+			s.editor.changed_dude()
+
+
+			return True
 
 
 	def move(s, y):

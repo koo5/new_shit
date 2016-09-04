@@ -550,6 +550,9 @@ class Node(NodePersistenceStuff, element.Element):
 		s.fresh = "i think youre looking for inst_fresh, fresh() is a class method, you called it on an instance"
 		s.forget_symbols()
 
+
+
+
 	def forget_symbols(s):
 		"""clear marpa symbol ids"""
 		s._symbol  = None
@@ -692,16 +695,6 @@ class Node(NodePersistenceStuff, element.Element):
 	def _eval(s):
 		s.runtime.unimplemented = True
 		return Text("not implemented")
-
-	def module(s):
-		if isinstance(s, Module):
-			return s
-		else:
-			if s.parent != None:
-				return s.parent.module()
-			else:
-				log ("%s has no parent", s)
-				return None
 
 	@classmethod
 	def fresh(cls, decl=None):
@@ -3936,7 +3929,7 @@ class Kbdbg(Node):
 			if s.has_result(): return
 
 
-
+element.Module = Module
 
 
 

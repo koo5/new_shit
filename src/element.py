@@ -63,6 +63,16 @@ class Element():
 		object.__setattr__(s, k, v)
 
 
+	def module(s):
+		if isinstance(s, Module):
+			return s
+		else:
+			if s.parent != None:
+				return s.parent.module()
+			else:
+				log ("%s has no parent", s)
+				return None
+
 	def on_keypress(self, event):
 		log('default handler')
 		return False
