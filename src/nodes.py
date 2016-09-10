@@ -314,6 +314,7 @@ class NodePersistenceStuff(object):
 		#assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
 		r = odict(s.serialize_decl())
 		r.update(s._serialize())
+		print("saving...", json.dumps(r, indent = 4))
 		return r
 
 	def serialize_decl(s):
@@ -430,8 +431,7 @@ class ParserPersistenceStuff(object):
 	def serialize(s):
 		return odict(
 			decl = 'Parser',
-		    slot = s.slot,
-			items = s.serialize_items()
+		    items = s.serialize_items()
 		)
 
 	def serialize_items(s):
@@ -447,7 +447,7 @@ class ParserPersistenceStuff(object):
 	@classmethod
 	def deserialize(cls, data, parent):
 		assert parent
-		r = cls(data['slot'])
+		r = cls()
 		r.parent = parent
 		log("deserializing Parser "+str(data))
 		for i in data['items']:
@@ -833,7 +833,7 @@ class NodeInstance(Node):
 			if isinstance(i, TypedParameter):
 				p = i.type.parsed
 				if not isinstance(p, Bananas):
-					ch = Parser(deref_decl(p))
+					ch = Parser()
 				else:
 					ch = Text("bad decl")
 				s.ch[i.ch.name.parsed.pyval] = ch
@@ -960,8 +960,8 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 				s2.append(i)
 
 
-		print(sy)
-		print(s2)
+		#print(sy)
+		#print(s2)
 
 		si = 0#syntax_item_index
 
@@ -1067,7 +1067,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 #			elif isinstance(v, ParametricType):
 #				a = v.inst_fresh()
 			else:
-				a = Parser(k)
+				a = Parser()
 			assert(isinstance(a, Node))
 			kids[k] = a
 		return kids
@@ -1354,7 +1354,7 @@ class List(ListPersistenceStuff, Collapsible):
 		return item
 
 	def newline(s, pos=-1):
-		p = Parser(0)
+		p = Parser()
 		p.parent = s
 		if pos == -1:
 			s.items.append(p)
@@ -1781,7 +1781,8 @@ class Module(Syntaxed):
 		#log(s)
 		#todo easy: find a json module that would preserve odict ordering (or hjson)
 		import json
-		out = json.dumps(s.serialize(), indent = 4)
+		ss = s.serialize()
+		out = json.dumps(ss, indent = 4)
 		with open(s.file_name, "w") as f:
 			f.write(out)
 			f.close()
@@ -2544,9 +2545,8 @@ class ParserBase(Node):
 		s.fix_parents()
 
 class Parser(ParserPersistenceStuff, ParserBase):
-	def __init__(s, slot):
+	def __init__(s):
 		super(Parser, s).__init__()
-		s.slot = slot
 
 	@property
 	def type(s):
@@ -2561,7 +2561,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		else: assert False,    p
 
 	def copy(s):
-		r = Parser(s.slot)
+		r = Parser()
 		for i in s.items:
 			if isinstance(i, unicode):
 				x = i
@@ -3021,7 +3021,7 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		s.target = target
 		for i in itervalues(s.target.params):
 			assert not isinstance(i.type, Parser), "%s to target %s is a dumbo" % (s, s.target)
-		s.args = dict([(name, Parser(name)) for name, v in iteritems(s.target.params)]) #this should go to fresh(?)
+		s.args = dict([(name, Parser()) for name, v in iteritems(s.target.params)]) #this should go to fresh(?)
 		s.fix_parents()
 
 	def copy(s):
@@ -3109,7 +3109,7 @@ class FunctionCallNodecl(NodeclBase):
 class CustomNodeDef(Syntaxed):
 	instance_class = NodeInstance
 	def palette(s, scope, text, node):
-		return [PaletteMenuItem(NodeInstance(s))]
+		return [PaletteMenuItem(Ref(s)), PaletteMenuItem(NodeInstance(s))]
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
 		return NodeInstance(s)

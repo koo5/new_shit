@@ -149,7 +149,7 @@ class ClientFrame(object):
 
 			c = colors.outline
 			k = int(line.font.width / 5)
-			width = 1
+			width = int(line.font.width / 10)
 			for col, graphics in line.graphics.items():
 				x = line.font.width * col
 				for graphic in graphics:
