@@ -634,8 +634,8 @@ class Editor(ClientFrame):
 		li = s.line_at_cursor()
 		if li:
 			z = li.zwes[s.cursor_c]
-			for zz in z:
-				print ("Z", zz)
+			#for zz in z:
+				#log("Zwe", zz)
 			if len(z):
 				middle = z[-1]
 

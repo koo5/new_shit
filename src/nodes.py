@@ -857,6 +857,10 @@ class NodeInstance(Node):
 							return i.ch.type.parsed
 		assert False
 
+	def _flatten(s):
+		assert(isinstance(v, Node) for v in itervalues(s.ch._dict))
+		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
+
 
 class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
@@ -1473,12 +1477,9 @@ class Statements(List):
 	def by_name(s, n):
 		for i in s.items:
 			i = i.parsed
-			print(i)
 			if isinstance(i, Syntaxed):
 				if 'ch' in i.__dict__.keys():
-					print (i.ch)
 					if 'name' in i.ch._dict:
-						print (i.name)
 						if i.name == n:
 							return i
 		assert False

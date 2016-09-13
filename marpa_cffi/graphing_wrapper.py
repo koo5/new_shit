@@ -31,7 +31,6 @@ def clear():
 	syms = []
 	rules= []
 	seqs = []
-	print ("clear")
 
 def symid2name(id):
 	return str(id)

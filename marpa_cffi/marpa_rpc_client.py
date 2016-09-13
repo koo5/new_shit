@@ -165,7 +165,7 @@ class ThreadedMarpa(object):
 		assert scope == uniq(scope)
 
 		s.clear()
-		print("grammar clear")
+		log("grammar clear")
 
 
 
@@ -184,7 +184,7 @@ class ThreadedMarpa(object):
 			s.start=s.named_symbol('start')
 		else:
 			s.start = start.symbol
-		print ("start=", s.start )
+		log("start=", s.start )
 		
 		for i in scope:
 			#the property is accessed here, forcing the registering of the nodes grammars
