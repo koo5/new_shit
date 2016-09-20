@@ -2229,11 +2229,13 @@ class SyntacticCategory(Syntaxed):
 	def register_symbol(s):
 		s._symbol = lhs = m.symbol(s.name)
 
+	def palette(s, scope, text, node):
+		return [PaletteMenuItem(Ref(s), 0)]
+
 class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
 	def __init__(s, children):
 		super(WorksAs, s).__init__(children)
-
 
 	def forget_symbols(s):
 		super(WorksAs, s).forget_symbols()
@@ -2254,8 +2256,6 @@ class WorksAs(Syntaxed):
 		if lhs != None and rhs != None:
 			r = m.rule(str(s), lhs, rhs)
 			s._rule = r
-
-
 
 	@classmethod
 	def b(cls, sub, sup):
@@ -3599,20 +3599,8 @@ def build_in_lemon_language():
 				   ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
 				   {'name' : B.text,
 				   'syntax': B.custom_syntax_list}))
-	"""this gets us a node defining nodes, so it should have nodecl functionality"""
 
 	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
-
-	"""
-	types and unions make the world burn
-	class Assignment(Syntaxed):
-		pass
-	build_in(SyntaxedNodecl(Assignment,
-				   [ChildTag('target'), "=", ChildTag("source")],
-				   {'target' : B.lvalue,
-				   'source': B.expression}))
-	"""
-
 
 
 	class After(Syntaxed):
