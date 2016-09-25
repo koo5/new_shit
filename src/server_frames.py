@@ -23,6 +23,7 @@ info=logger.info
 log=logger.debug
 
 import nodes
+import palette
 import mltt, lc
 
 from tags import *
@@ -262,9 +263,6 @@ class Menu(SidebarFrame):
 		s._current_parser_node = None
 		s.must_update = True
 
-
-
-
 	#weakref wrapper
 	@property
 	def current_parser_node(s):
@@ -371,7 +369,7 @@ class Menu(SidebarFrame):
 		s.current_text = text
 
 	def create_palette(s, scope, atts, parser):
-		s.palette_results = flatten([x.palette(scope, s.current_text, parser) for x in scope])
+		s.palette_results = flatten([palette.palette(x, scope, s.current_text, parser) for x in scope])
 		s.update_items()
 
 	def update_items(s):
@@ -517,6 +515,7 @@ class Menu(SidebarFrame):
 	def move(s, y):
 		s.sel = clamp(s.sel + y, -1, len(s.items))
 		s.signal_change()
+
 
 
 

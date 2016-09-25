@@ -749,10 +749,6 @@ class Node(NodePersistenceStuff, element.Element):
 			warn(str(s)+ " flattens to self")
 		return [s]
 
-	def palette(s, scope, text, node):
-		"create menu items"
-		return []
-
 	def __repr__(s):
 		r = object.__repr__(s)
 		try:
@@ -785,6 +781,8 @@ class Node(NodePersistenceStuff, element.Element):
 
 	def unparen(s):
 		return s
+
+
 
 
 class NodeInstance(Node):
@@ -1966,9 +1964,6 @@ class NodeclBase(Node):
 		""" fresh creates default children"""
 		return s.instance_class.fresh(decl)
 
-	def palette(s, scope, text, node):
-			return [PaletteMenuItem(s.instance_class.fresh())]
-
 	def works_as(s, type):
 		if isinstance(type, Ref):
 			type = type.target
@@ -1986,10 +1981,6 @@ class TypeNodecl(NodeclBase):
 	help = ["points to another node, like using an identifier. Used only for pointing to types."]
 	def __init__(s):
 		super().__init__(Ref)
-
-	def palette(s, scope, text, node):
-		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [PaletteMenuItem(Ref(x)) for x in nodecls]
 
 	def make_example(s):
 		return Ref(B.module)
@@ -2022,33 +2013,9 @@ class VarRefNodecl(NodeclBase):
 		super().__init__(VarRef)
 
 
-	def palette(s, scope, text, node):
-		r = []
-		for x in node.vardecls_in_scope:
-			assert isinstance(x, (UntypedVar, TypedParameter))
-			r += [PaletteMenuItem(VarRef(x))]
-		return r
-"""
-	def palette(s, scope, text):
-		r = []
-		for x in scope:
-			xc=x.compiled
-			for y in x.vardecls:
-				yc=y.compiled
-				#log("vardecl compiles to: "+str(yc))
-				if isinstance(yc, (UntypedVar, TypedParameter)):
-					#log("vardecl:"+str(yc))
-					r += [PaletteMenuItem(VarRef(yc))]
-		#log (str(scope)+"varrefs:"+str(r))
-		return r
-"""
 class ExpNodecl(NodeclBase):
 	def __init__(s):
 		super(ExpNodecl, s).__init__(Exp)
-
-	def palette(s, scope, text, node):
-		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [PaletteMenuItem(Exp(x)) for x in nodecls]
 
 class Nodecl(NodeclBase):
 	"""for simple nodes (Number, Text, Bool)"""
@@ -2061,17 +2028,6 @@ class Nodecl(NodeclBase):
 
 	def make_example(s):
 		return s.inst_fresh()
-
-	def palette(s, scope, text, node):
-		i = s.instance_class
-		m = i.match(text)
-		if m:
-			value = i(text)
-			score = 300
-		else:
-			value = i()
-			score = 0
-		return PaletteMenuItem(value, score)
 
 class SyntaxedNodecl(NodeclBase):
 	"""
@@ -2196,10 +2152,6 @@ class EnumType(ParametricTypeBase):
 	def __init__(s, children):
 		s.instance_class = EnumVal
 		super(EnumType, s).__init__(children)
-	def palette(s, scope, text, node):
-		r = [PaletteMenuItem(EnumVal(s, i)) for i in range(len(s.ch.options.items))] + [PaletteMenuItem(Ref(s))]
-		#print ">",r
-		return r
 	def works_as(s, type):
 		if isinstance(type, Ref):
 			type = type.target
@@ -2228,9 +2180,6 @@ class SyntacticCategory(Syntaxed):
 
 	def register_symbol(s):
 		s._symbol = lhs = m.symbol(s.name)
-
-	def palette(s, scope, text, node):
-		return [PaletteMenuItem(Ref(s), 0)]
 
 class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
@@ -2281,9 +2230,6 @@ class Definition(Syntaxed):
 
 	def inst_fresh(s):
 		return s.ch.type.inst_fresh(s)
-
-	def palette(s, scope, text, node):
-		return s.ch.type.palette(scope, text, None) + [PaletteMenuItem(Ref(s), 0)]
 
 	@property
 	def type(s):
@@ -2655,8 +2601,11 @@ class ParserMenuItem(MenuItem):
 			value = Text(value)
 		s.value = value
 		value.parent = s
-		s.scores = Dotdict()
-		if score != 0:  s.scores._ = score
+		if isinstance(score, dict):
+			s.scores = Dotdict(score)
+		else:
+			s.scores = Dotdict()
+			if score != 0:  s.scores._ = score
 		s.brackets_color = colors.parser_menu_item_brackets
 
 	@property
@@ -2854,9 +2803,6 @@ class FunctionDefinitionBase(Syntaxed):
        			'ret': s.ret,
 		}
 	"""
-
-	def palette(s, scope, text, node):
-		return [PaletteMenuItem(FunctionCall(s))]
 
 
 """for function overloading, we could have a node that would be a "Variant" of
@@ -3094,14 +3040,6 @@ class FunctionCallNodecl(NodeclBase):
 	offers function calls thru palette()"""
 	def __init__(s):
 		super(FunctionCallNodecl, s).__init__(FunctionCall)
-	def palette(s, scope, text, node):
-		#override NodeclBase palette() which returns a menuitem with a fresh() instance_class,
-		#FunctionCall cant be instantiated without a target.
-		return []
-		#the stuff below is now performed in FunctionDefinitionBase
-#		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
-#		return [PaletteMenuItem(FunctionCall(x)) for x in decls]
-
 
 
 # endregion
@@ -3109,8 +3047,6 @@ class FunctionCallNodecl(NodeclBase):
 
 class CustomNodeDef(Syntaxed):
 	instance_class = NodeInstance
-	def palette(s, scope, text, node):
-		return [PaletteMenuItem(Ref(s)), PaletteMenuItem(NodeInstance(s))]
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
 		return NodeInstance(s)
