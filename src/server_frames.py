@@ -334,7 +334,7 @@ class Menu(SidebarFrame):
 				if node:#brainfart
 					s.marpa.enqueue_parsing(s.parser_items2tokens(node))
 		elif m.message == 'parsed':
-				print (m.results)
+				log (m.results)
 				s.parse_results = [nodes.ParserMenuItem(x) for x in m.results]
 				s.update_items()
 				#	r.append(ParserMenuItem(i, 333))

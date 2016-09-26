@@ -826,7 +826,7 @@ class ObjectDeclaration(Syntaxed):
 		for x in scope:
 			x = x.compiled
 			if x.decl == cls.decl:
-				print x, x.decl, cls.decl
+				log( x, x.decl, cls.decl)
 				r += [CompilerMenuItem(Ref(x))]
 		return r
 

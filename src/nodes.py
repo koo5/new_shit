@@ -948,7 +948,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 	@classmethod
 	def from_parse(cls, p, sy):
-		print('from_parse:%s',p)
+		print('Syntaxed from_parse:x=',p, "sy=", sy)
 
 		r = cls.fresh()
 		#info((p, cls, sy))
@@ -1283,7 +1283,7 @@ class List(ListPersistenceStuff, Collapsible):
 
 	@classmethod
 	def from_parse(cls, x):
-		log('from_parse:%s',x)
+		log('List from_parse: x=',x)
 		assert x[0] == '['
 		assert x[2] == ']'
 		if x[1] == 'nulled': x[1] = []
