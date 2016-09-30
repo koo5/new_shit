@@ -109,3 +109,12 @@ license
 not decided yet, some standard license or this experiment: <https://github.com/koo5/Free-Man-License> 
 For now: By contributing to lemon, you agree to granting me nonexclusive rights to use your contribution (with attribution) within lemon, in any way, including relicensing and reselling. Also, the patent claim protection clauses like in http://www.gnu.org/licenses/agpl-3.0.html apply.:)
 
+
+
+
+
+
+todo
+===
+* define czech syntaxes for some stuff, make it a module-wise setting to prefer them
+* 

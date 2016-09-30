@@ -2597,6 +2597,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 class ParserMenuItem(MenuItem):
 	def __init__(s, value:Node, score = 0):
 		super(ParserMenuItem, s).__init__()
+		s.brackets_color = colors.parser_menu_item_brackets
 		if isinstance(value, str):
 			value = Text(value)
 		s.value = value
@@ -2606,7 +2607,6 @@ class ParserMenuItem(MenuItem):
 		else:
 			s.scores = Dotdict()
 			if score != 0:  s.scores._ = score
-		s.brackets_color = colors.parser_menu_item_brackets
 
 	@property
 	def score(s):

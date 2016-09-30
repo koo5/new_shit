@@ -376,6 +376,12 @@ class Menu(SidebarFrame):
 		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results,
 		                                     s.current_text, s.current_parser_node.type)
 
+		log = logging.getLogger('menu').debug
+		for i in s.sorted_everything:
+			log(i.value.tostr())
+			for k,v in iteritems(i.scores._dict):
+				log("%s:%s"%(k,v ))
+
 	@staticmethod
 	def sort_palette(items, text, decl):
 		matchf = fuzz.token_set_ratio#partial_ratio
