@@ -1,9 +1,13 @@
 from nodes import *
+import traceback
+
+def tb():
+	return (traceback.extract_stack())
 
 def palette(s, scope, text, parser):
 	"create menu items"
 	if isinstance(s, CustomNodeDef):
-		return [PaletteMenuItem(Ref(s)), PaletteMenuItem(NodeInstance(s))]
+		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), NodeInstance(s))]
 	elif isinstance(s, FunctionCallNodecl):
 		#override NodeclBase palette() which returns a menuitem with a fresh() instance_class,
 		#FunctionCall cant be instantiated without a target.
@@ -12,13 +16,13 @@ def palette(s, scope, text, parser):
 #		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
 #		return [PaletteMenuItem(FunctionCall(x)) for x in decls]
 	elif isinstance(s, FunctionDefinitionBase):
-		return [PaletteMenuItem(FunctionCall(s))]
+		return [PaletteMenuItem(tb(), FunctionCall(s))]
 	elif isinstance(s, Definition):
-		return palette(s.ch.type, scope, text, None) + [PaletteMenuItem(Ref(s), 0)]
+		return palette(s.ch.type, scope, text, None) + [PaletteMenuItem(tb(), Ref(s), 0)]
 	elif isinstance(s, SyntacticCategory):
-		return [PaletteMenuItem(Ref(s), 0)]
+		return [PaletteMenuItem(tb(), Ref(s), 0)]
 	elif isinstance(s, EnumType):
-		r = [PaletteMenuItem(EnumVal(s, i)) for i in range(len(s.ch.options.items))] + [PaletteMenuItem(Ref(s))]
+		r = [PaletteMenuItem(tb(), EnumVal(s, i)) for i in range(len(s.ch.options.items))] + [PaletteMenuItem(tb(), Ref(s))]
 		return r
 	elif isinstance(s, Nodecl):
 		i = s.instance_class
@@ -29,15 +33,15 @@ def palette(s, scope, text, parser):
 		else:
 			value = i()
 			score = 0
-		return PaletteMenuItem(value, {'hardcoded regex-y match':score})
+		return PaletteMenuItem(tb(), value, {'hardcoded regex-y match':score})
 	elif isinstance(s, ExpNodecl):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [PaletteMenuItem(Exp(x)) for x in nodecls]
+		return [PaletteMenuItem(tb(), Exp(x)) for x in nodecls]
 	elif isinstance(s, VarRefNodecl):
 		r = []
 		for x in parser.vardecls_in_scope:
 			assert isinstance(x, (UntypedVar, TypedParameter))
-			r += [PaletteMenuItem(VarRef(x))]
+			r += [PaletteMenuItem(tb(), VarRef(x))]
 		return r
 		"""
 				r = []
@@ -54,8 +58,8 @@ def palette(s, scope, text, parser):
 		"""
 	elif isinstance(s, NodeclBase):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
-		return [PaletteMenuItem(Ref(x)) for x in nodecls]
+		return [PaletteMenuItem(tb(), Ref(x)) for x in nodecls]
 	elif isinstance(s, NodeclBase):
-		return PaletteMenuItem(s.instance_class.fresh())
+		return PaletteMenuItem(tb(), s.instance_class.fresh())
 	else:
 		return []

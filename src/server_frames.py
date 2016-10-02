@@ -335,7 +335,7 @@ class Menu(SidebarFrame):
 					s.marpa.enqueue_parsing(s.parser_items2tokens(node))
 		elif m.message == 'parsed':
 				log (m.results)
-				s.parse_results = [nodes.ParserMenuItem(x) for x in m.results]
+				s.parse_results = [nodes.ParserMenuItem(['a parse'], x) for x in m.results]
 				s.update_items()
 				#	r.append(ParserMenuItem(i, 333))
 				s.signal_change()
@@ -377,10 +377,14 @@ class Menu(SidebarFrame):
 		                                     s.current_text, s.current_parser_node.type)
 
 		log = logging.getLogger('menu').debug
+		log("MENU:")
 		for i in s.sorted_everything:
 			log(i.value.tostr())
 			for k,v in iteritems(i.scores._dict):
 				log("%s:%s"%(k,v ))
+			for v in i.notes:
+				log(v)
+			log("")
 
 	@staticmethod
 	def sort_palette(items, text, decl):

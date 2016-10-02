@@ -2595,7 +2595,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
 
 class ParserMenuItem(MenuItem):
-	def __init__(s, value:Node, score = 0):
+	def __init__(s, notes, value:Node, score = 0):
 		super(ParserMenuItem, s).__init__()
 		s.brackets_color = colors.parser_menu_item_brackets
 		if isinstance(value, str):
@@ -2607,6 +2607,7 @@ class ParserMenuItem(MenuItem):
 		else:
 			s.scores = Dotdict()
 			if score != 0:  s.scores._ = score
+		s.notes = notes
 
 	@property
 	def score(s):
@@ -2620,8 +2621,8 @@ class ParserMenuItem(MenuItem):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
 
 class PaletteMenuItem(ParserMenuItem):
-	def __init__(s, value, score=0):
-		super().__init__(value, score)
+	def __init__(s, notes, value, score=0):
+		super().__init__(notes, value, score)
 		s.brackets_color = (0,0,0)
 
 class DefaultParserMenuItem(MenuItem):
