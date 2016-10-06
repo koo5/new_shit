@@ -375,7 +375,7 @@ class Menu(SidebarFrame):
 	def update_items(s):
 		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results,
 		                                     s.current_text, s.current_parser_node.type)
-
+		"""
 		log = logging.getLogger('menu').debug
 		log("MENU:")
 		for i in s.sorted_everything:
@@ -385,7 +385,7 @@ class Menu(SidebarFrame):
 			for v in i.notes:
 				log(v)
 			log("")
-
+		"""
 	@staticmethod
 	def sort_palette(items, text, decl):
 		matchf = fuzz.token_set_ratio#partial_ratio

@@ -4,3 +4,6 @@
 [submodule "pygame_cffi"]
 	path = pygame_cffi
 	url = https://github.com/CTPUG/pygame_cffi.git
+[submodule "supertools"]
+	path = supertools
+	url = https://github.com/gissehel/supertools
