@@ -33,7 +33,7 @@ def palette(s, scope, text, parser):
 		else:
 			value = i()
 			score = 0
-		return PaletteMenuItem(tb(), value, {'hardcoded regex-y match':score})
+		return [PaletteMenuItem(tb(), value, {'hardcoded regex-y match':score})]
 	elif isinstance(s, ExpNodecl):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [PaletteMenuItem(tb(), Exp(x)) for x in nodecls]
@@ -56,10 +56,10 @@ def palette(s, scope, text, parser):
 				#log (str(scope)+"varrefs:"+str(r))
 				return r
 		"""
-	elif isinstance(s, NodeclBase):
+	elif isinstance(s, TypeNodecl):
 		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
 		return [PaletteMenuItem(tb(), Ref(x)) for x in nodecls]
 	elif isinstance(s, NodeclBase):
-		return PaletteMenuItem(tb(), s.instance_class.fresh())
+		return [PaletteMenuItem(tb(), s.instance_class.fresh())]
 	else:
 		return []

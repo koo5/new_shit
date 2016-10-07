@@ -369,12 +369,27 @@ class Menu(SidebarFrame):
 		s.current_text = text
 
 	def create_palette(s, scope, atts, parser):
-		s.palette_results = flatten([palette.palette(x, scope, s.current_text, parser) for x in scope])
+		log = logging.getLogger('menu').debug
+		s.palette_results = []
+		log("scope:%s"%len(scope))
+		for x in scope:
+			log("%s:"%x)
+			a = palette.palette(x, scope, s.current_text, parser)
+			s.palette_results += a
+			for i in a:
+				log(i.value.tostr())
+
+		s.palette_results = flatten(s.palette_results)
+		log("palette_results:%s"% len(s.palette_results))
+
 		s.update_items()
 
 	def update_items(s):
+		log = logging.getLogger('menu').debug
+		log("parse_results:%s"% len(s.parse_results))
 		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results,
 		                                     s.current_text, s.current_parser_node.type)
+		log("sorted_everything:%s"% len(s.sorted_everything))
 		"""
 		log = logging.getLogger('menu').debug
 		log("MENU:")
