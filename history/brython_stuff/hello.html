@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="/src/brython.js"></script>
+</head>
+
+<body onload="brython(1)">
+<script type="text/python">
+from browser import document as doc
+
+def o(x):
+  doc["out"] <= x + "... "
+  print (x+"... ")
+
+o("start")
+o ("lemon_platform")
+import lemon_platform as platform
+platform.frontend = platform.brython
+
+o ("Dotdict")
+import Dotdict
+o ("lemon_six")
+import lemon_six
+o ("logger")
+import logger
+o ("lemon_colors")
+import lemon_colors
+o ("utils")
+import utils
+o ("element<br>")
+import element
+o ("widgets")
+import widgets
+o ("nodes")
+import nodes
+o ("project")
+import project
+o ("lemon")
+import frames
+o ("done.")
+import lemon
+o ("done.<br>")
+
+args = Dotdict.Dotdict()
+args.invert = False
+args.mono = False
+args.replay = False
+args.log_events = True
+
+for f in lemon.allframes:
+	f.cols = f.rows = 80 #whatever
+
+lemon.render()
+
+for l in lemon.root.lines:
+	for ch in l:
+		doc["out"] <= ch[0]
+	doc["out"] <= "<br>"
+
+</script>
+<p><div id="out">brython test:</div>
+</body>
+
+</html>
