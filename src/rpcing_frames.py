@@ -438,6 +438,7 @@ class ClientFrame(object):
 class Editor(ClientFrame):
 	def __init__(s):
 		super().__init__(server.editor)
+		s.counterpart.root.editors = [s]
 		s.cursor_c = s.cursor_r = 0
 		if SDL:
 			s._cursor_blink_phase = True
@@ -592,7 +593,7 @@ class Editor(ClientFrame):
 			log("moving cursor to %s", m.node)
 			pos = s.find_element(m.node)
 			if pos:
-				s._move_cursor_v(s.cursor_r - pos[1] + s.scroll_lines)
+				s._move_cursor_v((pos[1] - s.scroll_lines) - s.cursor_r)
 				s.cursor_c = pos[0]
 
 		if m.chars:
@@ -748,6 +749,12 @@ class Editor(ClientFrame):
 				f.write(ch[0])
 			f.write("\n")
 		f.close()
+
+	def move_cursor(s, something, coff=0, roff=0):
+		s.cursor_c, s.cursor_r = s.find_element(something)
+		s.cursor_c += coff
+		s.cursor_r += roff
+		s.after_cursor_moved()
 
 
 

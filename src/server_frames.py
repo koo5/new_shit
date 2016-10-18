@@ -390,6 +390,8 @@ class Menu(SidebarFrame):
 		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results,
 		                                     s.current_text, s.current_parser_node.type)
 		log("sorted_everything:%s"% len(s.sorted_everything))
+
+		s.current_parser_node.menu = s.sorted_everything
 		"""
 		log = logging.getLogger('menu').debug
 		log("MENU:")

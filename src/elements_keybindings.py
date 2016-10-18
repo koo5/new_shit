@@ -280,6 +280,17 @@ add_keys(n.ParserBase, -1, {
 	K(KMOD_CTRL,    K_b):  H(clipboard_paste)
 })
 
+def run(s, e):
+	s.eval()
+	new = n.ReplParser()
+	s.parent.add_below(s, new)
+	s.root.delayed_cursor_move.node = new
+	return AST_CHANGED
+
+add_keys(n.ReplParser, -1, {
+	K((), K_F12): H(run)
+})
+
 """
 analogically with delete,
 both items will know not to handle it, so parser gets it,

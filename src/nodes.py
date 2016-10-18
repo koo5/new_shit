@@ -971,7 +971,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			if type(i) == unicode:
 				assert type(s2[si] == unicode)
 			else:
-				assert isinstance(i, Element)
+				assert isinstance(i, Element),    i
 				r.ch[s2[si].name] = i
 
 			si+=1
@@ -1435,6 +1435,11 @@ class List(ListPersistenceStuff, Collapsible):
 			if not v.eq_by_value_and_python_class(b.items[i]):
 				return False
 		return True
+
+	def add_below(s, x, y):
+		i = s.items.index(x) + 1
+		s.items.insert(i, y)
+		y.parent = s
 
 class Statements(List):
 	def __init__(s):
@@ -2390,20 +2395,13 @@ def even_out(items):
 
 
 class ParserBase(Node):
-
-	"""
-	{Parser node}
-	"""
-
 	def __init__(s):
 		super(ParserBase, s).__init__()
 		s.items = NotifyingList()
-		#s.items.append(widgets.Text(s,"x"))
 		s.decl = None
 		s.on_edit = Signal()
 		s.brackets_color = colors.compiler_brackets
 		s.brackets = (' ', ' ')
-		s.reregister = False
 
 	def clipboard_paste(s):
 		print ("paste")
@@ -2593,6 +2591,24 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 	def long__repr__(s):
 		return object.__repr__(s) + "(for type '"+str(s.type)+"')"
+
+
+class ReplParser(Parser):
+	menu = []
+	def render(s):
+		log("ReplParser")
+		if len(s.items) == 0: # no items, show the gray type hint
+			return s.empty_render()
+
+		for i, item in enumerate(s.items):
+			yield [
+				AttTag(Att.item_index, (s, i)),
+				ElementTag(item),
+				EndTag()]
+
+		yield str(len(s.menu))
+
+
 
 class ParserMenuItem(MenuItem):
 	def __init__(s, notes, value:Node, score = 0):
@@ -3077,6 +3093,11 @@ def make_root():
 
 
 	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
+
+	r["repl"] = B.builtinmodule.inst_fresh()
+	r["repl"].ch.statements.items = [ReplParser()]
+	r["repl"].ch.statements.view_mode=2
+
 	r["intro"] = B.builtinmodule.inst_fresh()
 	r["intro"].ch.statements.items = [
 		Comment("""
@@ -3094,12 +3115,7 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 		Comment("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
 	]
 
-
-
-
-
 	r["intro"].ch.statements.view_mode=0
-
 
 
 	r["builtins"] = B.builtinmodule.inst_fresh()
@@ -3108,7 +3124,6 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	log("built in %s nodes",len(r["builtins"].ch.statements.items))
 	r["builtins"].ch.statements.add(Comment("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 0
-
 
 
 

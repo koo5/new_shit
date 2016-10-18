@@ -86,11 +86,8 @@ class Client():
 		# if args.lesh:
 		#	something = root.root['lesh'].command_line
 		# else:
-		something = s.editor.counterpart.root['liki'].ch.statements.items[0]
-		s.editor.cursor_c, s.editor.cursor_r = s.editor.find_element(something)
-		s.editor.cursor_c += 1
-		s.editor.after_cursor_moved()
-
+		something = s.editor.counterpart.root['repl'].ch.statements.items[0]
+		s.editor.move_cursor(something)
 
 	def after_sidebar_changed(s):
 		for i in s.sidebars:
