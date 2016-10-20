@@ -2611,24 +2611,27 @@ class ReplParser(Parser):
 
 
 class ParserMenuItem(MenuItem):
-	def __init__(s, notes, value:Node, score = 0):
+	def __init__(s, notes, value:Node, score = None):
 		super(ParserMenuItem, s).__init__()
 		s.brackets_color = colors.parser_menu_item_brackets
 		if isinstance(value, str):
 			value = Text(value)
 		s.value = value
 		value.parent = s
+		s.scores = Dotdict({
+			"@context" : "http://koo5.github.com/lemon/menu",
+			"@type" : "Item"
+		})
 		if isinstance(score, dict):
-			s.scores = Dotdict(score)
-		else:
-			s.scores = Dotdict()
-			if score != 0:  s.scores._ = score
+			for k,v in iteritems(score):
+				s.scores[k] = v
+		if score != None:  s.scores.init = score
 		s.notes = notes
 
 	@property
 	def score(s):
 		#print s.scores._dict
-		return sum([i if not isinstance(i, tuple) else i[0] for i in itervalues(s.scores._dict)])
+		return sum([i if type(i) == int else 0 for i in itervalues(s.scores._dict)])
 
 	def tags(s):
 		return [MemberTag('value'), ColorTag(colors.menu_item_extra_info), " - "+str(s.value.__class__.__name__)+' ('+str(s.score)+')', EndTag()]

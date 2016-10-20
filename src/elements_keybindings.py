@@ -289,6 +289,8 @@ def run(s, e):
 
 add_keys(n.ReplParser, -1, {
 	K((), K_F12): H(run)
+#	K((), K_TAB): H(complete)
+
 })
 
 """

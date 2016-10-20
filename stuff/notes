@@ -654,3 +654,19 @@ May 12
 
 
 
+
+> git status
+[20:33:10] kook@idea /home/kook/new_shit/pygame_cffi (0) 
+> git status
+HEAD detached at babe288
+nothing to commit, working directory clean
+[20:33:10] kook@idea /home/kook/new_shit/pygame_cffi (0) 
+> 
+
+
+
+
+menuWindow is a lemonSdlGui1Window
+
+todo
+compile pygame for py2?

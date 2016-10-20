@@ -405,30 +405,35 @@ class Menu(SidebarFrame):
 		"""
 	@staticmethod
 	def sort_palette(items, text, decl):
-		matchf = fuzz.token_set_ratio#partial_ratio
+		assert type(text) == unicode
+
+		#0-100
+		matchf = fuzz.token_set_ratio
 
 		if isinstance(decl, nodes.Exp):
 			decl = decl.type
 
 		def score_item(item):
 			v = item.value
-			assert type(text) == unicode
-			vname = 888
+
+			name = None
 			try:
 				try:
-					vname = v.name
+					name = v.name
 				except KeyError as e:
 					pass
 			except AttributeError:
 				pass
-			if type(vname) == str:
-				item.scores.name = matchf(unicode(vname), text, False), vname #0-100
+			if type(name) == str:
+				item.scores.name = name
+				item.scores.name_matchf = matchf(name, text)
 
-			assert type(v.decl.name) == unicode
-			item.scores.declname = 3 * matchf(v.decl.name, text, False), v.decl.name #0-100
+			assert type(v.decl.name) == str
+			item.scores.declname_matchf =  matchf(v.decl.name, text)
+			item.scores.declname = v.decl.name
 
 			if item.value.decl.works_as(decl):
-				item.scores.worksas = 200
+				item.scores.worksas = 30
 			else:
 				item.invalid = True
 
@@ -442,7 +447,10 @@ class Menu(SidebarFrame):
 			texts = [i for i in tags if type(i) == unicode]
 			#print texts
 			texttags = " ".join(texts)
-			item.scores.texttags = matchf(texttags, text), texttags
+			item.scores.texttags_matchf = matchf(texttags, text)
+			item.scores.texttags = texttags
+			if text in texttags:
+				item.scores.text_in_texttags = 200
 			return item
 
 		return sorted(map(score_item, items), key=lambda i: -i.score)
