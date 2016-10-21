@@ -1260,7 +1260,7 @@ class List(ListPersistenceStuff, Collapsible):
 		super().__init__()
 		s.items = []
 		s.decl = Ref(B.list_of_anything)
-
+		s.parser_class = Parser
 
 	def copy(s):
 		r = s.__class__.fresh()
@@ -1350,13 +1350,12 @@ class List(ListPersistenceStuff, Collapsible):
 		new.parent = s
 
 	def add(s, item):
-		
 		item.parent = s
 		s.items.append(item)
 		return item
 
 	def newline(s, pos=-1):
-		p = Parser()
+		p = s.parser_class()
 		p.parent = s
 		if pos == -1:
 			s.items.append(p)
@@ -3098,7 +3097,9 @@ def make_root():
 	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
 
 	r["repl"] = B.builtinmodule.inst_fresh()
+	r["repl"].ch.statements.parser_class = ReplParser
 	r["repl"].ch.statements.items = [ReplParser()]
+	r["repl"].ch.statements.newline()
 	r["repl"].ch.statements.view_mode=2
 
 	r["intro"] = B.builtinmodule.inst_fresh()

@@ -531,6 +531,11 @@ class Menu(SidebarFrame):
 				s.signal_change()
 				return True
 
+	def sel_and_accept(s):
+		if s.sel < 0:
+			s.sel = 0
+		s.accept()
+
 	def accept_and_run(s):
 		if s.sel == -1:
 			s.sel = 0

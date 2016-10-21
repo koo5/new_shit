@@ -84,8 +84,7 @@ def setup(client):
 		(K_SPACE,
 			(s.menu.accept, None, CHECK)),
 		(K_TAB,
-			s.menu.accept)
-
+			s.menu.sel_and_accept)
 	])
 
 	global_keys[frozenset([KMOD_CTRL])] = odict([
