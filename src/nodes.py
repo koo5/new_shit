@@ -687,6 +687,7 @@ class Node(NodePersistenceStuff, element.Element):
 			#log("const" + str(s))
 		#else:
 		#	s.runtime.value.append(r)
+
 		s.append_value(r)
 		return r
 

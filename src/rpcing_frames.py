@@ -96,7 +96,9 @@ class ClientFrame(object):
 	def project(s):
 		s.arrows = []
 		s.completed_arrows = None
-		return s.project_tags(s.tags.get())
+		if s.tags.dirty:
+			s.tags.clear()
+		return s.project_tags(s.tags)
 
 	def maybe_redraw(s):
 		"""non-rpcing client overrides this with a
@@ -127,50 +129,54 @@ class ClientFrame(object):
 			s.sdl_draw_stuff(surface)
 			sdl_screen_surface.blit(surface, s.rect.topleft)
 
-	def sdl_draw_lines(s, surf, highlight=None, transparent=False, just_bg=False):
+	def sdl_draw_lines(s, surf, transparent=False, just_bg=False):
 		y = 0
+		if s.lines.dirty:
+			s.lines.clear()
+		for row, line in enumerate(s.lines):
+				assert type(line) == Line
+				if row < s.scroll_lines:
+					continue
 
-		for row, line in enumerate(s.lines.get()):
-			assert type(line) == Line
-			if row < s.scroll_lines:
-				continue
+				font = line.font
+				assert type(font) == Font
 
-			font = line.font
-			assert type(font) == Font
+				fisheye = args.fisheye and type(s) == Editor and row == s.cursor_r
+				if fisheye:
+					y += args.line_spacing
+					font = get_font(1)
 
-			fisheye = args.fisheye and type(s) == Editor and row == s.cursor_r
-			if fisheye:
+				y += font.height
+
+				highlight = s.under_cursor if not args.eightbit else None
+
+				s.sdl_draw_line(surf, line.chars, line.font, y, highlight, transparent, just_bg)
+
+				c = colors.outline
+				k = int(line.font.width / 5)
+				width = int(line.font.width / 10)
+				for col, graphics in line.graphics.items():
+					x = line.font.width * col
+					for graphic in graphics:
+						y1 = int(y)
+						y2 = int(y - line.font.height)
+						pygame.draw.line(surf, c, (x,y1),(x,y2), width)
+						if graphic == element_start_graphic_indicator:
+							pygame.draw.line(surf, c, (x+k,y1),(x,y1), width)
+							pygame.draw.line(surf, c, (x+k,y2),(x,y2), width)
+						if graphic == element_end_graphic_indicator:
+							pygame.draw.line(surf, c, (x-k,y1),(x,y1), width)
+							pygame.draw.line(surf, c, (x-k,y2),(x,y2), width)
+
+
+				if row == s.rows + s.scroll_lines:
+					break
+
 				y += args.line_spacing
-				font = get_font(1)
 
-			y += font.height
+				if fisheye:
+					y += args.line_spacing
 
-			s.sdl_draw_line(surf, line.chars, line.font, y, highlight, transparent, just_bg)
-
-			c = colors.outline
-			k = int(line.font.width / 5)
-			width = int(line.font.width / 10)
-			for col, graphics in line.graphics.items():
-				x = line.font.width * col
-				for graphic in graphics:
-					y1 = int(y)
-					y2 = int(y - line.font.height)
-					pygame.draw.line(surf, c, (x,y1),(x,y2), width)
-					if graphic == element_start_graphic_indicator:
-						pygame.draw.line(surf, c, (x+k,y1),(x,y1), width)
-						pygame.draw.line(surf, c, (x+k,y2),(x,y2), width)
-					if graphic == element_end_graphic_indicator:
-						pygame.draw.line(surf, c, (x-k,y1),(x,y1), width)
-						pygame.draw.line(surf, c, (x-k,y2),(x,y2), width)
-
-
-			if row == s.rows + s.scroll_lines:
-				break
-
-			y += args.line_spacing
-
-			if fisheye:
-				y += args.line_spacing
 
 	@staticmethod
 	def sdl_draw_line(surf, chars, font, y, highlighted_element=None, transparent=False, just_bg=False):
@@ -373,17 +379,20 @@ class ClientFrame(object):
 		if cr == None:
 			return None
 		c,r = cr
+		l = s.line_at_row(r)
+		if not l:
+			return
 		try:
-			return s.lines[r+s.scroll_lines].chars[c][1]
+			return l.chars[c][1]
 		except IndexError:
 			return None
 
+	def line_at_row(s, r):
+		return s.lines.tryget(r+s.scroll_lines)
+
 	def line_at_cursor(s):
 		c,r = s.cursor
-		try:
-			return s.lines[r+s.scroll_lines]
-		except IndexError:
-			return None
+		return s.line_at_row(r)
 
 	def click_cr(s,e):
 		elem = s.under_cr(e.cr)
@@ -418,7 +427,7 @@ class ClientFrame(object):
 		for row, line in enumerate(s.lines):
 			fh = line.font.height
 			if row == r:
-				x = c * s.lines[r].font.width
+				x = c * line.font.width
 				return (x, y, y + fh)
 			else:
 				y += fh + args.line_spacing
@@ -473,7 +482,7 @@ class Editor(ClientFrame):
 
 	def first_nonblank(s):
 		r = 0
-		for ch, a in s.lines[s.cursor_r+s.scroll_lines].chars:
+		for ch, a in s.line_at_row(s.cursor_r+s.scroll_lines).chars:
 			if ch == " ":
 				r += 1
 			else:
@@ -483,13 +492,17 @@ class Editor(ClientFrame):
 		"""returns True if it moved"""
 		old = s.cursor_c, s.cursor_r, s.scroll_lines
 		s.cursor_c += x
-		if len(s.lines) <= s.cursor_r+s.scroll_lines or \
-						s.cursor_c > len(s.lines[s.cursor_r+s.scroll_lines].chars):
+		l = s.lines.tryget(s.cursor_r+s.scroll_lines)
+		if not l or s.cursor_c > len(l.chars):
 			s._move_cursor_v(x)
 			s.cursor_c = 0
 		if s.cursor_c < 0:
 			if s._move_cursor_v(-1):
-				s.cursor_c = len(s.lines[s.cursor_r+s.scroll_lines].chars)
+				l = s.lines.tryget(s.cursor_r+s.scroll_lines)
+				if l:
+					s.cursor_c = len(l.chars)
+				else:
+					s.cursor_c = 0
 			else:
 				s.cursor_c = 0
 		moved = old != (s.cursor_c, s.cursor_r, s.scroll_lines)
@@ -537,7 +550,7 @@ class Editor(ClientFrame):
 				break
 
 	def cursor_home(s):
-		if len(s.lines) > s.cursor_r+s.scroll_lines: # dont try to home beyond the end of file
+		if s.lines.tryget(s.cursor_r+s.scroll_lines): # dont try to home beyond the end of file
 			if s.cursor_c != 0:
 				s.cursor_c = 0
 			else:
@@ -545,7 +558,7 @@ class Editor(ClientFrame):
 			s.after_cursor_moved()
 
 	def cursor_end(s):
-		if len(s.lines) > s.cursor_r+s.scroll_lines:
+		if s.lines.tryget(s.cursor_r+s.scroll_lines):
 			s.cursor_c = len(s.lines[s.cursor_r+s.scroll_lines].chars)
 			s.after_cursor_moved()
 
@@ -644,15 +657,12 @@ class Editor(ClientFrame):
 		return dict(left=left, middle=middle, right=right)
 
 	def sdl_draw_stuff(s, surf):
-		highlight = s.under_cursor if not args.eightbit else None
-
 		if s.arrows_visible:
-			s.sdl_draw_lines(surf, highlight,
-			                 transparent=True)
+			s.sdl_draw_lines(surf, transparent=True)
 			s.sdl_draw_arrows(surf)
 
 		else:
-			s.sdl_draw_lines(surf, highlight, False)
+			s.sdl_draw_lines(surf, False)
 		s.after_project()
 		s.draw_cursor(surf)
 
