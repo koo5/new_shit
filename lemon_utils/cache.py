@@ -22,7 +22,7 @@ class Cache(object):
 			return None
 
 	def __getitem__(s, i):
-		print ("__getitem__",i)
+		#print ("__getitem__",i)
 		while i >= len(s.data):
 			s.fetch()
 		return s.data[i]
