@@ -622,7 +622,7 @@ class Editor(ClientFrame):
 		s.counterpart.set_atts(s.atts_triple)
 
 	def after_cursor_moved(s):
-		log("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
+		print("after_cursor_moved: %s %s",s.cursor_c, s.cursor_r)
 		s.must_redraw = True
 		s.update_atts_on_server()
 		s.maybe_redraw()
