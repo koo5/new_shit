@@ -381,6 +381,8 @@ class ListPersistenceStuff(object):
 			r.add(pl)
 			r.items[i] = deserialize(item_data, pl)
 			r.items[i].parent = r
+
+		r.view_mode = 2
 		return r
 
 class BaseRefPersistenceStuff(object):
@@ -2690,8 +2692,6 @@ class FunctionDefinitionBase(Syntaxed):
 
 	def __init__(s, children):
 		super(FunctionDefinitionBase, s).__init__(children)
-		s.ch.sig.parsed.view_mode=1
-		s.ch.sig.parsed.add(Text("AAAAA"))
 
 	def register_symbol(s):
 
