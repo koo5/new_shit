@@ -1,0 +1,110 @@
+{
+    "decl": {
+        "decl": "ref",
+        "target": {
+            "resolve": true,
+            "name": "module",
+            "class": "syntaxednodecl"
+        }
+    },
+    "children": {
+        "file": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "resolve": true,
+                    "name": "text",
+                    "class": "nodecl"
+                }
+            },
+            "text": "library/notes.lemon.json"
+        },
+        "name": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "resolve": true,
+                    "name": "text",
+                    "class": "nodecl"
+                }
+            },
+            "text": "notes"
+        },
+        "statements": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "resolve": true,
+                    "name": "statements",
+                    "class": "nodecl"
+                }
+            },
+            "items": [
+                {
+                    "items": [],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        " Choosing an XML processing API "
+                    ],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        "https://www.linkedin.com/learning/xml-integration-with-java/choosing-an-xml-processing-api"
+                    ],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        "downloaded:"
+                    ],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        "file:///home/kook/data/downloaded_stuff/146014_01_02_XR15_xmlapis.mp4"
+                    ],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        "Types of XML Processors:"
+                    ],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        "*tree-based"
+                    ],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        "**represent entire xml document as object tree..."
+                    ],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [
+                        "https://www.linkedin.com/learning/real-world-xml/using-xml-in-firefox"
+                    ],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [],
+                    "decl": "Parser"
+                },
+                {
+                    "items": [],
+                    "decl": "Parser"
+                }
+            ]
+        }
+    }
+}
