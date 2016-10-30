@@ -6,8 +6,8 @@ def tb():
 
 def palette(s, scope, text, parser):
 	"create menu items"
-	if isinstance(s, CustomNodeDef):
-		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), NodeInstance(s))]
+	if isinstance(s, CompoundNodeDef):
+		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), CompoundNode(s))]
 	elif isinstance(s, FunctionCallNodecl):
 		#override NodeclBase palette() which returns a menuitem with a fresh() instance_class,
 		#FunctionCall cant be instantiated without a target.

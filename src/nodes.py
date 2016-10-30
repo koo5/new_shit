@@ -101,7 +101,7 @@ def deref_decl(d):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
-	elif isinstance(d, (CustomNodeDef, Union)):
+	elif isinstance(d, (CompoundNodeDef, Union)):
 		return d
 	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
 		return d
@@ -180,7 +180,7 @@ def _to_lemon(x):
 	#elif isinstance(x, list):
 
 class Children(Dotdict):
-	"""this is the "ch" of Syntaxed nodes"""
+	"""this is the class of "ch" of Syntaxed nodes"""
 	pass
 
 
@@ -568,18 +568,17 @@ class Node(NodePersistenceStuff, element.Element):
 
 	@property
 	def symbol(s):
-		logging.getLogger("marpa").debug("gimme node_symbol for", s)
+		logging.getLogger("marpa").debug(("gimme node_symbol for", s))
 		if s._symbol == None:
 			s.register_symbol()
 		return s._symbol
 
 	def register_symbol(s):
-		#log("default")
-		pass
+		return register_symbol(s)
 
 	@classmethod
 	def register_class_symbol(cls):
-		pass
+		return register_class_symbol(cls)
 
 	"""
 	def make_rainbow(s):
@@ -620,9 +619,6 @@ class Node(NodePersistenceStuff, element.Element):
 	def clear_runtime_dict(s):
 		s.runtime._dict.clear()
 
-
-
-
 	def set_parent(s, v):
 		assert v or isinstance(s, Root) or s.isroot,  s
 		super().set_parent(v)
@@ -631,9 +627,6 @@ class Node(NodePersistenceStuff, element.Element):
 
 	#in python, overriding properties has to be done like this
 	parent=property(element.Element.get_parent, set_parent)
-
-
-
 
 	@property
 	def parsed(s):
@@ -788,10 +781,10 @@ class Node(NodePersistenceStuff, element.Element):
 
 
 
-class NodeInstance(Node):
+class CompoundNode(Node):
 	def __init__(s, decl):
 		super().__init__()
-		assert isinstance(decl, CustomNodeDef)
+		assert isinstance(decl, CompoundNodeDef)
 		s.decl = decl
 		s.create_kids()
 		s.fix_parents()
@@ -891,27 +884,6 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		# prevent setting new attributes
 		s.lock()
 		#assert isinstance(s.ddecl, SyntaxedNodecl)
-
-	@classmethod
-	def register_class_symbol(cls):
-		#this is the grand-top-starting symbol for this node type
-		r = m.symbol(cls.__name__)
-		m.set_symbol_rank(r, cls.rank)
-		
-		#since we have like class Var(Syntaxed)
-		#the Var's decl is the SyntaxedNodecl that actually holds the syntaxes and sits in the declaring module
-			
-		
-		ddecl = deref_decl(cls.decl)
-		
-		#and a syntaxed can have multiple syntaxes, for now just in a primitive way
-		
-		for sy in ddecl.instance_syntaxes:
-			cls.rule_for_syntax(r, sy, ddecl)
-				
-		return r
-
-
 
 	@classmethod
 	def rule_for_syntax(cls, cls_sym, syntax, ddecl):
@@ -1274,17 +1246,6 @@ class List(ListPersistenceStuff, Collapsible):
 		return r
 
 	@classmethod
-	def register_class_symbol(cls):
-		log("registering list grammar")
-		optionally_elements = m.symbol('optionally_elements')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char(','), 0)
-		r = m.symbol('list literal')
-		opening =  m.known_char('[')
-		closing =  m.known_char(']')
-		m.rule('list literal', r, [opening, optionally_elements, closing], cls.from_parse)
-		return r
-
-	@classmethod
 	def from_parse(cls, x):
 		log('List from_parse: x=',x)
 		assert x[0] == '['
@@ -1517,7 +1478,7 @@ class NoValue(Node):
 
 def banana(text="error text"):
 	return Text(text)#
-	r = NodeInstance(s.root.essentials.banana)
+	r = CompoundNode(s.root.essentials.banana)
 	r.ch.info = Text(text)
 	return r
 
@@ -1582,19 +1543,6 @@ class Number(WidgetedValue):
 		s.widget = widgets.Number(s, value)
 		s.widget.brackets = ('','')
 
-	@classmethod
-	def register_class_symbol(cls):
-		log("registering number grammar")
-		digit = m.symbol('digit')
-		digits = m.symbol('digits')
-		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
-			m.rule(i + "_is_a_digit",digit, m.known_char(i))
-
-		m.sequence('digits_is_sequence_of_digit', digits, digit, join)
-		r = m.symbol('number')
-		m.rule('number_is_digits', r, digits, (ident, cls))
-		return r
-
 	def _eval(s):
 		return Number(s.pyval)
 
@@ -1612,26 +1560,6 @@ class Text(WidgetedValue):
 		s.widget = widgets.Text(s, value)
 		s.brackets_color = colors.text_brackets
 		s.debug_note = debug_note
-
-
-	@classmethod
-	def register_class_symbol(cls):
-		clsstr = str(cls)
-		log("registering "+clsstr+" grammar")
-		double_slash = m.known_string('//')
-		slashed_end =  m.known_string('/'+cls.brackets[1])
-		body_part = m.symbol(clsstr+'_body_part')
-		m.rule(clsstr+'_body_part_is_double_slash', body_part, double_slash)
-		m.rule(clsstr+'_body_part_is_slashed_end', body_part, slashed_end)
-		m.rule(clsstr+'_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
-		m.rule(clsstr+'_body_part_is_known_char', body_part, m.syms.known_char)
-		body = m.symbol('body')
-		m.sequence(clsstr+'_body is seq of body part', body, body_part, join)
-		text = m.symbol(clsstr)
-		opening =  m.known_string(cls.brackets[0])
-		closing =  m.known_string(cls.brackets[1])
-		m.rule(clsstr+'_is_[body]', text, [opening, body, closing], cls.from_parse)
-		return text
 
 	@classmethod
 	def from_parse(cls, args):
@@ -1652,23 +1580,6 @@ class Identifier(WidgetedValue):
 		s.widget = widgets.Text(s, value)
 
 	@classmethod
-	def register_class_symbol(cls):
-		#the symbol here is meant a marpa symbol, 
-		#grammars are made up of symbols and rules
-		#so, here we have a little builtin grammar for Identifier
-		#it prolly allows more than we want now but w/e
-		#its actually the menu class that goes and collects this
-		#and then calls the marpa thread
-		
-		log("registering identifier grammar")
-		body_part = m.symbol('body_part')
-		m.rule('identifier_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
-		m.rule('identifier_body_part_is_known_char', body_part, m.syms.known_char)
-		r = m.symbol('Identifier')
-		m.sequence('identifier is seq of body part', r, body_part, cls.from_parse)
-		return r
-
-	@classmethod
 	def from_parse(cls, args):
 		return cls(''.join(args))
 
@@ -1677,23 +1588,6 @@ class RestrictedIdentifier(WidgetedValue):
 	def __init__(s, value=""):
 		super().__init__()
 		s.widget = widgets.Text(s, value)
-
-	@classmethod
-	def register_class_symbol(cls):
-		log("registering restricted identifier grammar")
-		body_part = m.symbol('body_part')
-
-		#ok doesnt seem we allow nubmers, perfect
-		allowed = []
-		for rng in ['az', 'AZ']:
-			allowed.extend([chr(x) for x in range(ord(rng[0]),ord(rng[1])+1)])
-		allowed.extend([ch for ch in '_-'])
-		for ch in allowed:
-			m.rule('restricted_identifier_body_part_is_', body_part, m.known_char(ch))
-		
-		r = m.symbol('Identifier')
-		m.sequence('identifier is seq of body part', r, body_part, cls.from_parse)
-		return r
 
 	@classmethod
 	def from_parse(cls, args):
@@ -1847,20 +1741,6 @@ class Ref(RefPersistenceStuff, Node):
 		s.target = target
 
 	@classmethod
-	def register_class_symbol(cls):
-		r = m.symbol('ref')
-
-		for i in m.scope:
-			if is_type(i):#todo: not just types but also functions and..?..
-				rendering = "*" + i.name
-				debug_name = "ref to"+str(i)
-				sym = m.symbol(debug_name)
-				m.rule(debug_name + "is a ref", r, sym)
-				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
-
-		return r
-
-	@classmethod
 	def from_parse(cls, x):
 		log(x)
 
@@ -1930,9 +1810,6 @@ class NodeclBase(Node):
 		instance_class.decl = Ref(s)
 		s.decl = None
 		s.example = None
-
-	def register_symbol(s):
-		s._symbol = s.instance_class.register_class_symbol()
 
 	def make_example(s):
 		return None
@@ -2185,9 +2062,6 @@ class SyntacticCategory(Syntaxed):
 	def __init__(s, children):
 		super(SyntacticCategory, s).__init__(children)
 
-	def register_symbol(s):
-		s._symbol = lhs = m.symbol(s.name)
-
 class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
 	def __init__(s, children):
@@ -2196,22 +2070,6 @@ class WorksAs(Syntaxed):
 	def forget_symbols(s):
 		super(WorksAs, s).forget_symbols()
 		s._rule = None
-
-	def register_symbol(s):
-		if s._rule != None:
-			return
-		lhs = s.ch.sup.parsed
-		rhs = s.ch.sub.parsed
-		if not isinstance(lhs, Ref) or not isinstance(rhs, Ref):
-			print ("invalid sub or sup in worksas")
-			return
-		lhs = lhs.target.symbol
-		rhs = rhs.target.symbol
-		if args.log_parsing:
-			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
-		if lhs != None and rhs != None:
-			r = m.rule(str(s), lhs, rhs)
-			s._rule = r
 
 	@classmethod
 	def b(cls, sub, sup):
@@ -2500,7 +2358,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		p = s.parent
 		if isinstance(p, Parser):
 			return p.type
-		elif isinstance(p, (Syntaxed, FunctionCall, NodeInstance)):
+		elif isinstance(p, (Syntaxed, FunctionCall, CompoundNode)):
 			return p.child_type(s)
 		elif isinstance(p, (List,Dict)):
 			return p.item_type
@@ -2692,31 +2550,6 @@ class FunctionDefinitionBase(Syntaxed):
 
 	def __init__(s, children):
 		super(FunctionDefinitionBase, s).__init__(children)
-
-	def register_symbol(s):
-
-		rhs = []
-		for i in s.sig:
-			if type(i) == Text:
-				a = m.known_string(i.pyval)
-			elif isinstance(i, TypedParameter):
-				#TypedParameter means its supposed to be an expression
-				a = B.expression.symbol
-				assert a,  i
-			elif isinstance(i, UnevaluatedArgument):
-				a = deref_decl(i.type).class_symbol
-				assert a,  i
-			assert a,  i
-			rhs.append(a)
-			rhs.append(m.syms.maybe_spaces)
-		if args.log_parsing:
-			log('rhs:%s'%rhs)
-			debugname = "call of "+repr(s)
-		else:
-			debugname=""
-		s._symbol = m.symbol(debugname)
-		m.rule(debugname, s._symbol, rhs, s.marpa_create_call)
-		m.rule("call is "+debugname, B.call.symbol, s._symbol)
 
 	def marpa_create_call(s, args):
 		'valuator action, takes an array of argument nodes, presumably'
@@ -3000,10 +2833,6 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		r.fix_parents()
 		return r
 
-	@classmethod
-	def register_class_symbol(cls):
-		return m.symbol("function_call")
-
 	@property
 	def slots(s):
 		return s.target.params
@@ -3067,25 +2896,29 @@ class FunctionCallNodecl(NodeclBase):
 # endregion
 
 
-class CustomNodeDef(Syntaxed):
-	instance_class = NodeInstance
+class CompoundNodeDef(Syntaxed):
+	instance_class = CompoundNode
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
-		return NodeInstance(s)
+		return CompoundNode(s)
 
 
 		
 
 
-
+grammar = None
 
 def make_root():
+	global grammar
+	grammar =  __import__("grammar")
+
+
+
 	if args.kbdbg:
 		return Kbdbg()
 		
 		
-		
-		
+
 
 	r = Root()
 
@@ -3192,6 +3025,8 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	#gc.collect()
 	#r["some program"].save()
 	#log("ok")
+
+
 	r.fix_parents()
 	if __debug__:
 		for i in r.flatten():
@@ -3554,9 +3389,9 @@ def build_in_lemon_language():
 				    'serialization':dict_from_to('text', 'anything')}))
 
 
-	build_in(SyntaxedNodecl(CustomNodeDef,
-				   ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
-				   {'name' : B.text,
+	build_in(SyntaxedNodecl(CompoundNodeDef,
+	                        ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
+	                        {'name' : B.text,
 				   'syntax': B.custom_syntax_list}))
 
 	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
@@ -3600,7 +3435,7 @@ def b_lemon_load_file(root, name):
 	return load_module(name, root["loaded program"])
 
 def load_module(file_name, placeholder):
-	log("loading "+file_name)
+	print ("loading "+file_name)
 	try:
 		input = json.load(open(file_name, "r"))
 	except Exception as e:
@@ -3613,8 +3448,7 @@ def load_module(file_name, placeholder):
 		if isinstance(i, Serialized):
 			i.unserialize()
 		d.fix_parents()
-	log("ok")
-	return file_name + " loaded ok"
+	return "ok"
 
 
 
@@ -3941,13 +3775,186 @@ element.Module = Module
 
 
 
+#misnot just symbols, rules too
+def register_symbol(s):
+	log = logging.getLogger("marpa").debug
+
+	if isinstance(s, SyntacticCategory):
+		s._symbol = m.symbol(s.name)
+		return
+
+	if isinstance(s, WorksAs):
+		if s._rule != None:
+			return
+		lhs = s.ch.sup.parsed
+		rhs = s.ch.sub.parsed
+		if not isinstance(lhs, Ref) or not isinstance(rhs, Ref):
+			print ("invalid sub or sup in worksas")
+			return
+		lhs = lhs.target.symbol
+		rhs = rhs.target.symbol
+		if args.log_parsing:
+			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
+		if lhs != None and rhs != None:
+			r = m.rule(str(s), lhs, rhs)
+			s._rule = r
+		return
+
+	if isinstance(s, FunctionDefinitionBase):
+		rhs = []
+		for i in s.sig:
+			if type(i) == Text:
+				a = m.known_string(i.pyval)
+			elif isinstance(i, TypedParameter):
+				#TypedParameter means its supposed to be an expression
+				a = B.expression.symbol
+				assert a,  i
+			elif isinstance(i, UnevaluatedArgument):
+				a = deref_decl(i.type).class_symbol
+				assert a,  i
+			assert a,  i
+			rhs.append(a)
+			rhs.append(m.syms.maybe_spaces)
+		if args.log_parsing:
+			log('rhs:%s'%rhs)
+			debugname = "call of "+repr(s)
+		else:
+			debugname=""
+		s._symbol = m.symbol(debugname)
+		m.rule(debugname, s._symbol, rhs, s.marpa_create_call)
+		m.rule("call is "+debugname, B.call.symbol, s._symbol)
+		return
+
+	if isinstance(s, NodeclBase):
+		s._symbol = s.instance_class.register_class_symbol()
+		return
+
+	log(("no symbol for", s))
 
 
 
 
 
+def register_class_symbol(cls):
+	log = logging.getLogger("marpa").debug
 
 
+	if FunctionCall.__subclasscheck__(cls):
+		return m.symbol("function_call")
 
 
+	elif Ref.__subclasscheck__(cls):
+		r = m.symbol('ref')
+		for i in m.scope:
+			if is_type(i):#todo: not just types but also functions and..?..
+				rendering = "*" + i.name
+				debug_name = "ref to"+str(i)
+				sym = m.symbol(debug_name)
+				m.rule(debug_name + "is a ref", r, sym)
+				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
+		return r
+
+	elif VarRef.__subclasscheck__(cls):
+		r = m.symbol('varref')
+		for i in m.scope:
+			if isinstance(i, (TypedParameter, UntypedVar)):
+				rendering = "$" + i.name
+				debug_name = "varref to"+str(i)
+				sym = m.symbol(debug_name)
+				m.rule(debug_name + "is a varref", r, sym)
+				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
+		return r
+
+
+	elif RestrictedIdentifier.__subclasscheck__(cls):
+		body_part = m.symbol('body_part')
+		allowed = []
+		for rng in ['az', 'AZ']:
+			allowed.extend([chr(x) for x in range(ord(rng[0]),ord(rng[1])+1)])
+		allowed.extend([ch for ch in '_-'])
+		for ch in allowed:
+			m.rule('restricted_identifier_body_part_is_', body_part, m.known_char(ch))
+		r = m.symbol('Identifier')
+		m.sequence('identifier is seq of body part', r, body_part, cls.from_parse)
+		return r
+
+
+	elif Identifier.__subclasscheck__(cls):
+		#the symbol here is meant a marpa symbol,
+		#grammars are made up of symbols and rules
+		#so, here we have a little builtin grammar for Identifier
+		#it prolly allows more than we want now but w/e
+		#its actually the menu class that goes and collects this
+		#and then calls the marpa thread
+
+		log("registering identifier grammar")
+		body_part = m.symbol('body_part')
+		m.rule('identifier_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
+		m.rule('identifier_body_part_is_known_char', body_part, m.syms.known_char)
+		r = m.symbol('Identifier')
+		m.sequence('identifier is seq of body part', r, body_part, cls.from_parse)
+		return r
+
+
+	elif Text.__subclasscheck__(cls):
+		clsstr = str(cls)
+		log("registering "+clsstr+" grammar")
+		double_slash = m.known_string('//')
+		slashed_end =  m.known_string('/'+cls.brackets[1])
+		body_part = m.symbol(clsstr+'_body_part')
+		m.rule(clsstr+'_body_part_is_double_slash', body_part, double_slash)
+		m.rule(clsstr+'_body_part_is_slashed_end', body_part, slashed_end)
+		m.rule(clsstr+'_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
+		m.rule(clsstr+'_body_part_is_known_char', body_part, m.syms.known_char)
+		body = m.symbol('body')
+		m.sequence(clsstr+'_body is seq of body part', body, body_part, join)
+		text = m.symbol(clsstr)
+		opening =  m.known_string(cls.brackets[0])
+		closing =  m.known_string(cls.brackets[1])
+		m.rule(clsstr+'_is_[body]', text, [opening, body, closing], cls.from_parse)
+		return text
+
+
+	elif Number.__subclasscheck__(cls):
+		log("registering number grammar")
+		digit = m.symbol('digit')
+		digits = m.symbol('digits')
+		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
+			m.rule(i + "_is_a_digit",digit, m.known_char(i))
+
+		m.sequence('digits_is_sequence_of_digit', digits, digit, join)
+		r = m.symbol('number')
+		m.rule('number_is_digits', r, digits, (ident, cls))
+		return r
+
+
+	elif List.__subclasscheck__(cls):
+		log("registering list grammar")
+		optionally_elements = m.symbol('optionally_elements')
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char(','), 0)
+		r = m.symbol('list literal')
+		opening =  m.known_char('[')
+		closing =  m.known_char(']')
+		m.rule('list literal', r, [opening, optionally_elements, closing], cls.from_parse)
+		return r
+
+
+	elif Syntaxed.__subclasscheck__(cls):
+		#this is the grand-top-starting symbol for this node type
+		r = m.symbol(cls.__name__)
+
+		#since we have like class Var(Syntaxed)
+		#the Var's decl is the SyntaxedNodecl that actually holds the syntaxes and sits in the declaring module
+
+		ddecl = deref_decl(cls.decl)
+
+		#and a syntaxed can have multiple syntaxes, for now just in a primitive way
+
+		for sy in ddecl.instance_syntaxes:
+			cls.rule_for_syntax(r, sy, ddecl)
+
+		return r
+
+	else:
+		log(("no class symbol for", cls))
 

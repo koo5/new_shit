@@ -19,6 +19,9 @@ from lemon_utils.utils import uniq
 from lemon_args import args
 from marpa_cffi.marpa_misc import *
 
+if args.log_parsing:
+	logger.setLevel("DEBUG")
+
 import marpa_cffi
 marpa = marpa_cffi.try_loading_marpa()
 if marpa == True:
@@ -100,7 +103,7 @@ class ThreadedMarpa(object):
 			rhs = [rhs]
 
 		if __debug__:
-			assert type(lhs) == symbol_int
+			assert type(lhs) == symbol_int,        lhs
 			for i in rhs:
 				assert type(i) == symbol_int
 			assert type(debug_name) == unicode
@@ -248,20 +251,6 @@ class ThreadedMarpa(object):
 
 
 
-	def register_symbol(s):
-		if s._rule != None:
-			return
-		lhs = s.ch.sup.target.symbol
-		rhs = s.ch.sub.target.symbol
-		if args.log_parsing:
-			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
-		if lhs != None and rhs != None:
-			r = m.rule(str(s), lhs, rhs)
-			s._rule = r
-
-
-
-
 	def enqueue_precomputation(s, for_node):
 		s.t.input.put(Dotdict(
 			task = 'feed',
@@ -320,7 +309,7 @@ class MarpaThread(threading.Thread):
 		s.c_syms = list(starmap(s.g.symbol_new, repeat(tuple(), inp.num_syms)))
 		for k,v in iteritems(inp.symbol_ranks):
 			s.g.symbol_rank_set(k,v)
-			log("symbol rank:", k, v)
+			log(("symbol rank:", k, v))
 		
 		if args.log_parsing:
 			log('s.c_syms:%s',s.c_syms)
@@ -337,7 +326,7 @@ class MarpaThread(threading.Thread):
 					s.c_rules.append(cr)
 					if rank != 0:
 						s.g.rule_rank_set(cr, rank)
-					log("rank ", rule, rank)
+					log(("rank ", rule, rank))
 
 		if args.graph_grammar:
 			graphing_wrapper.generate_png()

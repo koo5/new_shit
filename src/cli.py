@@ -18,9 +18,6 @@ from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 nodes.m = m = ThreadedMarpa(print, True)
 
 
-
-
-
 def handle(text=None):
 	msg = m.t.output.get()
 	if msg.message == 'precomputed':

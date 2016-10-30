@@ -258,7 +258,7 @@ rpcing_frames.ClientFrame.maybe_redraw = redraw
 def initial_resize():
 	"""SDL insists that you must give your new window some size
 	(screen_surface = pygame.display.set_mode), it ignores the WM
-	but if the WM takes over...it doesnt even realize it!
+	but if the WM forces a size...it doesnt even realize it!
 	so it thinks it has the original size
 	so i try to get the actual window size and "resize" """
 	resize((666,666))
