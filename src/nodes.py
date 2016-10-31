@@ -3775,7 +3775,7 @@ element.Module = Module
 
 
 
-#misnot just symbols, rules too
+#misnomer: its not just symbols, rules too
 def register_symbol(s):
 	log = logging.getLogger("marpa").debug
 
@@ -3800,30 +3800,6 @@ def register_symbol(s):
 			s._rule = r
 		return
 
-	if isinstance(s, FunctionDefinitionBase):
-		rhs = []
-		for i in s.sig:
-			if type(i) == Text:
-				a = m.known_string(i.pyval)
-			elif isinstance(i, TypedParameter):
-				#TypedParameter means its supposed to be an expression
-				a = B.expression.symbol
-				assert a,  i
-			elif isinstance(i, UnevaluatedArgument):
-				a = deref_decl(i.type).class_symbol
-				assert a,  i
-			assert a,  i
-			rhs.append(a)
-			rhs.append(m.syms.maybe_spaces)
-		if args.log_parsing:
-			log('rhs:%s'%rhs)
-			debugname = "call of "+repr(s)
-		else:
-			debugname=""
-		s._symbol = m.symbol(debugname)
-		m.rule(debugname, s._symbol, rhs, s.marpa_create_call)
-		m.rule("call is "+debugname, B.call.symbol, s._symbol)
-		return
 
 	if isinstance(s, NodeclBase):
 		s._symbol = s.instance_class.register_class_symbol()
@@ -3840,8 +3816,32 @@ def register_class_symbol(cls):
 
 
 	if FunctionCall.__subclasscheck__(cls):
-		return m.symbol("function_call")
-
+		top = m.symbol("function_call")
+		for s in m.scope:
+			if isinstance(s, FunctionDefinitionBase):
+				rhs = []
+				for i in s.sig:
+					if type(i) == Text:
+						a = m.known_string(i.pyval)
+					elif isinstance(i, TypedParameter):
+						#TypedParameter means its supposed to be an expression
+						a = B.expression.symbol
+						assert a,  i
+					elif isinstance(i, UnevaluatedArgument):
+						a = deref_decl(i.type).class_symbol
+						assert a,  i
+					assert a,  i
+					rhs.append(a)
+					rhs.append(m.syms.maybe_spaces)
+				if args.log_parsing:
+					log('rhs:%s'%rhs)
+					debugname = "call of "+repr(s)
+				else:
+					debugname=""
+				mbol = m.symbol(debugname)
+				m.rule(debugname, mbol, rhs, s.marpa_create_call)
+				m.rule("call is "+debugname, top, mbol)
+		return top
 
 	elif Ref.__subclasscheck__(cls):
 		r = m.symbol('ref')
@@ -3940,21 +3940,12 @@ def register_class_symbol(cls):
 
 
 	elif Syntaxed.__subclasscheck__(cls):
-		#this is the grand-top-starting symbol for this node type
 		r = m.symbol(cls.__name__)
-
-		#since we have like class Var(Syntaxed)
-		#the Var's decl is the SyntaxedNodecl that actually holds the syntaxes and sits in the declaring module
-
 		ddecl = deref_decl(cls.decl)
-
-		#and a syntaxed can have multiple syntaxes, for now just in a primitive way
-
 		for sy in ddecl.instance_syntaxes:
 			cls.rule_for_syntax(r, sy, ddecl)
-
 		return r
 
-	else:
-		log(("no class symbol for", cls))
+
+	log(("no class symbol for", cls))
 
