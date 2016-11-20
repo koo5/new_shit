@@ -27,13 +27,10 @@ def build_in_lc1(r):
 	r["lc1"].ch.statements.items = [
 		Comment("""untyped lambda calculus""")]
 
-	""" whats the lc1-test for """
-	#well the gui shows a "root", a tree with a couple of entries,
-	#so thats like where you would type in your lambda calculus program	
+	#whats the lc1-test for
+	#well the gui currently shows a tree with a couple of entries, and into this one you can type in your lambda calculus program
 	r["lc1-test"] = B.builtinmodule.inst_fresh()
-	r["lc1-test"].special_scope = [r["lc1"], 
-		#B.restrictedidentifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
-		];
+	r["lc1-test"].special_scope = [r["lc1"]];
 		
 		
 
@@ -41,7 +38,7 @@ def build_in_lc1(r):
 	lc1.exp.help = ["a lambda expression"]
 	
 
-	class Var(Syntaxed):
+	class Var(CompoundNode):
 		brackets = ("", "")
 		help = ["a variable"]
 		@property
@@ -51,7 +48,7 @@ def build_in_lc1(r):
 		def varName(s, v):
 			s.ch.name.pyval = v
 		
-	build_in(SyntaxedNodecl(Var,
+	build_in(compound(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, lc1)
 	#what's B.identifier
@@ -63,34 +60,34 @@ def build_in_lc1(r):
 
 
 
-	class ParExp(Syntaxed): 
+	class ParExp(CompoundNode):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 		
-	build_in(SyntaxedNodecl(ParExp,
+	build_in(compound(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
 		{'exp': lc1.exp}), None, lc1)
 	build_in(WorksAs.b(lc1.parexp, lc1.exp), False, lc1)
 
 
 
-	class Abs(Syntaxed): 
+	class Abs(CompoundNode):
 		help = ["abstraction, a lambda"]
 		#def eval(s):
 		
 		
 		
-	build_in(SyntaxedNodecl(Abs,
+	build_in(compound(Abs,
 		[TextTag("\\"), ChildTag("var"), TextTag("."), ChildTag("exp")],
 		{'var': lc1.var, 'exp': lc1.exp}), None, lc1)
 
 
 
 
-	class App(Syntaxed): 
+	class App(CompoundNode):
 		help = ["function application, a call"]
 		pass
-	build_in(SyntaxedNodecl(App,
+	build_in(compound(App,
 		[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
 		{'e1': lc1.exp, 'e2': lc1.exp}), None, lc1)
 
@@ -285,7 +282,7 @@ def build_in_lc2(r):
 	lc2.exp.help = ["a lambda expression"]
 	
 
-	class Var(Syntaxed):
+	class Var(CompoundNode):
 		brackets = ("", "")
 		help = ["a variable"]
 		@property
@@ -295,15 +292,15 @@ def build_in_lc2(r):
 		def varName(s, v):
 			s.ch.name.pyval = v
 		
-	build_in(SyntaxedNodecl(Var,
+	build_in(compound(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, lc2)
 
-	class ParExp(Syntaxed): 
+	class ParExp(CompoundNode):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 		
-	build_in(SyntaxedNodecl(ParExp,
+	build_in(compound(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
 		{'exp': lc2.exp}), None, lc2)
 	build_in(WorksAs.b(lc2.parexp, lc2.exp), False, lc2)
@@ -311,18 +308,18 @@ def build_in_lc2(r):
 
 	build_in(SyntacticCategory({'name': Text('type')}), None, lc2)
 
-	class ParType(Syntaxed): 
+	class ParType(CompoundNode):
 		help = ["a parenthesized type"]
 		brackets = ("", "")
-	build_in(SyntaxedNodecl(ParType,
+	build_in(compound(ParType,
 		[TextTag("("), ChildTag("type"), TextTag(")")],
 		{'type': lc2.type}), None, lc2)
 	build_in(WorksAs.b(lc2.partype, lc2.type), False, lc2)
 
 
-	class FunType(Syntaxed): 
+	class FunType(CompoundNode):
 		help = ["function type"]
-	build_in(SyntaxedNodecl(FunType,
+	build_in(compound(FunType,
 		[
 		[ChildTag("from"), TextTag("->"), ChildTag("to")],
 		["function from ", ChildTag("from"), " to ", ChildTag("to")]],
@@ -331,14 +328,14 @@ def build_in_lc2(r):
 
 
 	#this, alright so we'll make syntax class for it
-	class IntType(Syntaxed): 
+	class IntType(CompoundNode):
 		help = ["integer type"]
-	build_in(SyntaxedNodecl(IntType,
+	build_in(compound(IntType,
 		[TextTag("int")],
 		{}), None, lc2)
-	class BoolType(Syntaxed): 
+	class BoolType(CompoundNode):
 		help = ["bool type"]
-	build_in(SyntaxedNodecl(BoolType,
+	build_in(compound(BoolType,
 		[TextTag("bool")],
 		{}), None, lc2)
 
@@ -359,15 +356,15 @@ def build_in_lc2(r):
 
 
 
-	class BoolTrue(Syntaxed): 
+	class BoolTrue(CompoundNode):
 		help = ["..."]
-	build_in(SyntaxedNodecl(BoolTrue,
+	build_in(compound(BoolTrue,
 		[TextTag("true!")],
 		{}), None, lc2)
 	build_in(WorksAs.b(lc2.booltrue, lc2.bool), False, lc2)
-	class BoolFalse(Syntaxed): 
+	class BoolFalse(CompoundNode):
 		help = ["..."]
-	build_in(SyntaxedNodecl(BoolFalse,
+	build_in(compound(BoolFalse,
 		[TextTag("false!")],
 		{}), None, lc2)
 	build_in(WorksAs.b(lc2.boolfalse, lc2.bool), False, lc2)
@@ -392,10 +389,10 @@ App := Expr " " Expr
 	"""
 
 	
-	class Abs(Syntaxed): 
+	class Abs(CompoundNode):
 		help = ["abstraction, a lambda"]
 		
-	build_in(SyntaxedNodecl(Abs,
+	build_in(compound(Abs,
 		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
 		[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]],
 		{'var': lc2.var, 'type': lc2.type, 'exp': lc2.exp}), None, lc2)
@@ -404,10 +401,10 @@ App := Expr " " Expr
 
 	#"do" <function> "to" <argument>
 	#"run" <function> "on" <argument>
-	class App(Syntaxed): 
+	class App(CompoundNode):
 		help = ["function application, a call"]
 		
-	build_in(SyntaxedNodecl(App,
+	build_in(compound(App,
 		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
 		[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]],
 		{'e1': lc2.exp, 'e2': lc2.exp}), None, lc2)
@@ -799,7 +796,7 @@ def build_in_cube(r):
 	cube.exp.help = ["a lambda expression"]
 
 
-	class Var(Syntaxed):
+	class Var(CompoundNode):
 		brackets = ("", "")
 		help = ["a variable"]
 		@property
@@ -823,19 +820,19 @@ def build_in_cube(r):
 #for this though the only reason we have any ambiguity is because we have things as
 #text instead of haskell inductive data types
 #ill think about it some more, for now let's just avoid using any ambiguous examples
-	build_in(SyntaxedNodecl(Var,
+	build_in(compound(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, cube)
-	class ParExp(Syntaxed):
+	class ParExp(CompoundNode):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 	
-	build_in(SyntaxedNodecl(ParExp,
+	build_in(compound(ParExp,
 		[TextTag("("), ChildTag("exp"), TextTag(")")],
 		{'exp': cube.exp}), None, cube)
 
 	
-	class PiType(Syntaxed):
+	class PiType(CompoundNode):
 		help = ["""function type
 		
 		is this equivalent to FunType? whats the var there for?
@@ -1007,7 +1004,7 @@ rather than, given any type, and a value of that type, return that value
 		
 		
 		"""]
-	build_in(SyntaxedNodecl(PiType,
+	build_in(compound(PiType,
 		[#look..a parenthesized expression cant subsume "type->ret", subsume?
 		#you cant have <var>:<parenthetised expression> parse as a Pi
 		#can we fix it so that we can?
@@ -1021,45 +1018,45 @@ rather than, given any type, and a value of that type, return that value
 		#a parenthesized expression wouldn't work here?
 		{'arg': cube.var, 'type': cube.exp, 'ret': cube.exp}), None, cube)
 	
-	class Abs(Syntaxed): 
+	class Abs(CompoundNode):
 		help = ["abstraction, a lambda"]
-	build_in(SyntaxedNodecl(Abs,
+	build_in(compound(Abs,
 		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
 		#[TextTag("function taking ("), ChildTag("var"), TextTag(" - a "), ChildTag("type"), TextTag("):"), IndentTag(),"\n",  ChildTag("exp"), DedentTag(), "\n"]
 		],
 		{'var': cube.var, 'type': cube.exp, 'exp': cube.exp}), None, cube)
 	
-	class App(Syntaxed): 
+	class App(CompoundNode):
 		help = ["""function application, a call
 			#"do" <function> "to" <argument>
 			#"run" <function> "on" <argument>
 		"""]
 		
-	build_in(SyntaxedNodecl(App,
+	build_in(compound(App,
 		[[ChildTag("e1"), TextTag(" "), ChildTag("e2")],
 		#[ChildTag("e1"), TextTag(" applied to "), ChildTag("e2")]
 		],
 		{'e1': cube.exp, 'e2': cube.exp}), None, cube)
 	
 	
-	class StarKind(Syntaxed):
+	class StarKind(CompoundNode):
 		help = ["""star kind
 		whats this?
 		"""]
 		def toStr(s):
 			return "*"
 			
-	build_in(SyntaxedNodecl(StarKind,
+	build_in(compound(StarKind,
 		[TextTag("*")], #[TextTag("*")],
 		{}), None, cube)
 		
-	class BoxKind(Syntaxed): 
+	class BoxKind(CompoundNode):
 		help = ["""box kind
 		whats this?
 		"""]
 		def toStr(s):
 			return "[]"
-	build_in(SyntaxedNodecl(BoxKind,
+	build_in(compound(BoxKind,
 		[TextTag("[]")], #[TextTag("[]")],
 		{}), None, cube)
 	

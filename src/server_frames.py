@@ -438,7 +438,7 @@ class Menu(SidebarFrame):
 				item.invalid = True
 
 			#search thru syntaxes
-			#if isinstance(v, Syntaxed):
+			#if isinstance(v, CompoundNode):
 			#	for i in v.syntax:
 			#   		if isinstance(i, t):
 			#			item.score += fuzz.partial_ratio(i.text, s.pyval)

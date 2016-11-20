@@ -21,7 +21,7 @@ def build_in_MLTT(r):
 	build_in(SyntacticCategory({'name': Text("exp")}), None, MLTT)
 	MLTT.exp.help = ["a lambda expression"]
 
-	class DebVar(Syntaxed):
+	class DebVar(CompoundNode):
 		help = ["a De Brujin-ized variable"]
 
 		@property
@@ -39,11 +39,11 @@ def build_in_MLTT(r):
 		def __init__(s, children):
 			super(Var, s).__init__(children)
 
-	build_in(SyntaxedNodecl(DebVar,
+	build_in(compound(DebVar,
 	                        [ChildTag("name"), ChildTag('dist')],
 	                        {'name': B.restrictedidentifier, 'dist': B.number}))
 
-	class Var(Syntaxed):
+	class Var(CompoundNode):
 		brackets = ("", "")
 		help = ["a variable"]
 
@@ -58,68 +58,68 @@ def build_in_MLTT(r):
 		def __init__(s, children):
 			super(Var, s).__init__(children)
 
-	build_in(SyntaxedNodecl(Var,
+	build_in(compound(Var,
 	                        [ChildTag("name")],
 	                        {'name': B.restrictedidentifier}), None, MLTT)
 
-	class ParExp(Syntaxed):
+	class ParExp(CompoundNode):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 
-	build_in(SyntaxedNodecl(ParExp,
+	build_in(compound(ParExp,
 	                        [TextTag("("), ChildTag("exp"), TextTag(")")],
 	                        {'exp': MLTT.exp}), None, MLTT)
 
-	class PiType(Syntaxed):
+	class PiType(CompoundNode):
 		help = ["""function type		"""]
 
-	build_in(SyntaxedNodecl(PiType,
+	build_in(compound(PiType,
 	                        [
 		                        [ChildTag("arg"), TextTag(":"), ChildTag("type"), TextTag("->"), ChildTag("ret")],
 	                        ],
 	                        {'arg': MLTT.var, 'type': MLTT.exp, 'ret': MLTT.exp}), None, MLTT)
 
-	class Abs(Syntaxed):
+	class Abs(CompoundNode):
 		help = ["abstraction, a lambda"]
 
-	build_in(SyntaxedNodecl(Abs,
+	build_in(compound(Abs,
 	                        [[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."),
 	                          ChildTag("exp")]
 	                         ],
 	                        {'var': MLTT.var, 'type': MLTT.exp, 'exp': MLTT.exp}), None, MLTT)
 
-	class App(Syntaxed):
+	class App(CompoundNode):
 		help = ["""function application, a call
 			#"do" <function> "to" <argument>
 			#"run" <function> "on" <argument>
 		"""]
 
-	build_in(SyntaxedNodecl(App,
+	build_in(compound(App,
 	                        [[ChildTag("e1"), TextTag(" "), ChildTag("e2")]
 	                         ],
 	                        {'e1': MLTT.exp, 'e2': MLTT.exp}), None, MLTT)
 
-	class Level(Syntaxed):
+	class Level(CompoundNode):
 		pass
 
-	build_in(SyntaxedNodecl(Level,
+	build_in(compound(Level,
 	                        [TextTag("#")],
 	                        {}), None, MLTT)
 
-	class Succ(Syntaxed):
+	class Succ(CompoundNode):
 		help = ["""the successor of a level"""]
 
-	build_in(SyntaxedNodecl(
+	build_in(compound(
 		Succ,
 		[[TextTag("+")]],
 		{}),
 		None,
 		MLTT)
 
-	class Set(Syntaxed):
+	class Set(CompoundNode):
 		help = ["""the function constructing an MLTT universe from an element of Level"""]
 
-	build_in(SyntaxedNodecl(
+	build_in(compound(
 		Set,
 		[[TextTag("*")]],
 		{}),
@@ -127,10 +127,10 @@ def build_in_MLTT(r):
 		MLTT
 	)
 
-	class SetOmega(Syntaxed):
+	class SetOmega(CompoundNode):
 		help = ["""the 'kind' of MLTT universes"""]
 
-	build_in(SyntaxedNodecl(
+	build_in(compound(
 		SetOmega,
 
 		# eventually instead of TextTag we should extend this into

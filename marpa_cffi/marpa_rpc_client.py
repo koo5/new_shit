@@ -64,6 +64,7 @@ class ThreadedMarpa(object):
 
 
 	def clear(s):
+		log("grammar clear")
 		if s.debug:
 			s.debug_sym_names = []
 		s.syms = Dotdict()
@@ -136,7 +137,9 @@ class ThreadedMarpa(object):
 		return lhs
 
 	def string2tokens(s,raw):
-		"""return a list with known chars substituted with their corresponding symbol ids"""
+		"""return a list with known chars substituted with their corresponding symbol ids
+		see: known_char
+		"""
 		tokens = []
 		for i, char in enumerate(raw):
 			try:
@@ -166,31 +169,28 @@ class ThreadedMarpa(object):
 
 	def collect_grammar(s,  scope:list,  start=None):
 		assert scope == uniq(scope)
-
 		s.clear()
-		log("grammar clear")
+		s.scope = scope
 
-
-
-		#we dont have a separate tokenizer
-		s.named_symbol('nonspecial_char')
+		#tokenization stuff:
+		#any char used in any terminal of the grammar:
 		s.named_symbol('known_char')
+		#all the rest:
+		s.named_symbol('nonspecial_char')
 		#maybe just convenience
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
 
-
-
-		s.scope = scope
+		#anything means we are parsing for the editor and want to parse any fragments of the language
 		anything = start==None
 		if anything:
 			s.start=s.named_symbol('start')
 		else:
-			s.start = start.symbol
+			s.start = start.symbol # for example mltt expression
 		log("start=", s.start )
-		
+
 		for i in scope:
-			#the property is accessed here, forcing the registering of the nodes grammars
+			#the property is accessed, forcing registering of the grammar
 			sym = i.symbol
 
 		if anything:
@@ -203,50 +203,29 @@ class ThreadedMarpa(object):
 						rulename = ""
 					s.rule(rulename , s.start, i.symbol)
 
-		#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
-		#ok here we're gonna walk thru WorkAssess and BindsTighters and do the precedence and associativity magic
-
 		"""
 		sups = DefaultDict(list)
 		pris = DefaultDict(list)
 		asoc = DefaultDict(-1)
 
-		for i in scope:
-			#sub._losers = []
-			if i.__class__.__name__ == 'WorksAs':
-				#sub WorksAS sup, these are Refs
-				sups[i.ch.sup.target].append(i.ch.sub.target)
+		for n in scope:
+			if n.__class__.__name__ == 'WorksAs':
+				sups[n.ch.sup.parsed.target.symbol].append(n.ch.sub.parsed.target.symbol)
+			if n.__class__.__name__ == 'HasPriority':
+				pris[n.ch.value.parsed.pyval].append(n.ch.node.parsed.target.symbol)
+			if n.__class__.__name__ == 'HasAssociativity':
+				asoc[n.ch.value.parsed.pyval].append(n.ch.node.parsed.target.symbol)
 
+		this is some nonsense
 		for k,v in sups:
 			for sub in v:
-				for n in scope:
-					if n.__class__.__name__ == 'HasPriority':
-						pris[n.ch.value.pyval].append(n.ch.node)
-					if n.__class__.__name__ == 'HasAssociativity':
-						asoc[n.ch.value.pyval].append(n.ch.node)
-
-
-
-		for k,v in sups:
-			for sub in v:
-				pri = pris[sub]
+				???pri = pris[sub]
 				if not pri in level_syms[sup]:
 					level_syms[sup][pri] = s.symbol(sup.name + pri)
 				lhs = level_syms[sup][pri]
 				rhs =
 				pris[sub]
 
-		for k,v in sups:
-			for sub in v:
-				for n in scope:
-					if n.__class__.__name__ == 'BindsTighterThan':
-						if n.ch.b.target == sub:
-							sub._tighter_ones.append(n.ch.a.target)
-
-		for k, v in sups:
-			for sub in v:
-				level = 0
-				while sub._losers
 		"""
 
 
