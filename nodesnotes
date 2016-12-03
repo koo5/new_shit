@@ -658,7 +658,7 @@ yeah to call marpa .symbol and .rule functions
 
 
 
-	so....abs has a Nodecl
+	so....abs has a BuiltinNodecl
 	and this nodecl would lemonishly be Pitype
 	and thats probably all i can say about all this because i just have no idea
 	i have ParametricNodecls, for example; so these correspond to "type operators" in the

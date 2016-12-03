@@ -24,7 +24,7 @@ def palette(s, scope, text, parser):
 	elif isinstance(s, EnumType):
 		r = [PaletteMenuItem(tb(), EnumVal(s, i)) for i in range(len(s.ch.options.items))] + [PaletteMenuItem(tb(), Ref(s))]
 		return r
-	elif isinstance(s, Nodecl):
+	elif isinstance(s, BuiltinNodecl):
 		i = s.instance_class
 		m = i.match(text)
 		if m:

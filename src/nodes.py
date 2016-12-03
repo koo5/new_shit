@@ -775,7 +775,7 @@ class Node(NodePersistenceStuff, element.Element):
 	def _flatten(s):
 		"per-class implementation of flattening"
 		if not isinstance(s, (WidgetedValue, EnumVal, Ref, SyntaxedNodecl, FunctionCallNodecl,
-			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, VarRef)): #all childless nodes
+		                      ParametricNodecl, BuiltinNodecl, VarRefNodecl, TypeNodecl, VarRef)): #all childless nodes
 			warn(str(s)+ " flattens to self")
 		return [s]
 
@@ -819,12 +819,25 @@ class CompoundNode(Node):
 	def __init__(s, decl, children=None):
 		super().__init__()
 		assert isinstance(decl, CompoundNodeDef)
+
+		s.syntax_index = 0
+
 		s.decl = decl
 		s.check_slots(s.slots)
-		if children:
-			s.ch = children
-		else:
-			s.create_kids()
+
+		s.ch = Children()
+		s.create_kids()
+
+		assert len(children) == len(s.slots), (children, s.slots)
+
+		#set children from the constructor argument
+		for k in iterkeys(s.slots):
+			s.set_child(k, children[k])
+
+		# prevent setting new ch keys
+		s.ch._lock()
+		# prevent setting new attributes
+		s.lock()
 
 		s.fix_parents()
 
@@ -885,77 +898,7 @@ class CompoundNode(Node):
 							return i.ch.type.parsed
 		assert False
 
-	def _flatten(s):
-		assert(isinstance(v, Node) for v in itervalues(s.ch._dict))
-		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
 
-
-"""
-
-class Syntaxed(SyntaxedPersistenceStuff, Node):
-	"
-	Syntaxed has some named children, kept in s.ch.
-	their types are in s.slots.
-	syntax is a list of Tags, and it can contain ChildTag
-	"
-	brackets = ("<", ">")
-	brackets = (" ", " ")
-	default_syntax_index = 0
-	rank = 0
-
-	def __init__(s, children):
-		super().__init__()
-		s.check_slots(s.slots)
-		s.syntax_index = s.__class__.default_syntax_index
-		s.ch = Children()
-
-		assert len(children) == len(s.slots), (children, s.slots)
-
-		#set children from the constructor argument
-		for k in iterkeys(s.slots):
-			s.set_child(k, children[k])
-
-		# prevent setting new ch keys
-		s.ch._lock()
-		# prevent setting new attributes
-		s.lock()
-		#assert isinstance(s.ddecl, SyntaxedNodecl)
-
-	@classmethod
-	def rule_for_syntax(cls, cls_sym, syntax, ddecl):
-		syms = []
-
-
-		for i in syntax:
-		#we build up syms child after child, char after char
-		#if autocomplete is on, we create a rule after each addition
-		#otherwise we only create a rule for the final, complete, syms
-
-			ti = type(i)
-
-			if ti == unicode:
-				for ch in i:
-					syms = syms[:]
-					syms.append(m.known_char(ch))
-					if autocomplete:
-						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-			elif ti == ChildTag:
-				child_type = ddecl.instance_slots[i.name]
-				if type(child_type) == Exp:
-					x = B.expression.symbol
-				else:
-					x = deref_decl(child_type).symbol
-				if not x:
-					log("no type:" + str(i))
-					return None
-				assert x, child_type
-				syms = syms[:]
-				syms.append(x)
-				if autocomplete:
-					m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-		assert len(syms) != 0
-		if not autocomplete:
-			m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
 
 	@classmethod
 	def from_parse(cls, p, sy):
@@ -1483,7 +1426,7 @@ class Statements(List):
 		assert False
 
 
-"""
+
 class SortedView():
 	S_orig = 0
 	S_alpha_type_betically_with_flattened_classes?
@@ -1797,24 +1740,9 @@ class Ref(RefPersistenceStuff, Node):
 	def copy(s):
 		return Ref(s.target)
 
-
-class VarRef(VarRefPersistenceStuff, Node):
-	def __init__(s, target):
-		super(VarRef, s).__init__()
-		s.target = target
-		assert isinstance(target, (UntypedVar, TypedParameter))
-		#log("varref target:"+str(target))
-
-	def render(s):
-		return [TextTag('$'), ArrowTag(s.target), TextTag(s.name)]
-
-	@property
-	def name(s):
-		return s.target.name
-
 	def _eval(s):
 		#it is already has a value
-		return s.target.runtime.value.val
+		return s.target.eval()
 
 class Exp(Node):
 	"""used to specify that an expression (something that evaluates to, at runtime) of
@@ -1829,6 +1757,15 @@ class Exp(Node):
 	@property
 	def name(s):
 		return s.type.name + " expr"
+
+
+
+
+
+
+
+
+
 
 class NodeclBase(Node):
 	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
@@ -1890,62 +1827,32 @@ class NodeclBase(Node):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
 
 
-class TypeNodecl(NodeclBase):
-	""" "pass me a type" kind of value
-	instantiates Refs ..maybe should be TypeRefs
-	"""
-	help = ["points to another node, like using an identifier. Used only for pointing to types."]
+class RefNodecl(NodeclBase):
+	help = ["points to another node, like using an identifier. "]
+
 	def __init__(s):
 		super().__init__(Ref)
 
 	def make_example(s):
 		return Ref(B.module)
-#so this was my approach...nodes are types..
-#misses a parser aparently
-
-
-
-
-
-
-
-
-class VarRefNodecl(NodeclBase):
-	help=["points to a variable"]
-	def make_example(s):
-		item = B.untypedvar.instantiate({'name':Text("example variable")})
-		items = list_of('text').inst_fresh()
-		items.items = [Text(x) for x in ['a','b','c']]
-		items.view_mode = 1
-		p = FunctionCall(B.print)
-		p.args['expression'] = VarRef(item)
-		body = B.statements.inst_fresh()
-		body.items = [p]#, Annotation(p, "this")]
-		return For({'item': item,
-					'items': items,
-					'body': body})
-
-	def __init__(s):
-		super().__init__(VarRef)
 
 
 class ExpNodecl(NodeclBase):
 	def __init__(s):
 		super(ExpNodecl, s).__init__(Exp)
 
-class Nodecl(NodeclBase):
+
+class BuiltinNodecl(NodeclBase):
 	"""for simple nodes (Number, Text, Bool)"""
 	def __init__(s, instance_class):
-		super(Nodecl, s).__init__(instance_class)
+		super(BuiltinNodecl, s).__init__(instance_class)
 		instance_class.decl = Ref(s)
-		#print("building in",s.name)
-		#build_in(s, s.name)
-		#instance_class.name = s.name
 
 	def make_example(s):
 		return s.inst_fresh()
 
-class SyntaxedNodecl(NodeclBase):
+'''
+   class SyntaxedNodecl(NodeclBase):
 	"""
 	A Nodecl for a class derived from Syntaxed.
 	instance_slots holds types of children, not Ref'ed.
@@ -1954,7 +1861,7 @@ class SyntaxedNodecl(NodeclBase):
 	"""
 	def __init__(s, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , s).__init__(instance_class)
-		s.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(instance_slots)])
+		 s.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(instance_slots)])
 		if isinstance(instance_syntaxes[0], list):
 			s.instance_syntaxes = instance_syntaxes
 		else:
@@ -1963,7 +1870,7 @@ class SyntaxedNodecl(NodeclBase):
 
 	def make_example(s):
 		return s.inst_fresh()
-
+'''
 
 
 class ParametricTypeBase(CompoundNode):
@@ -2927,27 +2834,13 @@ class CompoundNodeDef(CompoundNode):
 grammar = None
 
 def make_root():
-	global grammar
-	grammar =  __import__("grammar")
-
-
-
-	if args.kbdbg:
-		return Kbdbg()
-		
-		
-
-
 	r = Root()
 
 	build_in_essentials()
-	build_in_misc()
 
-	#for k,v in iteritems(B._dict):
-	#	log(k, v)
-
-
-	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
+	settings = r["editor settings"] = B.builtinmodule.inst_fresh()
+	settings.ch.statements.items = [Text('sidebar tab')]
+	load_module('settings.lemon.json', settings)
 
 	r["repl"] = B.builtinmodule.inst_fresh()
 	r["repl"].ch.statements.parser_class = ReplParser
@@ -3039,8 +2932,8 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 def build_in_essentials():
 
-	build_in(Nodecl(Text))
-	build_in(Nodecl(Comment))
+	build_in(BuiltinNodecl(Text))
+	build_in(BuiltinNodecl(Comment))
 
 	build_in(ParametricNodecl(ParametricListType,
 		[TextTag("list of"), ChildTag("itemtype")],
@@ -3087,7 +2980,7 @@ def build_in_essentials():
 
 	build_in(SyntacticCategory({'name': Text("statement")}))
 
-	build_in(Nodecl(Statements))
+	build_in(BuiltinNodecl(Statements))
 
 	build_in(
 	compound(Module,
@@ -3122,9 +3015,9 @@ def build_in_essentials():
 
 	build_in(VarRefNodecl(), 'varref')
 
-	build_in([Nodecl(x) for x in [Number, Bananas, Identifier, RestrictedIdentifier]])
+	build_in([BuiltinNodecl(x) for x in [Number, Bananas, Identifier, RestrictedIdentifier]])
 
-	build_in(Nodecl(List), "list_literal")
+	build_in(BuiltinNodecl(List), "list_literal")
 
 	build_in([
 		compound(WorksAs,
@@ -3689,8 +3582,8 @@ def register_class_symbol(cls):
 		allowed.extend([ch for ch in '_-'])
 		for ch in allowed:
 			m.rule('restricted_identifier_body_part_is_', body_part, m.known_char(ch))
-		r = m.symbol('Identifier')
-		m.sequence('identifier is seq of body part', r, body_part, cls.from_parse)
+		r = m.symbol('restricted identifier')
+		m.sequence('restricted identifier is seq of body part', r, body_part, cls.from_parse)
 		return r
 
 
@@ -3758,7 +3651,32 @@ def register_class_symbol(cls):
 		r = m.symbol(cls.__name__)
 		ddecl = deref_decl(cls.decl)
 		for sy in ddecl.instance_syntaxes:
-			cls.rule_for_syntax(r, sy, ddecl)
+			syms = []
+			for i in syntax:
+				ti = type(i)
+				if ti == unicode:
+					for ch in i:
+						syms = syms[:]
+						syms.append(m.known_char(ch))
+						if autocomplete:
+							m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+				elif ti == ChildTag:
+					child_type = ddecl.instance_slots[i.name]
+					if type(child_type) == Exp:
+						x = B.expression.symbol
+					else:
+						x = deref_decl(child_type).symbol
+					if not x:
+						log("no type:" + str(i))
+						return None
+					assert x, child_type
+					syms = syms[:]
+					syms.append(x)
+					if autocomplete:
+						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+			assert len(syms) != 0
+			if not autocomplete:
+				m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
 		return r
 
 
@@ -3843,3 +3761,6 @@ def newnew():
 
 
 
+def to_level_1(node):
+	if (isinstance(node, BuiltinNodecl)):
+		return [NodeDecl(node.name), CompoundNode(B.fullsyntax
