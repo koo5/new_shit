@@ -1874,55 +1874,13 @@ class BuiltinNodecl(NodeclBase):
 
 
 class ParametricTypeBase(CompoundNode):
-	def inst_fresh(s, decl=None):
-		r = s.instance_class()
-		if decl == None:
-			decl = s
-		r.decl = Ref(decl)
-		return r
-
-	@property
-	def name(s):
-		return s.instance_class.__name__ + " type"
-
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+str(s.ch)+"')"
+	pass
 
 class ParametricDictType(ParametricTypeBase):
 	instance_class = Dict
 
 class ParametricListType(ParametricTypeBase):
 	instance_class = List
-
-
-	#@property
-	#def refsyntax(s):
-	#damn this is just all wrong. name should return something like "list of numbers"
-	#should i expose a wrapper for project that would return a string?
-	#or do we want to display the name as a node?
-	#you cant render a different nodes syntax as your own
-	#make a new kind of tag for this?
-
-
-class ParametricNodecl(SyntaxedNodecl):
-	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
-	only non Syntaxed types are parametric now(list and dict),
-	so this contains the type instance's syntax and slots (a bit confusing)"""
-	"""
-	def __init__(s, value_class, type_syntax, type_slots):
-		super(ParametricNodecl, s).__init__(ParametricType)
-		s.instance_slots = type_slots
-		s.instance_syntaxes = [type_syntax]
-		s.value_class = value_class
-
-	def make_type(s, kids):
-		return ParametricType(kids, s)
-
-	def palette(s, scope, text, node):
-		return [PaletteMenuItem(ParametricType.fresh(s))]
-	#def obvious_fresh(s):
-	#if there is only one possible node type to instantiate..
-	"""
 
 
 class EnumVal(Node):
@@ -2935,36 +2893,30 @@ def build_in_essentials():
 	build_in(BuiltinNodecl(Text))
 	build_in(BuiltinNodecl(Comment))
 
-	build_in(ParametricNodecl(ParametricListType,
+	x = BuiltInCompoundNodeDef(
+		"parametric list type",
 		[TextTag("list of"), ChildTag("itemtype")],
-		{'itemtype': B.type}),'list')
+		{'itemtype': B.type})
+	x.instance_class = ParametricListType
+	build_in(x, 'list')
 
-	build_in(CompoundNode(B.compoundnodecl, 'syntacticcategory')
+	build_in(BuiltinNodecl(CompoundNodeDef))
+	build_in(CompoundNodeDef('syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": B.text}))
 
+	for name in ["anything", "expression"]:
+		build_in(CompoundNode(B.syntacticcategory, {'name': Text(name)}))
 
+	build_in(CompoundNodeDef('definition', [ChildTag("name"), " is ", ChildTag("value")], {"name": B.text, "value":B.expression}))
+	build_in(CompoundNode(B.definition, {   "name": Text("list of anything"),
+			                                'type': list_of(B.anything)}))
 
-	BasicCompoundNodeType
+	build_in(CompoundNodeDef("enum",
+		["enum ", ChildTag("name"), ", options:", ChildTag("options")],
+		{'name': 'text', 'options': B.list_of_anything}))
 
-	#node type with name "syntactic category" and syntax [<name - text>, "is a syntactic category"]
-
-
-
-
-
-	build_in(CompoundNode
-	'name' :Text('syntactic category'), 'syntax'
-
-	build_in(CompoundNode(B.syntacticcategory, {'name': Text("anything")}))
-
-	build_in(
-		Definition(
-			{'name': Text("list of anything"),
-			 'type': list_of(B.anything)}))
-
-	build_in(compound(EnumType,
-				   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
-				   {'name': 'text',
-				    'options': B.list_of_anything}))
+	build_in(CompoundSyntax(B.syntacticcategory,
+			[TextTag("syntactic category:"), ChildTag("name")],
+			{'name': 'text'}))
 
 	build_in(
 		EnumType({'name': Text("language"),
@@ -3044,7 +2996,6 @@ def build_in_essentials():
 	build_in(CompoundSyntax(B.syntacticcategory,
 			[TextTag("syntactic category:"), ChildTag("name")],
 			{'name': 'text'}))
-
 
 	build_in(
 	ParametricNodecl(ParametricDictType,
