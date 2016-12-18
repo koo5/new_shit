@@ -2906,33 +2906,40 @@ def build_in_essentials():
 	for name in ["anything", "expression"]:
 		build_in(CompoundNode(B.syntacticcategory, {'name': Text(name)}))
 
+	build_in([
+		compound(WorksAs,
+					   [ChildTag("sub"), TextTag(" works as "), ChildTag("sup")],
+					   {'sub': 'type', 'sup': 'type'}),
+
+		SyntacticCategory({'name': Text("expression")})
+	])
+
+	build_in(compound(BindsTighterThan,
+				[[ChildTag("a"), " binds tighter than ",  ChildTag("b")]],
+				{'a': 'type', 'b': 'type'}))
+
+
+
+#?
 	build_in(CompoundNodeDef('definition', [ChildTag("name"), " is ", ChildTag("value")], {"name": B.text, "value":B.expression}))
 	build_in(CompoundNode(B.definition, {   "name": Text("list of anything"),
 			                                'type': list_of(B.anything)}))
 
+def build_in_syntaxes_stuff():
+
 	build_in(CompoundNodeDef("enum",
 		["enum ", ChildTag("name"), ", options:", ChildTag("options")],
 		{'name': 'text', 'options': B.list_of_anything}))
-
-	build_in(CompoundSyntax(B.syntacticcategory,
-			[TextTag("syntactic category:"), ChildTag("name")],
-			{'name': 'text'}))
-
 	build_in(
-		EnumType({'name': Text("language"),
+		CompoundNode(B.enum, {'name': Text("language"),
 		'options':B.enumtype.instance_slots["options"].inst_fresh()}), 'language')
-
 	B.language.ch.options.items = [Text('english'), Text('czech')]
 
 
-	build_in(
-	compound(Definition,
-				   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
-				   {'name': 'text', 'type': 'type'}))
-
 	build_in(SyntacticCategory({'name': Text("statement")}))
-
 	build_in(BuiltinNodecl(Statements))
+
+def build_in_editor_stuff():
 
 	build_in(
 	compound(Module,
@@ -2948,7 +2955,6 @@ def build_in_essentials():
 				   {'statements': B.statements,
 				    }))
 
-
 	build_in(
 	compound(LikiModule,
 	               [ChildTag("statements")],
@@ -2957,13 +2963,15 @@ def build_in_essentials():
 	                }))
 
 
-	build_in(Comment(
-	"""We start by declaring the existence of some types (decls).
-	Once declared, we can reference them from lemon objects.
-	Internally, each declaration is a Nodecl object.
-	The type name is usually a lowercased
-	name of the python class that implements it."""))
 
+	build_in(compound(Serialized,
+				   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
+				   {'last_rendering': B.text,
+				    'serialization':dict_from_to('text', 'anything')}))
+
+
+
+def build_in_lemon_lang():
 
 	build_in(VarRefNodecl(), 'varref')
 
@@ -2971,31 +2979,12 @@ def build_in_essentials():
 
 	build_in(BuiltinNodecl(List), "list_literal")
 
-	build_in([
-		compound(WorksAs,
-					   [ChildTag("sub"), TextTag(" works as "), ChildTag("sup")],
-					   {'sub': 'type', 'sup': 'type'}),
-
-		SyntacticCategory({'name': Text("expression")})
-	])
-
-
-	build_in(compound(BindsTighterThan,
-				[[ChildTag("a"), " binds tighter than ",  ChildTag("b")]],
-				{'a': 'type', 'b': 'type'}))
-
-
-
 
 	build_in(WorksAs.b("statement", "anything"), False)
 	build_in(WorksAs.b("expression", "statement"), False)
 	build_in(WorksAs.b("number", "expression"), False)
 	build_in(WorksAs.b("text", "expression"), False)
 
-
-	build_in(CompoundSyntax(B.syntacticcategory,
-			[TextTag("syntactic category:"), ChildTag("name")],
-			{'name': 'text'}))
 
 	build_in(
 	ParametricNodecl(ParametricDictType,
@@ -3005,9 +2994,6 @@ def build_in_essentials():
 	build_in(WorksAs.b("list", "expression"), False)
 	#build_in(WorksAs.b("dict", "expression"), False)
 
-
-
-	#build_in(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
 
 	build_in(EnumType({'name': Text("bool"),
 		'options':B.enumtype.instance_slots["options"].inst_fresh()}), 'bool')
@@ -3076,9 +3062,22 @@ def build_in_essentials():
 				   [TextTag("unevaluated"), ChildTag("argument")],
 				   {'argument': 'typedparameter'}))
 
+	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
 
 
-	#lets define a function signature type
+	class After(CompoundNode):
+		pass
+	#how to best choose the syntax from within a parent node?
+	"""
+	build_in(compound(After,
+	                        ['after', ChildTag('function'), ':\n', ChildTag('body')],
+		{'function': B.functionsignatureref,
+		 'body': B.statements}))
+	"""
+
+
+def build_in_lemon_function_nodes():
+
 	tmp = B.union.inst_fresh()
 	tmp.ch["items"].add(Ref(B.text))
 	tmp.ch["items"].add(Ref(B.typedparameter))
@@ -3129,6 +3128,8 @@ def build_in_essentials():
 			'name': B.text
 			}))
 
+
+def build_in_builtin_functions():
 
 	#lets keep 'print' a BuiltinFunctionDecl until we have type conversions as first-class functions in lemon,
 	#then it can be just a python library call printing strictly strings and we can dump the to_python_str (?)
@@ -3220,84 +3221,6 @@ def build_in_essentials():
 		pfn(b_range, [Text("numbers from"), num_arg('min'), Text("to"), num_arg('max')],
 			num_list(), name = "range", note="inclusive")
 	add_operators()
-
-
-
-
-	build_in(compound(Serialized,
-				   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
-				   {'last_rendering': B.text,
-				    'serialization':dict_from_to('text', 'anything')}))
-
-
-
-
-#so, this would be understood as a node declaration followed by a Syntax with some (eventually smart) default properties (default language)
-	build_in(compound(NodeWithSyntax,
-	                        ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
-	                        {'name' : B.text,
-				   'syntax': B.custom_syntax_list}))
-
-	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
-
-
-	class After(CompoundNode):
-		pass
-	#how to best choose the syntax from within a parent node?
-	"""
-	build_in(compound(After,
-	                        ['after', ChildTag('function'), ':\n', ChildTag('body')],
-		{'function': B.functionsignatureref,
-		 'body': B.statements}))
-	"""
-
-
-class Serialized(CompoundNode):
-	@classmethod
-	def new(cls, serialization_string):
-		return cls({'last_rendering': Text(),
-		           'serialization':Text(serialization_string)})
-
-	def __init__(s, children):
-		#s.status = widgets.Text(s, "(status)")
-		#s.status.color = "compiler hint"
-		super(Serialized, s).__init__(B.serialized, children)
-
-	def _eval(s):
-		return banana("deserialize me first")
-
-	def on_keypress(s, e):
-		if e.key == K_d and e.mod & KMOD_CTRL:
-			s.unserialize()
-			return True
-
-	def unserialize(s):
-		data = s.ch.serialization.pyval
-		log("unserializing %s"%data)
-		new = deserialize(data, s)
-		log("voila:%s"%new)
-		s.parent.replace_child(s, new)
-
-
-
-def b_lemon_load_file(root, name):
-	return load_module(name, root["loaded program"])
-
-def load_module(file_name, placeholder):
-	print ("loading "+file_name)
-	try:
-		input = json.load(open(file_name, "r"))
-	except Exception as e:
-		return str(e)
-	d = deserialize(input, placeholder)
-	placeholder.parent.replace_child(placeholder, d)
-	d.ch.file.pyval = file_name
-	d.fix_parents()
-	for i in d.flatten():
-		if isinstance(i, Serialized):
-			i.unserialize()
-		d.fix_parents()
-	return "ok"
 
 
 
@@ -3695,15 +3618,6 @@ def	compound(node_class, english_syntax, child_types):
 
 
 
-def b(x):
-	build_in(x)
-
-class NodeType:
-	def __init__(s, name):
-		s.name = name
-
-def newnew():
-	b(NodeType("number"))
 
 
 
@@ -3712,6 +3626,60 @@ def newnew():
 
 
 
-def to_level_1(node):
-	if (isinstance(node, BuiltinNodecl)):
-		return [NodeDecl(node.name), CompoundNode(B.fullsyntax
+
+class Serialized(CompoundNode):
+	@classmethod
+	def new(cls, serialization_string):
+		return cls({'last_rendering': Text(),
+		           'serialization':Text(serialization_string)})
+
+	def __init__(s, children):
+		#s.status = widgets.Text(s, "(status)")
+		#s.status.color = "compiler hint"
+		super(Serialized, s).__init__(B.serialized, children)
+
+	def _eval(s):
+		return banana("deserialize me first")
+
+	def on_keypress(s, e):
+		if e.key == K_d and e.mod & KMOD_CTRL:
+			s.unserialize()
+			return True
+
+	def unserialize(s):
+		data = s.ch.serialization.pyval
+		log("unserializing %s"%data)
+		new = deserialize(data, s)
+		log("voila:%s"%new)
+		s.parent.replace_child(s, new)
+
+
+
+def b_lemon_load_file(root, name):
+	return load_module(name, root["loaded program"])
+
+def load_module(file_name, placeholder):
+	print ("loading "+file_name)
+	try:
+		input = json.load(open(file_name, "r"))
+	except Exception as e:
+		return str(e)
+	d = deserialize(input, placeholder)
+	placeholder.parent.replace_child(placeholder, d)
+	d.ch.file.pyval = file_name
+	d.fix_parents()
+	for i in d.flatten():
+		if isinstance(i, Serialized):
+			i.unserialize()
+		d.fix_parents()
+	return "ok"
+
+
+
+
+
+
+
+
+
+
