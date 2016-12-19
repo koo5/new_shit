@@ -820,8 +820,6 @@ class CompoundNode(Node):
 		super().__init__()
 		assert isinstance(decl, CompoundNodeDef)
 
-		s.syntax_index = 0
-
 		s.decl = decl
 		s.check_slots(s.slots)
 
@@ -833,6 +831,8 @@ class CompoundNode(Node):
 		#set children from the constructor argument
 		for k in iterkeys(s.slots):
 			s.set_child(k, children[k])
+
+		s.syntax_ref = None
 
 		# prevent setting new ch keys
 		s.ch._lock()
@@ -858,7 +858,6 @@ class CompoundNode(Node):
 			for name, slot in iteritems(slots):
 				assert(isinstance(name, unicode))
 				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
-
 
 	def fix_parents(s):
 		s._fix_parents(list(s.ch._dict.values()))
@@ -2774,15 +2773,23 @@ class FunctionCallNodecl(NodeclBase):
 
 class CompoundNodeDef(CompoundNode):
 	instance_class = CompoundNode
-	def __init__(s):
-		s.decl = None
-	def inst_fresh(s, decl=None):
-		""" fresh creates default children"""
-		if decl == None:
-			decl = s
-		return CompoundNode(s)
-	def fix_parents(s):
-		s.fix_parents([s.name_node, s.syntax_language, s.default_syntax])
+	def __init__(s, init = None):
+
+
+
+def cnd(name, tags, types):
+	s = CompoundNodeDef
+	s.decl = B.compoundnodedef
+	s.ch.name = Text(name)
+	syntax = []
+	for i in tags:
+		if isinstance(i, str):
+			a = i
+		else:
+			a = TypedParameter({'name': Text(i.name), 'type': Ref(types[i.name)})
+		syntax.append(a)
+	return s
+
 
 
 
@@ -2892,15 +2899,15 @@ def build_in_essentials():
 
 	build_in(BuiltinNodecl(Text))
 	build_in(BuiltinNodecl(Comment))
+	build_in(BuiltinNodecl(CompoundNodeDef))
 
-	x = BuiltInCompoundNodeDef(
+	x = cnd(
 		"parametric list type",
 		[TextTag("list of"), ChildTag("itemtype")],
 		{'itemtype': B.type})
 	x.instance_class = ParametricListType
 	build_in(x, 'list')
 
-	build_in(BuiltinNodecl(CompoundNodeDef))
 	build_in(CompoundNodeDef('syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": B.text}))
 
 	for name in ["anything", "expression"]:
@@ -2908,7 +2915,7 @@ def build_in_essentials():
 
 	build_in([
 		compound(WorksAs,
-					   [ChildTag("sub"), TextTag(" works as "), ChildTag("sup")],
+					   [ChildTag("sub"), " works as ", ChildTag("sup")],
 					   {'sub': 'type', 'sup': 'type'}),
 
 		SyntacticCategory({'name': Text("expression")})
