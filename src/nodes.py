@@ -943,9 +943,6 @@ class CompoundNode(Node):
 		r.fix_parents()
 		return r
 
-	def fix_parents(s):
-		s._fix_parents(list(s.ch._dict.values()))
-
 	def set_child(s, name, item):
 		assert isinstance(name, unicode), repr(name)
 		assert isinstance(item, Node)
@@ -1057,8 +1054,6 @@ class CompoundNode(Node):
 
 	def unparen(s):
 		return s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
-
-"""
 
 
 
@@ -1423,19 +1418,6 @@ class Statements(List):
 						if i.name == n:
 							return i
 		assert False
-
-
-
-class SortedView():
-	S_orig = 0
-	S_alpha_type_betically_with_flattened_classes?
-
-	@property
-	def source(s):
-		return (s.parent. #module
-				ch.statements.parsed.items)
-
-"""
 
 
 
@@ -2773,12 +2755,12 @@ class FunctionCallNodecl(NodeclBase):
 
 class CompoundNodeDef(CompoundNode):
 	instance_class = CompoundNode
-	def __init__(s, init = None):
+
 
 
 
 def cnd(name, tags, types):
-	s = CompoundNodeDef
+	s = CompoundNodeDef()
 	s.decl = B.compoundnodedef
 	s.ch.name = Text(name)
 	syntax = []
@@ -2908,27 +2890,21 @@ def build_in_essentials():
 	x.instance_class = ParametricListType
 	build_in(x, 'list')
 
-	build_in(CompoundNodeDef('syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": B.text}))
+	build_in(cnd('syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": B.text}))
 
 	for name in ["anything", "expression"]:
 		build_in(CompoundNode(B.syntacticcategory, {'name': Text(name)}))
 
-	build_in([
-		compound(WorksAs,
-					   [ChildTag("sub"), " works as ", ChildTag("sup")],
-					   {'sub': 'type', 'sup': 'type'}),
+	build_in(cnd('WorksAs',
+				[ChildTag("sub"), " works as ", ChildTag("sup")],
+				{'sub': 'type', 'sup': 'type'}))
 
-		SyntacticCategory({'name': Text("expression")})
-	])
-
-	build_in(compound(BindsTighterThan,
-				[[ChildTag("a"), " binds tighter than ",  ChildTag("b")]],
+	build_in(cnd('BindsTighterThan',
+				[ChildTag("a"), " binds tighter than ",  ChildTag("b")],
 				{'a': 'type', 'b': 'type'}))
 
 
-
-#?
-	build_in(CompoundNodeDef('definition', [ChildTag("name"), " is ", ChildTag("value")], {"name": B.text, "value":B.expression}))
+	build_in(cnd('definition', [ChildTag("name"), " is ", ChildTag("value")], {"name": B.text, "value":B.expression}))
 	build_in(CompoundNode(B.definition, {   "name": Text("list of anything"),
 			                                'type': list_of(B.anything)}))
 
