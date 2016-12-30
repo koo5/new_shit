@@ -2768,7 +2768,7 @@ def cnd(name, tags, types):
 		if isinstance(i, str):
 			a = i
 		else:
-			a = TypedParameter({'name': Text(i.name), 'type': Ref(types[i.name)})
+			a = TypedParameter({'name': Text(i.name), 'type': Ref(types[i.name])})
 		syntax.append(a)
 	return s
 
@@ -2882,11 +2882,12 @@ def build_in_essentials():
 	build_in(BuiltinNodecl(Text))
 	build_in(BuiltinNodecl(Comment))
 	build_in(BuiltinNodecl(CompoundNodeDef))
+	build_in(cnd('type', ["type"], {}))
 
 	x = cnd(
 		"parametric list type",
 		[TextTag("list of"), ChildTag("itemtype")],
-		{'itemtype': B.type})
+		{'itemtype': Exp(B.type)})
 	x.instance_class = ParametricListType
 	build_in(x, 'list')
 
@@ -2910,7 +2911,7 @@ def build_in_essentials():
 
 def build_in_syntaxes_stuff():
 
-	build_in(CompoundNodeDef("enum",
+	build_in(cnd("enum",
 		["enum ", ChildTag("name"), ", options:", ChildTag("options")],
 		{'name': 'text', 'options': B.list_of_anything}))
 	build_in(
@@ -2918,8 +2919,7 @@ def build_in_syntaxes_stuff():
 		'options':B.enumtype.instance_slots["options"].inst_fresh()}), 'language')
 	B.language.ch.options.items = [Text('english'), Text('czech')]
 
-
-	build_in(SyntacticCategory({'name': Text("statement")}))
+	build_in(CompoundNode(B.syntacticcategory, {   "name": Text("statement")}))
 	build_in(BuiltinNodecl(Statements))
 
 def build_in_editor_stuff():
