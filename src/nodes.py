@@ -89,7 +89,7 @@ def make_union(items: list):
 
 
 def is_decl(node):
-	return isinstance(node, (NodeclBase, ParametricTypeBase, ParametricNodecl))
+	return isinstance(node, (NodeclBase, ParametricTypeBase))
 def is_type(node):
 	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, SyntacticCategory, EnumType))
 
@@ -812,13 +812,19 @@ class Node(NodePersistenceStuff, element.Element):
 		return s
 
 
+class BuiltinCompoundNodeDef(Node):
+	instance_class = CompoundNode
+	def __init__(s):
+		super().__init__()
+		s.ch = Children()
+
 
 
 class CompoundNode(Node):
 	brackets = (" ", " ")
 	def __init__(s, decl, children=None):
 		super().__init__()
-		assert isinstance(decl, CompoundNodeDef)
+		assert isinstance(decl, (CompoundNodeDef, BuiltinNodecl))
 
 		s.decl = decl
 		s.check_slots(s.slots)
@@ -842,13 +848,94 @@ class CompoundNode(Node):
 		s.fix_parents()
 
 	@property
+	def syntax(s):
+		return deref_decl(s.decl).ch.syntax.parsed.items
+
+	@property
 	def slots(s):
 		return s.ddecl.instance_slots
+
+	@staticmethod
+	def check_slots(slots):
+		if __debug__:
+			assert(isinstance(slots, dict))
+			for name, slot in iteritems(slots):
+				assert(isinstance(name, unicode))
+				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
+
+	@property
+	def syntax(s):
+		return s.syntaxes[s.syntax_index]
+
+	def render(s):
+		return s.syntax
+
+	@classmethod
+	def create_kids(cls, slots):
+		cls.check_slots(slots)
+		kids = {}
+		for k, v in iteritems(slots):
+			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
+			try:
+				easily_instantiable = deref_decl(v).instance_class.easily_instantiable
+			except:
+				easily_instantiable = False
+			if easily_instantiable:
+				a = v.inst_fresh()
+#			elif isinstance(v, ParametricType):
+#				a = v.inst_fresh()
+			else:
+				a = Parser()
+			assert(isinstance(a, Node))
+			kids[k] = a
+		return kids
+
+	@property
+	def name(s):
+		"override if this doesnt work for your subclass"
+		return s.ch.name.pyval
+
+	@property
+	def syntaxes(s):
+		return s.ddecl.instance_syntaxes
+
+
+	def long__repr__(s):
+		return object.__repr__(s) + "('"+str(s.ch)+"')"
+
+	def eq_by_value(a, b):
+		assert len(a.ch._dict) == len(b.ch._dict) #are you looking for eq_by_value_and_decl?
+		for k,v in iteritems(a.ch._dict):
+			if not b.ch[k].eq_by_value_and_python_class(v):
+				return False
+		return True
+
+	def copy(s):
+		decl = s.decl.copy()
+		r = s.__class__.fresh(decl)
+		for k,v in iteritems(s.ch._dict):
+			r.ch[k] = v.copy()
+		r.fix_parents()
+		return r
+
+	def unparen(s):
+		return s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
 
 	def child_type(s, ch):
 		for k,v in iteritems(s.slots):
 			if s.ch[k] == ch:
 				return v
+		assert False
+
+
+	def child_type(s, ch):
+		for name,v in iteritems(s.ch._dict):
+			if v == ch:
+				for i in s.syntax:
+					i = i.parsed
+					if isinstance(i, TypedParameter):
+						if i.ch.name.parsed.pyval == name:
+							return i.ch.type.parsed
 		assert False
 
 	@staticmethod
@@ -861,10 +948,6 @@ class CompoundNode(Node):
 
 	def fix_parents(s):
 		s._fix_parents(list(s.ch._dict.values()))
-
-	@property
-	def syntax(s):
-		return deref_decl(s.decl).ch.syntax.parsed.items
 
 	def create_kids(s):
 		s.ch = Dotdict()
@@ -886,18 +969,6 @@ class CompoundNode(Node):
 				yield i.pyval
 			elif isinstance(i, TypedParameter):
 				yield ElementTag(s.ch._dict[i.ch.name.parsed.pyval])
-
-	def child_type(s, ch):
-		for name,v in iteritems(s.ch._dict):
-			if v == ch:
-				for i in s.syntax:
-					i = i.parsed
-					if isinstance(i, TypedParameter):
-						if i.ch.name.parsed.pyval == name:
-							return i.ch.type.parsed
-		assert False
-
-
 
 	@classmethod
 	def from_parse(cls, p, sy):
@@ -975,21 +1046,6 @@ class CompoundNode(Node):
 		assert(isinstance(v, Node) for v in itervalues(s.ch._dict))
 		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
 
-	@staticmethod
-	def check_slots(slots):
-		if __debug__:
-			assert(isinstance(slots, dict))
-			for name, slot in iteritems(slots):
-				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
-
-	@property
-	def syntax(s):
-		return s.syntaxes[s.syntax_index]
-
-	def render(s):
-		return s.syntax
-
 	def prev_syntax(s):
 		s.syntax_index  -= 1
 		if s.syntax_index < 0:
@@ -1003,57 +1059,6 @@ class CompoundNode(Node):
 			s.syntax_index = len(s.syntaxes)-1
 		log("next syntax")
 		return CHANGED
-
-	@classmethod
-	def create_kids(cls, slots):
-		cls.check_slots(slots)
-		kids = {}
-		for k, v in iteritems(slots):
-			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
-			try:
-				easily_instantiable = deref_decl(v).instance_class.easily_instantiable
-			except:
-				easily_instantiable = False
-			if easily_instantiable:
-				a = v.inst_fresh()
-#			elif isinstance(v, ParametricType):
-#				a = v.inst_fresh()
-			else:
-				a = Parser()
-			assert(isinstance(a, Node))
-			kids[k] = a
-		return kids
-
-	@property
-	def name(s):
-		"override if this doesnt work for your subclass"
-		return s.ch.name.pyval
-
-	@property
-	def syntaxes(s):
-		return s.ddecl.instance_syntaxes
-
-
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+str(s.ch)+"')"
-
-	def eq_by_value(a, b):
-		assert len(a.ch._dict) == len(b.ch._dict) #are you looking for eq_by_value_and_decl?
-		for k,v in iteritems(a.ch._dict):
-			if not b.ch[k].eq_by_value_and_python_class(v):
-				return False
-		return True
-
-	def copy(s):
-		decl = s.decl.copy()
-		r = s.__class__.fresh(decl)
-		for k,v in iteritems(s.ch._dict):
-			r.ch[k] = v.copy()
-		r.fix_parents()
-		return r
-
-	def unparen(s):
-		return s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
 
 
 
@@ -2753,15 +2758,9 @@ class FunctionCallNodecl(NodeclBase):
 # endregion
 
 
-class CompoundNodeDef(CompoundNode):
-	instance_class = CompoundNode
-
-
-
 
 def cnd(name, tags, types):
-	s = CompoundNodeDef()
-	s.decl = B.compoundnodedef
+	s = BuiltinCompoundNodeDef()
 	s.ch.name = Text(name)
 	syntax = []
 	for i in tags:
@@ -2877,24 +2876,24 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 
 
+
 def build_in_essentials():
 
 	build_in(BuiltinNodecl(Text))
 	build_in(BuiltinNodecl(Comment))
-	build_in(BuiltinNodecl(CompoundNodeDef))
-	build_in(cnd('type', ["type"], {}))
-
-	x = cnd(
-		"parametric list type",
-		[TextTag("list of"), ChildTag("itemtype")],
-		{'itemtype': Exp(B.type)})
-	x.instance_class = ParametricListType
-	build_in(x, 'list')
 
 	build_in(cnd('syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": B.text}))
 
 	for name in ["anything", "expression"]:
 		build_in(CompoundNode(B.syntacticcategory, {'name': Text(name)}))
+
+	x = cnd(
+		"parametric list type",
+		[TextTag("list of"), ChildTag("itemtype")],
+		{'itemtype': B.expression})
+	x.instance_class = ParametricListType
+	build_in(x, 'list')
+
 
 	build_in(cnd('WorksAs',
 				[ChildTag("sub"), " works as ", ChildTag("sup")],
