@@ -98,9 +98,9 @@ def deref_decl(d):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
-	elif isinstance(d, (CompoundNodeDef, Union)):
+	elif isinstance(d, (BuiltinCompoundNodeDef, Union)):
 		return d
-	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
+	elif is_decl(d) or d == None or (isinstance(d, CompoundNode) and d.deref_decl.name == 'SyntacticCategory'):
 		return d
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
@@ -812,19 +812,12 @@ class Node(NodePersistenceStuff, element.Element):
 		return s
 
 
-class BuiltinCompoundNodeDef(Node):
-	instance_class = CompoundNode
-	def __init__(s):
-		super().__init__()
-		s.ch = Children()
-
 
 
 class CompoundNode(Node):
 	brackets = (" ", " ")
 	def __init__(s, decl, children=None):
 		super().__init__()
-		assert isinstance(decl, (CompoundNodeDef, BuiltinNodecl))
 
 		s.decl = decl
 		s.check_slots(s.slots)
@@ -847,14 +840,13 @@ class CompoundNode(Node):
 
 		s.fix_parents()
 
-	@property
-	def syntax(s):
-		return deref_decl(s.decl).ch.syntax.parsed.items
-
-	@property
-	def slots(s):
-		return s.ddecl.instance_slots
-
+	@staticmethod
+	def check_slots(slots):
+		if __debug__:
+			assert(isinstance(slots, dict))
+			for name, slot in iteritems(slots):
+				assert(isinstance(name, unicode))
+				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 	@staticmethod
 	def check_slots(slots):
 		if __debug__:
@@ -863,12 +855,28 @@ class CompoundNode(Node):
 				assert(isinstance(name, unicode))
 				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
+
+	@property
+	def syntax(s):
+		return deref_decl(s.decl).ch.syntax.parsed.items
 	@property
 	def syntax(s):
 		return s.syntaxes[s.syntax_index]
 
+
+	@property
+	def slots(s):
+		return s.ddecl.instance_slots
+
 	def render(s):
 		return s.syntax
+	def render(s):
+		for i in s.syntax:
+			i = i.parsed
+			if isinstance(i, Text):
+				yield i.pyval
+			elif isinstance(i, TypedParameter):
+				yield ElementTag(s.ch._dict[i.ch.name.parsed.pyval])
 
 	@classmethod
 	def create_kids(cls, slots):
@@ -889,6 +897,18 @@ class CompoundNode(Node):
 			assert(isinstance(a, Node))
 			kids[k] = a
 		return kids
+	def create_kids(s):
+		s.ch = Dotdict()
+		for i in s.syntax:
+			i = i.parsed
+			if isinstance(i, TypedParameter):
+				p = i.type.parsed
+				if not isinstance(p, Bananas):
+					ch = Parser()
+				else:
+					ch = Text("bad decl")
+				s.ch[i.ch.name.parsed.pyval] = ch
+		s.fix_parents()
 
 	@property
 	def name(s):
@@ -898,7 +918,6 @@ class CompoundNode(Node):
 	@property
 	def syntaxes(s):
 		return s.ddecl.instance_syntaxes
-
 
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.ch)+"')"
@@ -926,8 +945,7 @@ class CompoundNode(Node):
 			if s.ch[k] == ch:
 				return v
 		assert False
-
-
+	"""
 	def child_type(s, ch):
 		for name,v in iteritems(s.ch._dict):
 			if v == ch:
@@ -937,38 +955,10 @@ class CompoundNode(Node):
 						if i.ch.name.parsed.pyval == name:
 							return i.ch.type.parsed
 		assert False
-
-	@staticmethod
-	def check_slots(slots):
-		if __debug__:
-			assert(isinstance(slots, dict))
-			for name, slot in iteritems(slots):
-				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
+	"""
 
 	def fix_parents(s):
 		s._fix_parents(list(s.ch._dict.values()))
-
-	def create_kids(s):
-		s.ch = Dotdict()
-		for i in s.syntax:
-			i = i.parsed
-			if isinstance(i, TypedParameter):
-				p = i.type.parsed
-				if not isinstance(p, Bananas):
-					ch = Parser()
-				else:
-					ch = Text("bad decl")
-				s.ch[i.ch.name.parsed.pyval] = ch
-		s.fix_parents()
-
-	def render(s):
-		for i in s.syntax:
-			i = i.parsed
-			if isinstance(i, Text):
-				yield i.pyval
-			elif isinstance(i, TypedParameter):
-				yield ElementTag(s.ch._dict[i.ch.name.parsed.pyval])
 
 	@classmethod
 	def from_parse(cls, p, sy):
@@ -1059,6 +1049,16 @@ class CompoundNode(Node):
 			s.syntax_index = len(s.syntaxes)-1
 		log("next syntax")
 		return CHANGED
+
+
+
+
+
+class BuiltinCompoundNodeDef(Node):
+	instance_class = CompoundNode
+	def __init__(s):
+		super().__init__()
+		s.ch = Children()
 
 
 
@@ -2394,7 +2394,7 @@ class FunctionParameterBase(CompoundNode):
 class TypedParameter(FunctionParameterBase):
 	"""a parameter to a function, with a name and a type specified"""
 	def __init__(s, children):
-		super(TypedParameter, s).__init__(children)
+		super().__init__(B.typedparameter, ch)
 	@property
 	def type(s):
 		return s.ch.type.parsed
@@ -2769,6 +2769,7 @@ def cnd(name, tags, types):
 		else:
 			a = TypedParameter({'name': Text(i.name), 'type': Ref(types[i.name])})
 		syntax.append(a)
+		s.default_syntax = syntax
 	return s
 
 
@@ -2874,8 +2875,11 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	return r
 
 
+#def render_syntax(s, ch):
 
+#def set_syntax(s, ch):
 
+#BuiltinNodecl.setSyntax = {
 
 def build_in_essentials():
 
@@ -3313,31 +3317,6 @@ def build_in_misc():
 
 
 
-"""
-BuiltinMenuItem..
-class: based on customnode, one level,
-how to do views?
-add python_env to Module?
-
-PiType is a kind of node.
-PiType has var - a Var
-PiType has type - a Exp
-PiType has ret - a Exp
-PiType has syntax: [Child("var"), ":"
-"""
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3537,72 +3516,6 @@ def register_class_symbol(cls):
 
 
 	log(("no class symbol for", cls))
-
-
-
-
-
-
-
-
-"""
-def new_builtins():
-
-
-	nodedef(
-	node "name" with *english syntax: ["a" - *ref, "bla", "b" - *ref]
-	)
-
-	return
-
-*czech syntax for "BindsTighterThan": ["x"(a), "ma vyssi asociativitu nez", "y"(b)]
-(refers to default syntax)
-"""
-
-
-def	compound(node_class, english_syntax, child_types):
-	r = CompoundNodeDef()
-	r.syntax_language = EnumVal(
-		Serialized.new("""
-{
-    "decl": "ref",
-    "target":
-    {
-        "name": "language",
-        "resolve": true,
-        "decl":
-        {
-            "decl": "ref",
-            "target":
-            {
-                "name": "enumtype",
-                "resolve": true,
-                "class": "syntaxednodecl"
-            }
-        }
-    }
-}
-"""), 0)
-	r.instance_class = node_class
-	for i in english_syntax:
-		if type(i) == str:
-			x = Text(i)
-		elif type(i) == ChildTag:
-			x = TypedParameter()
-			x.ch.name = Text(i.name)
-			x.ch.type = Ref(child_types[i.name])
-		else: assert False, i
-		r.default_syntax.append(x)
-	r.name_node = Text(node_class.__name__)
-	r.fix_parents()
-	return r
-
-
-
-
-
-
-
 
 
 
