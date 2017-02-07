@@ -198,7 +198,7 @@ def prev_syntax(s, e):
 def next_syntax(s, e):
 	s.next_syntax()
 
-add_keys(n.CompoundNode, n.Node, {
+add_keys(n.Compound, n.Node, {
 	K(KMOD_CTRL, K_PERIOD): H(prev_syntax),
     K(KMOD_CTRL, K_COMMA ): H(next_syntax)})
 

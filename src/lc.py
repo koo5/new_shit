@@ -38,7 +38,7 @@ def build_in_lc1(r):
 	lc1.exp.help = ["a lambda expression"]
 	
 
-	class Var(CompoundNode):
+	class Var(Compound):
 		brackets = ("", "")
 		help = ["a variable"]
 		@property
@@ -60,7 +60,7 @@ def build_in_lc1(r):
 
 
 
-	class ParExp(CompoundNode):
+	class ParExp(Compound):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 		
@@ -71,7 +71,7 @@ def build_in_lc1(r):
 
 
 
-	class Abs(CompoundNode):
+	class Abs(Compound):
 		help = ["abstraction, a lambda"]
 		#def eval(s):
 		
@@ -84,7 +84,7 @@ def build_in_lc1(r):
 
 
 
-	class App(CompoundNode):
+	class App(Compound):
 		help = ["function application, a call"]
 		pass
 	build_in(compound(App,
@@ -282,7 +282,7 @@ def build_in_lc2(r):
 	lc2.exp.help = ["a lambda expression"]
 	
 
-	class Var(CompoundNode):
+	class Var(Compound):
 		brackets = ("", "")
 		help = ["a variable"]
 		@property
@@ -296,7 +296,7 @@ def build_in_lc2(r):
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, lc2)
 
-	class ParExp(CompoundNode):
+	class ParExp(Compound):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 		
@@ -308,7 +308,7 @@ def build_in_lc2(r):
 
 	build_in(SyntacticCategory({'name': Text('type')}), None, lc2)
 
-	class ParType(CompoundNode):
+	class ParType(Compound):
 		help = ["a parenthesized type"]
 		brackets = ("", "")
 	build_in(compound(ParType,
@@ -317,7 +317,7 @@ def build_in_lc2(r):
 	build_in(WorksAs.b(lc2.partype, lc2.type), False, lc2)
 
 
-	class FunType(CompoundNode):
+	class FunType(Compound):
 		help = ["function type"]
 	build_in(compound(FunType,
 		[
@@ -328,12 +328,12 @@ def build_in_lc2(r):
 
 
 	#this, alright so we'll make syntax class for it
-	class IntType(CompoundNode):
+	class IntType(Compound):
 		help = ["integer type"]
 	build_in(compound(IntType,
 		[TextTag("int")],
 		{}), None, lc2)
-	class BoolType(CompoundNode):
+	class BoolType(Compound):
 		help = ["bool type"]
 	build_in(compound(BoolType,
 		[TextTag("bool")],
@@ -356,13 +356,13 @@ def build_in_lc2(r):
 
 
 
-	class BoolTrue(CompoundNode):
+	class BoolTrue(Compound):
 		help = ["..."]
 	build_in(compound(BoolTrue,
 		[TextTag("true!")],
 		{}), None, lc2)
 	build_in(WorksAs.b(lc2.booltrue, lc2.bool), False, lc2)
-	class BoolFalse(CompoundNode):
+	class BoolFalse(Compound):
 		help = ["..."]
 	build_in(compound(BoolFalse,
 		[TextTag("false!")],
@@ -389,7 +389,7 @@ App := Expr " " Expr
 	"""
 
 	
-	class Abs(CompoundNode):
+	class Abs(Compound):
 		help = ["abstraction, a lambda"]
 		
 	build_in(compound(Abs,
@@ -401,7 +401,7 @@ App := Expr " " Expr
 
 	#"do" <function> "to" <argument>
 	#"run" <function> "on" <argument>
-	class App(CompoundNode):
+	class App(Compound):
 		help = ["function application, a call"]
 		
 	build_in(compound(App,
@@ -796,7 +796,7 @@ def build_in_cube(r):
 	cube.exp.help = ["a lambda expression"]
 
 
-	class Var(CompoundNode):
+	class Var(Compound):
 		brackets = ("", "")
 		help = ["a variable"]
 		@property
@@ -823,7 +823,7 @@ def build_in_cube(r):
 	build_in(compound(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, cube)
-	class ParExp(CompoundNode):
+	class ParExp(Compound):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 	
@@ -832,7 +832,7 @@ def build_in_cube(r):
 		{'exp': cube.exp}), None, cube)
 
 	
-	class PiType(CompoundNode):
+	class PiType(Compound):
 		help = ["""function type
 		
 		is this equivalent to FunType? whats the var there for?
@@ -1018,7 +1018,7 @@ rather than, given any type, and a value of that type, return that value
 		#a parenthesized expression wouldn't work here?
 		{'arg': cube.var, 'type': cube.exp, 'ret': cube.exp}), None, cube)
 	
-	class Abs(CompoundNode):
+	class Abs(Compound):
 		help = ["abstraction, a lambda"]
 	build_in(compound(Abs,
 		[[TextTag("\\"), ChildTag("var"), TextTag(":"), ChildTag("type"), TextTag("."), ChildTag("exp")],
@@ -1026,7 +1026,7 @@ rather than, given any type, and a value of that type, return that value
 		],
 		{'var': cube.var, 'type': cube.exp, 'exp': cube.exp}), None, cube)
 	
-	class App(CompoundNode):
+	class App(Compound):
 		help = ["""function application, a call
 			#"do" <function> "to" <argument>
 			#"run" <function> "on" <argument>
@@ -1039,7 +1039,7 @@ rather than, given any type, and a value of that type, return that value
 		{'e1': cube.exp, 'e2': cube.exp}), None, cube)
 	
 	
-	class StarKind(CompoundNode):
+	class StarKind(Compound):
 		help = ["""star kind
 		whats this?
 		"""]
@@ -1050,7 +1050,7 @@ rather than, given any type, and a value of that type, return that value
 		[TextTag("*")], #[TextTag("*")],
 		{}), None, cube)
 		
-	class BoxKind(CompoundNode):
+	class BoxKind(Compound):
 		help = ["""box kind
 		whats this?
 		"""]

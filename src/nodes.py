@@ -98,9 +98,9 @@ def deref_decl(d):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
-	elif isinstance(d, (BuiltinCompoundNodeDef, Union)):
+	elif isinstance(d, (CompoundNodecl, Union)):
 		return d
-	elif is_decl(d) or d == None or (isinstance(d, CompoundNode) and d.deref_decl.name == 'SyntacticCategory'):
+	elif is_decl(d) or d == None or (isinstance(d, Compound) and d.deref_decl.name == 'SyntacticCategory'):
 		return d
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
@@ -814,7 +814,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 
 
-class CompoundNode(Node):
+class Compound(Node):
 	brackets = (" ", " ")
 	def __init__(s, decl, children=None):
 		super().__init__()
@@ -832,7 +832,7 @@ class CompoundNode(Node):
 			s.set_child(k, children[k])
 
 		s.syntax_ref = None
-
+		s.name = "xxx"
 		# prevent setting new ch keys
 		s.ch._lock()
 		# prevent setting new attributes
@@ -840,21 +840,22 @@ class CompoundNode(Node):
 
 		s.fix_parents()
 
-	@staticmethod
-	def check_slots(slots):
-		if __debug__:
-			assert(isinstance(slots, dict))
-			for name, slot in iteritems(slots):
-				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
-	@staticmethod
-	def check_slots(slots):
-		if __debug__:
-			assert(isinstance(slots, dict))
-			for name, slot in iteritems(slots):
-				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
+
+	@staticmethod
+	def check_slots(slots):
+		if __debug__:
+			assert(isinstance(slots, dict))
+			for name, slot in iteritems(slots):
+				assert(isinstance(name, unicode))
+				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
+	@staticmethod
+	def check_slots(slots):
+		if __debug__:
+			assert(isinstance(slots, dict))
+			for name, slot in iteritems(slots):
+				assert(isinstance(name, unicode))
+				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
 
 	@property
 	def syntax(s):
@@ -862,11 +863,6 @@ class CompoundNode(Node):
 	@property
 	def syntax(s):
 		return s.syntaxes[s.syntax_index]
-
-
-	@property
-	def slots(s):
-		return s.ddecl.instance_slots
 
 	def render(s):
 		return s.syntax
@@ -910,10 +906,17 @@ class CompoundNode(Node):
 				s.ch[i.ch.name.parsed.pyval] = ch
 		s.fix_parents()
 
+
+
+
 	@property
 	def name(s):
 		"override if this doesnt work for your subclass"
 		return s.ch.name.pyval
+
+	@property
+	def slots(s):
+		return s.ddecl.instance_slots
 
 	@property
 	def syntaxes(s):
@@ -1050,15 +1053,6 @@ class CompoundNode(Node):
 		log("next syntax")
 		return CHANGED
 
-
-
-
-
-class BuiltinCompoundNodeDef(Node):
-	instance_class = CompoundNode
-	def __init__(s):
-		super().__init__()
-		s.ch = Children()
 
 
 
@@ -1439,7 +1433,7 @@ class NoValue(Node):
 
 def banana(text="error text"):
 	return Text(text)#
-	r = CompoundNode(s.root.essentials.banana)
+	r = Compound(s.root.essentials.banana)
 	r.ch.info = Text(text)
 	return r
 
@@ -1591,7 +1585,7 @@ class Root(Dict):
 
 
 
-class Module(CompoundNode):
+class Module(Compound):
 	"""module or program"""
 	special_scope = None
 	def __init__(s, kids):
@@ -1760,7 +1754,7 @@ class NodeclBase(Node):
 	classes in code without going thru a corresponding nodecl.inst_fresh()"""
 	help = None
 	def __init__(s, instance_class):
-		super(NodeclBase, s).__init__()
+		super().__init__()
 		s.instance_class = instance_class
 		instance_class.decl = Ref(s)
 		s.decl = None
@@ -1837,29 +1831,8 @@ class BuiltinNodecl(NodeclBase):
 	def make_example(s):
 		return s.inst_fresh()
 
-'''
-   class SyntaxedNodecl(NodeclBase):
-	"""
-	A Nodecl for a class derived from Syntaxed.
-	instance_slots holds types of children, not Ref'ed.
-	 children themselves are either Refs (pointing to other nodes),
-	 or owned nodes (their .parent points to us)
-	"""
-	def __init__(s, instance_class, instance_syntaxes, instance_slots):
-		super(SyntaxedNodecl , s).__init__(instance_class)
-		 s.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(instance_slots)])
-		if isinstance(instance_syntaxes[0], list):
-			s.instance_syntaxes = instance_syntaxes
-		else:
-			s.instance_syntaxes = [instance_syntaxes]
-		s.example = None
 
-	def make_example(s):
-		return s.inst_fresh()
-'''
-
-
-class ParametricTypeBase(CompoundNode):
+class ParametricTypeBase(Compound):
 	pass
 
 class ParametricDictType(ParametricTypeBase):
@@ -1946,10 +1919,10 @@ def borksas(sub, sup):
 		if isinstance(sup, unicode):
 			sup = B[sup]
 			
-		return CompoundNode(B.worksas, {'sub': Ref(sub), 'sup': Ref(sup)})
+		return Compound(B.worksas, {'sub': Ref(sub), 'sup': Ref(sup)})
 
 
-class Definition(CompoundNode):
+class Definition(Compound):
 	"""should have type functionality (work as a type)*?*"""
 	help=['used just for types, currently.']
 	def __init__(s, children):
@@ -1962,7 +1935,7 @@ class Definition(CompoundNode):
 	def type(s):
 		return s.ch.type.parsed
 
-class Union(CompoundNode):
+class Union(Compound):
 	help=['an union of types means that any type will satisfy']
 	def __init__(s, children):
 		super(Union, s).__init__(children)
@@ -1980,13 +1953,13 @@ class ListOfAnything(ParametricType):
 	def works_as(s, type):
 		return True
 """
-class UntypedVar(CompoundNode):
+class UntypedVar(Compound):
 	easily_instantiable = True
 	def __init__(s, children):
 		super(UntypedVar, s).__init__(children)
 
 
-class For(CompoundNode):
+class For(Compound):
 	def __init__(s, children):
 		super(For, s).__init__(children)
 
@@ -2008,7 +1981,7 @@ class For(CompoundNode):
 
 		return NoValue()
 
-class VarlessFor(CompoundNode):
+class VarlessFor(Compound):
 	def __init__(s, children):
 		s.it = B.untypedvar.inst_fresh()
 		s.it.ch.name.pyval = "it"
@@ -2027,7 +2000,7 @@ class VarlessFor(CompoundNode):
 		return NoValue()
 
 
-class If(CompoundNode):
+class If(Compound):
 	def __init__(s, children):
 		super(If, s).__init__(children)
 
@@ -2043,7 +2016,7 @@ class If(CompoundNode):
 			log("condition false")
 			return NoValue()
 
-class Else(CompoundNode):
+class Else(Compound):
 	"""a dangling else...dang!"""
 	def __init__(s, children):
 		super(Else, s).__init__(children)
@@ -2075,7 +2048,7 @@ class Else(CompoundNode):
 
 
 """
-class Filter(CompoundNode):
+class Filter(Compound):
 	def __init__(s, kids):
 		super(Filter, s).__init__(kids)
 """
@@ -2182,9 +2155,9 @@ class ParserBase(Node):
 
 	def post_insert_move_cursor(s, node):
 		#move cursor to first child or somewhere sensible. this should go somewhere else.
-		if isinstance(node, CompoundNode):
+		if isinstance(node, Compound):
 			fch = s.first_child(node)
-			if isinstance(fch, CompoundNode):
+			if isinstance(fch, Compound):
 				fch = s.first_child(fch)
 				#...
 			s.root.delayed_cursor_move.node = fch
@@ -2220,7 +2193,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		p = s.parent
 		if isinstance(p, Parser):
 			return p.type
-		elif isinstance(p, (CompoundNode, FunctionCall, CompoundNode)):
+		elif isinstance(p, (Compound, FunctionCall, Compound)):
 			return p.child_type(s)
 		elif isinstance(p, (List,Dict)):
 			return p.item_type
@@ -2388,7 +2361,7 @@ class DefaultParserMenuItem(MenuItem):
 
 
 
-class FunctionParameterBase(CompoundNode):
+class FunctionParameterBase(Compound):
 	pass
 
 class TypedParameter(FunctionParameterBase):
@@ -2408,7 +2381,7 @@ class UnevaluatedParameter(FunctionParameterBase):
 	def type(s):
 		return s.ch.argument.type
 
-class FunctionDefinitionBase(CompoundNode):
+class FunctionDefinitionBase(Compound):
 
 	def __init__(s, children):
 		super(FunctionDefinitionBase, s).__init__(children)
@@ -2545,7 +2518,7 @@ class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionB
 
 
 """
-class PassedFunctionCall(CompoundNode):
+class PassedFunctionCall(Compound):
 	def __init__(s, definition):
 		super(FunctionCall, s).__init__()
 		assert isinstance(definition, FunctionDefinition)
@@ -2767,15 +2740,50 @@ def cnd(name, tags, types):
 		if isinstance(i, str):
 			a = i
 		else:
-			a = TypedParameter({'name': Text(i.name), 'type': Ref(types[i.name])})
+			a = serialized_typed_parameter(i.name, types[i.name])
 		syntax.append(a)
 		s.default_syntax = syntax
 	return s
 
 
-
-
-		
+def serialized_typed_parameter(name, type):
+	return Serialized("""
+{
+    "decl": {
+        "decl": "ref",
+        "target": {
+            "name": "TypedParameter",
+            "resolve": true,
+        }
+    }
+    "children":
+    {
+        "name":
+        {
+            "decl":
+            {
+                "target":
+                {
+                    "name": "text",
+                    "resolve": true,
+                },
+                "decl": "ref"
+            },
+            "text": '""" + name + """'
+        },
+        "type":
+        {
+			"target":
+            {
+				"name": "text",
+				"resolve": true,
+            },
+            "decl": "ref"
+        }
+	}
+}
+	"""
+	)
 
 
 grammar = None
@@ -2881,35 +2889,66 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 #BuiltinNodecl.setSyntax = {
 
+class CompoundNodecl(NodeclBase):
+	@classmethod
+	def b(cls, name, syntax, types):
+		r = cls(Compound, syntax, types)
+		r.name = name
+		r.type_default_syntax = syntax
+		r.type_types = types
+		return r
+
+	def __init__(s, instance_class, instance_syntaxes, instance_slots):
+		super().__init__(instance_class)
+		s.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(instance_slots)])
+		if isinstance(instance_syntaxes[0], list):
+			s.instance_syntaxes = instance_syntaxes
+		else:
+			s.instance_syntaxes = [instance_syntaxes]
+		s.example = None
+
+	def make_example(s):
+		return s.inst_fresh()
+
+
+class CompoundNodeclNodecl(Node):
+	name = 'CompoundNodeclNodecl'
+	pass
+
+
 def build_in_essentials():
 
 	build_in(BuiltinNodecl(Text))
 	build_in(BuiltinNodecl(Comment))
-
-	build_in(cnd('syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": B.text}))
-
+	build_in(CompoundNodeclNodecl())
+	build_in(CompoundNodecl.b('a declaration of a syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": B.text}))
 	for name in ["anything", "expression"]:
-		build_in(CompoundNode(B.syntacticcategory, {'name': Text(name)}))
+		build_in(Compound(B.a_declaration_of_a_syntactic_category, {'name': Text(name)}))
 
-	x = cnd(
+	x = CompoundNodecl.b(
 		"parametric list type",
 		[TextTag("list of"), ChildTag("itemtype")],
 		{'itemtype': B.expression})
 	x.instance_class = ParametricListType
-	build_in(x, 'list')
+	build_in(x)
 
-
-	build_in(cnd('WorksAs',
+	build_in(CompoundNodecl.b('WorksAs',
 				[ChildTag("sub"), " works as ", ChildTag("sup")],
 				{'sub': 'type', 'sup': 'type'}))
 
-	build_in(cnd('BindsTighterThan',
-				[ChildTag("a"), " binds tighter than ",  ChildTag("b")],
-				{'a': 'type', 'b': 'type'}))
+	build_in(cnd('HasPrecedence',
+				[ChildTag("node"), " has precedence ",  ChildTag("precedence")],
+				{'node': 'type', 'precedence': 'number'}))
+
+
+
+#	build_in(cnd('BindsTighterThan',
+#				[ChildTag("a"), " binds tighter than ",  ChildTag("b")],
+#				{'a': 'type', 'b': 'type'}))
 
 
 	build_in(cnd('definition', [ChildTag("name"), " is ", ChildTag("value")], {"name": B.text, "value":B.expression}))
-	build_in(CompoundNode(B.definition, {   "name": Text("list of anything"),
+	build_in(Compound(B.definition, {   "name": Text("list of anything"),
 			                                'type': list_of(B.anything)}))
 
 def build_in_syntaxes_stuff():
@@ -2918,11 +2957,11 @@ def build_in_syntaxes_stuff():
 		["enum ", ChildTag("name"), ", options:", ChildTag("options")],
 		{'name': 'text', 'options': B.list_of_anything}))
 	build_in(
-		CompoundNode(B.enum, {'name': Text("language"),
+		Compound(B.enum, {'name': Text("language"),
 		'options':B.enumtype.instance_slots["options"].inst_fresh()}), 'language')
 	B.language.ch.options.items = [Text('english'), Text('czech')]
 
-	build_in(CompoundNode(B.syntacticcategory, {   "name": Text("statement")}))
+	build_in(Compound(B.syntacticcategory, {   "name": Text("statement")}))
 	build_in(BuiltinNodecl(Statements))
 
 def build_in_editor_stuff():
@@ -3051,7 +3090,7 @@ def build_in_lemon_lang():
 	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
 
 
-	class After(CompoundNode):
+	class After(Compound):
 		pass
 	#how to best choose the syntax from within a parent node?
 	"""
@@ -3213,7 +3252,7 @@ def build_in_builtin_functions():
 
 
 def build_in_misc():
-	class Note(CompoundNode):
+	class Note(Compound):
 		def __init__(s, children):
 			#s.text = widgets.Text(s, "")
 			super(Note,s).__init__(children)
@@ -3244,7 +3283,7 @@ def build_in_misc():
 
 
 
-	class PythonEval(CompoundNode):
+	class PythonEval(Compound):
 		def __init__(s, children):
 			super(PythonEval, s).__init__(children)
 
@@ -3254,7 +3293,7 @@ def build_in_misc():
 
 
 
-	class ShellCommand(CompoundNode):
+	class ShellCommand(Compound):
 		info = ["runs a command with os.system"]
 		def __init__(s, children):
 			super(ShellCommand, s).__init__(children)
@@ -3274,7 +3313,7 @@ def build_in_misc():
 				   {'command': Exp(B.text)}))
 
 
-	class FilesystemPath(CompoundNode):
+	class FilesystemPath(Compound):
 		def __init__(s, children):
 			s.status = widgets.Text(s, "(status)")
 			s.status.color = colors.parser_hint
@@ -3307,7 +3346,7 @@ def build_in_misc():
 
 
 
-	class MorningRule(CompoundNode):
+	class MorningRule(Compound):
 		pass
 
 	build_in(compound(MorningRule,
@@ -3482,7 +3521,7 @@ def register_class_symbol(cls):
 		return r
 
 
-	elif CompoundNode.__subclasscheck__(cls):
+	elif Compound.__subclasscheck__(cls):
 		r = m.symbol(cls.__name__)
 		ddecl = deref_decl(cls.decl)
 		for sy in ddecl.instance_syntaxes:
@@ -3522,7 +3561,7 @@ def register_class_symbol(cls):
 
 
 
-class Serialized(CompoundNode):
+class Serialized(Compound):
 	@classmethod
 	def new(cls, serialization_string):
 		return cls({'last_rendering': Text(),

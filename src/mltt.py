@@ -21,7 +21,7 @@ def build_in_MLTT(r):
 	build_in(SyntacticCategory({'name': Text("exp")}), None, MLTT)
 	MLTT.exp.help = ["a lambda expression"]
 
-	class DebVar(CompoundNode):
+	class DebVar(Compound):
 		help = ["a De Brujin-ized variable"]
 
 		@property
@@ -43,7 +43,7 @@ def build_in_MLTT(r):
 	                        [ChildTag("name"), ChildTag('dist')],
 	                        {'name': B.restrictedidentifier, 'dist': B.number}))
 
-	class Var(CompoundNode):
+	class Var(Compound):
 		brackets = ("", "")
 		help = ["a variable"]
 
@@ -62,7 +62,7 @@ def build_in_MLTT(r):
 	                        [ChildTag("name")],
 	                        {'name': B.restrictedidentifier}), None, MLTT)
 
-	class ParExp(CompoundNode):
+	class ParExp(Compound):
 		help = ["a parenthesized expression"]
 		brackets = ("", "")
 
@@ -70,7 +70,7 @@ def build_in_MLTT(r):
 	                        [TextTag("("), ChildTag("exp"), TextTag(")")],
 	                        {'exp': MLTT.exp}), None, MLTT)
 
-	class PiType(CompoundNode):
+	class PiType(Compound):
 		help = ["""function type		"""]
 
 	build_in(compound(PiType,
@@ -79,7 +79,7 @@ def build_in_MLTT(r):
 	                        ],
 	                        {'arg': MLTT.var, 'type': MLTT.exp, 'ret': MLTT.exp}), None, MLTT)
 
-	class Abs(CompoundNode):
+	class Abs(Compound):
 		help = ["abstraction, a lambda"]
 
 	build_in(compound(Abs,
@@ -88,7 +88,7 @@ def build_in_MLTT(r):
 	                         ],
 	                        {'var': MLTT.var, 'type': MLTT.exp, 'exp': MLTT.exp}), None, MLTT)
 
-	class App(CompoundNode):
+	class App(Compound):
 		help = ["""function application, a call
 			#"do" <function> "to" <argument>
 			#"run" <function> "on" <argument>
@@ -99,14 +99,14 @@ def build_in_MLTT(r):
 	                         ],
 	                        {'e1': MLTT.exp, 'e2': MLTT.exp}), None, MLTT)
 
-	class Level(CompoundNode):
+	class Level(Compound):
 		pass
 
 	build_in(compound(Level,
 	                        [TextTag("#")],
 	                        {}), None, MLTT)
 
-	class Succ(CompoundNode):
+	class Succ(Compound):
 		help = ["""the successor of a level"""]
 
 	build_in(compound(
@@ -116,7 +116,7 @@ def build_in_MLTT(r):
 		None,
 		MLTT)
 
-	class Set(CompoundNode):
+	class Set(Compound):
 		help = ["""the function constructing an MLTT universe from an element of Level"""]
 
 	build_in(compound(
@@ -127,7 +127,7 @@ def build_in_MLTT(r):
 		MLTT
 	)
 
-	class SetOmega(CompoundNode):
+	class SetOmega(Compound):
 		help = ["""the 'kind' of MLTT universes"""]
 
 	build_in(compound(

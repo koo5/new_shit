@@ -2,12 +2,13 @@ from nodes import *
 import traceback
 
 def tb():
+	return None
 	return (traceback.extract_stack())
 
 def palette(s, scope, text, parser):
 	"create menu items"
 	if isinstance(s, CompoundNodeDef):
-		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), CompoundNode(s))]
+		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), Compound(s))]
 	elif isinstance(s, FunctionCallNodecl):
 		#override NodeclBase palette() which returns a menuitem with a fresh() instance_class,
 		#FunctionCall cant be instantiated without a target.
