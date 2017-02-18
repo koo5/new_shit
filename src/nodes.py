@@ -89,7 +89,7 @@ def make_union(items: list):
 
 
 def is_decl(node):
-	return isinstance(node, (NodeclBase, ParametricTypeBase))
+	return isinstance(node, (Nodecl, ParametricTypeBase))
 def is_type(node):
 	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, SyntacticCategory, EnumType))
 
@@ -574,7 +574,7 @@ class Node(NodePersistenceStuff, element.Element):
 	def __init__(s):
 		"""	__init__ usually takes children or value as arguments.
 		fresh() calls it with some defaults (as the user would have it inserted from the menu)
-		each class has a decl, which is an object descending from NodeclBase (nodecl for node declaration).
+		each class has a decl, which is an object descending from Nodecl (nodecl for node declaration).
 		nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
 		nodecls have a set of functions for instantiating the values, and those need some cleanup"""
 		super().__init__()
@@ -688,7 +688,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	@property
 	def nodecls(s):
-		return [i for i in s.scope() if isinstance(i, (NodeclBase, EnumType))]
+		return [i for i in s.scope() if isinstance(i, (Nodecl, EnumType))]
 
 	@property
 	def vardecls_in_scope(s):
@@ -812,16 +812,12 @@ class Node(NodePersistenceStuff, element.Element):
 		return s
 
 
-
-
 class Compound(Node):
 	brackets = (" ", " ")
-	def __init__(s, decl, children=None):
+	def __init__(s, children=None):
 		super().__init__()
-
-		s.decl = decl
+		s.m_syntax = None, "default value(__init__)"
 		s.check_slots(s.slots)
-
 		s.ch = Children()
 		s.create_kids()
 
@@ -840,32 +836,21 @@ class Compound(Node):
 
 		s.fix_parents()
 
-
-
 	@staticmethod
 	def check_slots(slots):
 		if __debug__:
 			assert(isinstance(slots, dict))
 			for name, slot in iteritems(slots):
 				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
-	@staticmethod
-	def check_slots(slots):
-		if __debug__:
-			assert(isinstance(slots, dict))
-			for name, slot in iteritems(slots):
-				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
+				assert isinstance(slot, (Nodecl, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
+
+	#def currently_selected_syntax_for_rendering(s):
+	#	assert isinstance(r, list)
 
 	@property
 	def syntax(s):
-		return deref_decl(s.decl).ch.syntax.parsed.items
-	@property
-	def syntax(s):
-		return s.syntaxes[s.syntax_index]
+		return s.m_syntax[0]
 
-	def render(s):
-		return s.syntax
 	def render(s):
 		for i in s.syntax:
 			i = i.parsed
@@ -874,10 +859,11 @@ class Compound(Node):
 			elif isinstance(i, TypedParameter):
 				yield ElementTag(s.ch._dict[i.ch.name.parsed.pyval])
 
+
 	@classmethod
-	def create_kids(cls, slots):
+	def fresh_kids(cls, slots):
 		cls.check_slots(slots)
-		kids = {}
+		kids = Dotdict()
 		for k, v in iteritems(slots):
 			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
 			try:
@@ -886,26 +872,27 @@ class Compound(Node):
 				easily_instantiable = False
 			if easily_instantiable:
 				a = v.inst_fresh()
-#			elif isinstance(v, ParametricType):
-#				a = v.inst_fresh()
 			else:
 				a = Parser()
 			assert(isinstance(a, Node))
 			kids[k] = a
 		return kids
+
 	def create_kids(s):
-		s.ch = Dotdict()
-		for i in s.syntax:
+		s.ch = s.fresh_kids()
+		s.fix_parents()
+
+	def slots_from_syntax(s, sy):
+		slots = {}
+		for i in sy.parsed:
 			i = i.parsed
 			if isinstance(i, TypedParameter):
 				p = i.type.parsed
 				if not isinstance(p, Bananas):
-					ch = Parser()
+					slots[i.name.parsed.pyval] = p
 				else:
-					ch = Text("bad decl")
-				s.ch[i.ch.name.parsed.pyval] = ch
-		s.fix_parents()
-
+					return None #("bad decl")
+		return slots
 
 
 
@@ -1747,18 +1734,16 @@ class Exp(Node):
 
 
 
-class NodeclBase(Node):
-	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
-	know their python class ("instance_class"), syntax and shit. Think types.
-	usually does something like instance_class.decl = s, so we can instantiate the
-	classes in code without going thru a corresponding nodecl.inst_fresh()"""
+class Nodecl(Node):
+	"""Nodecls declare that some kind of nodes can be created,
+	know their python class ("instance_class"), instance_syntax etc."""
 	help = None
 	def __init__(s, instance_class):
 		super().__init__()
 		s.instance_class = instance_class
-		instance_class.decl = Ref(s)
-		s.decl = None
+		instance_class.decl = (s)
 		s.example = None
+		s.decl = None
 
 	def make_example(s):
 		return None
@@ -1807,7 +1792,7 @@ class NodeclBase(Node):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
 
 
-class RefNodecl(NodeclBase):
+class RefNodecl(Nodecl):
 	help = ["points to another node, like using an identifier. "]
 
 	def __init__(s):
@@ -1817,12 +1802,12 @@ class RefNodecl(NodeclBase):
 		return Ref(B.module)
 
 
-class ExpNodecl(NodeclBase):
+class ExpNodecl(Nodecl):
 	def __init__(s):
 		super(ExpNodecl, s).__init__(Exp)
 
 
-class BuiltinNodecl(NodeclBase):
+class BuiltinNodecl(Nodecl):
 	"""for simple nodes (Number, Text, Bool)"""
 	def __init__(s, instance_class):
 		super(BuiltinNodecl, s).__init__(instance_class)
@@ -2721,7 +2706,7 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		return [s] + flatten([v.flatten() for v in itervalues(s.args)])
 
 
-class FunctionCallNodecl(NodeclBase):
+class FunctionCallNodecl(Nodecl):
 	"""a type of FunctionCall nodes,
 	offers function calls thru palette()"""
 	def __init__(s):
@@ -2889,11 +2874,11 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 #BuiltinNodecl.setSyntax = {
 
-class CompoundNodecl(NodeclBase):
+class CompoundNodecl(Nodecl, Compound):
 	@classmethod
 	def b(cls, name, syntax, types):
 		r = cls(Compound, syntax, types)
-		r.name = name
+		r.ch.name = Text(name)
 		r.type_default_syntax = syntax
 		r.type_types = types
 		return r
@@ -3396,7 +3381,7 @@ def register_symbol(s):
 		return
 	"""
 
-	if isinstance(s, NodeclBase):
+	if isinstance(s, Nodecl):
 		s._symbol = s.instance_class.register_class_symbol()
 		return
 

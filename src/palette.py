@@ -10,7 +10,7 @@ def palette(s, scope, text, parser):
 	if isinstance(s, CompoundNodeDef):
 		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), Compound(s))]
 	elif isinstance(s, FunctionCallNodecl):
-		#override NodeclBase palette() which returns a menuitem with a fresh() instance_class,
+		#override Nodecl palette() which returns a menuitem with a fresh() instance_class,
 		#FunctionCall cant be instantiated without a target.
 		return []
 		#the stuff below is now performed in FunctionDefinitionBase
@@ -36,7 +36,7 @@ def palette(s, scope, text, parser):
 			score = 0
 		return [PaletteMenuItem(tb(), value, {'hardcoded regex-y match':score})]
 	elif isinstance(s, ExpNodecl):
-		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
+		nodecls = [x for x in scope if isinstance(x, (Nodecl))]
 		return [PaletteMenuItem(tb(), Exp(x)) for x in nodecls]
 	elif isinstance(s, VarRefNodecl):
 		r = []
@@ -58,9 +58,9 @@ def palette(s, scope, text, parser):
 				return r
 		"""
 	elif isinstance(s, TypeNodecl):
-		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
+		nodecls = [x for x in scope if isinstance(x, (Nodecl))]
 		return [PaletteMenuItem(tb(), Ref(x)) for x in nodecls]
-	elif isinstance(s, NodeclBase):
+	elif isinstance(s, Nodecl):
 		return [PaletteMenuItem(tb(), s.instance_class.fresh())]
 	else:
 		return []
