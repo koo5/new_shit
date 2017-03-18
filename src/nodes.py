@@ -8,6 +8,19 @@ good luck.
 
 """
 
+
+import sys
+class __LINE__(object):
+
+    def __repr__(self):
+        try:
+            raise Exception
+        except:
+            return str(sys.exc_info()[2].tb_frame.f_back.f_lineno)
+
+__LINE__ = __LINE__()
+
+
 autocomplete = True
 
 # region imports
@@ -52,8 +65,9 @@ AST_CHANGED = 2
 B = Dotdict()
 B._dict = odict()
 
-def build_in(node, name=None, builtins_table = B):
+def build_in(module, node, name=None):
 	"""add node to B"""
+	builtins_table = B
 	if isinstance(node, list):
 		#python lets you do this kind of name overriding?
 		#how does it know which node is the node you want
@@ -67,10 +81,12 @@ def build_in(node, name=None, builtins_table = B):
 			key = name
 		if isinstance(key, unicode):
 			key = key.replace(' ', '_')
+			key = key.lower()
 		assert node
 		assert key,  key
 		assert key not in builtins_table._dict,  repr(key) + " already in builtins:" + repr(node)
 		builtins_table[key] = node
+		module.add(node)
 		print ("built in as ", key)
 	return node
 
@@ -828,6 +844,10 @@ class Compound(Node):
 		# prevent setting new attributes
 		#s.lock()
 
+	@property
+	def builtin_name(s):
+		return s.name
+
 	def set_decl(s, decl):
 		if decl == None:
 			s.m_syntax = List()
@@ -885,7 +905,7 @@ class Compound(Node):
 		return kids
 
 	def create_kids(s):
-		s.ch = s.fresh_kids()
+		s.ch = s.fresh_kids(s.slots)
 		s.fix_parents()
 
 	def slots_from_syntax(s, sy):
@@ -954,7 +974,9 @@ class Compound(Node):
 	"""
 
 	def fix_parents(s):
-		s._fix_parents(list(s.ch._dict.values()))
+		print ('t', s.ch._dict)
+		print ('ttt', s.ch._dict.values())
+		s._fix_parents(list(iter(s.ch._dict.values())))
 
 	@classmethod
 	def from_parse(cls, p, sy):
@@ -1195,7 +1217,11 @@ class List(ListPersistenceStuff, Collapsible):
 	def __init__(s):
 		super().__init__()
 		s.items = []
-		s.decl = Ref(B.list_of_anything)
+		try:
+			d = Ref(B.list_of_anything)
+		except:
+			d = Serialized('Ref(B.list_of_anything)')
+		s.decl = d
 		s.parser_class = Parser
 
 	def copy(s):
@@ -1369,7 +1395,11 @@ class Statements(List):
 	def __init__(s):
 		super(Statements, s).__init__()
 		s.view_mode = Collapsible.vm_multiline
-		s.decl = Ref(B.statements)
+		try:
+			d = Ref(B.statements)
+		except:
+			d = Serialized('Ref(B.statements)')
+		s.decl = d
 
 	@classmethod
 	def fresh(cls, decl=None):
@@ -1581,10 +1611,10 @@ class Root(Dict):
 class Module(Compound):
 	"""module or program"""
 	special_scope = None
-	def __init__(s, kids):
-		super().__init__(kids)
+	def __init__(s):
+		super().__init__()
 		#s.sortedview = SortableStatements(s)
-		s.ch.statements.view_mode = Collapsible.vm_collapsed
+#		s.ch.statements.view_mode = Collapsible.vm_collapsed
 
 	def add(s, item):
 		s.ch.statements.add(item)
@@ -2739,8 +2769,11 @@ def make_root():
 	r = Root()
 
 	r["LDL"] = build_in_language_definition_language()
-
 	r["stuff"] = build_in_stuff()
+
+	r.fix_parents()
+	return r
+
 
 	"""
 	r["builtins"] = B.builtinmodule.inst_fresh()
@@ -2756,6 +2789,8 @@ def make_root():
 	settings.ch.statements.items = [Text('sidebar tab')]
 	load_module('settings.lemon.json', settings)
 	"""
+
+
 	r["repl"] = B.builtinmodule.inst_fresh()
 	r["repl"].ch.statements.parser_class = ReplParser
 	r["repl"].ch.statements.items = [ReplParser()]
@@ -2841,7 +2876,7 @@ def legacy_to_user_defined(tags, types):
 	syntax = []
 	for i in tags:
 		if isinstance(i, str):
-			a = i
+			a = Text(i)
 		else:
 			a = serialized_typed_parameter(i.name, types[i.name])
 		syntax.append(a)
@@ -2896,9 +2931,9 @@ class CompoundNodecl(Nodecl, Compound):
 		r = cls()
 		r.instance_class = Compound
 		r._builtin_name = name
-		r.ch.syntax = legacy_to_user_defined(syntax, types)
+		r.ch.syntax = List()
+		r.ch.syntax.items = legacy_to_user_defined(syntax, types)
 		r.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(types)])
-
 		return r
 
 	@property
@@ -2922,60 +2957,81 @@ class CompoundNodeclNodecl(Nodecl, Compound):
 
 def build_in_language_definition_language():
 	r = Module()
+	r.ch["statements"] = Statements()
 	r.add(Comment("here we define a language for defining languages"))
 
 	class RefsToNodeclsAndSyntacticCategories(Node):
 		"""a singleton class of a node that declares the possibility of existence of
-		a subset of Refs that point to Nodecls and SyntacticCategories""""
+		a subset of Refs that point to Nodecls and SyntacticCategories"""
 		pass
 
-	build_in(r, RefsToNodeclsAndSyntacticCategories())
+	build_in(r, RefsToNodeclsAndSyntacticCategories(), 'nodetype')
 
 	build_in(r, CompoundNodeclNodecl())
 
+	r.fix_parents();
+
 	build_in(r, CompoundNodecl.b('WorksAs',
 				[ChildTag("sub"), " works as ", ChildTag("sup")],
-				{'sub': 'type', 'sup': 'type'}))
+				{'sub': 'nodetype', 'sup': 'nodetype'}))
+	print(__LINE__, 444, B.worksas.ch.syntax)
 
+	r.fix_parents();
 	build_in(r, CompoundNodecl.b('HasPrecedence',
 				[ChildTag("node"), " has precedence ",  ChildTag("precedence")],
-				{'node': 'type', 'precedence': 'number'}))
+				{'node': 'nodetype', 'precedence': Serialized('number')}))
 
-	build_in(CompoundNodecl.b('a declaration of a syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": B.text}))
+	build_in(r, CompoundNodecl.b('a declaration of a syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": Serialized('B.text')}))
 
-
+	return r
 
 def build_in_stuff():
-	build_in_basic_nodecl(Text)
-	build_in_basic_nodecl(Comment)
+	r = Module()
+	r.ch["statements"] = Statements()
 
-	for name in ["anything", "expression"]:
+	build_in(r, BasicNodecl.with_instance_class(Text))
+	build_in(r, BasicNodecl.with_instance_class(Comment))
+
+	for name in ["anything", "expression", "statement"]:
 		x = Compound()
 		x.decl = B.a_declaration_of_a_syntactic_category
 		x.set_children({'name': Text(name)})
-		build_in(x, name)
+		build_in(r, x, name)
 
 	x = CompoundNodecl.b(
 		"parametric list type",
 		[TextTag("list of"), ChildTag("itemtype")],
 		{'itemtype': B.expression})
 	x.instance_class = ParametricListType
-	build_in(x)
+	build_in(r, x)
 
-	build_in(cnd('definition', [ChildTag("name"), " is ", ChildTag("value")], {"name": B.text, "value":B.expression}))
-	build_in(Compound(B.definition, {   "name": Text("list of anything"),
-			                                'type': list_of(B.anything)}))
+	build_in(r, CompoundNodecl.b('definition', [ChildTag("name"), " is ", ChildTag("value")], {"name": B.text, "value":B.expression}))
 
-		build_in(cnd("enum",
+	x = Compound()
+	x.decl = B.definition
+	x.set_children({"name": Text("list of anything"),
+			        'value': Serialized('list_of(B.anything)')})
+	build_in(r, x)
+
+	build_in(r, CompoundNodecl.b("enum",
 		["enum ", ChildTag("name"), ", options:", ChildTag("options")],
 		{'name': 'text', 'options': B.list_of_anything}))
-	build_in(
+
+	return r
+
+
+def build_in_language_enums():
+
+	print(B.enum.instance_slots)
+	print(B.enum.instance_slots["options"])
+	print(B.enum.instance_slots["options"].name)
+	build_in(r,
 		Compound(B.enum, {'name': Text("language"),
-		'options':B.enumtype.instance_slots["options"].inst_fresh()}), 'language')
+		'options':deref_decl(B.enum.instance_slots["options"]).inst_fresh()}), 'language')
+
 	B.language.ch.options.items = [Text('english'), Text('czech')]
 
-	build_in(Compound(B.syntacticcategory, {   "name": Text("statement")}))
-	build_in(BasicNodecl(Statements))
+	#build_in(BasicNodecl(Statements))
 
 	build_in(
 	compound(Module,
@@ -3029,7 +3085,7 @@ def build_in_lemon_lang():
 
 
 	build_in(EnumType({'name': Text("bool"),
-		'options':B.enumtype.instance_slots["options"].inst_fresh()}), 'bool')
+		'options':B.enum.instance_slots["options"].inst_fresh()}), 'bool')
 	B.bool.ch.options.items = [Text('false'), Text('true')]
 
 	build_in(

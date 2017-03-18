@@ -1,0 +1,181 @@
+pydev debugger: process 20078 is connecting
+
+built in as  nodetype
+built in as  compoundnodecl
+t {'statements': <nodes.Statements object at 0x7fb4ea97a908>}
+ttt dict_values([<nodes.Statements object at 0x7fb4ea97a908>])
+t {}
+ttt dict_values([])
+built in as  worksas
+2977 444 <nodes.List object at 0x7fb4ea97aeb8>
+t {'statements': <nodes.Statements object at 0x7fb4ea97a908>}
+ttt dict_values([<nodes.Statements object at 0x7fb4ea97a908>])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea97aeb8>}
+ttt dict_values([<nodes.List object at 0x7fb4ea97aeb8>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+built in as  hasprecedence
+built in as  a_declaration_of_a_syntactic_category
+built in as  text
+built in as  comment
+built in as  anything
+built in as  expression
+built in as  statement
+built in as  parametric_list_type
+built in as  definition
+built in as  list_of_anything
+built in as  enum
+t {'statements': <nodes.Statements object at 0x7fb4ea97a908>}
+ttt dict_values([<nodes.Statements object at 0x7fb4ea97a908>])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea97aeb8>}
+ttt dict_values([<nodes.List object at 0x7fb4ea97aeb8>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea98a6a0>}
+ttt dict_values([<nodes.List object at 0x7fb4ea98a6a0>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea98aac8>}
+ttt dict_values([<nodes.List object at 0x7fb4ea98aac8>])
+t {}
+ttt dict_values([])
+t {'statements': <nodes.Statements object at 0x7fb4ea98af60>}
+ttt dict_values([<nodes.Statements object at 0x7fb4ea98af60>])
+t {'name': <nodes.Text object at 0x7fb4ea99d208>}
+ttt dict_values([<nodes.Text object at 0x7fb4ea99d208>])
+t {'name': <nodes.Text object at 0x7fb4ea99d668>}
+ttt dict_values([<nodes.Text object at 0x7fb4ea99d668>])
+t {'name': <nodes.Text object at 0x7fb4ea99d828>}
+ttt dict_values([<nodes.Text object at 0x7fb4ea99d828>])
+t {'syntax': <nodes.List object at 0x7fb4ea99d748>}
+ttt dict_values([<nodes.List object at 0x7fb4ea99d748>])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea99dc18>}
+ttt dict_values([<nodes.List object at 0x7fb4ea99dc18>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+t {'value': <nodes.Serialized object at 0x7fb4eb63e2e8>, 'name': <nodes.Text object at 0x7fb4eb63e080>}
+ttt dict_values([<nodes.Serialized object at 0x7fb4eb63e2e8>, <nodes.Text object at 0x7fb4eb63e080>])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4eb63e470>}
+ttt dict_values([<nodes.List object at 0x7fb4eb63e470>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+t {'statements': <nodes.Statements object at 0x7fb4ea97a908>}
+ttt dict_values([<nodes.Statements object at 0x7fb4ea97a908>])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea97aeb8>}
+ttt dict_values([<nodes.List object at 0x7fb4ea97aeb8>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea98a6a0>}
+ttt dict_values([<nodes.List object at 0x7fb4ea98a6a0>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea98aac8>}
+ttt dict_values([<nodes.List object at 0x7fb4ea98aac8>])
+t {}
+ttt dict_values([])
+t {'statements': <nodes.Statements object at 0x7fb4ea98af60>}
+ttt dict_values([<nodes.Statements object at 0x7fb4ea98af60>])
+t {'name': <nodes.Text object at 0x7fb4ea99d208>}
+ttt dict_values([<nodes.Text object at 0x7fb4ea99d208>])
+t {'name': <nodes.Text object at 0x7fb4ea99d668>}
+ttt dict_values([<nodes.Text object at 0x7fb4ea99d668>])
+t {'name': <nodes.Text object at 0x7fb4ea99d828>}
+ttt dict_values([<nodes.Text object at 0x7fb4ea99d828>])
+t {'syntax': <nodes.List object at 0x7fb4ea99d748>}
+ttt dict_values([<nodes.List object at 0x7fb4ea99d748>])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4ea99dc18>}
+ttt dict_values([<nodes.List object at 0x7fb4ea99dc18>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+t {'value': <nodes.Serialized object at 0x7fb4eb63e2e8>, 'name': <nodes.Text object at 0x7fb4eb63e080>}
+ttt dict_values([<nodes.Serialized object at 0x7fb4eb63e2e8>, <nodes.Text object at 0x7fb4eb63e080>])
+t {}
+ttt dict_values([])
+t {'syntax': <nodes.List object at 0x7fb4eb63e470>}
+ttt dict_values([<nodes.List object at 0x7fb4eb63e470>])
+t {}
+ttt dict_values([])
+t {}
+ttt dict_values([])
+Traceback (most recent call last):
+  File "/home/kook/pub/sw/pycharm-community-2016.3/helpers/pydev/pydevd.py", line 1596, in <module>
+    globals = debugger.run(setup['file'], None, None, is_module)
+  File "/home/kook/pub/sw/pycharm-community-2016.3/helpers/pydev/pydevd.py", line 974, in run
+    pydev_imports.execfile(file, globals, locals)  # execute the script
+  File "/home/kook/pub/sw/pycharm-community-2016.3/helpers/pydev/_pydev_imps/_pydev_execfile.py", line 18, in execfile
+    exec(compile(contents+"\n", file, 'exec'), glob, loc)
+  File "/home/kook/new_shit/src/sdl_client.py", line 376, in <module>
+    main()
+  File "/home/kook/new_shit/src/sdl_client.py", line 348, in main
+    initial_resize()
+  File "/home/kook/new_shit/src/sdl_client.py", line 264, in initial_resize
+    resize((666,666))
+  File "/home/kook/new_shit/src/sdl_client.py", line 120, in resize
+    redraw_all(555)
+  File "/home/kook/new_shit/src/sdl_client.py", line 245, in redraw_all
+    f.maybe_draw()
+  File "/home/kook/new_shit/src/rpcing_frames.py", line 115, in maybe_draw
+    s.draw()
+  File "/home/kook/new_shit/src/rpcing_frames.py", line 129, in draw
+    s.sdl_draw_stuff(surface)
+  File "/home/kook/new_shit/src/rpcing_frames.py", line 665, in sdl_draw_stuff
+    s.sdl_draw_lines(surf, False)
+  File "/home/kook/new_shit/src/rpcing_frames.py", line 136, in sdl_draw_lines
+    for row, line in enumerate(s.lines):
+  File "/home/kook/new_shit/src/lemon_utils/cache.py", line 27, in __getitem__
+    s.fetch()
+  File "/home/kook/new_shit/src/lemon_utils/cache.py", line 13, in fetch
+    i = s.iterator.__next__()
+  File "/home/kook/new_shit/src/rpcing_frames.py", line 280, in project_tags
+    for tag in batch:
+  File "/home/kook/new_shit/src/element.py", line 175, in _collect_tags
+    for i in _collect_tags(elem, tag):
+  File "/home/kook/new_shit/src/element.py", line 175, in _collect_tags
+    for i in _collect_tags(elem, tag):
+  File "/home/kook/new_shit/src/element.py", line 175, in _collect_tags
+    for i in _collect_tags(elem, tag):
+  File "/home/kook/new_shit/src/element.py", line 193, in _collect_tags
+    for i in e.collect_tags():
+  File "/home/kook/new_shit/src/element.py", line 166, in collect_tags
+    for t in _collect_tags(s, s.tags()):
+  File "/home/kook/new_shit/src/element.py", line 175, in _collect_tags
+    for i in _collect_tags(elem, tag):
+  File "/home/kook/new_shit/src/element.py", line 175, in _collect_tags
+    for i in _collect_tags(elem, tag):
+  File "/home/kook/new_shit/src/element.py", line 175, in _collect_tags
+    for i in _collect_tags(elem, tag):
+  File "/home/kook/new_shit/src/element.py", line 172, in _collect_tags
+    for tag in tags:
+  File "/home/kook/new_shit/src/nodes.py", line 881, in render
+    for i in s.syntax:
+  File "/home/kook/new_shit/src/nodes.py", line 878, in syntax
+    return s.m_syntax[0]
+TypeError: 'NoneType' object is not subscriptable

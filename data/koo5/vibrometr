@@ -1,0 +1,28 @@
+http://www.ebay.com/itm/SainSmart-Graphic-LCD-Keypad-LCD-4884-for-Arduino-Nano-Leonardo-Mega2560-UNO-R3-/271204016265?hash=item3f2504e089:g:xLwAAOxydkZRjHG6
+-tohle vypada ze by na zadnych pinech neprekazelo
+
+
+http://www.ebay.com/itm/I2C-IIC-Interface-RGB-LED-Screen-LCD-1602-Keypad-For-Raspberry-Pi-New-/141820256387?hash=item2105256083:g:5qYAAOSwAYtWOq~N
+-proste namontovat nekam uplne zvlast.
+(a idealne asi komunikovat po software i2c)
+
+
+
+http://www.ebay.com/itm/2-4-TFT-LCD-Shield-SD-Socket-Touch-Panel-Module-for-Arduino-UNO-R3-New-GD-/201448097156?hash=item2ee73e0584:g:3k8AAOSw9mFWHMs2
+-zabere CS pin, takze bychom museli ten sd slot pouzit a nepouzit sd shield,
+cimzpadem bychom potrebovali nejake jine misto na bastleni, bud neco takoveho:
+https://www.google.cz/search?q=arduino+nanino&num=50&safe=off&client=ubuntu&hs=A4z&channel=fs&source=lnms&tbm=isch&sa=X&ved=0ahUKEwj2xbDPyv3LAhUGYZoKHXFGBSwQ_AUIBygB&biw=1280&bih=661
+nebo
+https://www.google.cz/search?safe=off&client=ubuntu&hs=ejK&channel=fs&biw=1280&bih=661&tbm=isch&sa=1&q=arduino+empty+shield&oq=arduino+empty+shield&gs_l=img.3..0i24.102969.105779.0.105902.14.7.1.6.6.0.177.753.2j4.6.0....0...1c.1.64.img..1.12.706.owflWKgV93Y
+
+
+
+
+
+kb
+{} => {?x superstructure (?x)}
+{?x superstructure ?y. ?y recurse ?z} => {?x recurse ?z}.
+fin.
+query
+a recurse ?z.
+fin.
