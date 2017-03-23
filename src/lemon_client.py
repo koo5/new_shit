@@ -75,9 +75,8 @@ class Client():
 	def initially_position_cursor(s):
 		s.editor.maybe_redraw()
 
-		s._initially_position_cursor()
 		try:
-
+			s._initially_position_cursor()
 			pass
 		except Exception as e:
 			log(e.__repr__(), ", cant set initial cursor position")

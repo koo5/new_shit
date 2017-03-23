@@ -838,7 +838,7 @@ class Compound(Node):
 	def __init__(s):
 		super().__init__()
 		s.ch = Children()
-		s.m_syntax = None
+		s.chosen_syntax = None
 		# prevent setting new ch keys
 		#s.ch._lock()
 		# prevent setting new attributes
@@ -847,7 +847,7 @@ class Compound(Node):
 	@property
 	def builtin_name(s):
 		return s.name
-
+	"""
 	def set_decl(s, decl):
 		if decl == None:
 			s.m_syntax = List()
@@ -856,7 +856,7 @@ class Compound(Node):
 			s.m_syntax = None, "default value(__init__)"
 			s.check_slots(s.slots)
 			s.create_kids()
-
+	"""
 	def set_children(s, children):
 		assert len(children) == len(s.slots), (children, s.slots)
 		for k in iterkeys(s.slots):
@@ -868,17 +868,35 @@ class Compound(Node):
 			assert(isinstance(slots, dict))
 			for name, slot in iteritems(slots):
 				assert(isinstance(name, unicode))
-				assert isinstance(slot, (Nodecl, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
+				assert isinstance(slot, (Nodecl, Exp, ParametricTypeBase, Compound)), "these slots are fucked up:" + str(slots)
 
 	#def currently_selected_syntax_for_rendering(s):
 	#	assert isinstance(r, list)
 
 	@property
-	def syntax(s):
-		return s.m_syntax[0]
+	def syntax_tags(s):
+		if not s.chosen_syntax:
+			s.ensure_you_have_a_syntax()
+		if s.chosen_syntax:
+			return syntax_list_to_tags(s.chosen_syntax.ch.syntax)
+		return ["a decl-less node"]
+
+	def ensure_you_have_a_syntax(s):
+		a = list(s.available_syntaxes())[0]
+		if len(a) == 0:
+			return
+		s.chosen_syntax = a
+
+	def available_syntaxes(s):
+		if s.decl:
+			yield Ref(s.decl)
+		#todo for i in flatten(root):
+			#if i is a syntax for us, yield it
+
+
 
 	def render(s):
-		for i in s.syntax:
+		for i in s.syntax_tags:
 			i = i.parsed
 			if isinstance(i, Text):
 				yield i.pyval
@@ -1015,10 +1033,15 @@ class Compound(Node):
 		return r
 
 	@classmethod
-	def fresh(cls, decl=None):
-		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
-		if decl:
-			r.decl = decl
+	def fresh(cls, decl_override=None):
+		if not decl_override:
+			decl = cls.decl
+		else:
+			decl = decl_override
+		decl = deref_decl(decl)
+		r = cls()
+		r.decl = decl
+		r.create_kids()
 		r.fix_parents()
 		return r
 
@@ -1821,6 +1844,8 @@ class Nodecl(Node):
 
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
+		if decl == None:
+			decl = s
 		return s.instance_class.fresh(decl)
 
 	def works_as(s, type):
@@ -2180,7 +2205,7 @@ class ParserBase(Node):
 
 	@staticmethod
 	def first_child(node):
-		for i in node.syntax:
+		for i in node.syntax_tags:
 			if isinstance(i, ChildTag):
 				return node.ch[i.name]
 		return node
@@ -2771,6 +2796,13 @@ def make_root():
 	r["LDL"] = build_in_language_definition_language()
 	r["stuff"] = build_in_stuff()
 
+
+	r["repl"] = B.builtinmodule.inst_fresh()
+	r["repl"].ch.statements.parser_class = ReplParser
+	r["repl"].ch.statements.items = [ReplParser()]
+	r["repl"].ch.statements.newline()
+	r["repl"].ch.statements.view_mode=2
+
 	r.fix_parents()
 	return r
 
@@ -2791,11 +2823,10 @@ def make_root():
 	"""
 
 
-	r["repl"] = B.builtinmodule.inst_fresh()
-	r["repl"].ch.statements.parser_class = ReplParser
-	r["repl"].ch.statements.items = [ReplParser()]
-	r["repl"].ch.statements.newline()
-	r["repl"].ch.statements.view_mode=2
+
+
+
+
 
 	r["intro"] = B.builtinmodule.inst_fresh()
 	r["intro"].ch.statements.items = [
@@ -2873,14 +2904,14 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 
 
 def legacy_to_user_defined(tags, types):
-	syntax = []
+	syntax_tags = []
 	for i in tags:
 		if isinstance(i, str):
 			a = Text(i)
 		else:
 			a = serialized_typed_parameter(i.name, types[i.name])
-		syntax.append(a)
-	return syntax
+		syntax_tags.append(a)
+	return syntax_tags
 
 def serialized_typed_parameter(name, type):
 	return Serialized("""
@@ -2931,8 +2962,8 @@ class CompoundNodecl(Nodecl, Compound):
 		r = cls()
 		r.instance_class = Compound
 		r._builtin_name = name
-		r.ch.syntax = List()
-		r.ch.syntax.items = legacy_to_user_defined(syntax, types)
+		r.ch.syntax_tags = List()
+		r.ch.syntax_tags.items = legacy_to_user_defined(syntax, types)
 		r.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(types)])
 		return r
 
@@ -2974,7 +3005,7 @@ def build_in_language_definition_language():
 	build_in(r, CompoundNodecl.b('WorksAs',
 				[ChildTag("sub"), " works as ", ChildTag("sup")],
 				{'sub': 'nodetype', 'sup': 'nodetype'}))
-	print(__LINE__, 444, B.worksas.ch.syntax)
+	print(__LINE__, 444, B.worksas.ch.syntax_tags)
 
 	r.fix_parents();
 	build_in(r, CompoundNodecl.b('HasPrecedence',
@@ -2991,6 +3022,7 @@ def build_in_stuff():
 
 	build_in(r, BasicNodecl.with_instance_class(Text))
 	build_in(r, BasicNodecl.with_instance_class(Comment))
+	build_in(r, BasicNodecl.with_instance_class(Statements))
 
 	for name in ["anything", "expression", "statement"]:
 		x = Compound()
@@ -3017,7 +3049,34 @@ def build_in_stuff():
 		["enum ", ChildTag("name"), ", options:", ChildTag("options")],
 		{'name': 'text', 'options': B.list_of_anything}))
 
+	build_in(r, CompoundNodecl.b('Module',
+		["module", ChildTag("name"), ', from file', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
+		{'statements': B.statements,
+	 	'name': B.text,
+		'file': B.text
+		}))
+
+	build_in(r, CompoundNodecl.b('BuiltinModule',
+				   [ChildTag("statements")],
+				   {'statements': B.statements,
+				    }))
+	B.builtinmodule.instance_class = BuiltinModule
+
+	"""
+	build_in(r, CompoundNodecl.b('LikiModule',
+	               [ChildTag("statements")],
+	               {'statements': B.statements,
+	                'file': B.text
+	                }))
+	"""
+	build_in(r, CompoundNodecl.b('Serialized',
+				   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
+				   {'last_rendering': B.text,
+				    'serialization': B.text}))
+	B.serialized.instance_class = Serialized
+
 	return r
+
 
 
 def build_in_language_enums():
@@ -3031,33 +3090,6 @@ def build_in_language_enums():
 
 	B.language.ch.options.items = [Text('english'), Text('czech')]
 
-	#build_in(BasicNodecl(Statements))
-
-	build_in(
-	compound(Module,
-				   ["module", ChildTag("name"), ', from file', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
-				   {'statements': B.statements,
-	 			    'name': B.text,
-				    'file': B.text
-				    }))
-
-	build_in(
-	compound(BuiltinModule,
-				   [ChildTag("statements")],
-				   {'statements': B.statements,
-				    }))
-
-	build_in(
-	compound(LikiModule,
-	               [ChildTag("statements")],
-	               {'statements': B.statements,
-	                'file': B.text
-	                }))
-
-	build_in(compound(Serialized,
-				   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
-				   {'last_rendering': B.text,
-				    'serialization':dict_from_to('text', 'anything')}))
 
 
 def build_in_lemon_lang():
@@ -3419,30 +3451,6 @@ def build_in_misc():
 #misnomer: its not just symbols, rules too
 def register_symbol(s):
 	log = logging.getLogger("marpa").debug
-
-	"""
-	this wont go here, these nodes will just be static information for marpa client
-	if isinstance(s, SyntacticCategory):
-		s._symbol = m.symbol(s.name)
-		return
-
-	if isinstance(s, WorksAs):
-		if s._rule != None:
-			return
-		lhs = s.ch.sup.parsed
-		rhs = s.ch.sub.parsed
-		if not isinstance(lhs, Ref) or not isinstance(rhs, Ref):
-			print ("invalid sub or sup in worksas")
-			return
-		lhs = lhs.target.symbol
-		rhs = rhs.target.symbol
-		if args.log_parsing:
-			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
-		if lhs != None and rhs != None:
-			r = m.rule(str(s), lhs, rhs)
-			s._rule = r
-		return
-	"""
 
 	if isinstance(s, Nodecl):
 		s._symbol = s.instance_class.register_class_symbol()

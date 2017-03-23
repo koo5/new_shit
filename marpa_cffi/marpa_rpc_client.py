@@ -1,4 +1,4 @@
-#in the end i hadnt made it a rpc client, it just spawns a thread
+#not really a rpc client, it just spawns a thread
 
 import sys, traceback
 import operator
@@ -190,8 +190,27 @@ class ThreadedMarpa(object):
 		log("start=", s.start )
 
 		for i in scope:
-			#the property is accessed, forcing registering of the grammar
-			sym = i.symbol
+			if isinstance(i, SyntacticCategory):
+				i._symbol = m.symbol(s.name)
+				continue
+			elif isinstance(i, WorksAs):
+				if i._rule != None:
+					continue
+				lhs = i.ch.sup.parsed
+				rhs = i.ch.sub.parsed
+				if not isinstance(lhs, Ref) or not isinstance(rhs, Ref):
+					print ("invalid sub or sup in worksas")
+					continue
+				lhs = lhs.target.symbol
+				rhs = rhs.target.symbol
+				if args.log_parsing:
+					log('%s %s %s %s %s'%(i, i.ch.sup, i.ch.sub, lhs, rhs))
+				if lhs != None and rhs != None:
+					r = m.rule(str(i), lhs, rhs)
+					i._rule = r
+			else:
+				#the property is accessed, forcing registering of the grammar
+				_ = i.symbol
 
 		if anything:
 			for i in scope:
