@@ -24,5 +24,10 @@ class Cache(object):
 	def __getitem__(s, i):
 		#print ("__getitem__",i)
 		while i >= len(s.data):
-			s.fetch()
+			try:
+				s.fetch()
+			except IndexError as e:
+				print(e.__traceback__)
+				raise RuntimeError(e)
+				exit()
 		return s.data[i]

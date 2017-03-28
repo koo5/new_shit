@@ -878,31 +878,36 @@ class Compound(Node):
 		if not s.chosen_syntax:
 			s.ensure_you_have_a_syntax()
 		if s.chosen_syntax:
-			return syntax_list_to_tags(s.chosen_syntax.ch.syntax)
+			return s.syntax_declaration_to_tags(s.chosen_syntax.target.ch.syntax.parsed)
 		return ["a decl-less node"]
 
 	def ensure_you_have_a_syntax(s):
-		a = list(s.available_syntaxes())[0]
-		if len(a) == 0:
+		syntaxes = list(s.available_syntaxes())
+		print('syntaxes:', syntaxes)
+		if len(syntaxes) == 0:
 			return
-		s.chosen_syntax = a
+		s.chosen_syntax = syntaxes[0]
 
 	def available_syntaxes(s):
 		if s.decl:
 			yield Ref(s.decl)
 		#todo for i in flatten(root):
-			#if i is a syntax for us, yield it
-
-
+			#if i is a usable syntax, yield it
 
 	def render(s):
+		print("tags:", (s, s.syntax_tags))
 		for i in s.syntax_tags:
+			yield i
+
+	def syntax_declaration_to_tags(s, d):
+		for i in d.parsed:
 			i = i.parsed
 			if isinstance(i, Text):
 				yield i.pyval
 			elif isinstance(i, TypedParameter):
 				yield ElementTag(s.ch._dict[i.ch.name.parsed.pyval])
-
+			else:
+				yield "666"
 
 	@classmethod
 	def fresh_kids(cls, slots):
@@ -992,8 +997,6 @@ class Compound(Node):
 	"""
 
 	def fix_parents(s):
-		print ('t', s.ch._dict)
-		print ('ttt', s.ch._dict.values())
 		s._fix_parents(list(iter(s.ch._dict.values())))
 
 	@classmethod

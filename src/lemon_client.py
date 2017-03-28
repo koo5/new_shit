@@ -77,7 +77,6 @@ class Client():
 
 		try:
 			s._initially_position_cursor()
-			pass
 		except Exception as e:
 			log(e.__repr__(), ", cant set initial cursor position")
 
