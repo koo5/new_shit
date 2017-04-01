@@ -212,6 +212,10 @@ def deserialize(data, parent):
 	parent is a dummy node placed at the point where the deserialized node should go,
 	this makes things like List.above() work while getting scope
 	"""
+	if isinstance(data, Serialized):
+		return data.unserialize()
+	elif isinstance(data, Node):
+		return data
 	assert parent
 	if 'resolve' in data: # create a Ref pointing to another node
 		return resolve(data, parent)
@@ -878,6 +882,7 @@ class Compound(Node):
 		if not s.chosen_syntax:
 			s.ensure_you_have_a_syntax()
 		if s.chosen_syntax:
+			print(s.chosen_syntax.target)
 			return s.syntax_declaration_to_tags(s.chosen_syntax.target.ch.syntax.parsed)
 		return ["a decl-less node"]
 
@@ -891,6 +896,11 @@ class Compound(Node):
 	def available_syntaxes(s):
 		if s.decl:
 			yield Ref(s.decl)
+		elif s.__class__.decl:
+			yield Ref(s.__class__.decl)
+		else:
+			print("decl-less:" + str(s))
+
 		#todo for i in flatten(root):
 			#if i is a usable syntax, yield it
 
@@ -907,7 +917,7 @@ class Compound(Node):
 			elif isinstance(i, TypedParameter):
 				yield ElementTag(s.ch._dict[i.ch.name.parsed.pyval])
 			else:
-				yield "666"
+				yield "(((666 bad thingie in syntax:" + i.long__repr__() + ")))"
 
 	@classmethod
 	def fresh_kids(cls, slots):
@@ -2799,7 +2809,6 @@ def make_root():
 	r["LDL"] = build_in_language_definition_language()
 	r["stuff"] = build_in_stuff()
 
-
 	r["repl"] = B.builtinmodule.inst_fresh()
 	r["repl"].ch.statements.parser_class = ReplParser
 	r["repl"].ch.statements.items = [ReplParser()]
@@ -2807,6 +2816,7 @@ def make_root():
 	r["repl"].ch.statements.view_mode=2
 
 	r.fix_parents()
+	r = transform(r, deserialize, None)
 	return r
 
 
@@ -2903,20 +2913,10 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	return r
 
 
-#def render_syntax(s, ch):
-
-
-def legacy_to_user_defined(tags, types):
-	syntax_tags = []
-	for i in tags:
-		if isinstance(i, str):
-			a = Text(i)
-		else:
-			a = serialized_typed_parameter(i.name, types[i.name])
-		syntax_tags.append(a)
-	return syntax_tags
-
-def serialized_typed_parameter(name, type):
+def stp(name, type):
+	"""
+	serialized_typed_parameter
+	"""
 	return Serialized("""
 	{
     "decl": {
@@ -2945,7 +2945,7 @@ def serialized_typed_parameter(name, type):
         {
 			"target":
             {
-				"name": "text",
+				"name": '""" + type + """',
 				"resolve": true,
             },
             "decl": "ref"
@@ -2960,14 +2960,22 @@ def serialized_typed_parameter(name, type):
 
 class CompoundNodecl(Nodecl, Compound):
 	@classmethod
-	def b(cls, name, syntax, types):
-		#here we get the legacy style syntax/types. we gotta turn it into a child of ours
+	def b(cls, name, syntax):
 		r = cls()
 		r.instance_class = Compound
 		r._builtin_name = name
-		r.ch.syntax_tags = List()
-		r.ch.syntax_tags.items = legacy_to_user_defined(syntax, types)
-		r.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(types)])
+		for i in syntax:
+			if isinstance(i, tuple):
+				name = i[0]
+				type = i[1]
+				it = B.typedparameter.inst_fresh()
+				it.set_child('name', name)
+				if isinstance(type, Node):
+					type = Ref(type)
+				it.ch[name] = type
+			else:
+				it = Text(i)
+			r.ch.syntax.append(it)
 		return r
 
 	@property
@@ -2994,29 +3002,18 @@ def build_in_language_definition_language():
 	r.ch["statements"] = Statements()
 	r.add(Comment("here we define a language for defining languages"))
 
-	class RefsToNodeclsAndSyntacticCategories(Node):
+	class RefToNodeclOrSyntacticCategory(Ref):
 		"""a singleton class of a node that declares the possibility of existence of
 		a subset of Refs that point to Nodecls and SyntacticCategories"""
 		pass
 
-	build_in(r, RefsToNodeclsAndSyntacticCategories(), 'nodetype')
-
 	build_in(r, CompoundNodeclNodecl())
-
-	r.fix_parents();
-
-	build_in(r, CompoundNodecl.b('WorksAs',
-				[ChildTag("sub"), " works as ", ChildTag("sup")],
-				{'sub': 'nodetype', 'sup': 'nodetype'}))
-	print(__LINE__, 444, B.worksas.ch.syntax_tags)
-
-	r.fix_parents();
-	build_in(r, CompoundNodecl.b('HasPrecedence',
-				[ChildTag("node"), " has precedence ",  ChildTag("precedence")],
-				{'node': 'nodetype', 'precedence': Serialized('number')}))
-
-	build_in(r, CompoundNodecl.b('a declaration of a syntactic category', [ChildTag("name"), " is a syntactic category"], {"name": Serialized('B.text')}))
-
+	build_in(r, RefsToNodeclsAndSyntacticCategories(), 'nodetype')
+	build_in(CompoundNodecl.b('TypedParameter', [stp("name", 'text'), "-", stp("type",'nodetype')]))
+	build_in(CompoundNodecl.b('UnevaluatedParameter', ["unevaluated", stp("name", 'text'), TextTag("-"), stp("type",'nodetype')]))
+	build_in(r, CompoundNodecl.b('WorksAs', [stp("sub",'nodetype'), " works as ", stp("sup",'nodetype')]))
+	build_in(r, CompoundNodecl.b('HasPrecedence', [stp("node",'nodetype'), " has precedence ",  stp("precedence",'nodetype')]))
+	build_in(r, CompoundNodecl.b('a declaration of a syntactic category', [stp("name",'text'), " is a syntactic category"]))
 	return r
 
 def build_in_stuff():
@@ -3030,17 +3027,15 @@ def build_in_stuff():
 	for name in ["anything", "expression", "statement"]:
 		x = Compound()
 		x.decl = B.a_declaration_of_a_syntactic_category
+		x = B.a_declaration_of_a_syntactic_category.inst_fresh()
 		x.set_children({'name': Text(name)})
 		build_in(r, x, name)
 
-	x = CompoundNodecl.b(
-		"parametric list type",
-		[TextTag("list of"), ChildTag("itemtype")],
-		{'itemtype': B.expression})
+	x = CompoundNodecl.b("parametric list type", [TextTag("list of "), stp("itemtype",B.expression)])
 	x.instance_class = ParametricListType
 	build_in(r, x)
 
-	build_in(r, CompoundNodecl.b('definition', [ChildTag("name"), " is ", ChildTag("value")], {"name": B.text, "value":B.expression}))
+	build_in(r, CompoundNodecl.b('definition', [stp("name",B.text), " is ", stp("value",B.expression)]))
 
 	x = Compound()
 	x.decl = B.definition
@@ -3048,9 +3043,7 @@ def build_in_stuff():
 			        'value': Serialized('list_of(B.anything)')})
 	build_in(r, x)
 
-	build_in(r, CompoundNodecl.b("enum",
-		["enum ", ChildTag("name"), ", options:", ChildTag("options")],
-		{'name': 'text', 'options': B.list_of_anything}))
+	build_in(r, CompoundNodecl.b("enum", ["enum ", stp("name",'text'), ", options:", stp("options",B.list_of_anything)]))
 
 	build_in(r, CompoundNodecl.b('Module',
 		["module", ChildTag("name"), ', from file', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
@@ -3058,11 +3051,14 @@ def build_in_stuff():
 	 	'name': B.text,
 		'file': B.text
 		}))
+	Module.decl = B.module
+	Module.instance_class = B.module
 
 	build_in(r, CompoundNodecl.b('BuiltinModule',
 				   [ChildTag("statements")],
 				   {'statements': B.statements,
 				    }))
+	BuiltinModule.decl = B.builtinmodule
 	B.builtinmodule.instance_class = BuiltinModule
 
 	"""
@@ -3171,20 +3167,9 @@ def build_in_lemon_lang():
 
 				],
 				{'statements': B.statements}))
-
-
 	"""...notes: formatting: we can speculate that we will get to having a multiline parser,
 	and that will allow for a more freestyle formatting...
 	"""
-
-	build_in(compound(TypedParameter,
-				   [ChildTag("name"), TextTag("-"), ChildTag("type")],
-				   {'name': 'text', 'type': 'type'}))
-
-
-	builtin_unevaluatedparameter = build_in(compound(UnevaluatedParameter,
-				   [TextTag("unevaluated"), ChildTag("argument")],
-				   {'argument': 'typedparameter'}))
 
 	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
 
@@ -3702,3 +3687,27 @@ def build_in_language_definition_language()...
 
 
 """
+
+
+def shallow_copy_visitor(s):
+	if isinstance(s, Compound):
+		r = Compound()
+		r.decl = s.decl
+		if s.chosen_syntax:
+			r.chosen_syntax = s.chosen_syntax.copy()
+
+def transform(s, transformer, parent):
+	r = transformer(s, parent)
+	if isinstance(s, Compound):
+		for k,child in iteritems(s.ch._dict):
+			r.set_child(k, transformer(child, s))
+	if isinstance(s, List):
+		for child in s.items:
+			r.append(transformer(child, s))
+	if isinstance(s, Dict):
+		for k,v in iteritems(s.items):
+			r[transformer(k, s)] = transformer(v, s)
+	return r
+
+
+
