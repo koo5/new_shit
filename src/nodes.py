@@ -2972,7 +2972,9 @@ class CompoundNodecl(Nodecl, Compound):
 				it.set_child('name', name)
 				if isinstance(type, Node):
 					type = Ref(type)
-				it.ch[name] = type
+				elif isinstance(type, str):
+					it.ch[name] = type
+				else: assert False
 			else:
 				it = Text(i)
 			r.ch.syntax.append(it)
