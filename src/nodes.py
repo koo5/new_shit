@@ -71,7 +71,7 @@ def build_in(module, node, name=None):
 	if isinstance(node, list):
 		#python lets you do this kind of name overriding?
 		#how does it know which node is the node you want
-		[build_in(node) for node in node]
+		[build_in(module, node) for node in node]
 	else:
 		if name == False or isinstance(node, Text):
 			key = node # we wont need to reference this node, so any useless key will do
@@ -1875,7 +1875,8 @@ class RefNodecl(Nodecl):
 	help = ["points to another node, like using an identifier. "]
 
 	def __init__(s):
-		super().__init__(Ref)
+		super().__init__()
+		s.insttance_class = Ref
 
 	def make_example(s):
 		return Ref(B.module)
@@ -2807,6 +2808,12 @@ def make_root():
 	r = Root()
 
 	r["LDL"] = build_in_language_definition_language()
+
+	r.fix_parents()
+	r = transform(r, deserialize, None)
+	return r
+
+
 	r["stuff"] = build_in_stuff()
 
 	r["repl"] = B.builtinmodule.inst_fresh()
@@ -2815,9 +2822,6 @@ def make_root():
 	r["repl"].ch.statements.newline()
 	r["repl"].ch.statements.view_mode=2
 
-	r.fix_parents()
-	r = transform(r, deserialize, None)
-	return r
 
 
 	"""
@@ -2959,17 +2963,28 @@ def stp(name, type):
 
 
 class CompoundNodecl(Nodecl, Compound):
+	@property
+	def instance_slots(s):
+		r = {}
+		for i in s.ch.syntax:
+			i = i.parsed
+			if i.decl == B.typedparameter:
+				n = i.ch["name"].pyval
+				assert not (n in r)
+				r[n] = i.ch['type'].target
+		return r
+
 	@classmethod
 	def b(cls, name, syntax):
-		r = cls()
+		r = B.compoundnodeclnodecl.inst_fresh()
 		r.instance_class = Compound
-		r._builtin_name = name
+		r.ch.name = Text(name)
 		for i in syntax:
 			if isinstance(i, tuple):
 				name = i[0]
 				type = i[1]
 				it = B.typedparameter.inst_fresh()
-				it.set_child('name', name)
+				it.set_child('name', Text(name))
 				if isinstance(type, Node):
 					type = Ref(type)
 				elif isinstance(type, str):
@@ -2988,41 +3003,75 @@ class CompoundNodecl(Nodecl, Compound):
 		super().__init__()
 		s.example = None
 
+
 	def make_example(s):
 		return s.inst_fresh()
 
 
+
 class CompoundNodeclNodecl(Nodecl, Compound):
-	name = 'CompoundNodeclNodecl'
+	builtin_name = 'CompoundNodeclNodecl'
+	@property
+	def instance_slots(s):
+		return {'name': B.text, 'syntax':Li
 	def __init__(s):
 		super().__init__()
 		s.set_instance_class(CompoundNodecl)
 
+def fixup(module):
+	for i in module.ch.statements.items:
+		if isinstance(i, CompoundNodecl):
+			for j in i.ch.syntax:
+				assert isinstance(j, Node)
+				if isinstance(j, b.typedparameter):
+					t = j.ch.type
+					if isinstance(t, str):
+						j.set_child('type', Ref(b[t]))
 
 def build_in_language_definition_language():
 	r = Module()
 	r.ch["statements"] = Statements()
 	r.add(Comment("here we define a language for defining languages"))
 
-	class RefToNodeclOrSyntacticCategory(Ref):
+	build_in(r, CompoundNodeclNodecl())
+
+	build_in(r, [BasicNodecl.with_instance_class(x) for x in [Number, Text]])
+
+
+	class NodeTypeNodecl(RefNodecl):
 		"""a singleton class of a node that declares the possibility of existence of
 		a subset of Refs that point to Nodecls and SyntacticCategories"""
 		pass
 
-	build_in(r, CompoundNodeclNodecl())
-	build_in(r, RefsToNodeclsAndSyntacticCategories(), 'nodetype')
-	build_in(CompoundNodecl.b('TypedParameter', [stp("name", 'text'), "-", stp("type",'nodetype')]))
-	build_in(CompoundNodecl.b('UnevaluatedParameter', ["unevaluated", stp("name", 'text'), TextTag("-"), stp("type",'nodetype')]))
-	build_in(r, CompoundNodecl.b('WorksAs', [stp("sub",'nodetype'), " works as ", stp("sup",'nodetype')]))
-	build_in(r, CompoundNodecl.b('HasPrecedence', [stp("node",'nodetype'), " has precedence ",  stp("precedence",'nodetype')]))
-	build_in(r, CompoundNodecl.b('a declaration of a syntactic category', [stp("name",'text'), " is a syntactic category"]))
-	return r
+	build_in(r, NodeTypeNodecl(), 'nodetype')
+
+	build_in(r, CompoundNodecl.b('TypedParameter', []))
+
+	name = Compound()
+	name.decl = B.typedparameter
+	type = Compound()
+	type.decl = B.typedparameter
+
+	name.ch._dict['name'] = Text('name')
+	name.ch._dict['type'] = Ref (B.text)
+	type.ch._dict['name'] = Text('type')
+	type.ch._dict['type'] = Ref (B.nodetype)
+	B.typedparameter.ch._dict['syntax'] = List()
+	[B.typedparameter.ch.syntax.add(i) for i in [name, Text(' - '), type]]
+
+	#build_in(CompoundNodecl.b('UnevaluatedParameter', ["unevaluated", ("name", 'text'), TextTag("-"), ("type",'nodetype')]))
+	build_in(r, CompoundNodecl.b('SyntacticCategory', [("name",'text'), " is a syntactic category"]))
+	build_in(r, CompoundNodecl.b('WorksAs', [("sub",'nodetype'), " works as ", ("sup",'nodetype')]))
+	build_in(r, CompoundNodecl.b('HasPrecedence', [("node",'nodetype'), " has precedence ",  ("precedence",'number')]))
+	build_in(r, CompoundNodecl.b('HasLeftAssociativity', [("node",'nodetype'), " has left associativity."]))
+	build_in(r, CompoundNodecl.b('HasRightAssociativity', [("node",'nodetype'), " has right associativity."]))
+
+	return fixup(r)
 
 def build_in_stuff():
 	r = Module()
 	r.ch["statements"] = Statements()
 
-	build_in(r, BasicNodecl.with_instance_class(Text))
 	build_in(r, BasicNodecl.with_instance_class(Comment))
 	build_in(r, BasicNodecl.with_instance_class(Statements))
 
@@ -3097,7 +3146,7 @@ def build_in_lemon_lang():
 
 	build_in(VarRefNodecl(), 'varref')
 
-	build_in([BasicNodecl(x) for x in [Number, Bananas, Identifier, RestrictedIdentifier]])
+	build_in([BasicNodecl(x) for x in [Bananas, Identifier, RestrictedIdentifier]])
 
 	build_in(BasicNodecl(List), "list_literal")
 

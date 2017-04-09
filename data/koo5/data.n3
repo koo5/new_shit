@@ -1,3 +1,4 @@
+[ a lemon:note; body "
 vector fonts:
 
 https://www.google.cz/search?client=ubuntu&channel=fs&q=engraving+font+truetype&ie=utf-8&oe=utf-8
@@ -14,6 +15,16 @@ http://imajeenyus.com/computer/20150110_single_line_fonts/index.shtml
 https://github.com/osresearch/vst/blob/master/teensyv/asteroids_font.c
 
 https://www.behance.net/gallery/24840741/Kandinsky-Alphabet
+
+"]
+
+
+#to transform a note where.... into individual links in rdf:
+#	...
+
+
+
+
 
 
 
