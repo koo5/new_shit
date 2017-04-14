@@ -1,0 +1,25 @@
+use http://linkedevents.org/ontology/
+
+
+
+
+
+
+
+{
+  "@context":{
+    "lode":"http://linkedevents.org/ontology/"
+    "lemon":"..."
+  },
+  "about":"lemon syntax for lode",
+
+  "@graph":
+  [
+    {
+      "@type":"lemon:syntax",
+      "type":"lode:Event",
+      ...
+    
+
+
+

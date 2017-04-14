@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+cd ~/hackery/bin
+xkbcomp xkb.dump $DISPLAY #:0
+xset r rate 200 33

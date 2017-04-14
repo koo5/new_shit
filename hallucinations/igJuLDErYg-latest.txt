@@ -1,0 +1,194 @@
+lemon-java
+
+
+
+we could start playing with nengo widgets like these:
+--
+narsProtoTerm:
+parses text and becomes Term
+
+narsStructuredProtoTerm:
+contains the Syntaxed etc stuff
++command line client
+
+bettyProtoTerm:
+better name bettyWidget?
+just text box that sends commands to betty. ok, not interesting.
+
+bettyStructuredProtoTerm
+...
+
+
+
+
+
+gui widgets 
+--
+exist inside protoTerm and allow structural editing of narsesse terms.
+will have to be synced back and forth with nars core somehow.
+
+class Node:
+  // analogous to https://github.com/koo5/new_shit/blob/master/src/element.py 
+  //and https://github.com/koo5/new_shit/blob/master/src/nodes.py#L512
+  Node *parent;
+  editing/widget event handlers, parse(), emit-narsesse, ... ,  
+  takes care of the graphical nodes representing it
+  in new_shit, this goes thru the tags() function, which returns a list of lemon-specific markup tags, for example
+   a Word would return a string with its contents
+   a number too, but also two WidgetTags() for +/- buttons
+   Syntaxed returns a mix of strings and ChildNodes, 
+    for example "independent variable" would return ["$", CnildTag("word")]
+
+class Syntaxed(Node):
+  //a node composed of text and child nodes
+  syntax - a name or a rule or a pointer to a variant of it or both? still working this out..
+  children dict - for example when this objects represents task, it has a budget and a sentence subnodes
+  alt + left and right arrow change between syntax alternatives, "==>" becomes "implies" etc
+alt up and down could switch variants?
+
+class Word(Node): 
+  //a "textbox" for editing words
+  //also use it for the "noneditable" parts of nodes grammar like "-->", ":/:" etc?
+class Number(Node):
+  //a textbox with +,- buttons
+  
+
+representing grammar: 
+---
+  technically:
+    for plan A, a hard-coded data structure representing https://code.google.com/p/open-nars/wiki/InputOutputFormat#Narsese_Grammar
+    see https://github.com/rns/libmarpa-bindings/blob/master/lua/json.lua
+    alternatively, we could use the classes of parsec, for example
+  semantically: 
+    what makes sense for the gui?
+    have optional() nodes or expand their occurences into two alternative syntaxes? 
+    what about oneOrMore?...
+    
+
+//optionally more natural, internationalized etc forms..
+
+
+
+
+parsers integration
+--
+there are several options for parsing and it should be decoupled , in the spirit of having multiple parsers in future
+  
+
+
+lemon shell:
+---
+can begin with anything, for example a simple interface to https://github.com/pickhardt/betty
+or parsing system settings, observe whats happening on the puter, etc yada yada anything..:) 
+
+
+
+
+betty
+---
+different kinds of interfaces (pseudocode in ultimate lemon lang):
+
+primitive, sends off everything that begins with "betty" to betty:
+def "betty" <string>:
+  exec "betty "+string
+
+
+more complex, can autocomplete commands:
+module betty:
+  parallel for command in get_betty_commands():
+    def betty <command>:
+      exec "betty "+command
+
+
+
+
+
+
+
+real lemons
+---
+if this works well, next we could make a language with extensible syntax, like what i have in new_shit but less shitty.
+
+and next (for me), a language based on types, but i cant wrap my head around that yet. http://lambda-the-ultimate.org/node/4776 etc.. -_-
+i guess this comes down to typed lambda calculus where "an expression evaluating to <type>" is a type
+
+
+--
+@prefix : <#>.
+
+:node a rdfs:class.
+:def a :node
+
+ <= {?x :sugared ?y. ?x a :def. }
+
+{?x :childOf ?y. ?y :form ?z. ?z 
+ 
+
+
+
+builtin 'builtin' (syntax - <list of<union<text, child>>>) ':' (type - type)
+
+@prefix : <#>.
+#builtin int:type
+:int a :node; :nodecl :builtin.
+:value "int"; :nodecl :string :child_of :int; :known_as "].
+
+
+:defun 
+
+def syntax for <term>
+
+def expression evaluating to a value of type <term>
+
+syntax for expression: <term> expression
+
+def variable declaration as <term> : <identifier>
+
+def identifier
+
+def cos(<<number>expression>):
+  #builtin
+
+:cos 
+  
+["for" <item - identifier> "in" <iterable - <<iterable>expression>> ":\n" <body - statements>]
+
+i actually define syntaxes and child types separately, but thats the idea.
+
+#:builtins a (
+
+8
+
+
+
+desugaring:
+
+builtin->
+ decl
+ syntax
+ 
+defun->
+ decl
+ syntax
+ body
+
+ 
+ 
+ 
+scoring:
+?x in_scope_of ?y
+?x :in_module ?m .y? :in_module ?m
+
+
+
+find nodes of expected type, in scope:
+?x :desug ?d. ?d a def. ?d :type ?t. ?t :valid ?expected
+
+
+
+
+----
+
+lets try from the ui side:
+
+?x syntax_of ?y

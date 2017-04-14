@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+route add -net 0.0.0.0 netmask 255.255.255.255 gw 192.168.88.1 metric 0 dev wlo1
+route add -host 10.0.0.101   metric 0 dev ppp0
+route add -host 10.0.0.158   metric 0 dev ppp0
+route add -host 10.0.0.161   metric 0 dev ppp0
+route add -host 10.0.1.184   metric 0 dev ppp0
+route add -host 10.0.0.3     metric 0 dev ppp0
+route add -host 10.0.1.128     metric 0 dev ppp0
+route add -host 10.0.2.106     metric 0 dev ppp0
+route add -net 10.0.2.0 netmask 255.255.255.0   metric 0 dev ppp0
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+curl -s ipip.cz | grep -a "Moje IP"
+ping jessie.elektroline.cz
