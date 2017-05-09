@@ -1,12 +1,14 @@
 <?xml version="1.0"?>
-<rdf:RDF xmlns="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#"
-     xml:base="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16"
+<rdf:RDF xmlns="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#"
+     xml:base="http://www.semanticweb.org/kook/ontologies/2017/3/lemon"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
-    <owl:Ontology rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16"/>
+    <owl:Ontology rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon">
+        <owl:imports rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/OWLLIst"/>
+    </owl:Ontology>
     
 
 
@@ -21,9 +23,9 @@
     
 
 
-    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#HasDecl -->
+    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/lemon#HasDecl -->
 
-    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#HasDecl">
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#HasDecl">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Node"/>
         <rdfs:range rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Node"/>
@@ -31,11 +33,24 @@
     
 
 
-    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#HasItems -->
+    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/lemon#HasItems -->
 
-    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#HasItems">
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#HasItems">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#List"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/lemon#HasScope -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#HasScope">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Node"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/OWLLIst#OWLList"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Node"/>
+        <rdfs:comment>could be either filled in by a rule, or from python.
+for now the only use case is when a request for parsing is made.</rdfs:comment>
     </owl:ObjectProperty>
     
 
@@ -72,7 +87,7 @@
 
     <owl:Class rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#CompoundNodeclNodecl">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Compound"/>
-        <owl:disjointWith rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#CompoundNodecl"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#CompoundNodecl"/>
     </owl:Class>
     
 
@@ -96,7 +111,7 @@
     <!-- http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Node -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Node">
-        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#Element"/>
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#Element"/>
     </owl:Class>
     
 
@@ -117,17 +132,17 @@
     
 
 
-    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#CompoundNodecl -->
+    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/lemon#CompoundNodecl -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#CompoundNodecl">
+    <owl:Class rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#CompoundNodecl">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Compound"/>
     </owl:Class>
     
 
 
-    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#Element -->
+    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/lemon#Element -->
 
-    <owl:Class rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#Element"/>
+    <owl:Class rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#Element"/>
     
 
 
@@ -142,10 +157,26 @@
     
 
 
-    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#Builtins -->
+    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/lemon#builtins1 -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-16#Builtins">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#Builtins1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#Compound"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/lemon#builtinsStatements -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#builtinsStatements">
         <rdf:type rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/untitled-ontology-13#List"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/kook/ontologies/2017/3/lemon#BuiltinsStatementsItems -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/lemon#BuiltinsStatementsItems">
+        <rdf:type rdf:resource="http://www.semanticweb.org/kook/ontologies/2017/3/OWLLIst#OWLList"/>
     </owl:NamedIndividual>
     
 

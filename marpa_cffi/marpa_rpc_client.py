@@ -114,7 +114,7 @@ class ThreadedMarpa(object):
 
 		s.rules.append((False, debug_name, lhs, rhs, action, rank))
 
-	def sequence(s,debug_name, lhs, rhs, action=ident, separator=-1, min=1, proper=False):
+	def sequence(s, debug_name, lhs, rhs, action=ident, separator=-1, min=1, proper=False):
 		assert type(lhs) == symbol_int
 		assert type(rhs) == symbol_int
 		assert type(debug_name) == unicode
@@ -249,7 +249,7 @@ class ThreadedMarpa(object):
 
 
 
-	def enqueue_precomputation(s, for_node):
+m	def enqueue_precomputation(s, for_node):
 		s.t.input.put(Dotdict(
 			task = 'feed',
 			num_syms = s.num_syms,

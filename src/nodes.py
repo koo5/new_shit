@@ -3035,15 +3035,14 @@ def build_in_language_definition_language():
 
 	build_in(r, CompoundNodeclNodecl())
 
-	build_in(r, [BasicNodecl.with_instance_class(x) for x in [Number, Text]])
-
-
 	class NodeTypeNodecl(RefNodecl):
 		"""a singleton class of a node that declares the possibility of existence of
 		a subset of Refs that point to Nodecls and SyntacticCategories"""
 		pass
 
 	build_in(r, NodeTypeNodecl(), 'nodetype')
+
+	build_in(r, [BasicNodecl.with_instance_class(x) for x in [Number, Text]])
 
 	build_in(r, CompoundNodecl.b('TypedParameter', []))
 

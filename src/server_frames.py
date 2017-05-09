@@ -324,7 +324,7 @@ class Menu(SidebarFrame):
 			i.forget_symbols() # todo:start using visitors
 		s.marpa.collect_grammar(scope)
 		assert s.current_parser_node
-		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
+		s.marpa.enqueue_precomputation (weakref(s.current_parser_node))
 
 	def on_thread_message(s):
 		m = s.marpa.t.output.get()
