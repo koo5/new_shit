@@ -11,6 +11,19 @@ good luck.
 
 """
 
+
+lang = cs = en = None
+def go_cs():
+	lang = "cs"
+	cs = True
+	en = False
+def go_en():
+	lang = "en"
+	en = True
+	cs = False
+go_cs()
+from localization import localized
+
 autocomplete = True
 
 # region imports
@@ -725,7 +738,7 @@ class Node(NodePersistenceStuff, element.Element):
 			yield [AttTag(Att.elem, elem), ColorTag(colors.eval_results), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
-				yield [TextTag(str(len(v.items))), TextTag(" values:"), ElementTag(v)]
+				yield [TextTag(str(len(v.items))), TextTag(localized(" values:")), ElementTag(v)]
 			else:
 				for i in v.items:
 					yield ElementTag(i)
@@ -1839,7 +1852,12 @@ class NodeclBase(Node):
 
 	@property
 	def name(s):
-		return s.instance_class.__name__.lower()
+		return s.names[lang]
+
+	@property
+	def names(s):
+		return {'en': s.instance_class.__name__.lower(),
+		'cs' : localize(s.names['en'])}
 
 	def instantiate(s, kids):
 		return s.instance_class(kids)
