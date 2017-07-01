@@ -1850,6 +1850,12 @@ class NodeclBase(Node):
 		yield DedentTag()
 		# t(str(s.instance_class))]
 
+
+	@property
+	def name(s):
+		return s.instance_class.__name__.lower()
+
+	"""
 	@property
 	def name(s):
 		return s.names[lang]
@@ -1858,7 +1864,7 @@ class NodeclBase(Node):
 	def names(s):
 		return {'en': s.instance_class.__name__.lower(),
 		'cs' : localize(s.names['en'])}
-
+	"""
 	def instantiate(s, kids):
 		return s.instance_class(kids)
 
@@ -3946,6 +3952,15 @@ def register_class_symbol(cls):
 		return r
 
 
+	elif Statements.__subclasscheck__(cls):
+		log("registering Statements grammar")
+		optionally_elements = m.symbol('optionally_elements')
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char('\n'), 0)
+		r = m.symbol('Statements')
+		m.rule('list literal', r, [m.known_char('{'), optionally_elements, m.known_char('}')], cls.from_parse)
+		return r
+
+
 	elif List.__subclasscheck__(cls):
 		log("registering list grammar")
 		optionally_elements = m.symbol('optionally_elements')
@@ -3967,3 +3982,9 @@ def register_class_symbol(cls):
 
 	log(("no class symbol for", cls))
 
+
+
+
+
+"""how Statements are parsed:
+how {node type}"""
