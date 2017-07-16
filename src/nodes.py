@@ -872,7 +872,7 @@ class Compound(Node):
 			assert(isinstance(slots, dict))
 			for name, slot in iteritems(slots):
 				assert(isinstance(name, unicode))
-				assert isinstance(slot, (Nodecl, Exp, ParametricTypeBase, Compound)), "these slots are fucked up:" + str(slots)
+				assert isinstance(slot, (str, Nodecl, Exp, ParametricTypeBase, Compound)), "these slots are fucked up:" + str(slots)
 
 	#def currently_selected_syntax_for_rendering(s):
 	#	assert isinstance(r, list)
@@ -3013,7 +3013,7 @@ class CompoundNodeclNodecl(Nodecl, Compound):
 	builtin_name = 'CompoundNodeclNodecl'
 	@property
 	def instance_slots(s):
-		return {'name': B.text, 'syntax':Li
+		return {'name': B.text, 'syntax':'list'}
 	def __init__(s):
 		super().__init__()
 		s.set_instance_class(CompoundNodecl)

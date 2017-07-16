@@ -249,7 +249,7 @@ class ThreadedMarpa(object):
 
 
 
-m	def enqueue_precomputation(s, for_node):
+	def enqueue_precomputation(s, for_node):
 		s.t.input.put(Dotdict(
 			task = 'feed',
 			num_syms = s.num_syms,
