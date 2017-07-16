@@ -5,7 +5,7 @@
 this file defines the AST classes of the language and everything around it.
 the philosophy of this codebase is "constant surprise". it keeps you alert.
 "kids" and "children" mean the same.
-sometimes i use "s" instead of "s".
+sometimes i use "s" instead of "self".
 "ch" is children of syntaxed.
 good luck.
 
