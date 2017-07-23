@@ -1,6 +1,8 @@
 #!/usr/bin/env ipython3
 # -*- coding: utf-8 -*-
 
+import lemon_utils.lemon_logging
+
 import common_utils
 input = common_utils.parse_input()
 
@@ -8,12 +10,19 @@ from rdflib.namespace import Namespace
 le = Namespace('http://koo5.github.com/lemon/api#')
 ti = Namespace('http://koo5.github.com/lemon/api/textinput#')
 from rdflib import RDF
-source = input.value(input.value(None, RDF.type, le.TextInput), ti.Source, None)
+command = input.value(None, RDF.type, le.TextInput)
+source = input.value(command, ti.Source, None)
 print('source:'+source)
 assert(source.startswith('file://'))#todo use https://github.com/YAmikep/datasource/tree/master/datasource
 text = open(source[7:]).read()
 
 #from IPython import embed;embed()
+
+from lemon_args import args
+do_graph_grammar = input.value(command, ti.DebugOptionGenerateGrammarGraphPngOn)
+print("do_graph_grammar:",do_graph_grammar)
+if do_graph_grammar:
+	args.graph_grammar = True
 
 import nodes
 nodes.autocomplete = False
@@ -32,6 +41,8 @@ def handle(text=None):
 	elif msg.message == 'parsed':
 		print (len(msg.results), "results")
 		return msg.results
+	else:
+		print(msg)
 
 def parse(text):
 	for i,x in enumerate(text):#this just prints the characters you got from stdin

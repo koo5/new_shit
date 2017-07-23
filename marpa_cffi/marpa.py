@@ -26,6 +26,7 @@ from __future__ import print_function
 
 from .marpa_cffi import *
 from .marpa_misc import *
+from .marpa_codes import events
 
 marpa_config = ffi.new("Marpa_Config*")
 lib.marpa_c_init(marpa_config)
@@ -100,14 +101,14 @@ class Grammar(object):
 
 	def events(s):
 		count = s.check_int(lib.marpa_g_event_count(s.g))
-		log('%s events'%count)
+		log('%s events:'%count)
 		if count > 0:
 			result = ffi.new('Marpa_Event*')
 			for i in range(count):
 				event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
 				event_value = result.t_value
 				r = event_type, event_value
-				log((i,r))
+				log((events[i],r))
 				yield r
 
 	def print_events(s):

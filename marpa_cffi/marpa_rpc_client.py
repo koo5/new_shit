@@ -170,16 +170,12 @@ class ThreadedMarpa(object):
 		s.clear()
 		log("grammar clear")
 
-
-
 		#we dont have a separate tokenizer
 		s.named_symbol('nonspecial_char')
 		s.named_symbol('known_char')
 		#maybe just convenience
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
-
-
 
 		s.scope = scope
 		anything = start==None
@@ -299,6 +295,8 @@ class MarpaThread(threading.Thread):
 					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
 				except Exception as e:
 					traceback.print_exc(file=sys.stdout)
+					s.send(Dotdict(message = 'error', traceback = traceback.format_exc()))
+					continue
 				s.send(Dotdict(message = 'parsed', results = r))
 
 
@@ -330,7 +328,7 @@ class MarpaThread(threading.Thread):
 
 		if args.graph_grammar:
 			graphing_wrapper.generate_png()
-			#graphing_wrapper.generate_gv()
+			graphing_wrapper.generate_gv()
 
 		s.g.precompute()
 		#check_accessibility()
@@ -347,7 +345,6 @@ class MarpaThread(threading.Thread):
 				log("%s %s %s"%(position[0], origin[0], client.rule2debug_name(Marpa_Rule_ID)))
 
 	def parse(s, tokens, raw, rules):
-
 		r = Recce(s.g)
 		r.start_input()
 		s.g.print_events()
