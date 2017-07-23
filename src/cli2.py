@@ -3,15 +3,11 @@
 
 import sys
 
-import lemon_utils.lemon_logging
-from marpa_cffi.marpa_cffi import lib
-
 import nodes
 nodes.autocomplete  = False
 
 from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 nodes.m = m = ThreadedMarpa(print, True)
-
 
 def handle(text=None):
 	msg = m.t.output.get()
@@ -31,22 +27,19 @@ def parse(text):
 	m.enqueue_precomputation(None)
 	return handle(text)
 
-
-#mod="lc1-test",nodes.lc1
-#mod="lc2-test",nodes.lc2
-#mod="cube-test",nodes.cube
-mod="MLTT-test",nodes.MLTT
-
-
-#so this runs before the __main__ is called
 r = nodes.make_root()
-scope = r[mod[0]].scope()
-m.collect_grammar(scope,mod[1].exp)
+scope = r['repl'].scope()
+m.collect_grammar(scope,nodes.B.statement)
 
-#the condition is true when you do like python ./cli.py,
-#false when you run ipython and just import cli
 if __name__=='__main__':
-	text = sys.stdin.read()[:-1]
+	if len(sys.argv) == 3 and sys.argv[1] == '-c':
+		text = sys.argv[2]
+	elif len(sys.argv) == 2:
+		text = open(sys.argv[1]).read()
+	elif len(sys.argv) == 1:
+		text = sys.stdin.read()[:-1]
+	else: assert (false)
+	print ("input:\n" + text)
 	p=parse(text)[0]
 	print (p.eval())
 	#reads stdin, cuts off last char

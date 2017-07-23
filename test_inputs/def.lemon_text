@@ -1,0 +1,5 @@
+def x:
+{
+	say "hi"
+	say "bye"
+}

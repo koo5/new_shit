@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 from cli import parse
-
 
 def do(t):
 	p = parse(t)
@@ -14,17 +12,12 @@ def do(t):
 			print(r.tostr())
 		print( "we couldnt prove that our grammar isnt ambiguous, but we can tell that your program is!")
 	else:
-
 		for i,r in enumerate(p):
 			print (i, ":", r)
 			print(r.tostr())
 			r = r.unparen()
-		
-			#type-check it before evaluating:
 			print("type check:",r.type_check().tostr())
 			print("eval:",r.eval().tostr())
-			#what do we do up here is it like while(r.prove()) ?
-			#but if it also has returns it will screw it up
 			for x in r.prove():
 				print("prove:",x.tostr())
 

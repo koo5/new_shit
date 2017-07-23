@@ -1,0 +1,7 @@
+@prefix : <#> .
+@prefix api <http://koo5.github.com/lemon/api#> .
+@prefix textinput <http://koo5.github.com/lemon/api/textinput#> .
+
+api:textinput a api:command.
+api:result rdfs:domain api:command.
+
