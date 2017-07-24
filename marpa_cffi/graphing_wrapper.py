@@ -74,12 +74,17 @@ def start():
 
 
 def esc(name):
+	if name == "":
+		return "<empty name>"
 	r = ""
+	all_spaces = True
 	for ch in name:
-		if not ch.isalnum():
-			r+="_"
-		else:
+		if ch != " " and ch != "_":
+			all_spaces = False
+		if ((ch.isalnum() or ch=="_") and ch != "\n" ) and not all_spaces:
 			r+=ch
+		else:
+			r+="<"+str(ch.encode(encoding='utf-8'))+">"
 	return r
 
 	#,,,
@@ -117,27 +122,26 @@ def generate_bnf(filename='grammar.bnf'):
 
 
 
-def generate_png(filename='grammar'):
-	graph = generate()
+def generate_png(graph):
 	graph.format = 'png'
-	graph.render(filename)
+	graph.render()
 
-def generate_gv(filename='grammar.gv'):
-	generate().save(filename)
+def generate_gv_dot(graph):
+	graph.save()
 
-def generate():
-	print ("generate graph")
+def generate(name):
+	print ("generate graph:"+name)
 	import graphviz
 
-	graph = graphviz.Digraph()
+	graph = graphviz.Digraph(name)
 	
 	for sym in syms:
-		try:
-			label = symid2name(sym)
-			color = 'black'
-		except:
-			label = str(sym)
-			color = 'gray'
+#		try:
+		label = sss(sym)
+		color = 'black'
+#		except:
+#			label = str(sym)
+#			color = 'gray'
 
 		#print ("s", sym, label)
 

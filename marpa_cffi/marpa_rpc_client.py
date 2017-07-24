@@ -327,8 +327,10 @@ class MarpaThread(threading.Thread):
 					log(("rank ", rule, rank))
 
 		if args.graph_grammar:
-			graphing_wrapper.generate_png()
-			graphing_wrapper.generate_gv()
+			graphing_wrapper.generate_bnf()
+			graph = graphing_wrapper.generate('grammar')
+			graphing_wrapper.generate_gv_dot(graph)
+			graphing_wrapper.generate_png(graph)
 
 		s.g.precompute()
 		#check_accessibility()
