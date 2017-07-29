@@ -1,0 +1,3 @@
+env LD_PRELOAD=libmarpa/dist/.libs/libmarpa.so ASAN_OPTIONS="symbolize=1,detect_leaks=0,strict_init_order=1,check_initialization_order=1,verbosity=1" ./tau --builtins 0 --limit 0 --silence addrules --silence readcurly --silence N3 --level 0   run  tests/simple/perm0c | vis/chew-it.py > ~/new_shit_master/kbdbg.json
+cd ~/new_shit_master
+./src/sdl_client.py --kbdbg
