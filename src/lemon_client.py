@@ -64,7 +64,8 @@ class Client():
 			rpcing_frames.server.load(args.run)
 			s.editor.root['loaded program'].run()
 
-		s.initially_position_cursor()
+		if not args.kbdbg:
+			s.initially_position_cursor()
 
 
 		if args.replay:

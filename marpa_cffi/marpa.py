@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 #this file tries to wrap libmarpa into something pythonic, and not specific to lemon
 """
  * 
@@ -38,6 +37,12 @@ logger=logging.getLogger("marpa")
 log=logger.debug
 
 
+def tb():
+	import traceback
+	return (traceback.extract_stack())
+
+
+
 from collections import defaultdict
 
 
@@ -57,6 +62,7 @@ class Grammar(object):
 	def check_int(s, result):
 		if result == -2:
 			s.get_and_log_error()
+			tb()
 		return result
 
 	def check_null(s, result):
@@ -101,14 +107,14 @@ class Grammar(object):
 
 	def events(s):
 		count = s.check_int(lib.marpa_g_event_count(s.g))
-		log('%s events:'%count)
+		log('%s events'%count)
 		if count > 0:
 			result = ffi.new('Marpa_Event*')
 			for i in range(count):
 				event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
 				event_value = result.t_value
 				r = event_type, event_value
-				log((events[i],r))
+				log('event:',events[i],r)
 				yield r
 
 	def print_events(s):
@@ -124,6 +130,7 @@ class Grammar(object):
 def log_error(e):
 	err = codes.errors[e]
 	log(err[0] + " " + repr(err[1]) )#constant + description
+	raise (Exception(err[0] + " " + repr(err[1]) ))
 
 class Recce(object):
 	def __init__(s, g):
@@ -203,4 +210,4 @@ class Valuator(object):
 
 # http://scipy-lectures.github.io/advanced/debugging/#debugging-segmentation-faults-using-gdb
 # http://fpaste.scsys.co.uk/451285 -  typical marpa C calls
-#https://github.com/Rizziepit/cffibuilder
+#https://github.com/Rizziepit/cffibuilder!      ``

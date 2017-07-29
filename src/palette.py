@@ -1,9 +1,7 @@
 from nodes import *
-import traceback
-
-
 
 def tb():
+	import traceback
 	return (traceback.extract_stack())
 
 def palette(s, scope, text, parser):

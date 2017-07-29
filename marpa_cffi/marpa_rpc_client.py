@@ -168,7 +168,7 @@ class ThreadedMarpa(object):
 		assert scope == uniq(scope)
 
 		s.clear()
-		log("grammar clear")
+		log("collect_grammar:...")
 
 		#we dont have a separate tokenizer
 		s.named_symbol('nonspecial_char')
@@ -183,7 +183,7 @@ class ThreadedMarpa(object):
 			s.start=s.named_symbol('start')
 		else:
 			s.start = start.symbol
-		log("start=", s.start )
+		log("start=%s", s.start )
 		
 		for i in scope:
 			#the property is accessed here, forcing the registering of the nodes grammars
@@ -249,7 +249,7 @@ class ThreadedMarpa(object):
 
 	def enqueue_precomputation(s, for_node):
 		s.t.input.put(Dotdict(
-			task = 'feed',
+			task = 'precompute_grammar',
 			num_syms = s.num_syms,
 			symbol_ranks = s.symbol_ranks,
 			rules = s.rules[:],
@@ -287,8 +287,8 @@ class MarpaThread(threading.Thread):
 		while True:
 			inp = s.input.get()
 			if not marpa: continue
-			if inp.task == 'feed':
-				s.feed(inp)
+			if inp.task == 'precompute_grammar':
+				s.precompute_grammar(inp)
 			elif inp.task == 'parse':
 				r = []
 				try:
@@ -300,11 +300,16 @@ class MarpaThread(threading.Thread):
 				s.send(Dotdict(message = 'parsed', results = r))
 
 
-	def feed(s, inp):
+	def precompute_grammar(s, inp):
+		log('precompute_grammar...')
 		s.g = Grammar()
 		# this calls symbol_new() repeatedly inp.num_syms times, and gathers the
 		# results in a list # this is too smart. also, todo: make symbol_new throw exceptions
 		s.c_syms = list(starmap(s.g.symbol_new, repeat(tuple(), inp.num_syms)))
+		for x in s.c_syms:
+			marpa_cffi.marpa.lib.marpa_g_symbol_is_completion_event_set(s.g.g, x, True)
+			marpa_cffi.marpa.lib.marpa_g_symbol_is_prediction_event_set(s.g.g, x, True)
+
 		for k,v in iteritems(inp.symbol_ranks):
 			s.g.symbol_rank_set(k,v)
 			log(("symbol rank:", k, v))
@@ -314,6 +319,7 @@ class MarpaThread(threading.Thread):
 		s.g.start_symbol_set(s.c_syms[inp.start])
 		s.c_rules = []
 		for rule in inp.rules:
+			log(rule)
 			if rule[0]: # its a sequence
 				_, _, lhs, rhs, action, sep, min, prop = rule
 				s.c_rules.append(s.g.sequence_new(lhs, rhs, sep, min, prop))
@@ -324,7 +330,7 @@ class MarpaThread(threading.Thread):
 					s.c_rules.append(cr)
 					if rank != 0:
 						s.g.rule_rank_set(cr, rank)
-					log(("rank ", rule, rank))
+						log(("rank ", rule, rank))
 
 		if args.graph_grammar:
 			graphing_wrapper.generate_bnf()
@@ -332,8 +338,11 @@ class MarpaThread(threading.Thread):
 			graphing_wrapper.generate_gv_dot(graph)
 			graphing_wrapper.generate_png(graph)
 
-		s.g.precompute()
-		#check_accessibility()
+		if not s.g.precompute():
+			s.send(Dotdict(message = 'error', for_node = inp.for_node))
+
+		check_accessibility()
+
 		s.send(Dotdict(message = 'precomputed', for_node = inp.for_node))
 
 
@@ -344,7 +353,7 @@ class MarpaThread(threading.Thread):
 		while Marpa_Rule_ID != -1:
 			Marpa_Rule_ID = lib.marpa_r_progress_item ( r.r, position, origin )
 			if Marpa_Rule_ID != -1:
-				log("%s %s %s"%(position[0], origin[0], client.rule2debug_name(Marpa_Rule_ID)))
+				log("progress_item:pos:%s origin:%s rule:%s"%(position[0], origin[0], client.rule2debug_name(Marpa_Rule_ID)))
 
 	def parse(s, tokens, raw, rules):
 		r = Recce(s.g)
@@ -355,7 +364,7 @@ class MarpaThread(threading.Thread):
 		log("current earleme: %s"% ce)
 		lib.marpa_r_progress_report_start(r.r, ce)
 
-		#s.print_completions(r)
+		s.print_completions(r)
 		
 		for i, sym in enumerate(tokens):
 			if client.debug:
@@ -367,7 +376,7 @@ class MarpaThread(threading.Thread):
 				r.alternative(s.c_syms[sym], i+1)
 			r.earleme_complete()
 			s.g.print_events()
-			#s.print_completions(r)
+			s.print_completions(r)
 
 		#s.print_completions(r)
 

@@ -81,7 +81,7 @@ def esc(name):
 	for ch in name:
 		if ch != " " and ch != "_":
 			all_spaces = False
-		if ((ch.isalnum() or ch=="_") and ch != "\n" ) and not all_spaces:
+		if ((ch.isalnum() or ch=="_") and ch != "\n" ) and not all_spaces or ch.isprintable():
 			r+=ch
 		else:
 			r+="<"+str(ch.encode(encoding='utf-8'))+">"

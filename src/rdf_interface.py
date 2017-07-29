@@ -3,6 +3,8 @@
 
 import lemon_utils.lemon_logging
 
+
+
 import common_utils
 input = common_utils.parse_input()
 
@@ -23,6 +25,8 @@ do_graph_grammar = input.value(command, ti.DebugOptionGenerateGrammarGraphPngOn)
 print("do_graph_grammar:",do_graph_grammar)
 if do_graph_grammar:
 	args.graph_grammar = True
+	from lemon_args import args
+	args.log_parsing = True
 
 import nodes
 nodes.autocomplete = False
@@ -55,5 +59,10 @@ scope = r['repl'].scope()
 m.collect_grammar(scope,nodes.B.statement)
 
 print ("input:\n" + text)
-p=parse(text)[0]
-print (p.eval())
+r = parse(text)
+if (len(r)):
+	p=[0]
+	print (p.eval())
+else:
+	print ("no parse")
+
