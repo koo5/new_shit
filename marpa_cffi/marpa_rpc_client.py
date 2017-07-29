@@ -347,23 +347,24 @@ class MarpaThread(threading.Thread):
 		position = ffi.new('int*')
 		origin = ffi.new('int*')
 		Marpa_Rule_ID = None
+		count = 0
 		while Marpa_Rule_ID != -1:
 			Marpa_Rule_ID = lib.marpa_r_progress_item ( r.r, position, origin )
 			if Marpa_Rule_ID != -1:
 				log("progress_item:pos:%s origin:%s rule:%s"%(position[0], origin[0], client.rule2debug_name(Marpa_Rule_ID)))
+				count += 1
+		log("%s progress_items"%count)
+		return count
 
 	def parse(s, tokens, raw, rules):
 		log("parse..")
 		r = Recce(s.g)
 		r.start_input()
-		s.g.print_events()
 
 		ce = lib.marpa_r_current_earleme(r.r);
 		log("current earleme: %s"% ce)
 		lib.marpa_r_progress_report_start(r.r, ce)
 
-		s.print_completions(r)
-		
 		for i, sym in enumerate(tokens):
 			if client.debug:
 				log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
@@ -371,12 +372,17 @@ class MarpaThread(threading.Thread):
 			if sym == None:
 				log("grammar not implemented, skipping this node")
 			else:
+
+				npredicted = 0
+				for t, v in s.g.events():
+					if t == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_PREDICTED:
+						print(client.symbol2debug_name(v))
+						npredicted += 1
+				log("%s predicted's"%npredicted)
+				s.print_completions(r)
+
 				r.alternative(s.c_syms[sym], i+1)
 			r.earleme_complete()
-			s.g.print_events()
-			s.print_completions(r)
-
-		#s.print_completions(r)
 
 		#token value 0 has special meaning(unvalued),
 		# so lets i+1 over there and prepend a dummy

@@ -3289,6 +3289,9 @@ def build_in_lemon_language():
 					{'sig': B.function_signature_list,
 					 'body': B.statements}))
 
+	build_in(WorksAs.b("functiondefinition", "statement"), False)
+
+
 	#user cant instantiate it, but we make a decl anyway,
 	#because we need to display it, its in builtins,
 	#its just like a normal function, FunctionCall can
