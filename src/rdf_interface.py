@@ -60,8 +60,8 @@ m.collect_grammar(scope,nodes.B.statement)
 
 print ("input:\n" + text)
 r = parse(text)
-if (len(r)):
-	p=[0]
+if (r and len(r)):
+	p=r[0]
 	print (p.eval())
 else:
 	print ("no parse")

@@ -3553,10 +3553,10 @@ def build_in_misc():
 			return Text(p)
 
 
-	build_in(SyntaxedNodecl(FilesystemPath,
-				   [[ChildTag("path")],
-				    [ChildTag("path"), MemberTag("status")]],
-				   {'path': (B.text)}))
+	#build_in(SyntaxedNodecl(FilesystemPath,
+	#			   [[ChildTag("path")],
+	#			    [ChildTag("path"), MemberTag("status")]],
+	#			   {'path': (B.text)}))
 
 	def b_files_in_dir(dir):
 		import os

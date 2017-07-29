@@ -154,13 +154,6 @@ class ThreadedMarpa(object):
 	def syms_sorted_by_values(s):
 		return s.sorted_by_values(s.debug_sym_names)
 
-	def check_accessibility(s):
-		for i in s.debug_sym_names._dict.items():
-			if not s.g.symbol_is_accessible(i[1]):
-				raise Exception("inaccessible: %s (%s)"%i)
-
-
-
 	#---------
 
 
@@ -295,7 +288,7 @@ class MarpaThread(threading.Thread):
 					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
 				except Exception as e:
 					traceback.print_exc(file=sys.stdout)
-					s.send(Dotdict(message = 'error', traceback = traceback.format_exc()))
+					s.send(Dotdict(message = 'eeerror', traceback = traceback.format_exc()))
 					continue
 				s.send(Dotdict(message = 'parsed', results = r))
 
@@ -309,6 +302,8 @@ class MarpaThread(threading.Thread):
 		for x in s.c_syms:
 			marpa_cffi.marpa.lib.marpa_g_symbol_is_completion_event_set(s.g.g, x, True)
 			marpa_cffi.marpa.lib.marpa_g_symbol_is_prediction_event_set(s.g.g, x, True)
+
+
 
 		for k,v in iteritems(inp.symbol_ranks):
 			s.g.symbol_rank_set(k,v)
@@ -336,12 +331,14 @@ class MarpaThread(threading.Thread):
 			graphing_wrapper.generate_bnf()
 			graph = graphing_wrapper.generate('grammar')
 			graphing_wrapper.generate_gv_dot(graph)
-			graphing_wrapper.generate_png(graph)
+			#graphing_wrapper.generate_png(graph)
 
-		if not s.g.precompute():
-			s.send(Dotdict(message = 'error', for_node = inp.for_node))
+		if s.g.precompute() == -2:
+			s.send(Dotdict(message = 'precompute error', for_node = inp.for_node))
 
-		check_accessibility()
+		for x in s.c_syms:
+			if not s.g.symbol_is_accessible(x):
+				log("inaccessible symbol: %s "%client.symbol2debug_name(x))
 
 		s.send(Dotdict(message = 'precomputed', for_node = inp.for_node))
 
@@ -356,6 +353,7 @@ class MarpaThread(threading.Thread):
 				log("progress_item:pos:%s origin:%s rule:%s"%(position[0], origin[0], client.rule2debug_name(Marpa_Rule_ID)))
 
 	def parse(s, tokens, raw, rules):
+		log("parse..")
 		r = Recce(s.g)
 		r.start_input()
 		s.g.print_events()

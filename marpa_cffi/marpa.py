@@ -114,7 +114,7 @@ class Grammar(object):
 				event_type = s.check_int(lib.marpa_g_event(s.g, result, i))
 				event_value = result.t_value
 				r = event_type, event_value
-				log('event:',events[i],r)
+				log('event:%s, value:%s',events[event_type],event_value)
 				yield r
 
 	def print_events(s):
