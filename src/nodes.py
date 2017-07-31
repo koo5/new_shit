@@ -3995,6 +3995,29 @@ def register_class_symbol(cls):
 
 
 
+def scope_after_hiding_and_unhiding():
+	scope = outer_scope()
+	all = scope[:]
+	for i in statements:
+		if not (type(i) in [HideNode, UnhideNode]):
+			continue
+		what = statements[0].ch.what.parsed().value
+		if type(i) == HideNode:
+			if what == "everything":
+				scope = []
+			else raise Exception("not implemented")
+		if type(i) == UnhideNode:
+			if what == "everything":
+				scope = all[:]
+			else:
+				for i in all:
+					if i.name == what:
+						if isinstance(i, Module):
+							for j in i.ch.items:
+								scope.append(j)
+						else:
+							scope.append(i)
 
-"""how Statements are parsed:
-how {node type}"""
+
+
+
