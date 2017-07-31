@@ -55,7 +55,7 @@ def parse(text):
 	return handle(text)
 
 r = nodes.make_root()
-scope = r['repl'].scope()
+scope = r['empty module'].scope()
 m.collect_grammar(scope,nodes.B.statement)
 
 print ("input:\n" + text)

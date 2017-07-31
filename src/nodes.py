@@ -2927,6 +2927,10 @@ class CompoundNodeDef(Syntaxed):
 		return CompoundNode(s)
 
 
+
+"""
+every module behaves as if first statement was "show everything"
+
 		
 
 
@@ -2957,7 +2961,7 @@ def make_root():
 	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
 
 	r["repl"] = B.builtinmodule.inst_fresh()
-	r["repl"].ch.statements.parser_class = ReplParser
+	r["repl"].ch.statements.parser_class                                                                                                             = ReplParser
 	r["repl"].ch.statements.items = [ReplParser()]
 	r["repl"].ch.statements.newline()
 	r["repl"].ch.statements.view_mode=2
@@ -2990,10 +2994,13 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	r["builtins"].ch.statements.view_mode = 0
 
 
-
 	#r["loaded program"] = B.module.inst_fresh()
 	#r["loaded program"].ch.name = Text("placeholder")
 	#r["loaded program"].ch.statements.view_mode=0
+
+
+	r["empty module"] = B.module.inst_fresh()
+	r["empty module"].ch.name = Text("empty module")
 
 
 	r["clipboard"] = B.module.inst_fresh()

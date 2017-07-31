@@ -101,7 +101,10 @@ class Grammar(object):
 		    MARPA_PROPER_SEPARATION if proper else 0)))
 
 	def precompute(s):
+		import time
+		start_time = time.time()
 		r = s.check_int(lib.marpa_g_precompute(s.g))
+		log("marpa_g_precompute returned in %s seconds"%time.time() - start_time)
 		s.print_events()
 		return r
 
