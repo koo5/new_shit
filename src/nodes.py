@@ -647,23 +647,7 @@ class Node(NodePersistenceStuff, element.Element):
 		return s
 
 	def scope(s):
-		"""lexical scope, what does this node see?"""
-		r = []
-
-		if isinstance(s.parent, List):
-			r += [x.parsed for x in s.parent.above(s)]
-
-		assert s.parent != None, s.long__repr__()
-
-		r += [s.parent]
-		sc = s.parent.scope()
-		if sc != None:
-			r += sc # note:Root has parent None
-
-		assert(r != None)
-		assert(flatten(r) == r)
-
-		return r
+		return scope_after_hiding_and_unhiding(s)
 
 	@property
 	def nodecls(s):
@@ -1636,11 +1620,6 @@ class Root(Dict):
 	#def okay(s):
 	#	recursively check parents?
 
-	def scope(s):
-		# deserialization needs this
-		return s["builtins"].ch.statements.parsed
-
-
 
 
 class Module(Syntaxed):
@@ -1704,35 +1683,6 @@ class Module(Syntaxed):
 		#except Exception as e:
 		#	log(e)
 		#	raise e
-
-	def scope(s):
-
-		if s == s.root["builtins"]:
-			return [] # builtins dont see anything
-		else:
-			if s.special_scope:
-				print ('....')
-				r = []
-				for i in s.special_scope:
-					if isinstance(i, Module):
-					#we dont honor the module's scope()
-						for x in i.ch.statements.parsed.items:
-							r.append(x)
-					else:
-						r.append(i)
-				return r
-			else:
-
-				r = s.root["builtins"].ch.statements.parsed.items[:]
-
-				for module in s.root['library'].items:
-					if not isinstance(module, Module):
-						continue
-					if module != s:
-						r += [x.parsed for x in module.ch.statements.parsed.items]
-					#log(module)
-					#log(r)
-				return r
 
 
 class BuiltinModule(Module):
@@ -2926,11 +2876,6 @@ class CompoundNodeDef(Syntaxed):
 		""" fresh creates default children"""
 		return CompoundNode(s)
 
-
-
-"""
-every module behaves as if first statement was "show everything"
-
 		
 
 
@@ -3989,26 +3934,28 @@ def register_class_symbol(cls):
 			cls.rule_for_syntax(r, sy, ddecl)
 		return r
 
-
 	log(("no class symbol for", cls))
 
 
 
 
-def scope_after_hiding_and_unhiding():
-	scope = outer_scope()
-	all = scope[:]
-	for i in statements:
+def scope_after_hiding_and_unhiding(s):
+	assert(type(s.parent) != Root)
+	local = what_in_my_module_do_i_see(s)
+	library = what_module_sees(s.module)
+	all = local + library
+	r = all
+	for i in local:
 		if not (type(i) in [HideNode, UnhideNode]):
 			continue
 		what = statements[0].ch.what.parsed().value
 		if type(i) == HideNode:
 			if what == "everything":
-				scope = []
-			else raise Exception("not implemented")
+				r = []
+			else: raise Exception("not implemented")
 		if type(i) == UnhideNode:
 			if what == "everything":
-				scope = all[:]
+				r = all[:]
 			else:
 				for i in all:
 					if i.name == what:
@@ -4017,7 +3964,34 @@ def scope_after_hiding_and_unhiding():
 								scope.append(j)
 						else:
 							scope.append(i)
+	return r
 
+def what_module_sees(module):
+	assert isinstance(module, Module)
+	if s == s.root["builtins"]:
+		return [] # builtins dont see anything
+	else:
+		modules = [s.root["builtins"]]
+		for module in s.root['library'].items:
+			if not isinstance(module, Module):
+				continue
+			if module != s:
+				modules.append(module)
+			#log(module) #log(r)
+		r = []
+		for module in modules:
+			r += [x.parsed for x in module.ch.statements.parsed.items]
+		return r
 
+def what_in_my_module_do_i_see(s):
+	assert s.parent,     s.long__repr__()
+	r = []
+	if isinstance(s.parent, Statements):
+		r += [x.parsed for x in s.parent.above(s)]
+	r += [s.parent]
+	sc = what_in_my_module_do_i_see(s.parent)
+	assert(r != None)
+	assert(flatten(r) == r)
+	return r
 
-
+#return s["builtins"].ch.statements.parsed
