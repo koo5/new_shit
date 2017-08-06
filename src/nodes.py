@@ -3992,7 +3992,7 @@ def scope_after_hiding_and_unhiding(s):
 			if what == "everything":
 				r = []
 			else: raise Exception("not implemented")
-		if dd == B.hideexceptnode:
+		elif dd == B.hideexceptnode:
 			what = i.ch.what.parsed().value
 			exc = i.ch.exceptions.parsed().pyval
 			if what == "everything":
@@ -4011,8 +4011,7 @@ def scope_after_hiding_and_unhiding(s):
 		#					scope.append(i)
 	return r
 
-def what_module_sees(module):
-	assert isinstance(module, Module)
+def collect_modules_seen_by_module(module):
 	if module == module.root["builtins"]:
 		return [] # builtins dont see anything
 	else:
@@ -4023,10 +4022,15 @@ def what_module_sees(module):
 			if module != m:
 				modules.append(module)
 			#log(module) #log(r)
-		r = []
-		for m in modules:
-			r += [x.parsed for x in m.ch.statements.parsed.items]
-		return r
+		return modules
+
+def what_module_sees(module):
+	assert isinstance(module, Module)
+	r = []
+	for m in collect_modules_seen_by_module(module):
+		for i in m.ch.statements.parsed.items:
+			r.append(i.parsed)
+	return r
 
 def what_in_my_module_do_i_see(s):
 	assert s.parent,     s.long__repr__()
@@ -4036,9 +4040,12 @@ def what_in_my_module_do_i_see(s):
 	if isinstance(p, Statements):
 		r += [x.parsed for x in p.above(s)]
 	elif not isinstance(p, Module):
-		sc = what_in_my_module_do_i_see(p)
+		r += what_in_my_module_do_i_see(p)
 	assert(r != None)
-	assert(flatten(r) == r)
+	assert_is_flat(r)
 	return r
+
+def assert_is_flat(r):
+	assert flatten(r) == r
 
 #return s["builtins"].ch.statements.parsed
