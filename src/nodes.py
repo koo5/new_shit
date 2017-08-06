@@ -907,7 +907,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 				else:
 					x = deref_decl(child_type).symbol
 				if not x:
-					log("no type:" + str(i))
+					warn("no type:" + str(i))
 					return None
 				assert x, child_type
 				syms = syms[:]
@@ -1551,7 +1551,7 @@ class Number(WidgetedValue):
 
 class Text(WidgetedValue):
 	easily_instantiable = True
-	brackets = ('[', ']')
+	brackets = ('"', '"')
 	def __init__(s, value="", debug_note=""):
 		super(Text, s).__init__()
 		s.widget = widgets.Text(s, value)
@@ -1693,7 +1693,7 @@ class LikiModule(Module):
 	pass
 class ModuleThatDoesntSeeAnythingExceptUnhide(Module):
 	def scope(s):
-		return [B.unhidenode, B.statement]
+		return [B.unhidenode, B.statement, B.text, B.anything, B.expression]
 	def full_scope(s):
 		return what_module_sees(s)
 
@@ -3197,7 +3197,7 @@ def build_in_lemon_language():
 
 	build_in(SyntaxedNodecl(UnhideNode,
 				   ["unhide ",ChildTag("what")],
-				   {'what': 'text'}))
+				   {'what': list_of(B.text)}))
 
 	build_in(WorksAs.b("unhidenode", "statement"), False)
 
@@ -3466,7 +3466,7 @@ def load_module(file_name, placeholder):
 	for i in d.flatten():
 		if isinstance(i, Serialized):
 			i.unserialize()
-		d.fix_parents()
+			d.fix_parents()
 	return "ok"
 
 
@@ -3813,14 +3813,14 @@ def register_symbol(s):
 		lhs = lhs.target.symbol
 		rhs = rhs.target.symbol
 		if args.log_parsing:
-			log('%s %s %s %s %s'%(s, s.ch.sup, s.ch.sub, lhs, rhs))
+			log('%s worksas %s\n (%s := %s)'%(s.ch.sub, s.ch.sup, lhs, rhs))
 		if lhs != None and rhs != None:
 			r = m.rule(str(s), lhs, rhs)
 			s._rule = r
 		return
 
 
-	if isinstance(s, NodeclBase):
+	if isinstance(s, (NodeclBase, ParametricListType)):
 		s._symbol = s.instance_class.register_class_symbol()
 		return
 

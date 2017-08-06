@@ -39,19 +39,16 @@ def ruleid2name(id):
 	return str(id)
 
 def symbol_new(g):
-#	print ('fuck you')
 	s = orig.symbol_new(g)
 	syms.append(s)
 	return s
 
 def rule_new(g,lhs,rhs,length):
-#	print ('fuck you')
 	r = orig.rule_new(g,lhs,rhs,length)
 	rules.append((r, lhs, rhs))
 	return r
 
 def sequence_new(g,lhs,rhs,separator, min, flags ):
-#	print ('fuck you')
 	s = orig.sequence_new(g,lhs,rhs,separator, min, flags)
 	seqs.append((s, lhs, rhs, separator, min))
 	return s
@@ -62,7 +59,6 @@ def stop():
 	lib.marpa_g_sequence_new = orig.sequence_new
 
 def start():
-#	print(lib.fuck)
 	orig.symbol_new = lib.marpa_g_symbol_new
 	lib.marpa_g_symbol_new = symbol_new
 	orig.rule_new = lib.marpa_g_rule_new
@@ -72,22 +68,6 @@ def start():
 
 	clear()
 
-
-def esc(name):
-	if name == "":
-		return "<empty name>"
-	r = ""
-	all_spaces = True
-	for ch in name:
-		if ch != " " and ch != "_":
-			all_spaces = False
-		if ((ch.isalnum() or ch=="_") and ch != "\n" ) and not all_spaces or ch.isprintable():
-			r+=ch
-		else:
-			r+="<"+str(ch.encode(encoding='utf-8'))+">"
-	return r
-
-	#,,,
 '''
 def sss(sym):
 	r = str(sym)
@@ -100,9 +80,24 @@ def sss(sym):
 	return r
 '''
 def sss(sym):
+	return escape_symbol_name_for_readable_printing(symid2name(sym))
 	return str(sym) + '_' + esc(symid2name(sym))
 
-
+def escape_symbol_name_for_readable_printing(name):
+	if name == "":
+		return "<empty name>"
+	r = ""
+	all_spaces = True
+	for i,ch in enumerate(name):
+		if ch != " " and ch != "_":
+			all_spaces = False
+		if (len(name) == i + 1) and (ch in [' ', '\n', '\t']):
+			all_spaces = True
+		if (ch != "\n") and (ch.isalnum() or (not all_spaces and ch.isprintable())):
+			r+=ch
+		else:
+			r+="<"+str(ch.encode(encoding='utf-8'))+">"
+	return r
 
 def generate_bnf(filename='grammar.bnf'):
 	f = open(filename, "w")

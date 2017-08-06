@@ -85,7 +85,7 @@ class ThreadedMarpa(object):
 
 	def symbol(s,debug_name):
 		if s.debug:
-			s.debug_sym_names.append(debug_name)
+			s.debug_sym_names.append(graphing_wrapper.escape_symbol_name_for_readable_printing(debug_name))
 		r = symbol_int(s.num_syms) # starting with 0
 		s.num_syms += 1
 		return r
@@ -377,14 +377,15 @@ class MarpaThread(threading.Thread):
 				log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
 				log("grammar not implemented, skipping this node")
 			else:
+				for event_type, event_value in s.g.events():
+					if event_type == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_PREDICTED:
+						log('predicted:%s',(client.symbol2debug_name(event_value)))
+					elif event_type == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_COMPLETED:
+						log('completed:%s',(client.symbol2debug_name(event_value)))
+					else:
+						log('event:%s, value:%s',events[event_type],event_value)
 
-				npredicted = 0
-				for t, v in s.g.events():
-					if t == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_PREDICTED:
-						print(client.symbol2debug_name(v))
-						npredicted += 1
-				log("%s predicted's"%npredicted)
-				s.print_completions(r)
+				#s.print_completions(r)
 
 				if client.debug:
 					log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))

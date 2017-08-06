@@ -54,12 +54,13 @@ class Element():
 
 	#after calling lock(), you cant set nonexisting attributes
 	def lock(s):
-		s._locked = True
+		#s._locked = True
 		#s.bananana = True
+		s.__setattr__ = s.__locked__setattr__
 
-	def __setattr__(s, k, v):
-		if hasattr(s, "_locked"):
-			s.__getattribute__(k)#we are lockd, try if it exists
+	def __locked__setattr__(s, k, v):
+		#if hasattr(s, "_locked"):
+		s.__getattribute__(k)#we are lockd, try if it exists
 		object.__setattr__(s, k, v)
 
 	@property

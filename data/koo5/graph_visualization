@@ -1,0 +1,9 @@
+graph visualization tools
+[a experience; subject koo5; with "xdot"; rating good; note "for several hundred nodes ok, didnt try more. Sucks at search". Might be worth hacking on.]
+[a experience; subject koo5; with "kgraphviewer"; note "repo version crashes. Not ok for thousands of nodes"] 
+[a note; subject "gephi"; contents "ok for several thousand nodes"]
+
+
+
+https://www.quora.com/How-can-I-visualize-a-graph-with-more-than-3-million-nodes
+https://link.springer.com/chapter/10.1007/978-3-7091-6783-0_1

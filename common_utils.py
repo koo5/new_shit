@@ -19,7 +19,9 @@ def parse_input():
 	elif len(sys.argv) == 2:
 		fn = sys.argv[1]
 		format = rdflib.util.guess_format(fn)
-		print('format:' + format)
+		print('format:' + str(format))
+		if not format:
+			raise Exception("input text format not recognized")
 		g.parse(fn, format=format)
 	else:
 		assert(False)
