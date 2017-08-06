@@ -62,15 +62,16 @@ class Element():
 			s.__getattribute__(k)#we are lockd, try if it exists
 		object.__setattr__(s, k, v)
 
-
+	@property
 	def module(s):
 		if isinstance(s, Module):
 			return s
 		else:
 			if s.parent != None:
-				return s.parent.module()
+				return s.parent.module
 			else:
 				log ("%s has no parent", s)
+				assert False
 				return None
 
 	def on_keypress(self, event):

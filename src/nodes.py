@@ -1684,12 +1684,18 @@ class Module(Syntaxed):
 		#	log(e)
 		#	raise e
 
+	def scope(s):
+		return what_module_sees(s)
 
 class BuiltinModule(Module):
 	pass
 class LikiModule(Module):
 	pass
-
+class ModuleThatDoesntSeeAnythingExceptUnhide(Module):
+	def scope(s):
+		return [B.unhidenode, B.statement]
+	def full_scope(s):
+		return what_module_sees(s)
 
 # endregion
 
@@ -2055,6 +2061,10 @@ class WorksAs(Syntaxed):
 			sup = B[sup]
 			
 		return cls({'sub': Ref(sub), 'sup': Ref(sup)})
+
+	def is_relevant_for(s, scope):
+		if deref_decl(s.ch.sub.parsed) in scope and deref_decl(s.ch.sup.parsed) in scope:
+			return True
 
 
 class BindsTighterThan(Syntaxed):
@@ -2944,8 +2954,7 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	#r["loaded program"].ch.statements.view_mode=0
 
 
-	r["empty module"] = B.module.inst_fresh()
-	r["empty module"].ch.name = Text("empty module")
+	r["empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
 
 
 	r["clipboard"] = B.module.inst_fresh()
@@ -3081,6 +3090,12 @@ def build_in_editor_structure_nodes():
 	                }))
 
 
+	build_in(
+	SyntaxedNodecl(ModuleThatDoesntSeeAnythingExceptUnhide,
+	               [ChildTag("statements")],
+	               {'statements': B.statements
+	                }))
+
 def build_in_lemon_language():
 
 	build_in(Comment(
@@ -3160,6 +3175,31 @@ def build_in_lemon_language():
 
 	B.union.notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
 
+	class HideNode(Syntaxed):
+		pass
+	class HideExceptNode(Syntaxed):
+		pass
+	class UnhideNode(Syntaxed):
+		pass
+
+	build_in(SyntaxedNodecl(HideNode,
+				   ["hide", " ", ChildTag("what")],
+				   {'what': 'text'}))
+
+	build_in(WorksAs.b("hidenode", "statement"), False)
+
+	build_in(SyntaxedNodecl(HideExceptNode,
+				   ["hide", " ", ChildTag("what"), " ", "except", " ", ChildTag("exceptions")],
+				   {'what': 'text',
+				    'exceptions': list_of(B.text)}))
+
+	build_in(WorksAs.b("hideexceptnode", "statement"), False)
+
+	build_in(SyntaxedNodecl(UnhideNode,
+				   ["unhide ",ChildTag("what")],
+				   {'what': 'text'}))
+
+	build_in(WorksAs.b("unhidenode", "statement"), False)
 
 	build_in(SyntaxedNodecl(UntypedVar,
 				   [ChildTag("name")],
@@ -3246,7 +3286,7 @@ def build_in_lemon_language():
 
 	#user cant instantiate it, but we make a decl anyway,
 	#because we need to display it, its in builtins,
-	#its just like a normal function, FunctionCall can
+	#its just li ke a normal function, FunctionCall can
 	#find it there..
 	build_in(SyntaxedNodecl(BuiltinFunctionDecl,
 				   [TextTag("builtin function"), ChildTag("name"), TextTag(":"), ChildTag("sig")],
@@ -3943,53 +3983,60 @@ def scope_after_hiding_and_unhiding(s):
 	assert(type(s.parent) != Root)
 	local = what_in_my_module_do_i_see(s)
 	library = what_module_sees(s.module)
-	all = local + library
+	all = library + local
 	r = all
 	for i in local:
-		if not (type(i) in [HideNode, UnhideNode]):
-			continue
-		what = statements[0].ch.what.parsed().value
-		if type(i) == HideNode:
+		dd = deref_decl(i.decl)
+		if dd == B.hidenode:
+			what = i.ch.what.parsed().value
 			if what == "everything":
 				r = []
 			else: raise Exception("not implemented")
-		if type(i) == UnhideNode:
+		if dd == B.hideexceptnode:
+			what = i.ch.what.parsed().value
+			exc = i.ch.exceptions.parsed().pyval
 			if what == "everything":
-				r = all[:]
-			else:
-				for i in all:
-					if i.name == what:
-						if isinstance(i, Module):
-							for j in i.ch.items:
-								scope.append(j)
-						else:
-							scope.append(i)
+				r = [x for x in r if x.name in exc]
+			else: raise Exception("not implemented")
+		#if type(i) == UnhideNode:
+		#	if what == "everything":
+		#		r = all[:]
+		#	else:
+		#		for i in all:
+		#			if i.name == what:
+		#				if isinstance(i, Module):
+		#					for j in i.ch.items:
+		#						scope.append(j)
+		#				else:
+		#					scope.append(i)
 	return r
 
 def what_module_sees(module):
 	assert isinstance(module, Module)
-	if s == s.root["builtins"]:
+	if module == module.root["builtins"]:
 		return [] # builtins dont see anything
 	else:
-		modules = [s.root["builtins"]]
-		for module in s.root['library'].items:
-			if not isinstance(module, Module):
+		modules = [module.root["builtins"]]
+		for m in module.root['library'].items:
+			if not isinstance(m, Module):
 				continue
-			if module != s:
+			if module != m:
 				modules.append(module)
 			#log(module) #log(r)
 		r = []
-		for module in modules:
-			r += [x.parsed for x in module.ch.statements.parsed.items]
+		for m in modules:
+			r += [x.parsed for x in m.ch.statements.parsed.items]
 		return r
 
 def what_in_my_module_do_i_see(s):
 	assert s.parent,     s.long__repr__()
 	r = []
-	if isinstance(s.parent, Statements):
-		r += [x.parsed for x in s.parent.above(s)]
-	r += [s.parent]
-	sc = what_in_my_module_do_i_see(s.parent)
+	p = s.parent
+	r += [p]
+	if isinstance(p, Statements):
+		r += [x.parsed for x in p.above(s)]
+	elif not isinstance(p, Module):
+		sc = what_in_my_module_do_i_see(p)
 	assert(r != None)
 	assert(flatten(r) == r)
 	return r

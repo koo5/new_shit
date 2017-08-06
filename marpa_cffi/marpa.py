@@ -104,7 +104,7 @@ class Grammar(object):
 		import time
 		start_time = time.time()
 		r = s.check_int(lib.marpa_g_precompute(s.g))
-		log("marpa_g_precompute returned in %s seconds"%time.time() - start_time)
+		log("marpa_g_precompute returned in %s seconds"%str(time.time() - start_time))
 		s.print_events()
 		return r
 

@@ -157,7 +157,7 @@ class ThreadedMarpa(object):
 	#---------
 
 
-	def collect_grammar(s,  scope:list,  start=None):
+	def collect_grammar(s,  full_scope:list, scope:list,  start=None):
 		assert scope == uniq(scope)
 
 		s.clear()
@@ -176,8 +176,14 @@ class ThreadedMarpa(object):
 			s.start=s.named_symbol('start')
 		else:
 			s.start = start.symbol
-		log("start=%s", s.start )
-		
+		log("start=%s", s.symbol2debug_name(s.start) )
+
+
+		for i in full_scope:
+			if type(i).__name__ == "WorksAs":
+				if i.is_relevant_for(scope):
+					scope.append(i)
+
 		for i in scope:
 			#the property is accessed here, forcing the registering of the nodes grammars
 			sym = i.symbol
@@ -366,10 +372,9 @@ class MarpaThread(threading.Thread):
 		lib.marpa_r_progress_report_start(r.r, ce)
 
 		for i, sym in enumerate(tokens):
-			if client.debug:
-				log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
 			#assert type(sym) == symbol_int
 			if sym == None:
+				log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
 				log("grammar not implemented, skipping this node")
 			else:
 
@@ -381,6 +386,8 @@ class MarpaThread(threading.Thread):
 				log("%s predicted's"%npredicted)
 				s.print_completions(r)
 
+				if client.debug:
+					log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
 				r.alternative(s.c_syms[sym], i+1)
 			r.earleme_complete()
 

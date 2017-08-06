@@ -1,5 +1,2 @@
-def x:
-{
-	say "hi"
-	say "bye"
-}
+unhide ["expression", "text"]
+"bye"
