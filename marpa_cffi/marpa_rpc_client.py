@@ -337,7 +337,10 @@ class MarpaThread(threading.Thread):
 			graphing_wrapper.generate_bnf()
 			graph = graphing_wrapper.generate('grammar')
 			graphing_wrapper.generate_gv_dot(graph)
-			#graphing_wrapper.generate_png(graph)
+			graphing_wrapper.generate_png(graph)
+			graph = graphing_wrapper.generate2('grammar2')
+			graphing_wrapper.generate_gv_dot(graph)
+			graphing_wrapper.generate_png(graph)
 
 		if s.g.precompute() == -2:
 			s.send(Dotdict(message = 'precompute error', for_node = inp.for_node))

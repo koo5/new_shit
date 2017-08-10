@@ -19,6 +19,7 @@ graphing_wrapper.stop() # you can restore original functions
 
 """
 
+import html
 
 from .marpa_cffi import lib
 
@@ -81,7 +82,7 @@ def sss(sym):
 '''
 def sss(sym):
 	return escape_symbol_name_for_readable_printing(symid2name(sym))
-	return str(sym) + '_' + esc(symid2name(sym))
+	return (str(sym) + '_' + esc(symid2name(sym))).replace('\\', '\\\\')
 
 def escape_symbol_name_for_readable_printing(name):
 	if name == "":
@@ -89,7 +90,7 @@ def escape_symbol_name_for_readable_printing(name):
 	r = ""
 	all_spaces = True
 	for i,ch in enumerate(name):
-		if ch != " " and ch != "_":
+		if ch not in " _[]":
 			all_spaces = False
 		if (len(name) == i + 1) and (ch in [' ', '\n', '\t']):
 			all_spaces = True
@@ -146,8 +147,6 @@ def generate(name):
 	                          #style="filled",
 	                          #fillcolor="green",
 	                          fontcolor=color)
-
-
 	for id, lhs, rhs in rules:
 #		print ("r", id)
 		#if len(rhs) > 1:
@@ -161,6 +160,34 @@ def generate(name):
 	
 	print ("done")
 	return graph
+
+def generate2(name):
+	print ("generate graph with records:"+name)
+	import graphviz
+	graph = graphviz.Digraph(name)
+	rs = rules + seqs
+	for r in rs:
+		id, lhs, rhs = r[0], r[1], r[2]
+		print (str(lhs) + ":=" + str(rhs))
+		is_seq = (len(r) == 5)
+		ports = '<<TABLE><tr><td port="lhs">' + html.escape(sss(lhs)) + ":=</td>"
+		if type(rhs) != list:
+			rhs = [rhs]
+		for port,sym in enumerate(rhs):
+			for r in rs:
+				id2, lhs2, rhs2 = r[0], r[1], r[2]
+				if lhs2 == sym:
+					graph.edge(str(id2)+":lhs", str(id)+":"+str(port))
+			ports += '<td port="' + str(port) + '">' + html.escape(sss(sym)) + '</td>'
+		graph.node(str(id),
+		ports + "</tr></TABLE>>",
+	                          #style="filled",
+	                          #fillcolor="green",
+	                          fontcolor='black')
+
+	print ("done")
+	return graph
+
 
 clear()
 
