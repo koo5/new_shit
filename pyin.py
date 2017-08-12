@@ -10,17 +10,24 @@ import common_utils
 
 
 import logging
+formatter = logging.Formatter('#%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_debug_out = logging.StreamHandler()
+console_debug_out.setLevel(logging.DEBUG)
+console_debug_out.setFormatter(formatter)
+
+kbdbg_out = logging.StreamHandler()
+kbdbg_out.setLevel(logging.DEBUG)
+
 logger=logging.getLogger()
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+logger.addHandler(console_debug_out)
 logger.setLevel(logging.DEBUG)
 logger.debug("hi")
+
 logger=logging.getLogger("pyin")
 log=logger.debug
+
 logger=logging.getLogger("kbdbg")
+logger.addHandler(kbdbg_out)
 kbdbg=logger.info
 kbdbg("this is sparta.")
 
@@ -95,11 +102,11 @@ class Rule(object):
 		max_depth = len(args) + len(s.body) - 1
 		locals = s.locals_template.new()
 		def desc():
-			return ("\nvvv\n" + str(s) + "\n" +
-			"args:" + str(args) + "\n" +
-			"locals:" + str(locals) + "\n" +
-			"depth:"+ str(depth) + "/" + str(max_depth)+
-			        "\n^^^")
+			return ("\n#vvv\n#" + str(s) + "\n" +
+			"#args:" + str(args) + "\n" +
+			"#locals:" + str(locals) + "\n" +
+			"#depth:"+ str(depth) + "/" + str(max_depth)+
+			        "\n#^^^")
 		log ("entering " + desc())
 		kbdbg(":frame"+str(locals.debug_id) + " :is_for_rule rule" + str(s.debug_id))
 		while True:
@@ -129,12 +136,12 @@ class Rule(object):
 		
 			try:
 				generators[depth].__next__()
-				log ("back in " + desc() + "\n from sub-rule")
+				log ("back in " + desc() + "\n# from sub-rule")
 				if (depth < max_depth):
 					log ("down")
 					depth+=1
 				else:
-					print ("NYAN")
+					print ("#NYAN")
 					yield "NYAN"#this is when it finishes a rule
 					log ("re-entering " + desc() + " for more results")
 			except StopIteration:
