@@ -46,15 +46,17 @@ def printify(iterable, separator):
 	return r
 
 @attr.s
-class Kbdbgable:
-	last_debug_id = 0
+class Kbdbgable(object):
+	last_instance_debug_id = 0
 	debug_id = attr.ib(init=False)
 	@debug_id.default
 	def _(s):
-		s.__class__.last_debug_id += 1
-		return s.__class__.last_debug_id
-
-
+		s.__class__.last_instance_debug_id += 1
+		return s.__class__.last_instance_debug_id
+	kbdbg_name = attr.ib(init=False)
+	@kbdbg_name.default
+	def _(s):
+		return s.__class__.__name__ + str(s.debug_id)
 
 class Triple(object):
 	def __init__(s, pred, args):
@@ -161,10 +163,7 @@ class Rule(object):
 					
 					bi_args = []
 					for i in triple.args:
-						if is_var(i):
-							a = get_value(locals[i])
-						else:
-							a = i
+						a = get_value(locals[i])
 						bi_args.append(a)
 					generator = pred(triple.pred, bi_args)
 				generators.append(generator)
@@ -219,13 +218,15 @@ class Atom(Kbdbgable):
 	value = attr.ib()
 	debug_locals = attr.ib(convert=weakref)
 
+
+@attr.s
 class Var(Kbdbgable):
-	def __init__(s, debug_name = "unnamed", debug_locals=None):
-		super()
-		s.debug_locals = weakref(debug_locals)# if debug_locals else None
-		s.debug_name = debug_name
-		s.bound_to = None
-		s.kbdbg_name = "var"+str(s.debug_id)+"_"+s.debug_name
+	debug_name = attr.ib(default="unnamed")
+	debug_locals = attr.ib(convert=weakref, default=None)
+	bound_to = attr.ib(default=None, init=False)
+	@property
+	def kbdbg_name(s):
+		return super().kbdbg_name+"_"+s.debug_name
 	def __str__(s):
 		if s.bound_to:
 			desc = '=' + str(s.bound_to)
@@ -273,7 +274,7 @@ def is_var(x):
 	return x.startswith('?')
 
 def get_value(x):
-	if type(x) == str:
+	if type(x) == Atom:
 		return x
 	v = x.bound_to
 	if v:
