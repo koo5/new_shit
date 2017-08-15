@@ -22,7 +22,7 @@ kbdbg_out = logging.StreamHandler()
 kbdbg_out.setLevel(logging.DEBUG)
 
 logger=logging.getLogger()
-#logger.addHandler(console_debug_out)
+logger.addHandler(console_debug_out)
 logger.setLevel(logging.DEBUG)
 logger.debug("hi")
 
@@ -102,9 +102,9 @@ class Rule(object):
 		s.kbdbg_name = "rule" + str(s.debug_id)
 		port = 0
 
-		html = s.kbdbg_name + ' has_graphviz_html_label "<<html><table><tr>{'
+		html = s.kbdbg_name + ' has_graphviz_html_label "<<html><table><tr><td>{'
 		if head:
-			html += head.pred + '('
+			html += head.pred + '(</td>'
 			for arg, is_last in tell_if_is_last_element(head.args):
 				html += '<td port="' + str(port) + '">' + arg + '</td>'
 				pn = s.kbdbg_name + 'port' + str(port)
@@ -113,9 +113,9 @@ class Rule(object):
 				port += 1
 				if not is_last:
 					html += '<td>, </td>'
-			html += ')'
+			html += '<td>).'
 		html += '} <= {'
-		kbdbg(html + '<td>}</td></tr></html>>".')
+		kbdbg(html + '}</td></tr></html>>".')
 
 	def __str__(s):
 		return "{" + str(s.head) + "} <= " + str(s.body)
