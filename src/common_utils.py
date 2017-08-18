@@ -16,13 +16,17 @@ def parse_input():
 				break
 			input_lines.append(l)
 		g.parse("\n".join(input_lines), 'nquads')
-	elif len(sys.argv) == 2:
-		fn = sys.argv[1]
-		format = rdflib.util.guess_format(fn)
-		print('format:' + str(format))
-		if not format:
-			raise Exception("input text format not recognized")
-		g.parse(fn, format=format)
+	elif len(sys.argv) == 3:
+		if sys.argv[1] == "--n3":
+			print("input on command line")
+			g.parse(data=sys.argv[2], format='n3')
+		else:
+			fn = sys.argv[1]
+			format = rdflib.util.guess_format(fn)
+			print('format:' + str(format))
+			if not format:
+				raise Exception("input text format not recognized")
+			g.parse(fn, format=format)
 	else:
 		assert(False)
 	return g

@@ -1,4 +1,4 @@
-#!/usr/bin/env ipython3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import lemon_utils.lemon_logging

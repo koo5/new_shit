@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import attr
 from weakref import ref as weakref
 import rdflib
 from rdflib import Graph
 import sys
 import common_utils
 #g = common_utils.parse_input()
-
-from structlog import get_logger
-sog = get_logger()
-sog.info("hi", how="areyou")
-
 import logging
+
+
 formatter = logging.Formatter('#%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 console_debug_out = logging.StreamHandler()
 console_debug_out.setFormatter(formatter)
 
@@ -22,7 +19,7 @@ kbdbg_out = logging.StreamHandler()
 kbdbg_out.setLevel(logging.DEBUG)
 
 logger=logging.getLogger()
-logger.addHandler(console_debug_out)
+#logger.addHandler(console_debug_out)
 logger.setLevel(logging.DEBUG)
 logger.debug("hi")
 
@@ -45,24 +42,10 @@ def printify(iterable, separator):
 			r += separator
 	return r
 
-@attr.s
-class Kbdbgable(object):
-	last_instance_debug_id = 0
-	debug_id = attr.ib(init=False)
-	@debug_id.default
-	def _(s):
-		s.__class__.last_instance_debug_id += 1
-		return s.__class__.last_instance_debug_id
-	kbdbg_name = attr.ib(init=False)
-	@kbdbg_name.default
-	def _(s):
-		return s.__class__.__name__ + str(s.debug_id)
-
-class Triple(object):
+class Triple():
 	def __init__(s, pred, args):
 		s.pred = pred
 		s.args = args
-
 	def __str__(s):
 		return s.pred + "(" + printify(s.args, ", ") + ")"
 
@@ -70,12 +53,68 @@ class Graph(list):
 	def __str__(s):
 		return "{" + printify(s, ". ") + "}"
 
+class Kbdbgable():
+	last_instance_debug_id = 0
+	def __init__(s):
+		s.__class__.last_instance_debug_id += 1
+		s.debug_id = s.__class__.last_instance_debug_id
+		s.kbdbg_name = s.__class__.__name__ + str(s.debug_id)
+
+class AtomVar(Kbdbgable):
+	def __init__(s, debug_name, debug_locals):
+		super().__init__()
+		s.debug_name = debug_name
+		s.debug_locals = weakref(debug_locals) if debug_locals != None else None
+		if debug_locals != None:
+			s.kbdbg_name = debug_locals.kbdbg_frame
+		s.kbdbg_name += "_" + debug_name
+
+class Atom(AtomVar):
+	def __init__(s, value, debug_locals=None):
+		super().__init__(value, debug_locals)
+		s.value = value
+	def __str__(s):
+		return s.kbdbg_name + '("'+s.value+'")'
+
+class Var(AtomVar):
+	def __init__(s, debug_name, debug_locals=None):
+		super().__init__(debug_name, debug_locals)
+		s.bound_to = None
+	def __str__(s):
+		if s.bound_to:
+			desc = '=' + str(s.bound_to)
+		else:
+			desc = '(free)'
+		return s.kbdbg_name + desc
+		# + " in " + str(s.debug_locals())
+
+	def _bind_to(x, y):
+		assert x.bound_to == None
+		x.bound_to = y
+		kbdbg(x.kbdbg_name + " is_bound_to " + y.kbdbg_name)
+		msg = "bound " + str(x) + " to " + str(y)
+		log(msg)
+		yield msg
+		x.bound_to = None
+		kbdbg(x.kbdbg_name + " is_unbound_from " + y.kbdbg_name)
+
+	def bind_to(x, y):
+		for i in x._bind_to(y):
+			yield i
+		if type(y) == Var:
+			log("and reverse?")
+			for i in y._bind_to(x):
+				yield i
+
 class Locals(dict):
-	def __init__(s, initializer, debug_rule, debug_id = 0):
-		super().__init__(initializer)
+	def __init__(s, initializer, debug_rule, debug_id = 0, kbdbg_frame=None):
+		super().__init__()
 		s.debug_id = debug_id
 		s.debug_last_instance_id = 0
 		s.debug_rule = weakref(debug_rule)
+		s.kbdbg_frame = kbdbg_frame
+		for k,v in initializer.items():
+			s[k] = v.__class__(v.debug_name, s)
 
 	def __str__(s):
 		r = ("locals " + str(s.debug_id) + " of " + str(s.debug_rule()))
@@ -83,33 +122,33 @@ class Locals(dict):
 			r += ":\n#" + printify([str(k) + ": " + str(v) for k, v in s.items()], ", ")
 		return r
 
-	def new(s):
+	def new(s, kbdbg_frame):
+		log("cloning " + str(s))
 		s.debug_last_instance_id += 1
-		r = Locals(s, s.debug_rule(), s.debug_last_instance_id)
+		r = Locals(s, s.debug_rule(), s.debug_last_instance_id, kbdbg_frame)
+		log("result: " + str(r))
 		return r
 
 def tell_if_is_last_element(x):
 	for i, j in enumerate(x):
 		yield j, (i == (len(x) - 1))
 
-class Rule(object):
-	debug_id = 0
+class Rule(Kbdbgable):
+	last_frame_id = 0
 	def __init__(s, head, body=Graph()):
-		Rule.debug_id += 1
-		s.debug_id = Rule.debug_id
+		super().__init__()
 		s.head = head
 		s.body = body
-		s.locals_template = s.make_locals(head, body)
+		s.locals_template = s.make_locals(head, body, s.kbdbg_name)
 		s.ep_heads = []
-		s.kbdbg_name = "rule" + str(s.debug_id)
-		port = 0
 
 		html = s.kbdbg_name + ' has_graphviz_html_label "<<html><table><tr><td>{'
+		port = 0
 		if head:
 			html += head.pred + '(</td>'
 			for arg, is_last in tell_if_is_last_element(head.args):
-				html += '<td port="' + str(port) + '">' + arg + '</td>'
 				pn = s.kbdbg_name + 'port' + str(port)
+				html += '<td port="' + pn + '">' + arg + '</td>'
 				kbdbg(s.kbdbg_name + ' has_port ' + pn + '.')
 				kbdbg(pn + ' belongs_to_thing "' + arg + '".')
 				port += 1
@@ -122,8 +161,9 @@ class Rule(object):
 	def __str__(s):
 		return "{" + str(s.head) + "} <= " + str(s.body)
 
-	def make_locals(s, head, body):
+	def make_locals(s, head, body, kbdbg_rule):
 		locals = Locals({}, s)
+		locals.kbdbg_frame = "locals_template_for_" + kbdbg_rule
 		for triple in ([head] if head else []) + body:
 			for a in triple.args:
 				if is_var(a):
@@ -134,28 +174,29 @@ class Rule(object):
 		return locals
 
 	def unify(s, args):
+		Rule.last_frame_id += 1
+		frame_id = Rule.last_frame_id
+
 		depth = 0
 		generators = []
 		max_depth = len(args) + len(s.body) - 1
-		locals = s.locals_template.new()
+		kbdbg_name = s.kbdbg_name + "Frame"+str(frame_id)
+		locals = s.locals_template.new(kbdbg_name)
 		def desc():
 			return ("\n#vvv\n#" + str(s) + "\n" +
 			"#args:" + str(args) + "\n" +
 			"#locals:" + str(locals) + "\n" +
 			"#depth:"+ str(depth) + "/" + str(max_depth)+
 			        "\n#^^^")
-		log ("entering " + desc())
-		kbdbg_name = s.kbdbg_name + "frame"+str(locals.debug_id)
 		kbdbg(kbdbg_name + " :is_for_rule rule" + str(s.debug_id))
+		log ("entering " + desc())
 		while True:
 			if len(generators) <= depth:
 				generator = None
 
 				if depth < len(args):
 					arg_index = depth
-					head_thing = s.head.args[arg_index]
-					if is_var(head_thing):
-						head_thing = get_value(locals[head_thing])
+					head_thing = get_value(locals[s.head.args[arg_index]])
 					generator = unify(get_value(args[arg_index]), head_thing)
 				else:
 					body_item_index = depth - len(args)
@@ -177,7 +218,7 @@ class Rule(object):
 					depth+=1
 				else:
 					print ("#NYAN")
-					yield "NYAN"#this is when it finishes a rule
+					yield locals#this is when it finishes a rule
 					log ("re-entering " + desc() + " for more results")
 			except StopIteration:
 				if (depth > 0):
@@ -200,7 +241,7 @@ class Rule(object):
 		s.ep_heads.append(args)
 		for i in s.unify(args):
 			s.ep_heads.pop()
-			yield "nyan"
+			yield i
 			s.ep_heads.append(args.copy())
 		s.ep_heads.pop()
 
@@ -213,53 +254,24 @@ def ep_match(a, b):
 			return
 	return True
 
-@attr.s
-class Atom(Kbdbgable):
-	value = attr.ib()
-	debug_locals = attr.ib(convert=weakref)
-
-
-@attr.s
-class Var(Kbdbgable):
-	debug_name = attr.ib(default="unnamed")
-	debug_locals = attr.ib(convert=weakref, default=None)
-	bound_to = attr.ib(default=None, init=False)
-	@property
-	def kbdbg_name(s):
-		return super().kbdbg_name+"_"+s.debug_name
-	def __str__(s):
-		if s.bound_to:
-			desc = '=' + str(s.bound_to)
-		else:
-			desc = '(free)'
-		return s.debug_name + desc
-		# + " in " + str(s.debug_locals())
-	def bind_to(x, y):
-		assert x.bound_to == None
-		x.bound_to = y
-		kbdbg(x.kbdbg_name + " is_bound_to " + y.kbdbg_name)
-		msg = "bound " + str(x) + " to " + str(y)
-		log(msg)
-		yield msg
-		x.bound_to = None
-		kbdbg(x.kbdbg_name + " is_unbound_from " + y.kbdbg_name)
-		if type(y) == Var:
-			sog("and reverse?")
-			for i in y.bind_to(x):
-				yield i
-
+def asst(x):
+	if type(x) == tuple:
+		for i in x:
+			asst(i)
+	else:
+		assert type(x) in [Var, Atom]
 
 def unify(x, y):
+	asst((x, y))
 	log("unify " + str(x) + " with " + str(y))
-	if x == y:
-		assert type(x) == str
-		msg = "equal consts:"+x
-		log(msg)
-		return success(msg)
 	if type(x) == Var:
 		return x.bind_to(y)
 	elif type(y) == Var:
 		return y.bind_to(x)
+	elif x.value == y.value:
+		msg = "equal consts:"+str(x)
+		log(msg)
+		return success(msg)
 	else:
 		return fail()
 
@@ -274,6 +286,7 @@ def is_var(x):
 	return x.startswith('?')
 
 def get_value(x):
+	asst(x)
 	if type(x) == Atom:
 		return x
 	v = x.bound_to
@@ -284,11 +297,12 @@ def get_value(x):
 
 def pred(p, args):
 	for i in args:
+		asst(i)
 		assert get_value(i) == i
 	for rule in preds[p]:
 		if(rule.find_ep(args)): continue
 		for i in rule.match(args):
-			yield "nyan"
+			yield i
 
 
 from collections import defaultdict
@@ -304,10 +318,12 @@ if __name__ == "__main__":
 		preds[r.head.pred].append(r)
 
 	for nyan in Rule(None, Graph([Triple('a', ['socrates', 'mortal'])])).match():
-		print (nyan)
-		print ("he's mortal, and he's dead")
+		print ("#he's mortal, and he's dead")
 
-	print ("who is mortal?")
-	v = Var('?who who')
-#	for nyan in pred('a', [v, 'mortal']):
-#		print (str(v) + " is mortal, and he's dead")
+	print ("#who is mortal?")
+	#for nyan in pred('a', [v, 'mortal']):
+	#v = Var('?who who')
+	w = '?who'
+	r = Rule(None, Graph([Triple('a', [w, 'mortal'])]))
+	for nyan in r.match():
+		print ('#'+str(nyan[w]) + " is mortal, and he's dead")
