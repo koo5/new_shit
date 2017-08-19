@@ -1,0 +1,68 @@
+@prefix kbdbg: <http://kbd.bg/> .
+@prefix : <file:///> .
+:Rule1 kbdbg:has_port :Rule1port0.
+:Rule1port0 kbdbg:belongs_to_thing "?X".
+:Rule1 kbdbg:has_port :Rule1port1.
+:Rule1port1 kbdbg:belongs_to_thing "mortal".
+:Rule1 kbdbg:has_graphviz_html_label "<<html><table><tr><td>{a(</td><td port="Rule1port0">?X</td><td>, </td><td port="Rule1port1">mortal</td><td>).} <= {}</td></tr></html>>".
+:Rule2 kbdbg:has_port :Rule2port0.
+:Rule2port0 kbdbg:belongs_to_thing "socrates".
+:Rule2 kbdbg:has_port :Rule2port1.
+:Rule2port1 kbdbg:belongs_to_thing "man".
+:Rule2 kbdbg:has_graphviz_html_label "<<html><table><tr><td>{a(</td><td port="Rule2port0">socrates</td><td>, </td><td port="Rule2port1">man</td><td>).} <= {}</td></tr></html>>".
+:Rule3 kbdbg:has_port :Rule3port0.
+:Rule3port0 kbdbg:belongs_to_thing "koo".
+:Rule3 kbdbg:has_port :Rule3port1.
+:Rule3port1 kbdbg:belongs_to_thing "man".
+:Rule3 kbdbg:has_graphviz_html_label "<<html><table><tr><td>{a(</td><td port="Rule3port0">koo</td><td>, </td><td port="Rule3port1">man</td><td>).} <= {}</td></tr></html>>".
+:Rule4 kbdbg:has_port :Rule4port0.
+:Rule4port0 kbdbg:belongs_to_thing "?nobody".
+:Rule4 kbdbg:has_port :Rule4port1.
+:Rule4port1 kbdbg:belongs_to_thing "superman".
+:Rule4 kbdbg:has_graphviz_html_label "<<html><table><tr><td>{not(</td><td port="Rule4port0">?nobody</td><td>, </td><td port="Rule4port1">superman</td><td>).} <= {}</td></tr></html>>".
+:Rule5 kbdbg:has_graphviz_html_label "<<html><table><tr><td>{} <= {}</td></tr></html>>".
+:Rule5Frame1 kbdbg:is_for_rule :rule5.
+:Rule1Frame2 kbdbg:is_for_rule :rule1.
+:Rule1Frame2_?X kbdbg:is_bound_to :Rule5Frame1_socrates.
+:Rule2Frame3 kbdbg:is_for_rule :rule2.
+#NYAN
+:Rule4Frame4 kbdbg:is_for_rule :rule4.
+:Rule4Frame4_?nobody kbdbg:is_bound_to :Rule5Frame1_socrates.
+#NYAN
+#NYAN
+#NYAN
+#he's mortal, and he's dead
+:Rule4Frame4_?nobody kbdbg:is_unbound_from :Rule5Frame1_socrates.
+:Rule3Frame5 kbdbg:is_for_rule :rule3.
+:Rule1Frame2_?X kbdbg:is_unbound_from :Rule5Frame1_socrates.
+:Rule2Frame6 kbdbg:is_for_rule :rule2.
+:Rule3Frame7 kbdbg:is_for_rule :rule3.
+#who is mortal?
+:Rule6 kbdbg:has_graphviz_html_label "<<html><table><tr><td>{} <= {}</td></tr></html>>".
+:Rule6Frame8 kbdbg:is_for_rule :rule6.
+:Rule1Frame9 kbdbg:is_for_rule :rule1.
+:Rule6Frame8_?who kbdbg:is_bound_to :Rule1Frame9_?X.
+:Rule2Frame10 kbdbg:is_for_rule :rule2.
+:Rule1Frame9_?X kbdbg:is_bound_to :Rule2Frame10_socrates.
+#NYAN
+:Rule4Frame11 kbdbg:is_for_rule :rule4.
+:Rule4Frame11_?nobody kbdbg:is_bound_to :Rule2Frame10_socrates.
+#NYAN
+#NYAN
+#NYAN
+#Rule6Frame8_?who=Rule1Frame9_?X=Rule2Frame10_socrates("socrates") is mortal, and he's dead
+:Rule4Frame11_?nobody kbdbg:is_unbound_from :Rule2Frame10_socrates.
+:Rule1Frame9_?X kbdbg:is_unbound_from :Rule2Frame10_socrates.
+:Rule3Frame12 kbdbg:is_for_rule :rule3.
+:Rule1Frame9_?X kbdbg:is_bound_to :Rule3Frame12_koo.
+#NYAN
+:Rule1Frame9_?X kbdbg:is_unbound_from :Rule3Frame12_koo.
+:Rule6Frame8_?who kbdbg:is_unbound_from :Rule1Frame9_?X.
+:Rule1Frame9_?X kbdbg:is_bound_to :Rule6Frame8_?who.
+:Rule1Frame9_?X kbdbg:is_unbound_from :Rule6Frame8_?who.
+:Rule2Frame13 kbdbg:is_for_rule :rule2.
+:Rule6Frame8_?who kbdbg:is_bound_to :Rule2Frame13_socrates.
+:Rule6Frame8_?who kbdbg:is_unbound_from :Rule2Frame13_socrates.
+:Rule3Frame14 kbdbg:is_for_rule :rule3.
+:Rule6Frame8_?who kbdbg:is_bound_to :Rule3Frame14_koo.
+:Rule6Frame8_?who kbdbg:is_unbound_from :Rule3Frame14_koo.

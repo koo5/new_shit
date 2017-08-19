@@ -15,7 +15,7 @@ def parse_input():
 			if l == "fin.":
 				break
 			input_lines.append(l)
-		g.parse("\n".join(input_lines), 'nquads')
+		g.parse("\n".join(input_lines), 'nt')
 	elif len(sys.argv) == 3:
 		if sys.argv[1] == "--n3":
 			print("input on command line")

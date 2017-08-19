@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from weakref import ref as weakref
-import rdflib
-from rdflib import Graph
+#import rdflib
+#from rdflib import Graph
 import sys
-import common_utils
+#import common_utils
 #g = common_utils.parse_input()
 import logging
 
@@ -15,8 +15,9 @@ formatter = logging.Formatter('#%(asctime)s - %(name)s - %(levelname)s - %(messa
 console_debug_out = logging.StreamHandler()
 console_debug_out.setFormatter(formatter)
 
-kbdbg_out = logging.StreamHandler()
+kbdbg_out = logging.StreamHandler(sys.stdout)
 kbdbg_out.setLevel(logging.DEBUG)
+kbdbg_out.setFormatter(logging.Formatter('%(message)s.'))
 
 logger=logging.getLogger()
 #logger.addHandler(console_debug_out)
@@ -29,7 +30,8 @@ log=logger.debug
 logger=logging.getLogger("kbdbg")
 logger.addHandler(kbdbg_out)
 kbdbg=logger.info
-kbdbg("this is sparta.")
+kbdbg("@prefix kbdbg: <http://kbd.bg/> ")
+kbdbg("@prefix : <file:///> ")
 
 
 
@@ -91,12 +93,12 @@ class Var(AtomVar):
 	def _bind_to(x, y):
 		assert x.bound_to == None
 		x.bound_to = y
-		kbdbg(x.kbdbg_name + " is_bound_to " + y.kbdbg_name)
+		kbdbg(":"+x.kbdbg_name + " kbdbg:is_bound_to " + ":"+y.kbdbg_name)
 		msg = "bound " + str(x) + " to " + str(y)
 		log(msg)
 		yield msg
 		x.bound_to = None
-		kbdbg(x.kbdbg_name + " is_unbound_from " + y.kbdbg_name)
+		kbdbg(":"+x.kbdbg_name + " kbdbg:is_unbound_from " + ":"+y.kbdbg_name)
 
 	def bind_to(x, y):
 		for i in x._bind_to(y):
@@ -142,21 +144,21 @@ class Rule(Kbdbgable):
 		s.locals_template = s.make_locals(head, body, s.kbdbg_name)
 		s.ep_heads = []
 
-		html = s.kbdbg_name + ' has_graphviz_html_label "<<html><table><tr><td>{'
+		html = ":"+s.kbdbg_name + ' kbdbg:has_graphviz_html_label "<<html><table><tr><td>{'
 		port = 0
 		if head:
 			html += head.pred + '(</td>'
 			for arg, is_last in tell_if_is_last_element(head.args):
 				pn = s.kbdbg_name + 'port' + str(port)
 				html += '<td port="' + pn + '">' + arg + '</td>'
-				kbdbg(s.kbdbg_name + ' has_port ' + pn + '.')
-				kbdbg(pn + ' belongs_to_thing "' + arg + '".')
+				kbdbg(":"+s.kbdbg_name + ' kbdbg:has_port ' + ":"+pn)
+				kbdbg(":"+pn + ' kbdbg:belongs_to_thing "' + arg + '"')
 				port += 1
 				if not is_last:
 					html += '<td>, </td>'
 			html += '<td>).'
 		html += '} <= {'
-		kbdbg(html + '}</td></tr></html>>".')
+		kbdbg(html + '}</td></tr></html>>"')
 
 	def __str__(s):
 		return "{" + str(s.head) + "} <= " + str(s.body)
@@ -188,7 +190,7 @@ class Rule(Kbdbgable):
 			"#locals:" + str(locals) + "\n" +
 			"#depth:"+ str(depth) + "/" + str(max_depth)+
 			        "\n#^^^")
-		kbdbg(kbdbg_name + " :is_for_rule rule" + str(s.debug_id))
+		kbdbg(":"+kbdbg_name + " kbdbg:is_for_rule :rule" + str(s.debug_id))
 		log ("entering " + desc())
 		while True:
 			if len(generators) <= depth:
