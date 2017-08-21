@@ -8,16 +8,12 @@ import sys
 #import common_utils
 #g = common_utils.parse_input()
 import logging
-
+import urllib.parse
 
 formatter = logging.Formatter('#%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 console_debug_out = logging.StreamHandler()
 console_debug_out.setFormatter(formatter)
-
-kbdbg_out = logging.StreamHandler(sys.stdout)
-kbdbg_out.setLevel(logging.DEBUG)
-kbdbg_out.setFormatter(logging.Formatter('%(message)s.'))
 
 logger=logging.getLogger()
 #logger.addHandler(console_debug_out)
@@ -27,11 +23,14 @@ logger.debug("hi")
 logger=logging.getLogger("pyin")
 log=logger.debug
 
+kbdbg_out = logging.StreamHandler(sys.stdout)
+kbdbg_out.setLevel(logging.DEBUG)
+kbdbg_out.setFormatter(logging.Formatter('%(message)s.'))
 logger=logging.getLogger("kbdbg")
 logger.addHandler(kbdbg_out)
 kbdbg=logger.info
-kbdbg("@prefix kbdbg: <http://kbd.bg/> ")
-kbdbg("@prefix : <file:///> ")
+kbdbg("@prefix kbdbg: <http://kbd.bg/#> ")
+kbdbg("@prefix : <file:///#> ")
 
 
 
@@ -69,7 +68,7 @@ class AtomVar(Kbdbgable):
 		s.debug_locals = weakref(debug_locals) if debug_locals != None else None
 		if debug_locals != None:
 			s.kbdbg_name = debug_locals.kbdbg_frame
-		s.kbdbg_name += "_" + debug_name
+		s.kbdbg_name += "_" + urllib.parse.quote_plus(debug_name)
 
 class Atom(AtomVar):
 	def __init__(s, value, debug_locals=None):
@@ -144,6 +143,7 @@ class Rule(Kbdbgable):
 		s.locals_template = s.make_locals(head, body, s.kbdbg_name)
 		s.ep_heads = []
 
+		kbdbg(":"+s.kbdbg_name + ' a ' + 'kbdbg:rule')
 		head = ":"+s.kbdbg_name + "Head"
 		kbdbg(":"+s.kbdbg_name + ' kbdbg:has_head ' + head)
 

@@ -1,52 +1,58 @@
-@prefix kbdbg: <http://kbd.bg/> .
-@prefix : <file:///> .
+@prefix kbdbg: <http://kbd.bg/#> .
+@prefix : <file:///#> .
+:Rule1 a kbdbg:rule.
 :Rule1 kbdbg:has_head :Rule1Head.
+:Rule2 a kbdbg:rule.
 :Rule2 kbdbg:has_head :Rule2Head.
+:Rule3 a kbdbg:rule.
 :Rule3 kbdbg:has_head :Rule3Head.
+:Rule4 a kbdbg:rule.
 :Rule4 kbdbg:has_head :Rule4Head.
+:Rule5 a kbdbg:rule.
 :Rule5 kbdbg:has_head :Rule5Head.
 :Rule5Frame1 kbdbg:is_for_rule :rule5.
 :Rule1Frame2 kbdbg:is_for_rule :rule1.
-:Rule1Frame2_?X kbdbg:is_bound_to :Rule5Frame1_socrates.
+:Rule1Frame2_%3FX kbdbg:is_bound_to :Rule5Frame1_socrates.
 :Rule2Frame3 kbdbg:is_for_rule :rule2.
 #NYAN
 :Rule4Frame4 kbdbg:is_for_rule :rule4.
-:Rule4Frame4_?nobody kbdbg:is_bound_to :Rule5Frame1_socrates.
+:Rule4Frame4_%3Fnobody kbdbg:is_bound_to :Rule5Frame1_socrates.
 #NYAN
 #NYAN
 #NYAN
 #he's mortal, and he's dead
-:Rule4Frame4_?nobody kbdbg:is_unbound_from :Rule5Frame1_socrates.
+:Rule4Frame4_%3Fnobody kbdbg:is_unbound_from :Rule5Frame1_socrates.
 :Rule3Frame5 kbdbg:is_for_rule :rule3.
-:Rule1Frame2_?X kbdbg:is_unbound_from :Rule5Frame1_socrates.
+:Rule1Frame2_%3FX kbdbg:is_unbound_from :Rule5Frame1_socrates.
 :Rule2Frame6 kbdbg:is_for_rule :rule2.
 :Rule3Frame7 kbdbg:is_for_rule :rule3.
 #who is mortal?
+:Rule6 a kbdbg:rule.
 :Rule6 kbdbg:has_head :Rule6Head.
 :Rule6Frame8 kbdbg:is_for_rule :rule6.
 :Rule1Frame9 kbdbg:is_for_rule :rule1.
-:Rule6Frame8_?who kbdbg:is_bound_to :Rule1Frame9_?X.
+:Rule6Frame8_%3Fwho kbdbg:is_bound_to :Rule1Frame9_%3FX.
 :Rule2Frame10 kbdbg:is_for_rule :rule2.
-:Rule1Frame9_?X kbdbg:is_bound_to :Rule2Frame10_socrates.
+:Rule1Frame9_%3FX kbdbg:is_bound_to :Rule2Frame10_socrates.
 #NYAN
 :Rule4Frame11 kbdbg:is_for_rule :rule4.
-:Rule4Frame11_?nobody kbdbg:is_bound_to :Rule2Frame10_socrates.
+:Rule4Frame11_%3Fnobody kbdbg:is_bound_to :Rule2Frame10_socrates.
 #NYAN
 #NYAN
 #NYAN
-#Rule6Frame8_?who=Rule1Frame9_?X=Rule2Frame10_socrates("socrates") is mortal, and he's dead
-:Rule4Frame11_?nobody kbdbg:is_unbound_from :Rule2Frame10_socrates.
-:Rule1Frame9_?X kbdbg:is_unbound_from :Rule2Frame10_socrates.
+#Rule6Frame8_%3Fwho=Rule1Frame9_%3FX=Rule2Frame10_socrates("socrates") is mortal, and he's dead
+:Rule4Frame11_%3Fnobody kbdbg:is_unbound_from :Rule2Frame10_socrates.
+:Rule1Frame9_%3FX kbdbg:is_unbound_from :Rule2Frame10_socrates.
 :Rule3Frame12 kbdbg:is_for_rule :rule3.
-:Rule1Frame9_?X kbdbg:is_bound_to :Rule3Frame12_koo.
+:Rule1Frame9_%3FX kbdbg:is_bound_to :Rule3Frame12_koo.
 #NYAN
-:Rule1Frame9_?X kbdbg:is_unbound_from :Rule3Frame12_koo.
-:Rule6Frame8_?who kbdbg:is_unbound_from :Rule1Frame9_?X.
-:Rule1Frame9_?X kbdbg:is_bound_to :Rule6Frame8_?who.
-:Rule1Frame9_?X kbdbg:is_unbound_from :Rule6Frame8_?who.
+:Rule1Frame9_%3FX kbdbg:is_unbound_from :Rule3Frame12_koo.
+:Rule6Frame8_%3Fwho kbdbg:is_unbound_from :Rule1Frame9_%3FX.
+:Rule1Frame9_%3FX kbdbg:is_bound_to :Rule6Frame8_%3Fwho.
+:Rule1Frame9_%3FX kbdbg:is_unbound_from :Rule6Frame8_%3Fwho.
 :Rule2Frame13 kbdbg:is_for_rule :rule2.
-:Rule6Frame8_?who kbdbg:is_bound_to :Rule2Frame13_socrates.
-:Rule6Frame8_?who kbdbg:is_unbound_from :Rule2Frame13_socrates.
+:Rule6Frame8_%3Fwho kbdbg:is_bound_to :Rule2Frame13_socrates.
+:Rule6Frame8_%3Fwho kbdbg:is_unbound_from :Rule2Frame13_socrates.
 :Rule3Frame14 kbdbg:is_for_rule :rule3.
-:Rule6Frame8_?who kbdbg:is_bound_to :Rule3Frame14_koo.
-:Rule6Frame8_?who kbdbg:is_unbound_from :Rule3Frame14_koo.
+:Rule6Frame8_%3Fwho kbdbg:is_bound_to :Rule3Frame14_koo.
+:Rule6Frame8_%3Fwho kbdbg:is_unbound_from :Rule3Frame14_koo.
