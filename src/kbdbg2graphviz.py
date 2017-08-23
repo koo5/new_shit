@@ -17,6 +17,14 @@ logger=logging.getLogger("kbdbg")
 logger.addHandler(gv_handler)
 gv=logger.info
 
+logger=logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.debug("hi")
+log=logger.debug
+
+def value(subject=None, predicate=rdflib.term.URIRef(u'http://www.w3.org/1999/02/22-rdf-syntax-ns#value'), object=None, default=None, any=False):
+	return value(subject, predicate, object, default, any)
+
 def process_input(step, lines):
 	g = Graph()
 	i = "\n".join(lines)
@@ -25,31 +33,58 @@ def process_input(step, lines):
 	#now query g and generate one graphviz image
 	gv("digraph frame"+str(step) + "{")
 
-	for x in g.subjects(RDF.type, kbdbg.rule):
-		print (x)
-
-
-	for rule, head in g.subjects(kbdbg.has_head):
+	for rule in g.subjects(RDF.type, kbdbg.rule):
+		log (rule+":")
+		head = g.value(rule, kbdbg.has_head)
 		#from IPython import embed;embed()
-		label = '<<html><table><tr><td>{'
+		html = '<<html><table><tr><td>{'
 		port = 0
 		if head:
-			html += head.pred + '(</td>'
-			for arg, is_last in tell_if_is_last_element(head.args):
+			pred = g.value(head, kbdbg.has_pred)
+			html += pred + '(</td>'
+			arg_index = 0
+			for arg, is_last in tell_if_is_last_element(Collection(g, g.value(head, kbdbg.has_args))):
+				#g.value(
 				pn = s.kbdbg_name + 'port' + str(port)
 				html += '<td port="' + pn + '">' + arg + '</td>'
-				kbdbg(":"+s.kbdbg_name + ' kbdbg:has_port ' + ":"+pn)
-				kbdbg(":"+pn + ' kbdbg:belongs_to_thing "' + arg + '"')
+				#kbdbg(":"+s.kbdbg_name + ' kbdbg:has_port ' + ":"+pn)
+				#kbdbg(":"+pn + ' kbdbg:belongs_to_thing "' + arg + '"')
 				port += 1
 				if not is_last:
 					html += '<td>, </td>'
 			html += '<td>).'
 			html += '} <= {'
-			kbdbg(html + '}</td></tr></html>>"')
 
-		labels[rule] = label
+		body = g.value(rule, kbdbg.has_body)
+		#from IPython import embed;embed()
+		port = 0
+		if head:
+			pred = g.value(head, kbdbg.has_pred)
+			html += pred + '(</td>'
+			arg_index = 0
+			for arg, is_last in tell_if_is_last_element(Collection(g, g.value(head, kbdbg.has_args))):
+				#g.value(
+				pn = s.kbdbg_name + 'port' + str(port)
+				html += '<td port="' + pn + '">' + arg + '</td>'
+				#kbdbg(":"+s.kbdbg_name + ' kbdbg:has_port ' + ":"+pn)
+				#kbdbg(":"+pn + ' kbdbg:belongs_to_thing "' + arg + '"')
+				port += 1
+				if not is_last:
+					html += '<td>, </td>'
+			html += '<td>).'
+			html += '} <= {'
 
-	gv("digraph frame"+str(step) + "}")
+		html ++ '}</td></tr></html>>"'
+
+		rule_html_labels[rule] = html
+		#thing_to_port[rule][
+
+
+
+
+
+
+	gv("}")
 
 
 if __name__ == '__main__':
