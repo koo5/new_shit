@@ -28,10 +28,6 @@ if marpa == True:
 	import marpa_cffi.marpa_codes
 	import marpa_cffi.graphing_wrapper as graphing_wrapper
 	from marpa_cffi.marpa import *
-		
-
-	
-	
 else:
 	log(marpa)
 	log('no marpa, no parsing!')
@@ -166,9 +162,16 @@ class ThreadedMarpa(object):
 		#we dont have a separate tokenizer
 		s.named_symbol('nonspecial_char')
 		s.named_symbol('known_char')
-		#maybe just convenience
+
+		#these should eventually be defined in lemon lang
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
+
+		s.named_symbol('whitespace_char')
+		s.named_symbol('maybe_whitespace')
+		for x in ' \n\t':
+			s.rule("whitespace_char", s.syms.whitespace_char, s.symbol(x))
+		s.sequence('maybe_whitespace', s.syms.maybe_whitespace, action=ignore, min=0)
 
 		s.scope = scope
 		anything = start==None

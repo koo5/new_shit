@@ -272,9 +272,6 @@ class Menu(SidebarFrame):
 	def current_parser_node(s, x):
 		s._current_parser_node = weakref(x)
 
-
-
-
 	def must_recollect(s):
 		if s._changed:
 			s._changed = False

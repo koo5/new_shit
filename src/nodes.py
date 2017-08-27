@@ -649,6 +649,10 @@ class Node(NodePersistenceStuff, element.Element):
 	def scope(s):
 		return scope_after_hiding_and_unhiding(s)
 
+	def full_scope(s):
+		return what_in_my_module_do_i_see(s) + what_module_sees(s.module)
+
+
 	@property
 	def nodecls(s):
 		return [i for i in s.scope() if isinstance(i, (NodeclBase, EnumType))]
@@ -2387,6 +2391,8 @@ class Parser(ParserPersistenceStuff, ParserBase):
 				if type == B.text:
 					r = Text(i0)
 
+
+
 		r.parent = s
 		return r
 
@@ -3277,7 +3283,8 @@ def build_in_lemon_language():
 
 
 	build_in(SyntaxedNodecl(FunctionDefinition,
-				   [TextTag("deffun:"), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
+				   [TextTag("def "), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
+				   #[TextTag("def "), ChildTag("sig"), TextTag(":"), MaybeWhitespace() , TextTag("\n"), MaybeWhitespace(), ChildTag("body")],
 					{'sig': B.function_signature_list,
 					 'body': B.statements}))
 
@@ -3845,10 +3852,8 @@ def register_class_symbol(cls):
 					elif isinstance(i, TypedParameter):
 						#TypedParameter means its supposed to be an expression
 						a = B.expression.symbol
-						assert a,  i
 					elif isinstance(i, UnevaluatedArgument):
 						a = deref_decl(i.type).class_symbol
-						assert a,  i
 					assert a,  i
 					rhs.append(a)
 					rhs.append(m.syms.maybe_spaces)
@@ -3949,10 +3954,18 @@ def register_class_symbol(cls):
 
 	elif Statements.__subclasscheck__(cls):
 		log("registering Statements grammar")
+		parser = m.symbol('parser')
+		parser_one_char = m.symbol('parser_one_char')
+		m.rule('parser1', parser_one_char, m.syms.nonspecial_char)
+		m.rule('parser2', parser_one_char, m.syms.known_char)
+		m.sequence('parser', parser, parser_one_char, min=0)
+		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
+		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
 		optionally_elements = m.symbol('optionally_elements')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char('\n'), 0)
+		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
 		r = m.symbol('Statements')
-		m.rule('list literal', r, [m.known_char('{'), optionally_elements, m.known_char('}')], cls.from_parse)
+		m.rule('statements literal', r, [m.maybe_whitespace, m.known_char('{'), m.maybe_whitespace, optionally_elements, m.maybe_whitespace, m.known_char('}')], cls.from_parse)
 		return r
 
 

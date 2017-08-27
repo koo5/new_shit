@@ -17,6 +17,7 @@ source = input.value(command, ti.Source, None)
 print('source:'+source)
 assert(source.startswith('file://'))#todo use https://github.com/YAmikep/datasource/tree/master/datasource
 text = open(source[7:]).read()
+print ("input:\n" + text)
 
 #from IPython import embed;embed()
 
@@ -34,32 +35,28 @@ nodes.autocomplete = False
 from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 nodes.m = m = ThreadedMarpa(print, True)
 
-def handle(text=None):
-	msg = m.t.output.get()
-	if msg.message == 'precomputed':
-		ts = m.string2tokens(text)
-		print ("tokens", ts)
-		m.enqueue_parsing([ts, text])
-		#recurse to wait for 'parsed'
-		return handle()
-	elif msg.message == 'parsed':
-		print (len(msg.results), "results")
-		return msg.results
-	else:
-		print(msg)
-
-def parse(text):
-	for i,x in enumerate(text):#this just prints the characters you got from stdin
-		print(i, x)#prefixed by their position in the string
+def parse_sync(p, text=None):
+	m.collect_grammar(p.full_scope(), p.scope(), p.type)
 	m.enqueue_precomputation(None)
-	return handle(text)
+	while True:
+		msg = m.t.output.get()
+		if msg.message == 'precomputed':
+			ts = m.string2tokens(text)
+			print ("tokens", ts)
+			m.enqueue_parsing([ts, text])
+			#recurse to wait for 'parsed'
+		elif msg.message == 'parsed':
+			return msg.results
+		else:
+			raise 666
 
 r = nodes.make_root()
 module = r['empty module']
-m.collect_grammar(module.full_scope(), module.scope(), nodes.B.statement)
+p = nodes.Parser()
+p.add(nodes.Text(value = text))
+module.ch.statements.add(p)
 
-print ("input:\n" + text)
-r = parse(text)
+r = parse_sync(p, text)
 if (r and len(r)):
 	p=r[0]
 	print (p.eval())

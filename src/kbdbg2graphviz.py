@@ -22,8 +22,8 @@ logger.setLevel(logging.DEBUG)
 logger.debug("hi")
 log=logger.debug
 
-def value(subject=None, predicate=rdflib.term.URIRef(u'http://www.w3.org/1999/02/22-rdf-syntax-ns#value'), object=None, default=None, any=False):
-	return value(subject, predicate, object, default, any)
+def value(g, subject=None, predicate=rdflib.term.URIRef(u'http://www.w3.org/1999/02/22-rdf-syntax-ns#value'), object=None, default=None, any=False):
+	return g.value(subject, predicate, object, default, any)
 
 def process_input(step, lines):
 	g = Graph()
@@ -34,50 +34,19 @@ def process_input(step, lines):
 	gv("digraph frame"+str(step) + "{")
 
 	for rule in g.subjects(RDF.type, kbdbg.rule):
-		log (rule+":")
-		head = g.value(rule, kbdbg.has_head)
-		#from IPython import embed;embed()
-		html = '<<html><table><tr><td>{'
-		port = 0
-		if head:
-			pred = g.value(head, kbdbg.has_pred)
-			html += pred + '(</td>'
-			arg_index = 0
-			for arg, is_last in tell_if_is_last_element(Collection(g, g.value(head, kbdbg.has_args))):
-				#g.value(
-				pn = s.kbdbg_name + 'port' + str(port)
-				html += '<td port="' + pn + '">' + arg + '</td>'
-				#kbdbg(":"+s.kbdbg_name + ' kbdbg:has_port ' + ":"+pn)
-				#kbdbg(":"+pn + ' kbdbg:belongs_to_thing "' + arg + '"')
-				port += 1
-				if not is_last:
-					html += '<td>, </td>'
-			html += '<td>).'
-			html += '} <= {'
+		do_rule(rule)
 
-		body = g.value(rule, kbdbg.has_body)
-		#from IPython import embed;embed()
-		port = 0
-		if head:
-			pred = g.value(head, kbdbg.has_pred)
-			html += pred + '(</td>'
-			arg_index = 0
-			for arg, is_last in tell_if_is_last_element(Collection(g, g.value(head, kbdbg.has_args))):
-				#g.value(
-				pn = s.kbdbg_name + 'port' + str(port)
-				html += '<td port="' + pn + '">' + arg + '</td>'
-				#kbdbg(":"+s.kbdbg_name + ' kbdbg:has_port ' + ":"+pn)
-				#kbdbg(":"+pn + ' kbdbg:belongs_to_thing "' + arg + '"')
-				port += 1
-				if not is_last:
-					html += '<td>, </td>'
-			html += '<td>).'
-			html += '} <= {'
-
-		html ++ '}</td></tr></html>>"'
-
-		rule_html_labels[rule] = html
-		#thing_to_port[rule][
+	for binding in g.subjects(RDF.type, kbdbg.binding):
+		if g.value(binding, kbdbg.was_unbound):
+			continue
+		source_thing = g.value(binding, kbdbg.has_source)
+		target_thing = g.value(binding, kbdbg.has_target)
+		#
+		target_frame = g.value(binding, kbdbg.belongs_to_frame)
+		#
+		target_name = g.value(binding, kbdbg.has_name)
+		for port in rules[g.value(source_frame, kbdbg.belongs_to_rule)].body_ports:
+		gv(source_frame + ":" + [source_name] -> " + target_frame
 
 
 
@@ -85,6 +54,43 @@ def process_input(step, lines):
 
 
 	gv("}")
+
+
+def do_rule(rule):
+		log (rule+":")
+		head = g.value(rule, kbdbg.has_head)
+		body_items_list_name = g.value(rule, kbdbg.has_body)
+		#from IPython import embed;embed()
+		html = '<<html><table><tr><td>{'
+		port_index = 0
+		if head:
+			do_pred(port_index, html, head)
+		html += '}'
+		if body_items_list_name:
+			html += ' <= {'
+			body_items_collection = Collection(g, body_items_list_name)
+			for body_item in body_items_collection:
+				do_pred(port_index, html, body_item)
+			html += '}'
+		html = '</tr></table></html>>'
+		rule_html_labels[rule] = html
+		#thing_to_port[rule][
+
+def do_term(port_index, html, term):
+	pred = g.value(term, kbdbg.has_pred)
+	html += pred + '(</td>'
+	arg_index = 0
+	for arg, is_last in tell_if_is_last_element(Collection(g, g.value(term, kbdbg.has_args))):
+		port_name = rule + 'port' + str(port_index)
+		html += '<td port="' + port_name + '">' + arg + '</td>'
+		port_index += 1
+		if not is_last:
+			html += '<td>, </td>'
+	html += '<td>). '
+
+
+
+
 
 
 if __name__ == '__main__':
