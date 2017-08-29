@@ -3957,7 +3957,7 @@ def register_class_symbol(cls):
 		parser = m.symbol('parser')
 		parser_one_char = m.symbol('parser_one_char')
 		m.rule('parser1', parser_one_char, m.syms.nonspecial_char)
-		m.rule('parser2', parser_one_char, m.syms.known_char)
+		m.rule('parser2', p+arser_one_char, m.syms.known_char)
 		m.sequence('parser', parser, parser_one_char, min=0)
 		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
 		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
@@ -3967,6 +3967,16 @@ def register_class_symbol(cls):
 		r = m.symbol('Statements')
 		m.rule('statements literal', r, [m.maybe_whitespace, m.known_char('{'), m.maybe_whitespace, optionally_elements, m.maybe_whitespace, m.known_char('}')], cls.from_parse)
 		return r
+
+
+build_in(SyntaxedNodecl(Sequence, ['sequence of', ChildTag('min'), 'or more', ChildTag('itemtype')],
+{'min':'number',
+'itemtype':B.type})
+
+build_in(SyntaxedNodecl(Statements, ['{', ChildTag('body'), '}'],
+                        {'body': B.statementsbody}))
+
+
 
 
 	elif List.__subclasscheck__(cls):

@@ -39,14 +39,21 @@ def process_input(step, lines):
 	for binding in g.subjects(RDF.type, kbdbg.binding):
 		if g.value(binding, kbdbg.was_unbound):
 			continue
-		source_thing = g.value(binding, kbdbg.has_source)
-		target_thing = g.value(binding, kbdbg.has_target)
-		#
-		target_frame = g.value(binding, kbdbg.belongs_to_frame)
-		#
-		target_name = g.value(binding, kbdbg.has_name)
-		for port in rules[g.value(source_frame, kbdbg.belongs_to_rule)].body_ports:
-		gv(source_frame + ":" + [source_name] -> " + target_frame
+		source = Dotdict()
+		target = Dotdict()
+		source.thing = g.value(binding, kbdbg.has_source)
+		source.string = g.value(source.thing, kbdbg.has_string)
+		source.frame = g.value(source.thing, kbdbg.belongs_to_frame)
+		source.rule = g.value(source.frame, kbdbg.belongs_to_rule)
+		target.thing = g.value(binding, kbdbg.has_target)
+		target.string = g.value(target.thing, kbdbg.has_string)
+		target.frame = g.value(target.thing, kbdbg.belongs_to_frame)
+		target.rule = g.value(target.frame, kbdbg.belongs_to_rule)
+		for source_port in g.values(source_rule, kbdbg.has_body_port)
+			if source.string == g.value(source.port, kbdbg.belongs_to_thing_string)
+				for target.port in g.values(target.rule, kbdbg.has_head_port)
+					if target.string == g.value(target.port, kbdbg.belongs_to_thing_string)
+						gv(source.frame + ":" + source.port + " -> " + target.frame + ":" + target.port)
 
 
 
