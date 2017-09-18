@@ -2342,6 +2342,11 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		super(Parser, s).__init__()
 
 	@property
+	def parsed_symbol(s):
+		if s.is_tail_of_statements_body:
+
+
+	@property
 	def type(s):
 		p = s.parent
 		if isinstance(p, Parser):
@@ -3961,20 +3966,17 @@ def register_class_symbol(cls):
 		m.sequence('parser', parser, parser_one_char, min=0)
 		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
 		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
-		optionally_elements = m.symbol('optionally_elements')
 		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
 		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-		r = m.symbol('Statements')
-		m.rule('statements literal', r, [m.maybe_whitespace, m.known_char('{'), m.maybe_whitespace, optionally_elements, m.maybe_whitespace, m.known_char('}')], cls.from_parse)
+		r = m.symbol('Statements literal head')
+		m.rule('statements literal head', r, [m.maybe_whitespace, m.knowffffn_char('{'), m.maybe_whitespace, m.known_char('}')], empty_statements_body_from_parse)
 		return r
 
 
-build_in(SyntaxedNodecl(Sequence, ['sequence of', ChildTag('min'), 'or more', ChildTag('itemtype')],
-{'min':'number',
-'itemtype':B.type})
-
-build_in(SyntaxedNodecl(Statements, ['{', ChildTag('body'), '}'],
-                        {'body': B.statementsbody}))
+#build_in(SyntaxedNodecl(Sequence, ['sequence of', ChildTag('min'), 'or more', ChildTag('itemtype')],
+#{'min':'number', 'itemtype':B.type})
+#build_in(SyntaxedNodecl(Statements, ['{', ChildTag('body'), '}'],
+#                        {'body': B.statementsbody}))
 
 
 

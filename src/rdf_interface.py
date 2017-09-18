@@ -36,7 +36,7 @@ from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 nodes.m = m = ThreadedMarpa(print, True)
 
 def parse_sync(p, text=None):
-	m.collect_grammar(p.full_scope(), p.scope(), p.type)
+	m.collect_grammar(p.full_scope(), p.scope(), p.parsed_symbol)
 	m.enqueue_precomputation(None)
 	while True:
 		msg = m.t.output.get()
