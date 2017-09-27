@@ -67,6 +67,7 @@ class ThreadedMarpa(object):
 		s.known_chars = {}
 		s.rules = []
 		s.symbol_ranks = {}
+		s._parser_symbol = None
 
 	def set_symbol_rank(s, sy, r):
 		s.symbol_ranks[sy] = r
@@ -151,6 +152,16 @@ class ThreadedMarpa(object):
 		return s.sorted_by_values(s.debug_sym_names)
 
 	#---------
+
+	@property
+	def parser_symbol(m):
+		if m._parser_symbol == None:
+			m._parser_symbol = m.symbol('parser')
+			parser_one_char = m.symbol('parser_one_char')
+			m.rule('parser1', parser_one_char, m.syms.nonspecial_char)
+			m.rule('parser2', parser_one_char, m.syms.known_char)
+			m.sequence('parser', parser, parser_one_char, min=0)
+		return m._parser_symbol
 
 
 	def collect_grammar(s,  full_scope:list, scope:list,  start=None):

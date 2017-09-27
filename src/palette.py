@@ -61,5 +61,7 @@ def palette(s, scope, text, parser):
 		return [PaletteMenuItem(tb(), Ref(x)) for x in nodecls]
 	elif isinstance(s, NodeclBase):
 		return [PaletteMenuItem(tb(), s.instance_class.fresh())]
+	elif isinstance(s, MycroftNodecl):
+		return [PaletteMenuItem(tb(), s.instance_class.fresh(cmd)) for cmd in mycroft.complete(text)]
 	else:
 		return []
