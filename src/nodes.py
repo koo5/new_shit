@@ -3805,7 +3805,7 @@ element.Module = Module
 
 
 
-
+"""
 build_in(SyntaxedNodecl(Sequence, ['sequence of', ChildTag('min'), 'or more', ChildTag('itemtype')],
                         {'min': 'number', 'itemtype': B.type})
 build_in(Definition({'name': Text('statementsbody'), 'type': Sequence({'min': Number(0), 'itemtype': B.statement)))
@@ -3815,10 +3815,11 @@ build_in(SyntaxedNodecl(Statements, ['{', ChildTag('body'), '}'], {'body': B.sta
 class Sequence(Syntaxed):
 	pass
 
-
+"""
 """
 todo: try pre-generating grammar for marpa 
 (add sub-rule objects, linearize grammars depth-first up until <reparse tag>,..?
+with or without tail, whatever i can get working
 
 plan b: try gf
 plan c: avoid need of reparsing, force nonambiguous grammar for identifiers, go back to a solution employing the editor
@@ -3828,17 +3829,18 @@ plan c: avoid need of reparsing, force nonambiguous grammar for identifiers, go 
 def register_symbol(s):
 	log = logging.getLogger("marpa").debug
 
-	if isinstance(s, Sequence):
-		syntax_for_parser = []
+	#if isinstance(s, Sequence):
+	#	syntax_for_parser = []
 
-		"""
+	"""
 		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
 		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
 		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
 		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
 		r = m.symbol('Statements literal head')
 		m.rule('statements literal head', r, [m.maybe_whitespace, m.known_char('{'), m.maybe_whitespace, m.known_char('}')], empty_statements_body_from_parse)
-		return r"""
+		return r
+	"""
 
 	if isinstance(s, Definition):
 		xxx
