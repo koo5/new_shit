@@ -2341,9 +2341,9 @@ class Parser(ParserPersistenceStuff, ParserBase):
 	def __init__(s):
 		super(Parser, s).__init__()
 
-	@property
-	def parsed_symbol(s):
-		if s.is_tail_of_statements_body:
+	#@property
+	#def parsed_symbol(s):
+	#	if s.is_tail_of_statements_body:
 
 
 	@property
@@ -3989,6 +3989,27 @@ def register_class_symbol(cls):
 		r = m.symbol('number')
 		m.rule('number_is_digits', r, digits, (ident, cls))
 		return r
+
+
+
+
+	elif Statements.__subclasscheck__(cls):
+		log("registering Statements grammar")
+		parser = m.symbol('parser')
+		parser_one_char = m.symbol('parser_one_char')
+		m.rule('parser1', parser_one_char, m.syms.nonspecial_char)
+		m.rule('parser2', p+arser_one_char, m.syms.known_char)
+		m.sequence('parser', parser, parser_one_char, min=0)
+		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
+		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
+		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+		r = m.symbol('Statements literal head')
+		m.rule('statements literal head', r, [m.maybe_whitespace, m.knowffffn_char('{'), m.maybe_whitespace, m.known_char('}')], empty_statements_body_from_parse)
+		return r
+
+
+
 
 	elif List.__subclasscheck__(cls):
 		log("registering list grammar")
