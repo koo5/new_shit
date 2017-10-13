@@ -1,6 +1,7 @@
 from nodes import *
 
 def tb():
+	return "hi"
 	import traceback
 	return (traceback.extract_stack())
 
@@ -9,14 +10,10 @@ def palette(s, scope, text, parser):
 	if isinstance(s, CompoundNodeDef):
 		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), CompoundNode(s))]
 	elif isinstance(s, FunctionCallNodecl):
-		#override NodeclBase palette() which returns a menuitem with a fresh() instance_class,
-		#FunctionCall cant be instantiated without a target.
-		return []
-		#the stuff below is now performed in FunctionDefinitionBase
-#		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
-#		return [PaletteMenuItem(FunctionCall(x)) for x in decls]
-	elif isinstance(s, FunctionDefinitionBase):
-		return [PaletteMenuItem(tb(), FunctionCall(s))]
+		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
+		return [PaletteMenuItem(tb(), FunctionCall(x)) for x in decls]
+	#elif isinstance(s, FunctionDefinitionBase):
+	#	return [PaletteMenuItem(tb(), FunctionCall(s))]
 	elif isinstance(s, Definition):
 		return palette(s.ch.type, scope, text, None) + [PaletteMenuItem(tb(), Ref(s), 0)]
 	elif isinstance(s, SyntacticCategory):
@@ -61,7 +58,7 @@ def palette(s, scope, text, parser):
 		return [PaletteMenuItem(tb(), Ref(x)) for x in nodecls]
 	elif isinstance(s, NodeclBase):
 		return [PaletteMenuItem(tb(), s.instance_class.fresh())]
-	elif isinstance(s, MycroftNodecl):
-		return [PaletteMenuItem(tb(), s.instance_class.fresh(cmd)) for cmd in mycroft.complete(text)]
+#	elif isinstance(s, MycroftNodecl):
+#		return [PaletteMenuItem(tb(), s.instance_class.fresh(cmd)) for cmd in mycroft.complete(text)]
 	else:
 		return []

@@ -2926,31 +2926,37 @@ def make_root():
 
 	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
 
+	r["intro"] = B.builtinmodule.inst_fresh()
+	r["intro"].ch.statements.items = [
+		Comment("""
+
+	the ui of lemon is currently conciped like this:
+	root is a dictionary with keys like "intro", "some program" etc.
+	it's values are mostly modules. modules can be collapsed and expanded and they
+	hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
+
+	Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
+	ctrl-del will delete something. Inserting of nodes happens in the Parser node. it looks like this:"""),
+		Parser(),
+		Comment("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
+		Comment("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
+	]
+
+	r["intro"].ch.statements.view_mode = 0
+
+
 	r["repl"] = B.builtinmodule.inst_fresh()
 	r["repl"].ch.statements.parser_class                                                                                                             = ReplParser
 	r["repl"].ch.statements.items = [ReplParser()]
 	r["repl"].ch.statements.newline()
 	r["repl"].ch.statements.view_mode=2
 
-	r["intro"] = B.builtinmodule.inst_fresh()
-	r["intro"].ch.statements.items = [
-		Comment("""
 
-the interface of lemon is currently implemented like this:
-root is a dictionary with keys like "intro", "some program" etc.
-it's values are mostly modules. modules can be collapsed and expanded and they
-hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
-
-Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
-ctrl-del will delete something. Inserting of nodes happens in the Parser node."""),
-		#it looks like this:"""),
-		#Parser(b['number']), todo:ParserWithType
-		Comment("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
-		Comment("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
-	]
-
-	r["intro"].ch.statements.view_mode=0
-
+	r["empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
+	r["empty module"].ch.statements.view_mode = 2
+	uh = B.unhidenode.inst_fresh()
+	uh.ch.what.add(Text("number"))
+	r["empty module"].ch.statements.items = [uh, Parser()]
 
 	r["builtins"] = B.builtinmodule.inst_fresh()
 	r["builtins"].ch.statements.items = list(itervalues(B._dict))
@@ -2963,10 +2969,6 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	#r["loaded program"] = B.module.inst_fresh()
 	#r["loaded program"].ch.name = Text("placeholder")
 	#r["loaded program"].ch.statements.view_mode=0
-
-
-	r["empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
-
 
 	r["clipboard"] = B.module.inst_fresh()
 	r["clipboard"].ch.name = Text("clipboard")
@@ -2984,8 +2986,8 @@ ctrl-del will delete something. Inserting of nodes happens in the Parser node.""
 	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
 
 
-	essentials = [x.ch.statements for x in library.items if x.ch.name.pyval == "essentials"][0]
-	r.essentials.banana = essentials.by_name('Banana')
+	#essentials = [x.ch.statements for x in library.items if x.ch.name.pyval == "essentials"][0]
+	#r.essentials.banana = essentials.by_name('Banana')
 
 
 
@@ -3842,8 +3844,8 @@ def register_symbol(s):
 		return r
 	"""
 
-	if isinstance(s, Definition):
-		xxx
+	#if isinstance(s, Definition):
+	#	xxx
 	if isinstance(s, SyntacticCategory):
 		s._symbol = m.symbol(s.name)
 		return
@@ -3993,20 +3995,20 @@ def register_class_symbol(cls):
 
 
 
-	elif Statements.__subclasscheck__(cls):
-		log("registering Statements grammar")
-		parser = m.symbol('parser')
-		parser_one_char = m.symbol('parser_one_char')
-		m.rule('parser1', parser_one_char, m.syms.nonspecial_char)
-		m.rule('parser2', p+arser_one_char, m.syms.known_char)
-		m.sequence('parser', parser, parser_one_char, min=0)
-		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
-		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
-		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-		r = m.symbol('Statements literal head')
-		m.rule('statements literal head', r, [m.maybe_whitespace, m.knowffffn_char('{'), m.maybe_whitespace, m.known_char('}')], empty_statements_body_from_parse)
-		return r
+	#elif Statements.__subclasscheck__(cls):
+	#	log("registering Statements grammar")
+	#	parser = m.symbol('parser')
+	#	parser_one_char = m.symbol('parser_one_char')
+	#	m.rule('parser1', parser_one_char, m.syms.nonspecial_char)
+	#	m.rule('parser2', p+arser_one_char, m.syms.known_char)
+	#	m.sequence('parser', parser, parser_one_char, min=0)
+	#	statement_followed_by_parser = m.symbol('statement_followed_by_parser')
+	#	m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
+	#	m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+	#	m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+	#	r = m.symbol('Statements literal head')
+	#	m.rule('statements literal head', r, [m.maybe_whitespace, m.knowffffn_char('{'), m.maybe_whitespace, m.known_char('}')],  empty_statements_body_from_parse)
+	#	return r
 
 
 
@@ -4036,33 +4038,35 @@ def register_class_symbol(cls):
 def scope_after_hiding_and_unhiding(s):
 	assert(type(s.parent) != Root)
 	local = what_in_my_module_do_i_see(s)
-	library = what_module_sees(s.module)
-	all = library + local
-	r = all
+	library = s.module.scope()
+	r = library + local
+	full = local + what_module_sees(s.module)
 	for i in local:
 		dd = deref_decl(i.decl)
 		if dd == B.hidenode:
-			what = i.ch.what.parsed().value
+			what = i.ch.what.parsed.value
 			if what == "everything":
 				r = []
 			else: raise Exception("not implemented")
 		elif dd == B.hideexceptnode:
-			what = i.ch.what.parsed().value
-			exc = i.ch.exceptions.parsed().pyval
+			what = i.ch.what.parsed.value
+			exc = i.ch.exceptions.parsed.pyval
 			if what == "everything":
 				r = [x for x in r if x.name in exc]
 			else: raise Exception("not implemented")
-		#if type(i) == UnhideNode:
-		#	if what == "everything":
-		#		r = all[:]
-		#	else:
-		#		for i in all:
-		#			if i.name == what:
-		#				if isinstance(i, Module):
-		#					for j in i.ch.items:
-		#						scope.append(j)
-		#				else:
-		#					scope.append(i)
+		elif dd == B.unhidenode:
+			what = i.ch.what.parsed.pyval
+			log("unhide:%s"%what)
+			#if what.parsed.eq(Text("everything")):
+			#	r = full[:]
+			#else:
+			for j in full:
+				if is_decl(j) and j.name in what:
+					if isinstance(j, Module):
+						for k in j.ch.items:
+							r.append(j)
+					else:
+						r.append(j)
 	return r
 
 def collect_modules_seen_by_module(module):

@@ -3,8 +3,6 @@
 import sys, traceback
 import operator
 import types
-from queue import Queue
-import threading
 from itertools import starmap, repeat
 from pprint import pformat as pp
 
@@ -14,6 +12,7 @@ log=logger.debug
 info=logger.info
 
 from lemon_utils.dotdict import Dotdict
+from lemon_utils.lemmacsthread import LemmacsThread
 from lemon_utils.lemon_six import unicode, itervalues, iteritems
 from lemon_utils.utils import uniq
 from lemon_args import args
@@ -42,13 +41,14 @@ else:
 client = None
 
 class ThreadedMarpa(object):
-	def __init__(s ,send_thread_message, debug=True):
+	def __init__(s, send_thread_message, debug=True):
 		global client
 		client = s
 		s.debug = debug
 		s.clear()
 		#---
-		s.t = MarpaThread(send_thread_message)
+		s.t = MarpaThread()
+		s.t.send_thread_message = send_thread_message
 		s.t.start()
 		s.cancel = False
 		if args.graph_grammar:
@@ -56,8 +56,6 @@ class ThreadedMarpa(object):
 			graphing_wrapper.start()
 			graphing_wrapper.symid2name = s.symbol2debug_name
 			lib.rule_new = graphing_wrapper.rule_new
-
-
 
 	def clear(s):
 		if s.debug:
@@ -107,8 +105,9 @@ class ThreadedMarpa(object):
 			assert type(action) in (tuple, types.FunctionType, types.MethodType)
 
 		log((debug_name, lhs, rhs, action, rank))
-
-		s.rules.append((False, debug_name, lhs, rhs, action, rank))
+		rule = (False, debug_name, lhs, rhs, action, rank)
+		if not rule in s.rules:
+			s.rules.append(rule)
 
 	def sequence(s,debug_name, lhs, rhs, action=ident, separator=-1, min=1, proper=False):
 		assert type(lhs) == symbol_int
@@ -165,7 +164,9 @@ class ThreadedMarpa(object):
 
 
 	def collect_grammar(s,  full_scope:list, scope:list,  start=None):
-		assert scope == uniq(scope)
+		full_scope = full_scope[:]
+		scope = scope[:]
+		assert scope == uniq(scope),  scope - uniq(scope)
 
 		s.clear()
 		log("collect_grammar:...")
@@ -182,7 +183,7 @@ class ThreadedMarpa(object):
 		s.named_symbol('maybe_whitespace')
 		for x in ' \n\t':
 			s.rule("whitespace_char", s.syms.whitespace_char, s.symbol(x))
-		s.sequence('maybe_whitespace', s.syms.maybe_whitespace, action=ignore, min=0)
+		s.sequence('maybe_whitespace', s.syms.maybe_whitespace, s.syms.whitespace_char,action=ignore, min=0)
 
 		s.scope = scope
 		anything = start==None
@@ -195,8 +196,10 @@ class ThreadedMarpa(object):
 
 		for i in full_scope:
 			if type(i).__name__ == "WorksAs":
+				log('WorksAs')
 				if i.is_relevant_for(scope):
-					scope.append(i)
+					if not i in scope:
+						scope.append(i)
 
 		for i in scope:
 			#the property is accessed here, forcing the registering of the nodes grammars
@@ -276,22 +279,15 @@ class ThreadedMarpa(object):
 			raw = tr[1],
 			rules = s.rules[:]))
 
-class LoggedQueue(Queue):
-	def put(s, x):
-		if args.log_parsing:
-			log(pp(x))
-		super().put(x)
 
-class MarpaThread(threading.Thread):
-	def __init__(s, send_thread_message):
-		super().__init__(daemon=True)
-		s.input = LoggedQueue()
-		s.output = LoggedQueue()
-		s.send_thread_message = send_thread_message
+
+class MarpaThread(LemmacsThread):
+	def __init__(s):
+		super().__init__()
+		s.input.logged = s.output.logged = args.log_parsing
 
 	def send(s, msg):
-		s.output.put(msg)
-		s.send_thread_message()
+		s.send_to_main_thread(msg)
 
 	def run(s):
 		"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4
@@ -334,7 +330,7 @@ class MarpaThread(threading.Thread):
 		s.g.start_symbol_set(s.c_syms[inp.start])
 		s.c_rules = []
 		for rule in inp.rules:
-			log(rule)
+			#log(rule)
 			if rule[0]: # its a sequence
 				_, _, lhs, rhs, action, sep, min, prop = rule
 				s.c_rules.append(s.g.sequence_new(lhs, rhs, sep, min, prop))

@@ -254,7 +254,7 @@ class Menu(SidebarFrame):
 		editor.on_atts_change.connect(s.update)
 		s.valid_only = False
 		s._changed = True
-		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
+		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, True)#send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
 		s.palette_results = []
@@ -307,7 +307,7 @@ class Menu(SidebarFrame):
 				#and theres currently no way to know
 				scope = s.current_parser_node.scope()
 			except AssertionError as e:
-				print ("assertion error", e)
+				print ("current_parser_node could have been deleted, assertion error", e)
 				return
 			s.update_current_text()
 			s.prepare_grammar(scope)
@@ -319,7 +319,7 @@ class Menu(SidebarFrame):
 		log("prepare grammar..")
 		for i in s.editor.root.flatten():
 			i.forget_symbols() # todo:start using visitors
-		s.marpa.collect_grammar(scope)
+		s.marpa.collect_grammar(scope, scope)
 		assert s.current_parser_node
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
 
@@ -368,9 +368,9 @@ class Menu(SidebarFrame):
 	def create_palette(s, scope, atts, parser):
 		log = logging.getLogger('menu').debug
 		s.palette_results = []
-		log("scope:%s"%len(scope))
+		log("scope:%s items"%len(scope))
 		for x in scope:
-			log("%s:"%x)
+			log("scope item:%s:"%x)
 			a = palette.palette(x, scope, s.current_text, parser)
 			s.palette_results += a
 			for i in a:
