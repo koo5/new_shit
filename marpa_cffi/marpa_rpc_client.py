@@ -86,8 +86,12 @@ class ThreadedMarpa(object):
 		return r
 
 	def symbol2debug_name(s,symid):
-		assert s.debug
-		return s.debug_sym_names[symid]
+		if s.debug:
+			if symid < len(s.debug_sym_names):
+				return s.debug_sym_names[symid]
+			else:
+				assert False
+		return str(symid)
 
 	def rule2debug_name(s,r):
 		assert s.debug
@@ -166,7 +170,7 @@ class ThreadedMarpa(object):
 	def collect_grammar(s,  full_scope:list, scope:list,  start=None):
 		full_scope = full_scope[:]
 		scope = scope[:]
-		assert scope == uniq(scope),  scope - uniq(scope)
+		assert scope == uniq(scope),  (scope,uniq(scope))
 
 		s.clear()
 		log("collect_grammar:...")
@@ -191,12 +195,11 @@ class ThreadedMarpa(object):
 			s.start=s.named_symbol('start')
 		else:
 			s.start = start.symbol
-		log("start=%s", s.symbol2debug_name(s.start) )
-
+		if s.debug:	log("start=%s", s.symbol2debug_name(s.start) )
 
 		for i in full_scope:
 			if type(i).__name__ == "WorksAs":
-				log('WorksAs')
+				if s.debug:log('WorksAs')
 				if i.is_relevant_for(scope):
 					if not i in scope:
 						scope.append(i)
@@ -209,7 +212,7 @@ class ThreadedMarpa(object):
 			for i in scope:
 				if i.symbol != None:
 					if args.log_parsing:
-						log(i.symbol)
+						if s.debug: log(i.symbol)
 						rulename = 'start is %s' % s.symbol2debug_name(i.symbol)
 					else:
 						rulename = ""
@@ -284,7 +287,7 @@ class ThreadedMarpa(object):
 class MarpaThread(LemmacsThread):
 	def __init__(s):
 		super().__init__()
-		s.input.logged = s.output.logged = args.log_parsing
+		#s.input.logged = s.output.logged = args.log_parsing
 
 	def send(s, msg):
 		s.send_to_main_thread(msg)

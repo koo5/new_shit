@@ -1,1313 +1,1313 @@
 {
     "decl": {
-        "decl": "ref",
         "target": {
             "name": "module",
             "resolve": true,
             "class": "syntaxednodecl"
-        }
+        },
+        "decl": "ref"
     },
     "children": {
         "statements": {
             "decl": {
-                "decl": "ref",
                 "target": {
                     "name": "statements",
                     "resolve": true,
                     "class": "nodecl"
-                }
+                },
+                "decl": "ref"
             },
             "items": [
                 {
-                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
-                                "decl": "ref",
                                 "target": {
                                     "name": "functiondefinition",
                                     "resolve": true,
                                     "class": "syntaxednodecl"
-                                }
+                                },
+                                "decl": "ref"
                             },
                             "children": {
                                 "sig": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "function signature list",
                                             "resolve": true,
                                             "decl": {
-                                                "decl": "ref",
                                                 "target": {
                                                     "name": "definition",
                                                     "resolve": true,
                                                     "class": "syntaxednodecl"
-                                                }
+                                                },
+                                                "decl": "ref"
                                             }
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "text",
                                                             "resolve": true,
                                                             "class": "nodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "text": "toggle window maximized state by name"
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "typedparameter",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
                                                         "name": {
                                                             "decl": {
-                                                                "decl": "ref",
                                                                 "target": {
                                                                     "name": "text",
                                                                     "resolve": true,
                                                                     "class": "nodecl"
-                                                                }
+                                                                },
+                                                                "decl": "ref"
                                                             },
                                                             "text": "name"
                                                         },
                                                         "type": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
-                                                                    "decl": "ref",
                                                                     "target": {
                                                                         "name": "text",
                                                                         "resolve": true,
                                                                         "class": "nodecl"
-                                                                    }
+                                                                    },
+                                                                    "decl": "ref"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 },
                                 "body": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "statements",
                                             "resolve": true,
                                             "class": "nodecl"
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 "o = output of bash:"
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 }
                             }
                         }
-                    ]
+                    ],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
-                    "items": []
+                    "items": [],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
-                                "decl": "ref",
                                 "target": {
                                     "name": "functiondefinition",
                                     "resolve": true,
                                     "class": "syntaxednodecl"
-                                }
+                                },
+                                "decl": "ref"
                             },
                             "children": {
                                 "sig": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "function signature list",
                                             "resolve": true,
                                             "decl": {
-                                                "decl": "ref",
                                                 "target": {
                                                     "name": "definition",
                                                     "resolve": true,
                                                     "class": "syntaxednodecl"
-                                                }
+                                                },
+                                                "decl": "ref"
                                             }
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "text",
                                                             "resolve": true,
                                                             "class": "nodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "text": "toggle maximized state of active window"
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 },
                                 "body": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "statements",
                                             "resolve": true,
                                             "class": "nodecl"
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "shellcommand",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
                                                         "command": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 "wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz"
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 }
                             }
                         }
-                    ]
+                    ],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
-                    "items": []
+                    "items": [],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
-                    "items": []
+                    "items": [],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
-                    "items": []
+                    "items": [],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
                     "items": [
                         ""
-                    ]
+                    ],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
-                    "items": []
+                    "items": [],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
-                                "decl": "ref",
                                 "target": {
                                     "name": "functiondefinition",
                                     "resolve": true,
                                     "class": "syntaxednodecl"
-                                }
+                                },
+                                "decl": "ref"
                             },
                             "children": {
                                 "sig": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "function signature list",
                                             "resolve": true,
                                             "decl": {
-                                                "decl": "ref",
                                                 "target": {
                                                     "name": "definition",
                                                     "resolve": true,
                                                     "class": "syntaxednodecl"
-                                                }
+                                                },
+                                                "decl": "ref"
                                             }
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "text",
                                                             "resolve": true,
                                                             "class": "nodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "text": "change backlight brightness to"
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "typedparameter",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
                                                         "name": {
                                                             "decl": {
-                                                                "decl": "ref",
                                                                 "target": {
                                                                     "name": "text",
                                                                     "resolve": true,
                                                                     "class": "nodecl"
-                                                                }
+                                                                },
+                                                                "decl": "ref"
                                                             },
                                                             "text": "percent"
                                                         },
                                                         "type": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
-                                                                    "decl": "ref",
                                                                     "target": {
                                                                         "name": "number",
                                                                         "resolve": true,
                                                                         "class": "nodecl"
-                                                                    }
+                                                                    },
+                                                                    "decl": "ref"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "text",
                                                             "resolve": true,
                                                             "class": "nodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "text": "%"
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 },
                                 "body": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "statements",
                                             "resolve": true,
                                             "class": "nodecl"
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "shellcommand",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
                                                         "command": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "decl": {
-                                                                        "decl": "ref",
                                                                         "target": {
                                                                             "name": "functioncall",
                                                                             "resolve": true,
                                                                             "class": "functioncallnodecl"
-                                                                        }
+                                                                        },
+                                                                        "decl": "ref"
                                                                     },
                                                                     "target": {
                                                                         "name": "str add",
                                                                         "resolve": true,
                                                                         "decl": {
-                                                                            "decl": "ref",
                                                                             "target": {
                                                                                 "name": "builtinpythonfunctiondecl",
                                                                                 "resolve": true,
                                                                                 "class": "syntaxednodecl"
-                                                                            }
+                                                                            },
+                                                                            "decl": "ref"
                                                                         }
                                                                     },
                                                                     "args": {
-                                                                        "B": {
-                                                                            "decl": "Parser",
+                                                                        "A": {
                                                                             "items": [
                                                                                 {
                                                                                     "decl": {
-                                                                                        "decl": "ref",
+                                                                                        "target": {
+                                                                                            "name": "text",
+                                                                                            "resolve": true,
+                                                                                            "class": "nodecl"
+                                                                                        },
+                                                                                        "decl": "ref"
+                                                                                    },
+                                                                                    "text": "xbacklight = "
+                                                                                }
+                                                                            ],
+                                                                            "decl": "Parser"
+                                                                        },
+                                                                        "B": {
+                                                                            "items": [
+                                                                                {
+                                                                                    "decl": {
                                                                                         "target": {
                                                                                             "name": "functioncall",
                                                                                             "resolve": true,
                                                                                             "class": "functioncallnodecl"
-                                                                                        }
+                                                                                        },
+                                                                                        "decl": "ref"
                                                                                     },
                                                                                     "target": {
                                                                                         "name": "str",
                                                                                         "resolve": true,
                                                                                         "decl": {
-                                                                                            "decl": "ref",
                                                                                             "target": {
                                                                                                 "name": "builtinpythonfunctiondecl",
                                                                                                 "resolve": true,
                                                                                                 "class": "syntaxednodecl"
-                                                                                            }
+                                                                                            },
+                                                                                            "decl": "ref"
                                                                                         }
                                                                                     },
                                                                                     "args": {
                                                                                         "converted": {
-                                                                                            "decl": "Parser",
                                                                                             "items": [
                                                                                                 {
                                                                                                     "decl": {
-                                                                                                        "decl": "ref",
                                                                                                         "target": {
                                                                                                             "name": "varref",
                                                                                                             "resolve": true,
                                                                                                             "class": "varrefnodecl"
-                                                                                                        }
+                                                                                                        },
+                                                                                                        "decl": "ref"
                                                                                                     },
                                                                                                     "target": {
                                                                                                         "name": "percent",
                                                                                                         "resolve": true,
                                                                                                         "decl": {
-                                                                                                            "decl": "ref",
                                                                                                             "target": {
                                                                                                                 "name": "typedparameter",
                                                                                                                 "resolve": true,
                                                                                                                 "class": "syntaxednodecl"
-                                                                                                            }
+                                                                                                            },
+                                                                                                            "decl": "ref"
                                                                                                         }
                                                                                                     }
                                                                                                 }
-                                                                                            ]
+                                                                                            ],
+                                                                                            "decl": "Parser"
                                                                                         }
                                                                                     }
                                                                                 }
-                                                                            ]
-                                                                        },
-                                                                        "A": {
-                                                                            "decl": "Parser",
-                                                                            "items": [
-                                                                                {
-                                                                                    "decl": {
-                                                                                        "decl": "ref",
-                                                                                        "target": {
-                                                                                            "name": "text",
-                                                                                            "resolve": true,
-                                                                                            "class": "nodecl"
-                                                                                        }
-                                                                                    },
-                                                                                    "text": "xbacklight = "
-                                                                                }
-                                                                            ]
+                                                                            ],
+                                                                            "decl": "Parser"
                                                                         }
                                                                     }
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 }
                             }
                         }
-                    ]
+                    ],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
-                                "decl": "ref",
                                 "target": {
                                     "name": "functiondefinition",
                                     "resolve": true,
                                     "class": "syntaxednodecl"
-                                }
+                                },
+                                "decl": "ref"
                             },
                             "children": {
                                 "sig": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "function signature list",
                                             "resolve": true,
                                             "decl": {
-                                                "decl": "ref",
                                                 "target": {
                                                     "name": "definition",
                                                     "resolve": true,
                                                     "class": "syntaxednodecl"
-                                                }
+                                                },
+                                                "decl": "ref"
                                             }
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 "[nastav sv\u011btlost obrazovky na]"
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "typedparameter",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
                                                         "name": {
                                                             "decl": {
-                                                                "decl": "ref",
                                                                 "target": {
                                                                     "name": "text",
                                                                     "resolve": true,
                                                                     "class": "nodecl"
-                                                                }
+                                                                },
+                                                                "decl": "ref"
                                                             },
                                                             "text": "procent"
                                                         },
                                                         "type": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
-                                                                    "decl": "ref",
                                                                     "target": {
                                                                         "name": "number",
                                                                         "resolve": true,
                                                                         "class": "nodecl"
-                                                                    }
+                                                                    },
+                                                                    "decl": "ref"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "text",
                                                             "resolve": true,
                                                             "class": "nodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "text": "procent"
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 },
                                 "body": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "statements",
                                             "resolve": true,
                                             "class": "nodecl"
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "functioncall",
                                                             "resolve": true,
                                                             "class": "functioncallnodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "target": {
+                                                        "resolve": true,
                                                         "sig": {
                                                             "decl": {
-                                                                "decl": "ref",
                                                                 "target": {
                                                                     "name": "function signature list",
                                                                     "resolve": true,
                                                                     "decl": {
-                                                                        "decl": "ref",
                                                                         "target": {
                                                                             "name": "definition",
                                                                             "resolve": true,
                                                                             "class": "syntaxednodecl"
-                                                                        }
+                                                                        },
+                                                                        "decl": "ref"
                                                                     }
-                                                                }
+                                                                },
+                                                                "decl": "ref"
                                                             },
                                                             "items": [
                                                                 {
-                                                                    "decl": "Parser",
                                                                     "items": [
                                                                         {
                                                                             "decl": {
-                                                                                "decl": "ref",
                                                                                 "target": {
                                                                                     "name": "text",
                                                                                     "resolve": true,
                                                                                     "class": "nodecl"
-                                                                                }
+                                                                                },
+                                                                                "decl": "ref"
                                                                             },
                                                                             "text": "change backlight brightness to"
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "decl": "Parser"
                                                                 },
                                                                 {
-                                                                    "decl": "Parser",
                                                                     "items": [
                                                                         {
                                                                             "decl": {
-                                                                                "decl": "ref",
                                                                                 "target": {
                                                                                     "name": "typedparameter",
                                                                                     "resolve": true,
                                                                                     "class": "syntaxednodecl"
-                                                                                }
+                                                                                },
+                                                                                "decl": "ref"
                                                                             },
                                                                             "children": {
                                                                                 "name": {
                                                                                     "decl": {
-                                                                                        "decl": "ref",
                                                                                         "target": {
                                                                                             "name": "text",
                                                                                             "resolve": true,
                                                                                             "class": "nodecl"
-                                                                                        }
+                                                                                        },
+                                                                                        "decl": "ref"
                                                                                     },
                                                                                     "text": "percent"
                                                                                 },
                                                                                 "type": {
-                                                                                    "decl": "Parser",
                                                                                     "items": [
                                                                                         {
-                                                                                            "decl": "ref",
                                                                                             "target": {
                                                                                                 "name": "number",
                                                                                                 "resolve": true,
                                                                                                 "class": "nodecl"
-                                                                                            }
+                                                                                            },
+                                                                                            "decl": "ref"
                                                                                         }
-                                                                                    ]
+                                                                                    ],
+                                                                                    "decl": "Parser"
                                                                                 }
                                                                             }
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "decl": "Parser"
                                                                 },
                                                                 {
-                                                                    "decl": "Parser",
                                                                     "items": [
                                                                         {
                                                                             "decl": {
-                                                                                "decl": "ref",
                                                                                 "target": {
                                                                                     "name": "text",
                                                                                     "resolve": true,
                                                                                     "class": "nodecl"
-                                                                                }
+                                                                                },
+                                                                                "decl": "ref"
                                                                             },
                                                                             "text": "%"
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "decl": "Parser"
                                                                 }
                                                             ]
                                                         },
-                                                        "decl": "defun",
-                                                        "resolve": true
+                                                        "decl": "defun"
                                                     },
                                                     "args": {
                                                         "percent": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 "$procent"
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 }
                             }
                         }
-                    ]
+                    ],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
-                                "decl": "ref",
                                 "target": {
                                     "name": "functiondefinition",
                                     "resolve": true,
                                     "class": "syntaxednodecl"
-                                }
+                                },
+                                "decl": "ref"
                             },
                             "children": {
                                 "sig": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "function signature list",
                                             "resolve": true,
                                             "decl": {
-                                                "decl": "ref",
                                                 "target": {
                                                     "name": "definition",
                                                     "resolve": true,
                                                     "class": "syntaxednodecl"
-                                                }
+                                                },
+                                                "decl": "ref"
                                             }
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "text",
                                                             "resolve": true,
                                                             "class": "nodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "text": "set backlight brigtness to"
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "typedparameter",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
                                                         "name": {
                                                             "decl": {
-                                                                "decl": "ref",
                                                                 "target": {
                                                                     "name": "text",
                                                                     "resolve": true,
                                                                     "class": "nodecl"
-                                                                }
+                                                                },
+                                                                "decl": "ref"
                                                             },
                                                             "text": "percent"
                                                         },
                                                         "type": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
-                                                                    "decl": "ref",
                                                                     "target": {
                                                                         "name": "number",
                                                                         "resolve": true,
                                                                         "class": "nodecl"
-                                                                    }
+                                                                    },
+                                                                    "decl": "ref"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "text",
                                                             "resolve": true,
                                                             "class": "nodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "text": "%"
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 },
                                 "body": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "statements",
                                             "resolve": true,
                                             "class": "nodecl"
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "functioncall",
                                                             "resolve": true,
                                                             "class": "functioncallnodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "target": {
+                                                        "resolve": true,
                                                         "sig": {
                                                             "decl": {
-                                                                "decl": "ref",
                                                                 "target": {
                                                                     "name": "function signature list",
                                                                     "resolve": true,
                                                                     "decl": {
-                                                                        "decl": "ref",
                                                                         "target": {
                                                                             "name": "definition",
                                                                             "resolve": true,
                                                                             "class": "syntaxednodecl"
-                                                                        }
+                                                                        },
+                                                                        "decl": "ref"
                                                                     }
-                                                                }
+                                                                },
+                                                                "decl": "ref"
                                                             },
                                                             "items": [
                                                                 {
-                                                                    "decl": "Parser",
                                                                     "items": [
                                                                         {
                                                                             "decl": {
-                                                                                "decl": "ref",
                                                                                 "target": {
                                                                                     "name": "text",
                                                                                     "resolve": true,
                                                                                     "class": "nodecl"
-                                                                                }
+                                                                                },
+                                                                                "decl": "ref"
                                                                             },
                                                                             "text": "change backlight brightness to"
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "decl": "Parser"
                                                                 },
                                                                 {
-                                                                    "decl": "Parser",
                                                                     "items": [
                                                                         {
                                                                             "decl": {
-                                                                                "decl": "ref",
                                                                                 "target": {
                                                                                     "name": "typedparameter",
                                                                                     "resolve": true,
                                                                                     "class": "syntaxednodecl"
-                                                                                }
+                                                                                },
+                                                                                "decl": "ref"
                                                                             },
                                                                             "children": {
                                                                                 "name": {
                                                                                     "decl": {
-                                                                                        "decl": "ref",
                                                                                         "target": {
                                                                                             "name": "text",
                                                                                             "resolve": true,
                                                                                             "class": "nodecl"
-                                                                                        }
+                                                                                        },
+                                                                                        "decl": "ref"
                                                                                     },
                                                                                     "text": "percent"
                                                                                 },
                                                                                 "type": {
-                                                                                    "decl": "Parser",
                                                                                     "items": [
                                                                                         {
-                                                                                            "decl": "ref",
                                                                                             "target": {
                                                                                                 "name": "number",
                                                                                                 "resolve": true,
                                                                                                 "class": "nodecl"
-                                                                                            }
+                                                                                            },
+                                                                                            "decl": "ref"
                                                                                         }
-                                                                                    ]
+                                                                                    ],
+                                                                                    "decl": "Parser"
                                                                                 }
                                                                             }
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "decl": "Parser"
                                                                 },
                                                                 {
-                                                                    "decl": "Parser",
                                                                     "items": [
                                                                         {
                                                                             "decl": {
-                                                                                "decl": "ref",
                                                                                 "target": {
                                                                                     "name": "text",
                                                                                     "resolve": true,
                                                                                     "class": "nodecl"
-                                                                                }
+                                                                                },
+                                                                                "decl": "ref"
                                                                             },
                                                                             "text": "%"
                                                                         }
-                                                                    ]
+                                                                    ],
+                                                                    "decl": "Parser"
                                                                 }
                                                             ]
                                                         },
-                                                        "decl": "defun",
-                                                        "resolve": true
+                                                        "decl": "defun"
                                                     },
                                                     "args": {
                                                         "percent": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "decl": {
-                                                                        "decl": "ref",
                                                                         "target": {
                                                                             "name": "varref",
                                                                             "resolve": true,
                                                                             "class": "varrefnodecl"
-                                                                        }
+                                                                        },
+                                                                        "decl": "ref"
                                                                     },
                                                                     "target": {
                                                                         "name": "percent",
                                                                         "resolve": true,
                                                                         "decl": {
-                                                                            "decl": "ref",
                                                                             "target": {
                                                                                 "name": "typedparameter",
                                                                                 "resolve": true,
                                                                                 "class": "syntaxednodecl"
-                                                                            }
+                                                                            },
+                                                                            "decl": "ref"
                                                                         }
                                                                     }
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 }
                             }
                         }
-                    ]
+                    ],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
-                    "items": []
+                    "items": [],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
-                                "decl": "ref",
                                 "target": {
                                     "name": "functiondefinition",
                                     "resolve": true,
                                     "class": "syntaxednodecl"
-                                }
+                                },
+                                "decl": "ref"
                             },
                             "children": {
                                 "sig": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "function signature list",
                                             "resolve": true,
                                             "decl": {
-                                                "decl": "ref",
                                                 "target": {
                                                     "name": "definition",
                                                     "resolve": true,
                                                     "class": "syntaxednodecl"
-                                                }
+                                                },
+                                                "decl": "ref"
                                             }
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "text",
                                                             "resolve": true,
                                                             "class": "nodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "text": "change backlight brightness by"
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "typedparameter",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
                                                         "name": {
                                                             "decl": {
-                                                                "decl": "ref",
                                                                 "target": {
                                                                     "name": "text",
                                                                     "resolve": true,
                                                                     "class": "nodecl"
-                                                                }
+                                                                },
+                                                                "decl": "ref"
                                                             },
                                                             "text": "percent"
                                                         },
                                                         "type": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
-                                                                    "decl": "ref",
                                                                     "target": {
                                                                         "name": "number",
                                                                         "resolve": true,
                                                                         "class": "nodecl"
-                                                                    }
+                                                                    },
+                                                                    "decl": "ref"
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 },
                                 "body": {
                                     "decl": {
-                                        "decl": "ref",
                                         "target": {
                                             "name": "statements",
                                             "resolve": true,
                                             "class": "nodecl"
-                                        }
+                                        },
+                                        "decl": "ref"
                                     },
                                     "items": [
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
                                                         "target": {
                                                             "name": "if",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
-                                                        "statements": {
-                                                            "decl": {
-                                                                "decl": "ref",
-                                                                "target": {
-                                                                    "name": "statements",
-                                                                    "resolve": true,
-                                                                    "class": "nodecl"
-                                                                }
-                                                            },
-                                                            "items": [
-                                                                {
-                                                                    "decl": "Parser",
-                                                                    "items": [
-                                                                        "x=[+]+str($percent)"
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        },
                                                         "condition": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "decl": {
-                                                                        "decl": "ref",
                                                                         "target": {
                                                                             "name": "functioncall",
                                                                             "resolve": true,
                                                                             "class": "functioncallnodecl"
-                                                                        }
+                                                                        },
+                                                                        "decl": "ref"
                                                                     },
                                                                     "target": {
                                                                         "name": "ge",
                                                                         "resolve": true,
                                                                         "decl": {
-                                                                            "decl": "ref",
                                                                             "target": {
                                                                                 "name": "builtinpythonfunctiondecl",
                                                                                 "resolve": true,
                                                                                 "class": "syntaxednodecl"
-                                                                            }
+                                                                            },
+                                                                            "decl": "ref"
                                                                         }
                                                                     },
                                                                     "args": {
-                                                                        "B": {
-                                                                            "decl": "Parser",
-                                                                            "items": [
-                                                                                "1"
-                                                                            ]
-                                                                        },
                                                                         "A": {
-                                                                            "decl": "Parser",
                                                                             "items": [
                                                                                 {
                                                                                     "decl": {
-                                                                                        "decl": "ref",
                                                                                         "target": {
                                                                                             "name": "varref",
                                                                                             "resolve": true,
                                                                                             "class": "varrefnodecl"
-                                                                                        }
+                                                                                        },
+                                                                                        "decl": "ref"
                                                                                     },
                                                                                     "target": {
                                                                                         "name": "percent",
                                                                                         "resolve": true,
                                                                                         "decl": {
-                                                                                            "decl": "ref",
                                                                                             "target": {
                                                                                                 "name": "typedparameter",
                                                                                                 "resolve": true,
                                                                                                 "class": "syntaxednodecl"
-                                                                                            }
+                                                                                            },
+                                                                                            "decl": "ref"
                                                                                         }
                                                                                     }
                                                                                 }
-                                                                            ]
+                                                                            ],
+                                                                            "decl": "Parser"
+                                                                        },
+                                                                        "B": {
+                                                                            "items": [
+                                                                                "1"
+                                                                            ],
+                                                                            "decl": "Parser"
                                                                         }
                                                                     }
                                                                 }
-                                                            ]
-                                                        }
-                                                    }
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "decl": "Parser",
-                                            "items": [
-                                                {
-                                                    "decl": {
-                                                        "decl": "ref",
-                                                        "target": {
-                                                            "name": "else",
-                                                            "resolve": true,
-                                                            "class": "syntaxednodecl"
-                                                        }
-                                                    },
-                                                    "children": {
+                                                            ],
+                                                            "decl": "Parser"
+                                                        },
                                                         "statements": {
                                                             "decl": {
-                                                                "decl": "ref",
                                                                 "target": {
                                                                     "name": "statements",
                                                                     "resolve": true,
                                                                     "class": "nodecl"
-                                                                }
+                                                                },
+                                                                "decl": "ref"
                                                             },
                                                             "items": [
                                                                 {
-                                                                    "decl": "Parser",
                                                                     "items": [
-                                                                        "x = [-]+str($percent)"
-                                                                    ]
+                                                                        "x=[+]+str($percent)"
+                                                                    ],
+                                                                    "decl": "Parser"
                                                                 }
                                                             ]
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         },
                                         {
-                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
-                                                        "decl": "ref",
+                                                        "target": {
+                                                            "name": "else",
+                                                            "resolve": true,
+                                                            "class": "syntaxednodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "children": {
+                                                        "statements": {
+                                                            "decl": {
+                                                                "target": {
+                                                                    "name": "statements",
+                                                                    "resolve": true,
+                                                                    "class": "nodecl"
+                                                                },
+                                                                "decl": "ref"
+                                                            },
+                                                            "items": [
+                                                                {
+                                                                    "items": [
+                                                                        "x = [-]+str($percent)"
+                                                                    ],
+                                                                    "decl": "Parser"
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
                                                         "target": {
                                                             "name": "shellcommand",
                                                             "resolve": true,
                                                             "class": "syntaxednodecl"
-                                                        }
+                                                        },
+                                                        "decl": "ref"
                                                     },
                                                     "children": {
                                                         "command": {
-                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "decl": {
-                                                                        "decl": "ref",
                                                                         "target": {
                                                                             "name": "functioncall",
                                                                             "resolve": true,
                                                                             "class": "functioncallnodecl"
-                                                                        }
+                                                                        },
+                                                                        "decl": "ref"
                                                                     },
                                                                     "target": {
                                                                         "name": "str add",
                                                                         "resolve": true,
                                                                         "decl": {
-                                                                            "decl": "ref",
                                                                             "target": {
                                                                                 "name": "builtinpythonfunctiondecl",
                                                                                 "resolve": true,
                                                                                 "class": "syntaxednodecl"
-                                                                            }
+                                                                            },
+                                                                            "decl": "ref"
                                                                         }
                                                                     },
                                                                     "args": {
-                                                                        "B": {
-                                                                            "decl": "Parser",
-                                                                            "items": [
-                                                                                "$x"
-                                                                            ]
-                                                                        },
                                                                         "A": {
-                                                                            "decl": "Parser",
                                                                             "items": [
                                                                                 {
                                                                                     "decl": {
-                                                                                        "decl": "ref",
                                                                                         "target": {
                                                                                             "name": "text",
                                                                                             "resolve": true,
                                                                                             "class": "nodecl"
-                                                                                        }
+                                                                                        },
+                                                                                        "decl": "ref"
                                                                                     },
                                                                                     "text": "xbacklight "
                                                                                 }
-                                                                            ]
+                                                                            ],
+                                                                            "decl": "Parser"
+                                                                        },
+                                                                        "B": {
+                                                                            "items": [
+                                                                                "$x"
+                                                                            ],
+                                                                            "decl": "Parser"
                                                                         }
                                                                     }
                                                                 }
-                                                            ]
+                                                            ],
+                                                            "decl": "Parser"
                                                         }
                                                     }
                                                 }
-                                            ]
+                                            ],
+                                            "decl": "Parser"
                                         }
                                     ]
                                 }
                             }
                         }
-                    ]
+                    ],
+                    "decl": "Parser"
                 },
                 {
-                    "decl": "Parser",
                     "items": [
                         ""
-                    ]
+                    ],
+                    "decl": "Parser"
                 }
             ]
         },
         "name": {
             "decl": {
-                "decl": "ref",
                 "target": {
                     "name": "text",
                     "resolve": true,
                     "class": "nodecl"
-                }
+                },
+                "decl": "ref"
             },
-            "text": ""
+            "text": "backlight"
         },
         "file": {
             "decl": {
-                "decl": "ref",
                 "target": {
                     "name": "text",
                     "resolve": true,
                     "class": "nodecl"
-                }
+                },
+                "decl": "ref"
             },
             "text": "library/xbacklight.lemon.json"
         }

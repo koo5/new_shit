@@ -254,7 +254,7 @@ class Menu(SidebarFrame):
 		editor.on_atts_change.connect(s.update)
 		s.valid_only = False
 		s._changed = True
-		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, True)#send_thread_message, args.graph_grammar or args.log_parsing)
+		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
 		s.palette_results = []
@@ -303,7 +303,7 @@ class Menu(SidebarFrame):
 
 	def update_menu(s):
 		if s.current_parser_node:
-			try:#hack, current_parser_node could have been deleted,
+			try:#hack, current_parser_node could have been moved to clipboard,
 				#and theres currently no way to know
 				scope = s.current_parser_node.scope()
 			except AssertionError as e:
@@ -317,7 +317,9 @@ class Menu(SidebarFrame):
 	def prepare_grammar(s, scope):
 		#s.marpa.t.input.clear()
 		log("prepare grammar..")
-		for i in s.editor.root.flatten():
+		f = s.editor.root.flatten()
+		for i in f:
+			print("f:", i)
 			i.forget_symbols() # todo:start using visitors
 		s.marpa.collect_grammar(scope, scope)
 		assert s.current_parser_node

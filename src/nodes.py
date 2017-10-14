@@ -2052,7 +2052,7 @@ class WorksAs(Syntaxed):
 		super(WorksAs, s).__init__(children)
 
 	def forget_symbols(s):
-		super(WorksAs, s).forget_symbols()
+		super().forget_symbols()
 		s._rule = None
 
 	@classmethod
@@ -2955,7 +2955,10 @@ def make_root():
 	r["empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
 	r["empty module"].ch.statements.view_mode = 2
 	uh = B.unhidenode.inst_fresh()
-	uh.ch.what.add(Text("number"))
+	uh.ch.what.view_mode = 2
+	#uh.ch.what.add(Text("functioncall"))
+	#uh.ch.what.add(Text("backlight"))
+
 	r["empty module"].ch.statements.items = [uh, Parser()]
 
 	r["builtins"] = B.builtinmodule.inst_fresh()
@@ -3986,7 +3989,6 @@ def register_class_symbol(cls):
 		digits = m.symbol('digits')
 		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
 			m.rule(i + "_is_a_digit",digit, m.known_char(i))
-
 		m.sequence('digits_is_sequence_of_digit', digits, digit, join)
 		r = m.symbol('number')
 		m.rule('number_is_digits', r, digits, (ident, cls))
@@ -4016,10 +4018,10 @@ def register_class_symbol(cls):
 	elif List.__subclasscheck__(cls):
 		log("registering list grammar")
 		optionally_elements = m.symbol('optionally_elements')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char(','), 0)
 		r = m.symbol('list literal')
 		opening =  m.known_char('[')
 		closing =  m.known_char(']')
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char(','), 0)
 		m.rule('list literal', r, [opening, optionally_elements, closing], cls.from_parse)
 		return r
 
@@ -4056,16 +4058,28 @@ def scope_after_hiding_and_unhiding(s):
 			else: raise Exception("not implemented")
 		elif dd == B.unhidenode:
 			what = i.ch.what.parsed.pyval
-			log("unhide:%s"%what)
+			logging.getLogger("scope").debug("unhide:%s"%what)
 			#if what.parsed.eq(Text("everything")):
 			#	r = full[:]
 			#else:
 			for j in full:
-				if is_decl(j) and j.name in what:
-					if isinstance(j, Module):
-						for k in j.ch.items:
-							r.append(j)
-					else:
+				j = j.parsed
+				if isinstance(j, Module):
+					logging.getLogger("scope").debug("considering module %s" % j)
+					if not ('name' in j.ch._dict):
+						logging.getLogger("scope").debug("does not have name")
+						continue
+					elif (j.name in what):
+						logging.getLogger("scope").debug("unhiding module %s:"%j)
+						for k in j.ch.statements.items:
+							k = k.parsed
+							logging.getLogger("scope").debug("-%s" % k)
+							if k not in r:
+								r.append(k)
+
+				elif is_decl(j) and (j.name in what):
+					logging.getLogger("scope").debug("unhiding %s" % j)
+					if j not in r:
 						r.append(j)
 	return r
 
@@ -4078,14 +4092,16 @@ def collect_modules_seen_by_module(module):
 			if not isinstance(m, Module):
 				continue
 			if module != m:
-				modules.append(module)
+				modules.append(m)
 			#log(module) #log(r)
 		return modules
+
 
 def what_module_sees(module):
 	assert isinstance(module, Module)
 	r = []
 	for m in collect_modules_seen_by_module(module):
+		r.append(m)
 		for i in m.ch.statements.parsed.items:
 			r.append(i.parsed)
 	return r

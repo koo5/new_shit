@@ -4,5 +4,5 @@ class LoggedQueue(Queue):
 	logged = False
 	def put(s, x):
 		if s.logged:
-			log(pp(x))
+			s.logger.debug(pp(x))
 		super().put(x)

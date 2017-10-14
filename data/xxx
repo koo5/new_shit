@@ -1,0 +1,6 @@
+recipe [connect to openvnp on ubuntu]:
+about:
+	czech syntax for @<recipe [connect to openvnp on ubuntu]>: recept [pripojit se na ubuntu po openvpn]
+body:
+	bash: apt install network-manager-openvpn-gnome 
+
