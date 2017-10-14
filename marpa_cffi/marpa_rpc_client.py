@@ -1,10 +1,12 @@
 #in the end i hadnt made it a rpc client, it just spawns a thread
 
+from typing import *
+int
+
 import sys, traceback
 import operator
 import types
 from itertools import starmap, repeat
-from pprint import pformat as pp
 
 import logging
 logger=logging.getLogger("marpa")
@@ -273,6 +275,7 @@ class ThreadedMarpa(object):
 			symbol_ranks = s.symbol_ranks,
 			rules = s.rules[:],
 			for_node = for_node,
+			debug_sym_names = s.debug_sym_names[:],
 			start=s.start))
 
 	def enqueue_parsing(s, tr):
@@ -287,7 +290,9 @@ class ThreadedMarpa(object):
 class MarpaThread(LemmacsThread):
 	def __init__(s):
 		super().__init__()
-		#s.input.logged = s.output.logged = args.log_parsing
+		if args.log_parsing:
+			s.input.logger = s.output.logger = logging.getLogger("marpa")
+			pass
 
 	def send(s, msg):
 		s.send_to_main_thread(msg)
@@ -297,23 +302,21 @@ class MarpaThread(LemmacsThread):
 		imho unbased requirement that all operations are done in one thread..
 		anyway, lets make a little event loop here"""
 		while True:
-			inp = s.input.get()
-			if not marpa: continue
-			if inp.task == 'precompute_grammar':
-				s.precompute_grammar(inp)
-			elif inp.task == 'parse':
-				r = []
-				try:
+			try:
+				inp = s.input.get()
+				if not marpa: continue
+				if inp.task == 'precompute_grammar':
+					s.precompute_grammar(inp)
+				elif inp.task == 'parse':
 					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
-				except Exception as e:
-					traceback.print_exc(file=sys.stdout)
-					s.send(Dotdict(message = 'eeerror', traceback = traceback.format_exc()))
-					continue
-				s.send(Dotdict(message = 'parsed', results = r))
-
+					s.send(Dotdict(message = 'parsed', results = r))
+			except Exception as e:
+				traceback.print_exc(file=sys.stdout)
+				s.send(Dotdict(message = 'eeerror', traceback = traceback.format_exc()))
 
 	def precompute_grammar(s, inp):
 		log('precompute_grammar...')
+		graphing_wrapper.clear()
 		s.g = Grammar()
 		# this calls symbol_new() repeatedly inp.num_syms times, and gathers the
 		# results in a list # this is too smart. also, todo: make symbol_new throw exceptions
@@ -457,7 +460,7 @@ class MarpaThread(LemmacsThread):
 					log ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
 				stack[where] = stack2[where] = char
 			elif s == lib.MARPA_STEP_RULE:
-				r = v.v.t_rule_id
+				r = v.v.t_rule_id#type:int
 				#print ("rule id:%s"%r)
 				if babble:
 					log ("rule:"+rule2name(r))

@@ -281,6 +281,8 @@ class Menu(SidebarFrame):
 		s.must_update = True
 
 	def update(s):
+		if not s.counterpart.visible:
+			return
 		node_changed = s.parser_changed()
 		old_text = s.current_text
 		s.update_current_text()
@@ -316,11 +318,7 @@ class Menu(SidebarFrame):
 
 	def prepare_grammar(s, scope):
 		#s.marpa.t.input.clear()
-		log("prepare grammar..")
-		f = s.editor.root.flatten()
-		for i in f:
-			print("f:", i)
-			i.forget_symbols() # todo:start using visitors
+		nodes.forget_symbols()
 		s.marpa.collect_grammar(scope, scope)
 		assert s.current_parser_node
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
@@ -334,7 +332,7 @@ class Menu(SidebarFrame):
 					s.marpa.enqueue_parsing(s.parser_items2tokens(node))
 		elif m.message == 'parsed':
 				log (m.results)
-				s.parse_results = [nodes.ParserMenuItem(['a parse'], x) for x in m.results]
+				s.parse_results = [nodes.ParserMenuItem(['a parse'], x, 5500) for x in m.results]
 				s.update_items()
 				#	r.append(ParserMenuItem(i, 333))
 				s.signal_change()

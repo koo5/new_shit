@@ -22,6 +22,7 @@ graphing_wrapper.stop() # you can restore original functions
 import html
 
 from .marpa_cffi import lib
+import threading
 
 class Orig(object):
 	pass

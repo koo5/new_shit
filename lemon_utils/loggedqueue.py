@@ -1,8 +1,9 @@
 from queue import Queue
+from pprint import pformat
 
 class LoggedQueue(Queue):
-	logged = False
+	logger = None
 	def put(s, x):
-		if s.logged:
-			s.logger.debug(pp(x))
+		if s.logger:
+			s.logger.debug(pformat(x))
 		super().put(x)

@@ -11,6 +11,13 @@ good luck.
 
 """
 
+node_rules = {}
+node_symbols = {}
+def forget_symbols():
+	node_symbols.clear()
+	node_rules.clear()
+forget_symbols()
+
 
 lang = cs = en = None
 def go_cs():
@@ -565,7 +572,6 @@ class Node(NodePersistenceStuff, element.Element):
 		s.runtime = Dotdict() #various runtime data herded into one place
 		s.clear_runtime_dict()
 		s.fresh = "i think youre looking for inst_fresh, fresh() is a class method, you called it on an instance"
-		s.forget_symbols()
 
 	def clipboard_cut(s):
 		s.clipboard_copy()
@@ -575,16 +581,13 @@ class Node(NodePersistenceStuff, element.Element):
 		print ("copy")
 		s.root["clipboard"].ch.statements.add(s.copy())
 
-	def forget_symbols(s):
-		"""clear marpa symbol ids"""
-		s._symbol  = None
-
 	@property
 	def symbol(s):
-		logging.getLogger("marpa").debug(("gimme node_symbol for", s))
-		if s._symbol == None:
+		if not s in node_symbols:
+			logging.getLogger("marpa").debug(("gimme symbol for", s))
 			s.register_symbol()
-		return s._symbol
+		if s in node_symbols:
+			return node_symbols[s]
 
 	def register_symbol(s):
 		return register_symbol(s)
@@ -2051,10 +2054,6 @@ class WorksAs(Syntaxed):
 	def __init__(s, children):
 		super(WorksAs, s).__init__(children)
 
-	def forget_symbols(s):
-		super().forget_symbols()
-		s._rule = None
-
 	@classmethod
 	def b(cls, sub, sup):
 		"""building-in helper"""
@@ -2956,8 +2955,8 @@ def make_root():
 	r["empty module"].ch.statements.view_mode = 2
 	uh = B.unhidenode.inst_fresh()
 	uh.ch.what.view_mode = 2
-	#uh.ch.what.add(Text("functioncall"))
-	#uh.ch.what.add(Text("backlight"))
+	uh.ch.what.add(Text("functioncall"))
+	uh.ch.what.add(Text("backlight"))
 
 	r["empty module"].ch.statements.items = [uh, Parser()]
 
@@ -3850,11 +3849,11 @@ def register_symbol(s):
 	#if isinstance(s, Definition):
 	#	xxx
 	if isinstance(s, SyntacticCategory):
-		s._symbol = m.symbol(s.name)
+		node_symbols[s] = m.symbol(s.name)
 		return
 
-	if isinstance(s, WorksAs):
-		if s._rule != None:
+	elif isinstance(s, WorksAs):
+		if s in node_rules:
 			return
 		lhs = s.ch.sup.parsed
 		rhs = s.ch.sub.parsed
@@ -3867,12 +3866,12 @@ def register_symbol(s):
 			log('%s worksas %s\n (%s := %s)'%(s.ch.sub, s.ch.sup, lhs, rhs))
 		if lhs != None and rhs != None:
 			r = m.rule(str(s), lhs, rhs)
-			s._rule = r
+			node_rules[s] = r
 		return
 
 
-	if isinstance(s, (NodeclBase, ParametricListType)):
-		s._symbol = s.instance_class.register_class_symbol()
+	elif isinstance(s, (NodeclBase, ParametricListType)):
+		node_symbols[s] = s.instance_class.register_class_symbol()
 		return
 
 	log(("no symbol for", s))

@@ -60,6 +60,7 @@ class ClientFrame(object):
 		s.must_redraw = True
 		s._scroll_lines = 0
 		s.indent_width = 4
+		counterpart.counterpart = s
 		s.counterpart = counterpart
 		s.tags = Cache(s.counterpart.collect_tags)
 		s.lines = Cache(s.project)
@@ -765,6 +766,7 @@ class Editor(ClientFrame):
 		s.cursor_c += coff
 		s.cursor_r += roff
 		s.after_cursor_moved()
+
 
 
 

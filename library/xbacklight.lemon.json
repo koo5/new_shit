@@ -8,6 +8,28 @@
         "decl": "ref"
     },
     "children": {
+        "file": {
+            "decl": {
+                "target": {
+                    "name": "text",
+                    "resolve": true,
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": "library/xbacklight.lemon.json"
+        },
+        "name": {
+            "decl": {
+                "target": {
+                    "name": "text",
+                    "resolve": true,
+                    "class": "nodecl"
+                },
+                "decl": "ref"
+            },
+            "text": "backlight"
+        },
         "statements": {
             "decl": {
                 "target": {
@@ -19,6 +41,7 @@
             },
             "items": [
                 {
+                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
@@ -48,6 +71,7 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -60,10 +84,10 @@
                                                     },
                                                     "text": "toggle window maximized state by name"
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -87,6 +111,7 @@
                                                             "text": "name"
                                                         },
                                                         "type": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "target": {
@@ -96,13 +121,11 @@
                                                                     },
                                                                     "decl": "ref"
                                                                 }
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 },
@@ -117,23 +140,23 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 "o = output of bash:"
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 }
                             }
                         }
-                    ],
-                    "decl": "Parser"
+                    ]
                 },
                 {
-                    "items": [],
-                    "decl": "Parser"
+                    "decl": "Parser",
+                    "items": []
                 },
                 {
+                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
@@ -163,6 +186,7 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -175,8 +199,7 @@
                                                     },
                                                     "text": "toggle maximized state of active window"
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 },
@@ -191,6 +214,7 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -203,46 +227,23 @@
                                                     },
                                                     "children": {
                                                         "command": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 "wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz"
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 }
                             }
                         }
-                    ],
-                    "decl": "Parser"
+                    ]
                 },
                 {
-                    "items": [],
-                    "decl": "Parser"
-                },
-                {
-                    "items": [],
-                    "decl": "Parser"
-                },
-                {
-                    "items": [],
-                    "decl": "Parser"
-                },
-                {
-                    "items": [
-                        ""
-                    ],
-                    "decl": "Parser"
-                },
-                {
-                    "items": [],
-                    "decl": "Parser"
-                },
-                {
+                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
@@ -272,6 +273,7 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -284,10 +286,10 @@
                                                     },
                                                     "text": "change backlight brightness to"
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -311,6 +313,7 @@
                                                             "text": "percent"
                                                         },
                                                         "type": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "target": {
@@ -320,15 +323,14 @@
                                                                     },
                                                                     "decl": "ref"
                                                                 }
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -341,8 +343,7 @@
                                                     },
                                                     "text": "%"
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 },
@@ -357,6 +358,7 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -369,6 +371,7 @@
                                                     },
                                                     "children": {
                                                         "command": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "decl": {
@@ -393,6 +396,7 @@
                                                                     },
                                                                     "args": {
                                                                         "A": {
+                                                                            "decl": "Parser",
                                                                             "items": [
                                                                                 {
                                                                                     "decl": {
@@ -405,10 +409,10 @@
                                                                                     },
                                                                                     "text": "xbacklight = "
                                                                                 }
-                                                                            ],
-                                                                            "decl": "Parser"
+                                                                            ]
                                                                         },
                                                                         "B": {
+                                                                            "decl": "Parser",
                                                                             "items": [
                                                                                 {
                                                                                     "decl": {
@@ -433,6 +437,7 @@
                                                                                     },
                                                                                     "args": {
                                                                                         "converted": {
+                                                                                            "decl": "Parser",
                                                                                             "items": [
                                                                                                 {
                                                                                                     "decl": {
@@ -456,32 +461,28 @@
                                                                                                         }
                                                                                                     }
                                                                                                 }
-                                                                                            ],
-                                                                                            "decl": "Parser"
+                                                                                            ]
                                                                                         }
                                                                                     }
                                                                                 }
-                                                                            ],
-                                                                            "decl": "Parser"
+                                                                            ]
                                                                         }
                                                                     }
                                                                 }
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 }
                             }
                         }
-                    ],
-                    "decl": "Parser"
+                    ]
                 },
                 {
+                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
@@ -511,12 +512,23 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
-                                                "[nastav sv\u011btlost obrazovky na]"
-                                            ],
-                                            "decl": "Parser"
+                                                {
+                                                    "decl": {
+                                                        "target": {
+                                                            "name": "text",
+                                                            "resolve": true,
+                                                            "class": "nodecl"
+                                                        },
+                                                        "decl": "ref"
+                                                    },
+                                                    "text": "nastav sv\u011btlost obrazovky na"
+                                                }
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -540,6 +552,7 @@
                                                             "text": "procent"
                                                         },
                                                         "type": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "target": {
@@ -549,15 +562,14 @@
                                                                     },
                                                                     "decl": "ref"
                                                                 }
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -570,8 +582,7 @@
                                                     },
                                                     "text": "procent"
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 },
@@ -586,132 +597,58 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "name": "functioncall",
+                                                            "name": "serialized",
                                                             "resolve": true,
-                                                            "class": "functioncallnodecl"
+                                                            "class": "syntaxednodecl"
                                                         },
                                                         "decl": "ref"
                                                     },
-                                                    "target": {
-                                                        "resolve": true,
-                                                        "sig": {
+                                                    "children": {
+                                                        "serialization": {
                                                             "decl": {
                                                                 "target": {
-                                                                    "name": "function signature list",
+                                                                    "name": "Dict type",
                                                                     "resolve": true,
                                                                     "decl": {
                                                                         "target": {
-                                                                            "name": "definition",
+                                                                            "name": "parametricdicttype",
                                                                             "resolve": true,
-                                                                            "class": "syntaxednodecl"
+                                                                            "class": "parametricnodecl"
                                                                         },
                                                                         "decl": "ref"
                                                                     }
                                                                 },
                                                                 "decl": "ref"
-                                                            },
-                                                            "items": [
-                                                                {
-                                                                    "items": [
-                                                                        {
-                                                                            "decl": {
-                                                                                "target": {
-                                                                                    "name": "text",
-                                                                                    "resolve": true,
-                                                                                    "class": "nodecl"
-                                                                                },
-                                                                                "decl": "ref"
-                                                                            },
-                                                                            "text": "change backlight brightness to"
-                                                                        }
-                                                                    ],
-                                                                    "decl": "Parser"
-                                                                },
-                                                                {
-                                                                    "items": [
-                                                                        {
-                                                                            "decl": {
-                                                                                "target": {
-                                                                                    "name": "typedparameter",
-                                                                                    "resolve": true,
-                                                                                    "class": "syntaxednodecl"
-                                                                                },
-                                                                                "decl": "ref"
-                                                                            },
-                                                                            "children": {
-                                                                                "name": {
-                                                                                    "decl": {
-                                                                                        "target": {
-                                                                                            "name": "text",
-                                                                                            "resolve": true,
-                                                                                            "class": "nodecl"
-                                                                                        },
-                                                                                        "decl": "ref"
-                                                                                    },
-                                                                                    "text": "percent"
-                                                                                },
-                                                                                "type": {
-                                                                                    "items": [
-                                                                                        {
-                                                                                            "target": {
-                                                                                                "name": "number",
-                                                                                                "resolve": true,
-                                                                                                "class": "nodecl"
-                                                                                            },
-                                                                                            "decl": "ref"
-                                                                                        }
-                                                                                    ],
-                                                                                    "decl": "Parser"
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    ],
-                                                                    "decl": "Parser"
-                                                                },
-                                                                {
-                                                                    "items": [
-                                                                        {
-                                                                            "decl": {
-                                                                                "target": {
-                                                                                    "name": "text",
-                                                                                    "resolve": true,
-                                                                                    "class": "nodecl"
-                                                                                },
-                                                                                "decl": "ref"
-                                                                            },
-                                                                            "text": "%"
-                                                                        }
-                                                                    ],
-                                                                    "decl": "Parser"
-                                                                }
-                                                            ]
+                                                            }
                                                         },
-                                                        "decl": "defun"
-                                                    },
-                                                    "args": {
-                                                        "percent": {
-                                                            "items": [
-                                                                "$procent"
-                                                            ],
-                                                            "decl": "Parser"
+                                                        "last_rendering": {
+                                                            "decl": {
+                                                                "target": {
+                                                                    "name": "text",
+                                                                    "resolve": true,
+                                                                    "class": "nodecl"
+                                                                },
+                                                                "decl": "ref"
+                                                            },
+                                                            "text": ""
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 }
                             }
                         }
-                    ],
-                    "decl": "Parser"
+                    ]
                 },
                 {
+                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
@@ -741,6 +678,7 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -753,10 +691,10 @@
                                                     },
                                                     "text": "set backlight brigtness to"
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -780,6 +718,7 @@
                                                             "text": "percent"
                                                         },
                                                         "type": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "target": {
@@ -789,15 +728,14 @@
                                                                     },
                                                                     "decl": "ref"
                                                                 }
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -810,8 +748,7 @@
                                                     },
                                                     "text": "%"
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 },
@@ -826,157 +763,62 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
                                                         "target": {
-                                                            "name": "functioncall",
+                                                            "name": "serialized",
                                                             "resolve": true,
-                                                            "class": "functioncallnodecl"
+                                                            "class": "syntaxednodecl"
                                                         },
                                                         "decl": "ref"
                                                     },
-                                                    "target": {
-                                                        "resolve": true,
-                                                        "sig": {
+                                                    "children": {
+                                                        "serialization": {
                                                             "decl": {
                                                                 "target": {
-                                                                    "name": "function signature list",
+                                                                    "name": "Dict type",
                                                                     "resolve": true,
                                                                     "decl": {
                                                                         "target": {
-                                                                            "name": "definition",
+                                                                            "name": "parametricdicttype",
                                                                             "resolve": true,
-                                                                            "class": "syntaxednodecl"
+                                                                            "class": "parametricnodecl"
                                                                         },
                                                                         "decl": "ref"
                                                                     }
                                                                 },
                                                                 "decl": "ref"
-                                                            },
-                                                            "items": [
-                                                                {
-                                                                    "items": [
-                                                                        {
-                                                                            "decl": {
-                                                                                "target": {
-                                                                                    "name": "text",
-                                                                                    "resolve": true,
-                                                                                    "class": "nodecl"
-                                                                                },
-                                                                                "decl": "ref"
-                                                                            },
-                                                                            "text": "change backlight brightness to"
-                                                                        }
-                                                                    ],
-                                                                    "decl": "Parser"
-                                                                },
-                                                                {
-                                                                    "items": [
-                                                                        {
-                                                                            "decl": {
-                                                                                "target": {
-                                                                                    "name": "typedparameter",
-                                                                                    "resolve": true,
-                                                                                    "class": "syntaxednodecl"
-                                                                                },
-                                                                                "decl": "ref"
-                                                                            },
-                                                                            "children": {
-                                                                                "name": {
-                                                                                    "decl": {
-                                                                                        "target": {
-                                                                                            "name": "text",
-                                                                                            "resolve": true,
-                                                                                            "class": "nodecl"
-                                                                                        },
-                                                                                        "decl": "ref"
-                                                                                    },
-                                                                                    "text": "percent"
-                                                                                },
-                                                                                "type": {
-                                                                                    "items": [
-                                                                                        {
-                                                                                            "target": {
-                                                                                                "name": "number",
-                                                                                                "resolve": true,
-                                                                                                "class": "nodecl"
-                                                                                            },
-                                                                                            "decl": "ref"
-                                                                                        }
-                                                                                    ],
-                                                                                    "decl": "Parser"
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    ],
-                                                                    "decl": "Parser"
-                                                                },
-                                                                {
-                                                                    "items": [
-                                                                        {
-                                                                            "decl": {
-                                                                                "target": {
-                                                                                    "name": "text",
-                                                                                    "resolve": true,
-                                                                                    "class": "nodecl"
-                                                                                },
-                                                                                "decl": "ref"
-                                                                            },
-                                                                            "text": "%"
-                                                                        }
-                                                                    ],
-                                                                    "decl": "Parser"
-                                                                }
-                                                            ]
+                                                            }
                                                         },
-                                                        "decl": "defun"
-                                                    },
-                                                    "args": {
-                                                        "percent": {
-                                                            "items": [
-                                                                {
-                                                                    "decl": {
-                                                                        "target": {
-                                                                            "name": "varref",
-                                                                            "resolve": true,
-                                                                            "class": "varrefnodecl"
-                                                                        },
-                                                                        "decl": "ref"
-                                                                    },
-                                                                    "target": {
-                                                                        "name": "percent",
-                                                                        "resolve": true,
-                                                                        "decl": {
-                                                                            "target": {
-                                                                                "name": "typedparameter",
-                                                                                "resolve": true,
-                                                                                "class": "syntaxednodecl"
-                                                                            },
-                                                                            "decl": "ref"
-                                                                        }
-                                                                    }
-                                                                }
-                                                            ],
-                                                            "decl": "Parser"
+                                                        "last_rendering": {
+                                                            "decl": {
+                                                                "target": {
+                                                                    "name": "text",
+                                                                    "resolve": true,
+                                                                    "class": "nodecl"
+                                                                },
+                                                                "decl": "ref"
+                                                            },
+                                                            "text": ""
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 }
                             }
                         }
-                    ],
-                    "decl": "Parser"
+                    ]
                 },
                 {
-                    "items": [],
-                    "decl": "Parser"
+                    "decl": "Parser",
+                    "items": []
                 },
                 {
+                    "decl": "Parser",
                     "items": [
                         {
                             "decl": {
@@ -1006,6 +848,7 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -1018,10 +861,10 @@
                                                     },
                                                     "text": "change backlight brightness by"
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -1045,6 +888,7 @@
                                                             "text": "percent"
                                                         },
                                                         "type": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "target": {
@@ -1054,13 +898,11 @@
                                                                     },
                                                                     "decl": "ref"
                                                                 }
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 },
@@ -1075,6 +917,7 @@
                                     },
                                     "items": [
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -1087,6 +930,7 @@
                                                     },
                                                     "children": {
                                                         "condition": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "decl": {
@@ -1111,6 +955,7 @@
                                                                     },
                                                                     "args": {
                                                                         "A": {
+                                                                            "decl": "Parser",
                                                                             "items": [
                                                                                 {
                                                                                     "decl": {
@@ -1134,19 +979,17 @@
                                                                                         }
                                                                                     }
                                                                                 }
-                                                                            ],
-                                                                            "decl": "Parser"
+                                                                            ]
                                                                         },
                                                                         "B": {
+                                                                            "decl": "Parser",
                                                                             "items": [
                                                                                 "1"
-                                                                            ],
-                                                                            "decl": "Parser"
+                                                                            ]
                                                                         }
                                                                     }
                                                                 }
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         },
                                                         "statements": {
                                                             "decl": {
@@ -1159,19 +1002,19 @@
                                                             },
                                                             "items": [
                                                                 {
+                                                                    "decl": "Parser",
                                                                     "items": [
                                                                         "x=[+]+str($percent)"
-                                                                    ],
-                                                                    "decl": "Parser"
+                                                                    ]
                                                                 }
                                                             ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -1194,19 +1037,19 @@
                                                             },
                                                             "items": [
                                                                 {
+                                                                    "decl": "Parser",
                                                                     "items": [
                                                                         "x = [-]+str($percent)"
-                                                                    ],
-                                                                    "decl": "Parser"
+                                                                    ]
                                                                 }
                                                             ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         },
                                         {
+                                            "decl": "Parser",
                                             "items": [
                                                 {
                                                     "decl": {
@@ -1219,6 +1062,7 @@
                                                     },
                                                     "children": {
                                                         "command": {
+                                                            "decl": "Parser",
                                                             "items": [
                                                                 {
                                                                     "decl": {
@@ -1243,6 +1087,7 @@
                                                                     },
                                                                     "args": {
                                                                         "A": {
+                                                                            "decl": "Parser",
                                                                             "items": [
                                                                                 {
                                                                                     "decl": {
@@ -1255,61 +1100,35 @@
                                                                                     },
                                                                                     "text": "xbacklight "
                                                                                 }
-                                                                            ],
-                                                                            "decl": "Parser"
+                                                                            ]
                                                                         },
                                                                         "B": {
+                                                                            "decl": "Parser",
                                                                             "items": [
                                                                                 "$x"
-                                                                            ],
-                                                                            "decl": "Parser"
+                                                                            ]
                                                                         }
                                                                     }
                                                                 }
-                                                            ],
-                                                            "decl": "Parser"
+                                                            ]
                                                         }
                                                     }
                                                 }
-                                            ],
-                                            "decl": "Parser"
+                                            ]
                                         }
                                     ]
                                 }
                             }
                         }
-                    ],
-                    "decl": "Parser"
+                    ]
                 },
                 {
+                    "decl": "Parser",
                     "items": [
                         ""
-                    ],
-                    "decl": "Parser"
+                    ]
                 }
             ]
-        },
-        "name": {
-            "decl": {
-                "target": {
-                    "name": "text",
-                    "resolve": true,
-                    "class": "nodecl"
-                },
-                "decl": "ref"
-            },
-            "text": "backlight"
-        },
-        "file": {
-            "decl": {
-                "target": {
-                    "name": "text",
-                    "resolve": true,
-                    "class": "nodecl"
-                },
-                "decl": "ref"
-            },
-            "text": "library/xbacklight.lemon.json"
         }
     }
 }
