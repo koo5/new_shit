@@ -1,3 +1,5 @@
 unhide ["expression","text"]
 def x():
-	print "x"
+{
+	print "x";
+}

@@ -275,7 +275,7 @@ class ThreadedMarpa(object):
 			symbol_ranks = s.symbol_ranks,
 			rules = s.rules[:],
 			for_node = for_node,
-			debug_sym_names = s.debug_sym_names[:],
+			#debug_sym_names = s.debug_sym_names[:],
 			start=s.start))
 
 	def enqueue_parsing(s, tr):

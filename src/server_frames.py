@@ -312,7 +312,9 @@ class Menu(SidebarFrame):
 				print ("current_parser_node could have been deleted, assertion error", e)
 				return
 			s.update_current_text()
+			logging.getLogger("root").debug("scope:%s items" % len(scope))
 			s.prepare_grammar(scope)
+			log("scope:%s items" % len(scope))
 			s.create_palette(scope, s.editor.atts, s.current_parser_node)
 			s.signal_change()
 
@@ -368,7 +370,6 @@ class Menu(SidebarFrame):
 	def create_palette(s, scope, atts, parser):
 		log = logging.getLogger('menu').debug
 		s.palette_results = []
-		log("scope:%s items"%len(scope))
 		for x in scope:
 			log("scope item:%s:"%x)
 			a = palette.palette(x, scope, s.current_text, parser)

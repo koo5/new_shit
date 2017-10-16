@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 """
@@ -223,7 +224,7 @@ def deserialize(data, parent):
 	if not 'decl' in data: # every node must have a type
 		raise DeserializationException("no decl key in %s"%data)
 	decl = data['decl']
-	log("deserializing node with decl %s"%repr(decl))
+	logging.getLogger("serialization").debug("deserializing node with decl %s"%repr(decl))
 	if decl == 'Parser': # ok, some nodes are special, we dont have a nodecl for Parser
 		return Parser.deserialize(data, parent)
 	elif decl == 'defun': # i dont save the exact class of functions definitions, makes it easier to change functions from BuiltinPythonFunctionDecl to FunctionDefinition, for example
@@ -233,10 +234,10 @@ def deserialize(data, parent):
 	elif isinstance(decl, unicode): # we will look for a nodecl node with this name
 		decl = find_decl(decl, parent.nodecls)
 		if decl:
-			log("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
+			logging.getLogger("serialization").debug("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
 			return decl.instance_class.deserialize(data, parent)
 		else:
-			log("nodecl node not found")
+			logging.getLogger("serialization").debug("nodecl node not found")
 			raise DeserializationException ("cto takoj " + repr(decl))
 	elif isinstance(decl, dict): # the node comes with a decl as, basically, its child
 		decl = deserialize(decl, parent)
@@ -244,9 +245,13 @@ def deserialize(data, parent):
 
 
 		try:
-			return deref_decl(decl).instance_class.deserialize(data, parent)
+			logging.getLogger("serialization").debug("got %s, lets deref_decl it..."%decl)
+			ddd = deref_decl(decl)
+			logging.getLogger("serialization").debug("ok thats %s" % ddd)
+			return ddd.instance_class.deserialize(data, parent)
 		except DeserializationException as e:
-			log(e)
+			#logging.getLogger("serialization").debug(e)
+			print (e)
 			#raise
 			return failed_deser(data, parent)
 
@@ -260,7 +265,9 @@ def failed_deser(data, parent):
 	r = Serialized.fresh()
 	r.parent = parent
 	if 'last_rendering' in data:
-		r.ch.last_rendering.pyval = data['last_rendering']
+		p = Parser()
+		r.ch.last_rendering = p
+		p.items.append(Text(data['last_rendering']))
 	r.ch.serialization = to_lemon(data)
 	r.fix_parents()
 	return r
@@ -271,7 +278,7 @@ def find_decl(name, decls):
 	assert isinstance(name, unicode)
 	for i in decls:
 		if name == i.name:
-			log("found:%s",name)
+			logging.getLogger("serialization").debug("found:%s",name)
 			return i
 	raise DeserializationException ("%s not found in %s"% (repr(name), repr(decls)))
 
@@ -279,7 +286,7 @@ def find_decl(name, decls):
 def resolve(data, parent):
 	assert parent
 	assert(data['resolve'])
-	log("resolving %s", data)
+	logging.getLogger("serialization").debug("resolving %s", data)
 	scope = parent.scope()
 
 	if 'decl' in data:
@@ -299,9 +306,9 @@ def resolve(data, parent):
 			for i in scope:
 				#if decl.eq(i.decl) and i.name == name:
 				dd1,dd2 = deref_decl(decl) ,deref_decl(i.decl)
-				log('dd1:%s, dd2:%s'%(dd1,dd2))
+				logging.getLogger("serialization").debug('dd1:%s, dd2:%s'%(dd1,dd2))
 				if dd1 == dd2:
-					log("in scope:%s",i)
+					logging.getLogger("serialization").debug("in scope:%s",i)
 					if i.name == name:
 						return i
 			raise DeserializationException("node not found: %s ,decl: %s"%(data,decl))
@@ -309,13 +316,13 @@ def resolve(data, parent):
 	elif 'class' in data:
 		sought_name = data['name']
 		sought_class_name = data['class']
-		log("looking for name:%s, class:%s", sought_name, sought_class_name)
+		logging.getLogger("serialization").debug("looking for name:%s, class:%s", sought_name, sought_class_name)
 		for i in scope:
 			class_name = i.__class__.__name__.lower()
 
 			if class_name == sought_class_name:
 				name = i.name
-				log("class:%s, name:%s",class_name, name)
+				logging.getLogger("serialization").debug("class:%s, name:%s",class_name, name)
 				if name == sought_name:
 					return i
 		raise DeserializationException("node with name %s and class %s not found"%(sought_name, sought_class_name))
@@ -333,13 +340,14 @@ class NodePersistenceStuff(object):
 	def serialize(s):
 		#assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
 		r = odict(s.serialize_decl())
+		r["last_rendering"] = s.tostr()
 		r.update(s._serialize())
-		print("saving...", json.dumps(r, indent = 4))
+		print("saving...", json.dumps(r, indent = 4, sort_keys=True))
 		return r
 
 	def serialize_decl(s):
 		if s.decl:
-			#log("serializing decl %s of %s"%(s.decl, s))
+			logging.getLogger("serialization").debug("serializing decl %s of %s"%(s.decl, s))
 			return {'decl': s.decl.serialize()}
 		else:
 			return {'class': s.__class__.__name__.lower()}
@@ -439,8 +447,9 @@ class VarRefPersistenceStuff(BaseRefPersistenceStuff):
 		placeholder = Text("placeholder")
 		placeholder.parent = parent
 		decl = deserialize(data['target']['decl'], placeholder)
+		logging.getLogger("serialization").debug('vardecl decl:%s', decl)
 		for i in parent.vardecls_in_scope:
-			log('i in parent.vardecls_in_scope:%s',i)
+			logging.getLogger("serialization").debug('i in parent.vardecls_in_scope:%s',i)
 			if decl.eq_by_value_and_python_class(i.decl):
 				if i.name == data['target']['name']:
 					r = cls(i)
@@ -471,7 +480,7 @@ class ParserPersistenceStuff(object):
 		assert parent
 		r = cls()
 		r.parent = parent
-		log("deserializing Parser "+str(data))
+		logging.getLogger("serialization").debug("deserializing Parser "+str(data))
 		for i in data['items']:
 			if isinstance(i, unicode):
 				r.add(widgets.Text(666, i))
@@ -519,7 +528,9 @@ def resolve_function(data, parent):
 			if i.ch.sig.eq_by_value_and_python_class(sig):
 				#log("found")
 				return i
-		raise DeserializationException("function %s not found by sig" % data)
+		for i in funcs:
+			logging.getLogger("serialization").debug("function considered:%s"%i)
+		raise DeserializationException("function not found by sig:%s" % sig)#json.dumps(sig, indent = 4, sort_keys=True))
 
 	else:
 		raise DeserializationException("function call without neither sig nor name:%s" % data)
@@ -1678,10 +1689,14 @@ class Module(Syntaxed):
 		#s = yaml.dump(s.serialize(), indent = 4)
 		#open('test_save.lemon', "w").write(s)
 		#log(s)
-		#todo easy: find a json module that would preserve odict ordering (or hjson)
-		import json
+
+		for i in s.flatten():
+			if isinstance(i, Serialized):
+				print("warning: saving Serialized:%s"%i)
 		ss = s.serialize()
-		out = json.dumps(ss, indent = 4)
+
+		import json
+		out = json.dumps(ss, indent = 4, sort_keys=True)
 		with open(s.file_name, "w") as f:
 			f.write(out)
 			f.close()
@@ -2352,7 +2367,9 @@ class Parser(ParserPersistenceStuff, ParserBase):
 			return p.type
 		elif isinstance(p, (Syntaxed, FunctionCall, CompoundNode)):
 			return p.child_type(s)
-		elif isinstance(p, (List,Dict)):
+		elif isinstance(p, (List, Dict)):
+			return p.item_type
+		elif isinstance(p, Serialized):
 			return p.item_type
 
 		else: assert False,    p
@@ -3419,8 +3436,8 @@ def build_in_lemon_language():
 
 
 	build_in(SyntaxedNodecl(Serialized,
-				   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
-				   {'last_rendering': B.text,
+				   ["failed to deserialize:", ChildTag("last_rendering"), ChildTag("serialization")],
+				   {'last_rendering': B.anything,
 				    'serialization':dict_from_to('text', 'anything')}))
 
 
@@ -3483,7 +3500,16 @@ def load_module(file_name, placeholder):
 		if isinstance(i, Serialized):
 			i.unserialize()
 			d.fix_parents()
-	return "ok"
+	bad = False
+	for i in d.flatten():
+		if isinstance(i, Serialized):
+			print("deserialization failed:%s"%i)
+			bad = True
+	if bad:
+		print ("...loaded with warnings")
+		return "warning"
+	else:
+		return "ok"
 
 
 
@@ -3992,25 +4018,6 @@ def register_class_symbol(cls):
 		r = m.symbol('number')
 		m.rule('number_is_digits', r, digits, (ident, cls))
 		return r
-
-
-
-
-	#elif Statements.__subclasscheck__(cls):
-	#	log("registering Statements grammar")
-	#	parser = m.symbol('parser')
-	#	parser_one_char = m.symbol('parser_one_char')
-	#	m.rule('parser1', parser_one_char, m.syms.nonspecial_char)
-	#	m.rule('parser2', p+arser_one_char, m.syms.known_char)
-	#	m.sequence('parser', parser, parser_one_char, min=0)
-	#	statement_followed_by_parser = m.symbol('statement_followed_by_parser')
-	#	m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
-	#	m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-	#	m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-	#	r = m.symbol('Statements literal head')
-	#	m.rule('statements literal head', r, [m.maybe_whitespace, m.knowffffn_char('{'), m.maybe_whitespace, m.known_char('}')],  empty_statements_body_from_parse)
-	#	return r
-
 
 
 

@@ -120,7 +120,7 @@ def generate_bnf(filename='grammar.bnf'):
 
 
 def generate_png(graph):
-	graph.format = 'png'
+	graph.format = 'svg'
 	graph.render()
 
 def generate_gv_dot(graph):
