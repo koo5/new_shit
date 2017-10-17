@@ -3884,8 +3884,6 @@ def register_symbol(s):
 	#	xxx
 	if isinstance(s, SyntacticCategory):
 		node_symbols[s] = m.symbol(s.name)
-		return
-
 	elif isinstance(s, WorksAs):
 		if s in node_rules:
 			return
@@ -3901,20 +3899,28 @@ def register_symbol(s):
 		if lhs != None and rhs != None:
 			r = m.rule(str(s), lhs, rhs)
 			node_rules[s] = r
-		return
-
-	elif isinstance(s, Statements):
-		node_symbols[s] = s.instance_class.register_class_symbol()
-
 	elif isinstance(s, (ParametricListType)):
-		node_symbols[s] = s.instance_class.register_class_symbol()
-		#s.ch.
-
+		dd = s.ddecl
+		assert isinstance(dd, ParametricNodecl)
+		for k,v in iteritems(node_symbols):
+			if k.eq_by_value_and_python_class(s): #should be by
+				node_symbols[s] = v
+				return
+		item_symbol = deref_decl(s.ch.itemtype).symbol
+		if item_symbol == None:
+			log = logging.getLogger("marpa").warning("no symbol for %s" % s)
+			return
+		desc = '%s literal' % s.tostr()
+		node_symbols[s] = r = m.symbol(desc)
+		log("registering %s grammar" % desc)
+		optionally_elements = m.symbol('optionally_elements of %s' % desc)
+		m.sequence('optionally_elements of %s' % desc, optionally_elements, item_symbol, ident_list, m.known_char(','), 0)
+		opening, closing = m.known_char('['), m.known_char(']')
+		m.rule('list literal of %s' % desc, r, [opening, optionally_elements, closing], s.instance_class.from_parse)
 	elif isinstance(s, (NodeclBase)):
 		node_symbols[s] = s.instance_class.register_class_symbol()
-		return
-
-	log(("no symbol for", s))
+	else:
+		log(("no symbol for", s))
 
 
 
@@ -4036,7 +4042,7 @@ def register_class_symbol(cls):
 	elif Statements.__subclasscheck__(cls):
 		("registering Statements grammar")
 		optionally_elements = m.symbol('optionally_elements')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list,m.known_char('\n'), 0)
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char('\n'), 0)
 		r = m.symbol('Statements')
 		m.rule('list literal', r, [m.known_char('{'), optionally_elements, m.known_char('}')],cls.from_parse)
 		return r

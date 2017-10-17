@@ -118,6 +118,9 @@ class ThreadedMarpa(object):
 	def sequence(s,debug_name, lhs, rhs, action=ident, separator=-1, min=1, proper=False):
 		assert type(lhs) == symbol_int
 		assert type(rhs) == symbol_int
+		assert (type(separator) in (int, symbol_int)),    type(separator)
+		assert type(min) == int
+		assert type(proper) == bool
 		assert type(debug_name) == unicode
 		s.rules.append((True, debug_name, lhs, rhs, action, separator, min, proper))
 
@@ -336,7 +339,7 @@ class MarpaThread(LemmacsThread):
 		s.g.start_symbol_set(s.c_syms[inp.start])
 		s.c_rules = []
 		for rule in inp.rules:
-			#log(rule)
+			log(rule)
 			if rule[0]: # its a sequence
 				_, _, lhs, rhs, action, sep, min, prop = rule
 				s.c_rules.append(s.g.sequence_new(lhs, rhs, sep, min, prop))
