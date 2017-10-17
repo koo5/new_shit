@@ -169,7 +169,7 @@ class ThreadedMarpa(object):
 		return m._parser_symbol
 
 
-	def collect_grammar(s,  full_scope:list, scope:list,  start=None):
+	def collect_grammar(s, full_scope:list, scope:list, start=None):
 		full_scope = full_scope[:]
 		scope = scope[:]
 		assert scope == uniq(scope),  (scope,uniq(scope))

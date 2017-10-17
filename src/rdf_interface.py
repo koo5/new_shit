@@ -36,7 +36,7 @@ from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 nodes.m = m = ThreadedMarpa(print, True)
 
 def parse_sync(p, text=None):
-	m.collect_grammar(p.full_scope(), p.scope(), p.parsed_symbol)
+	m.collect_grammar(p.full_scope(), p.scope(), p.type)#parsed_symbol)
 	m.enqueue_precomputation(None)
 	while True:
 		msg = m.t.output.get()
@@ -51,15 +51,23 @@ def parse_sync(p, text=None):
 			raise 666
 
 r = nodes.make_root()
-module = r['empty module']
+module = r['cli dummy empty module']
 p = nodes.Parser()
-p.add(nodes.Text(value = text))
 module.ch.statements.add(p)
+if text.startswith("unhide"):
+	p._type = nodes.B.unhidenode
+	split = text.index("\n")
+	first_line = text[:split]
+	rest_of_lines = text[split:]
+	p.add(nodes.Text(value = text))
+	r = parse_sync(p, first_line)
+	if (r and len(r)):
+		p=r[0]
+		print (p.eval())
+	p = nodes.Parser()
+	module.ch.statements.add(p)
+	p.add(nodes.Text(value=rest_of_lines))
 
-r = parse_sync(p, text)
-if (r and len(r)):
-	p=r[0]
-	print (p.eval())
 else:
 	print ("no parse")
 

@@ -1,0 +1,2 @@
+unhide ["builtins","text"]
+print "x"

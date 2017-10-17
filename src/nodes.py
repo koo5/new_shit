@@ -1710,7 +1710,10 @@ class Module(Syntaxed):
 		return what_module_sees(s)
 
 class BuiltinModule(Module):
-	pass
+	_name = "some builtin module"
+	@property
+	def name(s):
+		return s._name
 class LikiModule(Module):
 	pass
 class ModuleThatDoesntSeeAnythingExceptUnhide(Module):
@@ -2352,16 +2355,18 @@ class ParserBase(Node):
 		s.fix_parents()
 
 class Parser(ParserPersistenceStuff, ParserBase):
+	_type = None
 	def __init__(s):
 		super(Parser, s).__init__()
 
-	#@property
-	#def parsed_symbol(s):
-	#	if s.is_tail_of_statements_body:
-
+	@property
+	def parsed_symbol(s):
+		return s.type.symbol
 
 	@property
 	def type(s):
+		if s._type:
+			return s._type
 		p = s.parent
 		if isinstance(p, Parser):
 			return p.type
@@ -2973,11 +2978,14 @@ def make_root():
 	uh = B.unhidenode.inst_fresh()
 	uh.ch.what.view_mode = 2
 	uh.ch.what.add(Text("functioncall"))
-	uh.ch.what.add(Text("backlight"))
+	uh.ch.what.add(Text("builtins"))
 
 	r["empty module"].ch.statements.items = [uh, Parser()]
 
+	r["cli dummy empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
+
 	r["builtins"] = B.builtinmodule.inst_fresh()
+	r["builtins"]._name = "builtins"
 	r["builtins"].ch.statements.items = list(itervalues(B._dict))
 	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
 	log("built in %s nodes",len(r["builtins"].ch.statements.items))
@@ -3895,8 +3903,14 @@ def register_symbol(s):
 			node_rules[s] = r
 		return
 
+	elif isinstance(s, Statements):
+		node_symbols[s] = s.instance_class.register_class_symbol()
 
-	elif isinstance(s, (NodeclBase, ParametricListType)):
+	elif isinstance(s, (ParametricListType)):
+		node_symbols[s] = s.instance_class.register_class_symbol()
+		#s.ch.
+
+	elif isinstance(s, (NodeclBase)):
 		node_symbols[s] = s.instance_class.register_class_symbol()
 		return
 
@@ -4019,7 +4033,13 @@ def register_class_symbol(cls):
 		m.rule('number_is_digits', r, digits, (ident, cls))
 		return r
 
-
+	elif Statements.__subclasscheck__(cls):
+		("registering Statements grammar")
+		optionally_elements = m.symbol('optionally_elements')
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list,m.known_char('\n'), 0)
+		r = m.symbol('Statements')
+		m.rule('list literal', r, [m.known_char('{'), optionally_elements, m.known_char('}')],cls.from_parse)
+		return r
 
 	elif List.__subclasscheck__(cls):
 		log("registering list grammar")
@@ -4070,12 +4090,14 @@ def scope_after_hiding_and_unhiding(s):
 			#else:
 			for j in full:
 				j = j.parsed
+				try:
+					name = j.name
+				except (KeyError, AttributeError):
+					logging.getLogger("scope").debug("does not have name")
+					continue
 				if isinstance(j, Module):
 					logging.getLogger("scope").debug("considering module %s" % j)
-					if not ('name' in j.ch._dict):
-						logging.getLogger("scope").debug("does not have name")
-						continue
-					elif (j.name in what):
+					if (name in what):
 						logging.getLogger("scope").debug("unhiding module %s:"%j)
 						for k in j.ch.statements.items:
 							k = k.parsed
@@ -4083,7 +4105,7 @@ def scope_after_hiding_and_unhiding(s):
 							if k not in r:
 								r.append(k)
 
-				elif is_decl(j) and (j.name in what):
+				elif is_decl(j) and (name in what):
 					logging.getLogger("scope").debug("unhiding %s" % j)
 					if j not in r:
 						r.append(j)
