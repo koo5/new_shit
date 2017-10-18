@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+nice -n 19 /home/kook/Downloads/dashcore-0.12.1/bin/dash-qt&
+
+cd /home/kook/Downloads/monero-gui-0.10.3.1-beta2/
+
+nice -n 19 ./start-gui.sh&
+
+nice -n 19 electrum&

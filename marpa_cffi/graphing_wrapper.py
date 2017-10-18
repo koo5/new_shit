@@ -70,6 +70,17 @@ def start():
 
 	clear()
 
+
+def esc(name):
+	r = ""
+	for ch in name:
+		if not ch.isalnum():
+			r+="_"
+		else:
+			r+=ch
+	return r
+
+	#,,,
 '''
 def sss(sym):
 	r = str(sym)

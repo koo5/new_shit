@@ -1,0 +1,8 @@
+kook ALL=(ALL) NOPASSWD:/home/kook/bin/routes_eline_vrany
+kook ALL=(ALL) NOPASSWD:/home/kook/bin/killall.sh
+kook ALL=(ALL) NOPASSWD:/home/kook/bin/killall.sh
+kook ALL=(ALL) NOPASSWD:/home/kook/bin/killall.sh
+kook ALL=(ALL) NOPASSWD:/home/kook/bin/snap.fish
+
+
+

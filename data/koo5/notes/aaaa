@@ -1,0 +1,21 @@
+
+
+
+
+
+"""
+env ASAN_OPTIONS="symbolize=1,detect_leaks=0,strict_init_order=1,check_initialization_order=1,verbosity=1" gdb ./eyasdisp  #  --simulation --debug all:DEBUG -s jessie.elektroline.cz -v RM
+cd ~/elektroline/asan-build/3rdparty/opc ; and  make -j 4; and cd ~/elektroline/asan-build/libeyas/ ; and make -j 4; and cd ~/elektroline/asan-build/eyasdisp/ ; and make -j 4; and cd ~/elektroline/asan-build/eyassrv/ ; and make -j 4
+~/Qt/5.7/gcc_64/bin/qmake  -r ~/elektroline/EYAS-master/eyas.pro   -spec linux-clang
+
+
+
+
+
+
+
+
+
+
+
+"""

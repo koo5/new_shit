@@ -1,0 +1,125 @@
+04:50 < HMCa_> just a constraint around each ill-formed expression structure
+04:50 < stoopkid> can you do an example?
+04:50 < HMCa_> {?x a pi. ?x a sigma.}=>false.
+
+
+05:23 < stoopkid> http://www.cse.chalmers.se/~ulfn/darcs/Agda2/examples/AIM6/Path/Prelude.agda
+05:23 < stoopkid> data Bool : Set where
+05:23 < stoopkid> false : Bool
+05:23 < stoopkid> true : Bool
+
+
+05:28 < HMCa_> http://augustss.blogspot.com/2007_10_01_archive.html
+05:29 < HMCa_> http://augustss.blogspot.com/2007_11_01_archive.html
+
+
+alpha-equivalence:	can be made syntactically equal by renaming
+			vars
+
+beta-equivalence:	can be made syntactically equal by reducing
+			to normal form and possibly renaming vars
+
+eta-equivalence:	f is eta-equivalent to \x.(f x)
+
+
+
+For type-inferencing an expression, we have to know the type of all
+the free variables in the expression. We know the type of all the bound
+variables already because type-annotations for bound variables are
+syntactically required by simply-typed lambda.
+
+
+
+tCheck :: Env -> Expr -> TC Type
+
+#The type of each var should be present in the Env
+#findVar will look up the var in the Env and return the type
+
+tCheck r (Var s) =
+    findVar r s
+
+
+
+
+#Type-check the expression in function-position (.ch.e1)
+#If it's not a function-type, then fail type-checking
+#The argument-type of the function will be 'at'
+#Type-check the expression in argument-position (.ch.e2), into 'ta'
+#If ta != at, then fail type-checking.
+#Otherwise, return the return-type 'rt' of the function.
+
+tCheck r (App f a) = do
+    tf <- tCheck r f
+    case tf of
+     Arrow at rt -> do
+        ta <- tCheck r a
+        when (ta /= at) $ throwError "Bad function argument type"
+        return rt
+     _ -> throwError "Non-function in application"
+
+
+
+
+#Add the bound variable (.ch.var) to the Env
+#Type-check the (.ch.exp) using the Env that includes the
+#bound variable. It's type will go into 'te'
+#If it type-checks, then return the type "t -> te"
+
+tCheck r (Lam s t e) = do
+    let r' = extend s t r
+    te <- tCheck r' e
+    return $ Arrow t te
+
+
+
+
+
+
+
+
+
+.....monads...............
+..................
+
+"monad" in functional programming refers to
+"strong monad" in category theory
+
+Strong monads:
+"A strong monad over a monoidal category (C,*,I) is a monad (T,m,n),
+together with a natural transformation t_(A,B) : A*TB -> T(A*B), called
+tensorial strength, such that the following 5 diagrams commute for
+every objet A, B, and C: "
+
+.........
+.........
+yea anybody who says they understand monads is a liar unless they're on
+like HMC's level
+
+
+
+Monoidal categories:
+"A monoidal category is a category C equipped with:
+  * a bifunctor F : C*C -> C called the tensor product or monoidal product
+  * an object I called the unit object or identity object
+  * three natural isomorphisms subject to certain 'coherence conditions'
+    expressing the fact that the tensor operation
+	* is associative: there is an isomorphism A called the
+		associator with components A_(a,b,c) : (a*b)*c ~ a*(b*c)
+	* has I as left and right identity: there are two isomorphisms
+		P and R, called the left and right unitors, with
+		components P_a : I*a ~ a, and R_a : a*I ~ a
+
+  The coherence conditions:
+	1) ((a*b)*c)*d --[A_(a,b,c)*1_d]--> (a*(b*c))*d
+	   etc...
+
+"
+
+
+Monads:
+"If F and G are a pair of adjoint functors, with F left-adjoint to G,
+then the composition G.F is a monad."
+
+
+Adjoint functors:
+" ... "

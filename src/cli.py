@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 import sys
+
+
 
 import lemon_utils.lemon_logging
 from marpa_cffi.marpa_cffi import lib
 
+
 import nodes
 nodes.autocomplete  = False
 
+
 from marpa_cffi.marpa_rpc_client import ThreadedMarpa
 nodes.m = m = ThreadedMarpa(print, True)
+
+
+
+
 
 
 def handle(text=None):
@@ -26,12 +35,14 @@ def handle(text=None):
 		return msg.results
 
 def parse(text):
-	for i,x in enumerate(text):#this just prints the characters you got from stdin
-		print(i, x)#prefixed by their position in the string
+	#this just prints the characters you got from stdin
+	#prefixed by their position in the string
+	for i,x in enumerate(text):
+		print(i, x)
 	m.enqueue_precomputation(None)
 	return handle(text)
 
-	
+
 #mod="lc1-test",nodes.lc1
 #mod="lc2-test",nodes.lc2
 #mod="cube-test",nodes.cube

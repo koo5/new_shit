@@ -1,0 +1,187 @@
+#languages
+##lemon1
+
+
+delka prazdnyho listu s naakumulovanou delkou N je N.
+delka zbytku listu s naakumulovanym N
+
+
+to compile something:
+
+[a defun; syntax ("compile" [a parameter; name "something"])]
+
+
+to print <something>:
+        return the effect of writing the string representation of it into stdout;
+
+ofc theres a bazillion design decisions that i had to haphazardly make to be able to write this
+
+now, before turning this into some kind of ast, are we speaking rules or functions?
+
+(function definition:
+    primary syntax: ["print", (parameter: name: "something")]
+    body:...
+    
+as a rule:
+:print a tau:rule;
+lemon:primary_syntax: ("print" [a lemon:parameter; name: "something"]);
+
+
+
+
+
+
+
+
+##editor control language
+
+
+#parsing,grammars,
+
+##stoopkid1
+
+sentence mySentence= 
+"FERDINAND and ELIZABETH, by the Grace of God, King and Queen of Castile, of Leon, of Arragon, of Sicily, of Granada, of Toledo, of Valencia, of Galicia, of ...."
+whats the goal of this mapping? what are you gonna do with { %malePerson %maleRoyaltyTitle %place}? would pattern match this sentence and then derive facts like "Ferdinand King Castile"
+ok makes sense
+mapping myMapping{
+    //sentence embedded with variables
+    "?malePerson and ?femalePerson, by the Grace of God, ?maleRoyaltyTitle and
+    ?femaleRoyaltyTitle of ?listOfPlaces" 
+    => 
+    //generates n3 rule on those variables
+    "{?place in ?listOfPlace} => { %malePerson %maleRoyaltyTitle %place}"
+}
+
+So, ideally these mappings would end up getting reused, rather than writing one for each different sentence, but managing mapping reusage can be another part of it.
+
+so this part would be part of what the pattern matching checks against, it's more
+than just sentence structure it's whether the concepts are typed correctly (as in rdf:type)
+sentenceRef  mySentenceRef{  
+    //if it pattern matches with some reference KB:
+    Ferdinand a malePerson.
+    Elizabeth a femalePerson
+    King a maleRoyaltyTitle
+    Queen a femaleRoyaltyTitle
+    Castile a place
+    Leon a place
+    Arragon a place
+    Sicily a place
+    Granada a place
+    ....
+    (Castile Leon Arragon Sicily Granada ...) a listOfPlaces
+    
+    {?x a listOfPlaces. ?y list_in ?x} => {?y a place}
+    {?t a maleRoyaltyTitle. ?x ?t ?y} => {?x a malePerson. ?y a place}.
+    
+    
+}
+
+//this would either overlap, contradict or extend any results derived from the mapping.
+rdf myRDF{
+    Ferdinand King   Castile,
+    Ferdinand King   Leon.
+    ...
+}
+
+mySentence mapping myMapping.
+mySentence ref mySentenceRef.
+mySentence KB myRDF.
+
+
+
+Just a real rough example-ish outline of how it would trace from natural language to triples.
+
+
+
+##i should write something about new_shit, there were some whacky/original ideas
+
+
+##marpa and its role
+##gf and its role
+
+##en.wikipedia.org/wiki/Stochastic_context-free_grammar
+
+
+
+
+
+
+
+
+
+
+to draw a box:
+...
+
+a crate is a kind of block
+a crate is usually 1m high.
+a crate is usually 1m wide. 
+a crate is usually 1m long. 
+
+
+
+maybe_remove
+
+
+
+
+
+
+switch to the next tab
+
+
+object editor
+
+ the lol - list of lines
+
+	@property
+	def cols(s):
+		return s.rect.width // get_font(0).width
+	@property
+	def rows(s):
+		return s.rect.width // get_font(0).height
+
+
+to draw:
+	pos = 0
+	l = scroll amount
+	
+	
+
+
+
+
+
+
+an input is a kind of object
+
+
+it has an input, which is an ast
+it has an output, which is an ast
+it has an update button, which is a button
+
+
+the update button icon is update.png
+the update button width is the update button height is the font height
+
+
+
+
+
+
+
+what is the type system of the language?
+can we have imperative constructs?
+
+
+
+
+
+"simple declaration" has syntax [(name - string) is a (
+
+
+
+
+
+(name - a string) "is" (type - a class)

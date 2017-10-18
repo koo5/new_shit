@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://www.semanticweb.org/kook/ontologies/2017/3/OWLLIst#"
+     xml:base="http://www.semanticweb.org/kook/ontologies/2017/3/OWLLIst"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <owl:Ontology rdf:about="http://www.semanticweb.org/kook/ontologies/2017/3/OWLLIst"/>
+    
+  <!-- OWLList -->
+  <owl:Class rdf:about="#OWLList">
+    <rdfs:subClassOf>
+      <owl:Restriction>
+        <owl:onProperty>
+          <owl:ObjectProperty rdf:about="#isFollowedBy"/>
+        </owl:onProperty>
+        <owl:allValuesFrom rdf:resource="#OWLList"/>
+      </owl:Restriction>
+    </rdfs:subClassOf>
+    <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+  </owl:Class>
+
+  <!-- isFollowedBy -->
+  <owl:ObjectProperty rdf:about="#isFollowedBy">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#TransitiveProperty"/>
+    <rdfs:subPropertyOf>
+      <owl:ObjectProperty rdf:ID="hasListProperty"/>
+    </rdfs:subPropertyOf>
+    <rdfs:range rdf:resource="#OWLList"/>
+  </owl:ObjectProperty>
+
+  <!-- hasContents -->
+  <owl:ObjectProperty rdf:about="#hasContents">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+    <rdfs:subPropertyOf>
+      <owl:ObjectProperty rdf:about="#hasListProperty"/>
+    </rdfs:subPropertyOf>
+  </owl:ObjectProperty>
+
+  <!--hasListProperty -->
+  <owl:ObjectProperty rdf:about="#hasListProperty">
+    <rdfs:domain rdf:resource="#OWLList"/>
+  </owl:ObjectProperty>
+
+  <!-- hasNext -->
+  <owl:FunctionalProperty rdf:about="#hasNext">
+    <rdfs:subPropertyOf rdf:resource="#isFollowedBy"/>
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+  </owl:FunctionalProperty>
+
+  <!-- EmptyList -->
+  <owl:Class rdf:about="#EmptyList">
+    <owl:equivalentClass>
+      <owl:Class>
+        <owl:intersectionOf rdf:parseType="Collection">
+          <owl:Class rdf:about="#OWLList"/>
+          <owl:Restriction>
+            <owl:onProperty>
+              <owl:ObjectProperty rdf:about="#hasContents"/>
+            </owl:onProperty>
+            <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#int"
+            >0</owl:maxCardinality>
+          </owl:Restriction>
+        </owl:intersectionOf>
+      </owl:Class>
+    </owl:equivalentClass>
+    <owl:equivalentClass>
+      <owl:Class>
+        <owl:intersectionOf rdf:parseType="Collection">
+          <owl:Class rdf:about="#OWLList"/>
+          <owl:Class>
+            <owl:complementOf>
+              <owl:Restriction>
+                <owl:onProperty>
+                  <owl:ObjectProperty rdf:about="#isFollowedBy"/>
+                </owl:onProperty>
+                <owl:someValuesFrom rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+              </owl:Restriction>
+            </owl:complementOf>
+          </owl:Class>
+        </owl:intersectionOf>
+      </owl:Class>
+    </owl:equivalentClass>
+  </owl:Class>
+  
+</rdf:RDF>

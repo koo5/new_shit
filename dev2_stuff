@@ -1,0 +1,70 @@
++		for n in scope:
++			if n.__class__.__name__ == 'WorksAs':
++				sups[n.ch.sup.parsed.target.symbol].append(n.ch.sub.parsed.target.symbol)
++			if n.__class__.__name__ == 'HasPriority':
++				pris[n.ch.value.parsed.pyval].append(n.ch.node.parsed.target.symbol)
++			if n.__class__.__name__ == 'HasAssociativity':
++				asoc[n.ch.value.parsed.pyval].append(n.ch.node.parsed.target.symbol)
+ 
+
+
++
++
++
++
++
++
++
++"""
++
++
++ 
++-def generate_png(graph):
++-	graph.format = 'svg'
++-	graph.render()
+++def generate_png(filename='grammar'):
+++	graph = generate()
+++	graph.format = 'png'
+++	graph.render(filename)
++ 
++-def generate_gv_dot(graph):
++-	graph.save()
+++def generate_gv(filename='grammar.gv'):
+++	generate().save(filename)
++ 
++-def generate(name):
++-	print ("generate graph:"+name)
+++def generate():
+++	print ("generate graph")
++ 	import graphviz
++ 
++-	graph = graphviz.Digraph(name)
+++	graph = graphviz.Digraph()
++ 	
++ 	for sym in syms:
++-#		try:
++-		label = sss(sym)
++-		color = 'black'
++-#		except:
++-#			label = str(sym)
++-#			color = 'gray'
+++		try:
+++			label = symid2name(sym)
+++			color = 'black'
+++		except:
+++			label = str(sym)
+++			color = 'gray'
++
++
++"""
++
+
+
+
+
+
+
+
+
+
+

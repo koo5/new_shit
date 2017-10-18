@@ -1,0 +1,168 @@
+{
+    "decl": {
+        "decl": "ref",
+        "target": {
+            "resolve": true,
+            "name": "likimodule",
+            "class": "syntaxednodecl"
+        }
+    },
+    "children": {
+        "statements": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "resolve": true,
+                    "name": "statements",
+                    "class": "nodecl"
+                }
+            },
+            "items": [
+                {
+                    "items": [
+                        {
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "resolve": true,
+                                    "name": "enumtype",
+                                    "class": "syntaxednodecl"
+                                }
+                            },
+                            "children": {
+                                "options": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "resolve": true,
+                                            "name": "list of anything",
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "resolve": true,
+                                                    "name": "definition",
+                                                    "class": "syntaxednodecl"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "text",
+                                                            "class": "nodecl"
+                                                        }
+                                                    },
+                                                    "text": "Sunday"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "text",
+                                                            "class": "nodecl"
+                                                        }
+                                                    },
+                                                    "text": "Monday"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "text",
+                                                            "class": "nodecl"
+                                                        }
+                                                    },
+                                                    "text": "Tuesday"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "resolve": true,
+                                                            "name": "text",
+                                                            "class": "nodecl"
+                                                        }
+                                                    },
+                                                    "text": "Wednesday"
+                                                }
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [
+                                                ""
+                                            ],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        },
+                                        {
+                                            "items": [],
+                                            "slot": 0,
+                                            "decl": "Parser"
+                                        }
+                                    ]
+                                },
+                                "name": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "resolve": true,
+                                            "name": "text",
+                                            "class": "nodecl"
+                                        }
+                                    },
+                                    "text": "weekday"
+                                }
+                            }
+                        }
+                    ],
+                    "slot": 0,
+                    "decl": "Parser"
+                }
+            ]
+        },
+        "file": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "resolve": true,
+                    "name": "text",
+                    "class": "nodecl"
+                }
+            },
+            "text": "liki.lemon.json"
+        }
+    }
+}

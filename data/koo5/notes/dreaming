@@ -1,0 +1,26 @@
+#delayed cursor move:
+
+  after nodes.Parser backspace:
+    s.root.delayed_cursor_move -= 1
+
+  after nodes.Parser unicode:
+    #move cursor to left to body start
+
+  after widgets.Text backspace
+    s.root.delayed_cursor_move -= 1
+
+  after widgets.Text unicode
+    s.root.delayed_cursor_move += len(e.uni)
+
+
+  see also:
+    nodes.ParserBase.post_insert_move_cursor
+
+
+cursor pos is a number
+
+
+to move cursor left:
+	move cursor left by one character
+
+to move cursor left by <number> character(s):

@@ -1,0 +1,5 @@
+sudo mount --bind /dev /444/dev
+sudo mount --bind /dev/pts /444/dev/pts
+sudo mount -t proc proc /444/proc
+sudo mount -t sysfs sys /444/sys
+sudo chroot /444 /bin/bash
