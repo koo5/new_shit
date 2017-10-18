@@ -278,12 +278,7 @@ def initial_resize():
 	except Exception as e:
 		info("%s, failed to work around stupid sdl, will continue thinking the window is 666x666, please do a manual resize", e)
 
-
-#db_worthy
-def set_pygame_keyboard_settings_to_system_settings():
-	"""
-	pygame 1, unix
-	"""
+def fix_keyboard():
 	repeat_delay, repeat_rate = 300, 30
 	try:#try to set SDL keyboard settings to system settings
 		lines = subprocess.check_output(['xset', '-q']).decode().splitlines()
@@ -293,9 +288,9 @@ def set_pygame_keyboard_settings_to_system_settings():
 		repeat_delay, repeat_rate = int(line[3]), int(line[6])
 	except Exception as e:
 		print ("cant get system keyboard repeat delay/rate:", e)
-	info ("setting repeat delay to %s, repeat rate to %s" % (repeat_delay, repeat_rate))
+	#print ("setting repeat delay to %s, repeat rate to %s" % (repeat_delay, repeat_rate))
 	pygame.key.set_repeat(repeat_delay, 1000//repeat_rate)
-#end
+
 
 
 
@@ -327,13 +322,6 @@ rpcing_frames.server.mods_to_str = mods_to_str
 def loop():
 	process_event(pygame.event.wait())
 
-
-
-
-
-
-
-
 def mainloop():
 	while True:
 		loop()
@@ -351,7 +339,7 @@ def main():
 	except:
 		pass
 
-	set_pygame_keyboard_settings_to_system_settings()
+	fix_keyboard()
 	change_font_size()
 
 	c = lemon_client.Client(thread_message_signal, send_thread_message)

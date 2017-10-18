@@ -1,19 +1,23 @@
 from nodes import *
+import traceback
 
 def tb():
-	return "hi"
-	import traceback
+	return None
 	return (traceback.extract_stack())
 
 def palette(s, scope, text, parser):
 	"create menu items"
 	if isinstance(s, CompoundNodeDef):
-		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), CompoundNode(s))]
+		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), Compound(s))]
 	elif isinstance(s, FunctionCallNodecl):
-		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
-		return [PaletteMenuItem(tb(), FunctionCall(x)) for x in decls]
-	#elif isinstance(s, FunctionDefinitionBase):
-	#	return [PaletteMenuItem(tb(), FunctionCall(s))]
+		#override Nodecl palette() which returns a menuitem with a fresh() instance_class,
+		#FunctionCall cant be instantiated without a target.
+		return []
+		#the stuff below is now performed in FunctionDefinitionBase
+#		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]
+#		return [PaletteMenuItem(FunctionCall(x)) for x in decls]
+	elif isinstance(s, FunctionDefinitionBase):
+		return [PaletteMenuItem(tb(), FunctionCall(s))]
 	elif isinstance(s, Definition):
 		return palette(s.ch.type, scope, text, None) + [PaletteMenuItem(tb(), Ref(s), 0)]
 	elif isinstance(s, SyntacticCategory):
@@ -21,7 +25,7 @@ def palette(s, scope, text, parser):
 	elif isinstance(s, EnumType):
 		r = [PaletteMenuItem(tb(), EnumVal(s, i)) for i in range(len(s.ch.options.items))] + [PaletteMenuItem(tb(), Ref(s))]
 		return r
-	elif isinstance(s, Nodecl):
+	elif isinstance(s, BasicNodecl):
 		i = s.instance_class
 		m = i.match(text)
 		if m:
@@ -32,7 +36,7 @@ def palette(s, scope, text, parser):
 			score = 0
 		return [PaletteMenuItem(tb(), value, {'hardcoded regex-y match':score})]
 	elif isinstance(s, ExpNodecl):
-		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
+		nodecls = [x for x in scope if isinstance(x, (Nodecl))]
 		return [PaletteMenuItem(tb(), Exp(x)) for x in nodecls]
 	elif isinstance(s, VarRefNodecl):
 		r = []
@@ -54,11 +58,9 @@ def palette(s, scope, text, parser):
 				return r
 		"""
 	elif isinstance(s, TypeNodecl):
-		nodecls = [x for x in scope if isinstance(x, (NodeclBase))]
+		nodecls = [x for x in scope if isinstance(x, (Nodecl))]
 		return [PaletteMenuItem(tb(), Ref(x)) for x in nodecls]
-	elif isinstance(s, NodeclBase):
+	elif isinstance(s, Nodecl):
 		return [PaletteMenuItem(tb(), s.instance_class.fresh())]
-#	elif isinstance(s, MycroftNodecl):
-#		return [PaletteMenuItem(tb(), s.instance_class.fresh(cmd)) for cmd in mycroft.complete(text)]
 	else:
 		return []

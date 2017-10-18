@@ -64,8 +64,7 @@ class Client():
 			rpcing_frames.server.load(args.run)
 			s.editor.root['loaded program'].run()
 
-		if not args.kbdbg:
-			s.initially_position_cursor()
+		s.initially_position_cursor()
 
 
 		if args.replay:
@@ -76,10 +75,8 @@ class Client():
 	def initially_position_cursor(s):
 		s.editor.maybe_redraw()
 
-		s._initially_position_cursor()
 		try:
-
-			pass
+			s._initially_position_cursor()
 		except Exception as e:
 			log(e.__repr__(), ", cant set initial cursor position")
 
@@ -87,7 +84,7 @@ class Client():
 		# if args.lesh:
 		#	something = root.root['lesh'].command_line
 		# else:
-		something = s.editor.counterpart.root['empty module'].ch.statements.items[1]
+		something = s.editor.counterpart.root['repl'].ch.statements.items[0]
 		s.editor.move_cursor(something)
 
 	def after_sidebar_changed(s):

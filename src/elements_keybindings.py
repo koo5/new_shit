@@ -198,7 +198,7 @@ def prev_syntax(s, e):
 def next_syntax(s, e):
 	s.next_syntax()
 
-add_keys(n.Syntaxed, n.Node, {
+add_keys(n.Compound, n.Node, {
 	K(KMOD_CTRL, K_PERIOD): H(prev_syntax),
     K(KMOD_CTRL, K_COMMA ): H(next_syntax)})
 
@@ -300,16 +300,16 @@ so it must have a handler defined for between, or a checker, and
 based on item_att delete(or deconstruct) the node
 if Parser is empty: check succeeds only for UNICODE (on body), creates Text
 """
+if False:
+	def step_fwd(s, e):
+		print("fwd")
+		s.step_fwd()
+	def step_back(s, e):
+		s.step_back()
 
-def step_fwd(s, e):
-	print("fwd")
-	s.step_fwd()
-def step_back(s, e):
-	s.step_back()
-
-add_keys(n.Kbdbg, None, {
-	K((),           K_F11):       H(step_back),
-	K((),           K_F12):       H(step_fwd),
-	K((),           K_F9):        H(n.Kbdbg.res_back),
-	K((),           K_F10):       H(n.Kbdbg.res_fwd)
-})
+	add_keys(n.Kbdbg, None, {
+		K((),           K_F11):       H(step_back),
+		K((),           K_F12):       H(step_fwd),
+		K((),           K_F9):        H(n.Kbdbg.res_back),
+		K((),           K_F10):       H(n.Kbdbg.res_fwd)
+	})

@@ -62,11 +62,11 @@ class Editor(ServerFrame):
 		super(Editor, s).__init__()
 
 		s.root = nodes.make_root()
-		if not args.kbdbg:
-			lc.build_in_lc1(s.root)
-			lc.build_in_lc2(s.root)
-			lc.build_in_cube(s.root)
-			mltt.build_in_MLTT(s.root)
+
+		#lc.build_in_lc1(s.root)
+		#lc.build_in_lc2(s.root)
+		##lc.build_in_cube(s.root)
+		#mltt.build_in_MLTT(s.root)
 
 		s.root.fix_parents()
 		s.atts = Atts(dict(left={},right={},middle={}))
@@ -272,6 +272,9 @@ class Menu(SidebarFrame):
 	def current_parser_node(s, x):
 		s._current_parser_node = weakref(x)
 
+
+
+
 	def must_recollect(s):
 		if s._changed:
 			s._changed = False
@@ -281,8 +284,6 @@ class Menu(SidebarFrame):
 		s.must_update = True
 
 	def update(s):
-		if not s.counterpart.visible:
-			return
 		node_changed = s.parser_changed()
 		old_text = s.current_text
 		s.update_current_text()
@@ -304,27 +305,26 @@ class Menu(SidebarFrame):
 			return True
 
 	def update_menu(s):
-		log = logging.getLogger('menu').debug
 		if s.current_parser_node:
-			try:#hack, current_parser_node could have been moved to clipboard,
+			try:#hack, current_parser_node could have been deleted,
 				#and theres currently no way to know
 				scope = s.current_parser_node.scope()
 			except AssertionError as e:
-				print ("current_parser_node could have been deleted, assertion error", e)
+				print ("assertion error", e)
 				return
 			s.update_current_text()
-			log("scope:%s items" % len(scope))
 			s.prepare_grammar(scope)
-			log("scope:%s items" % len(scope))
 			s.create_palette(scope, s.editor.atts, s.current_parser_node)
 			s.signal_change()
 
 	def prepare_grammar(s, scope):
 		#s.marpa.t.input.clear()
-		nodes.forget_symbols()
-		s.marpa.collect_grammar(scope, scope)
+		log("prepare grammar..")
+		for i in s.editor.root.flatten():
+			i.forget_symbols() # todo:start using visitors
+		s.marpa.collect_grammar(scope)
 		assert s.current_parser_node
-		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
+		s.marpa.enqueue_precomputation (weakref(s.current_parser_node))
 
 	def on_thread_message(s):
 		m = s.marpa.t.output.get()
@@ -335,7 +335,7 @@ class Menu(SidebarFrame):
 					s.marpa.enqueue_parsing(s.parser_items2tokens(node))
 		elif m.message == 'parsed':
 				log (m.results)
-				s.parse_results = [nodes.ParserMenuItem(['a parse'], x, 5500) for x in m.results]
+				s.parse_results = [nodes.ParserMenuItem(['a parse'], x) for x in m.results]
 				s.update_items()
 				#	r.append(ParserMenuItem(i, 333))
 				s.signal_change()
@@ -371,8 +371,9 @@ class Menu(SidebarFrame):
 	def create_palette(s, scope, atts, parser):
 		log = logging.getLogger('menu').debug
 		s.palette_results = []
+		log("scope:%s"%len(scope))
 		for x in scope:
-			log("scope item:%s:"%x)
+			log("%s:"%x)
 			a = palette.palette(x, scope, s.current_text, parser)
 			s.palette_results += a
 			for i in a:
@@ -437,7 +438,7 @@ class Menu(SidebarFrame):
 				item.invalid = True
 
 			#search thru syntaxes
-			#if isinstance(v, Syntaxed):
+			#if isinstance(v, Compound):
 			#	for i in v.syntax:
 			#   		if isinstance(i, t):
 			#			item.score += fuzz.partial_ratio(i.text, s.pyval)

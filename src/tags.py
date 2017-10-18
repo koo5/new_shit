@@ -12,6 +12,7 @@ class Att():#Enum):
 
 
 
+
 end_tag = 0
 indent_tag = 1
 dedent_tag = 2
@@ -20,8 +21,6 @@ editable_end_tag = 4
 zwe_tag = 5 # zero width element
 element_start_graphic_indicator = 6
 element_end_graphic_indicator = 7
-maybe_whitespace = 8
-reparse = 9
 
 
 
@@ -77,8 +76,3 @@ class ElementTag():
 
 
 
-def MaybeWhitespace():
-	return maybe_whitespace
-
-def Reparse():
-	return reparse

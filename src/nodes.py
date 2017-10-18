@@ -1,13 +1,9 @@
-
 # -*- coding: utf-8 -*-
 
 """
 
 this file defines the AST classes of the language and everything around it.
 the philosophy of this codebase is "constant surprise". it keeps you alert.
-"kids" and "children" mean the same.
-sometimes i use "s" instead of "self".
-"ch" is children of syntaxed.
 good luck.
 
 """
@@ -24,25 +20,6 @@ class __LINE__(object):
 
 __LINE__ = __LINE__()
 
-node_rules = {}
-node_symbols = {}
-def forget_symbols():
-	node_symbols.clear()
-	node_rules.clear()
-forget_symbols()
-
-
-lang = cs = en = None
-def go_cs():
-	lang = "cs"
-	cs = True
-	en = False
-def go_en():
-	lang = "en"
-	en = True
-	cs = False
-go_cs()
-from localization import localized
 
 autocomplete = True
 
@@ -88,25 +65,29 @@ AST_CHANGED = 2
 B = Dotdict()
 B._dict = odict()
 
-def build_in(node, name=None, builtins_table = B):
+def build_in(module, node, name=None):
 	"""add node to B"""
+	builtins_table = B
 	if isinstance(node, list):
 		#python lets you do this kind of name overriding?
 		#how does it know which node is the node you want
-		[build_in(node) for node in node]
+		[build_in(module, node) for node in node]
 	else:
 		if name == False or isinstance(node, Text):
 			key = node # we wont need to reference this node, so any useless key will do
 		elif name == None:
-			key = node.name
+			key = node.builtin_name
 		else:
 			key = name
 		if isinstance(key, unicode):
 			key = key.replace(' ', '_')
+			key = key.lower()
 		assert node
 		assert key,  key
 		assert key not in builtins_table._dict,  repr(key) + " already in builtins:" + repr(node)
 		builtins_table[key] = node
+		module.add(node)
+		print ("built in as ", key)
 	return node
 
 class DelayedCursorMove():
@@ -125,18 +106,18 @@ def make_union(items: list):
 
 
 def is_decl(node):
-	return isinstance(node, (NodeclBase, ParametricTypeBase, ParametricNodecl))
+	return isinstance(node, (Nodecl, ParametricTypeBase))
 def is_type(node):
-	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, SyntacticCategory, EnumType))
+	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, EnumType))
 
 def deref_decl(d):
 	if isinstance(d, Ref):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
-	elif isinstance(d, (CompoundNodeDef, Union)):
+	elif isinstance(d, (CompoundNodecl, Union)):
 		return d
-	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
+	elif is_decl(d) or d == None or (isinstance(d, Compound) and d.deref_decl.name == 'SyntacticCategory'):
 		return d
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
@@ -212,8 +193,9 @@ def _to_lemon(x):
 		raise Exception("i dunno how to convert %s"%repr(x))
 	#elif isinstance(x, list):
 
+
 class Children(Dotdict):
-	"""this is the class of "ch" of Syntaxed nodes"""
+	"""the class of "ch" of compound nodes"""
 	pass
 
 
@@ -230,13 +212,17 @@ def deserialize(data, parent):
 	parent is a dummy node placed at the point where the deserialized node should go,
 	this makes things like List.above() work while getting scope
 	"""
+	if isinstance(data, Serialized):
+		return data.unserialize()
+	elif isinstance(data, Node):
+		return data
 	assert parent
 	if 'resolve' in data: # create a Ref pointing to another node
 		return resolve(data, parent)
 	if not 'decl' in data: # every node must have a type
 		raise DeserializationException("no decl key in %s"%data)
 	decl = data['decl']
-	logging.getLogger("serialization").debug("deserializing node with decl %s"%repr(decl))
+	log("deserializing node with decl %s"%repr(decl))
 	if decl == 'Parser': # ok, some nodes are special, we dont have a nodecl for Parser
 		return Parser.deserialize(data, parent)
 	elif decl == 'defun': # i dont save the exact class of functions definitions, makes it easier to change functions from BuiltinPythonFunctionDecl to FunctionDefinition, for example
@@ -246,10 +232,10 @@ def deserialize(data, parent):
 	elif isinstance(decl, unicode): # we will look for a nodecl node with this name
 		decl = find_decl(decl, parent.nodecls)
 		if decl:
-			logging.getLogger("serialization").debug("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
+			log("deserializing item with decl %s thru class %s"%(decl, decl.instance_class))
 			return decl.instance_class.deserialize(data, parent)
 		else:
-			logging.getLogger("serialization").debug("nodecl node not found")
+			log("nodecl node not found")
 			raise DeserializationException ("cto takoj " + repr(decl))
 	elif isinstance(decl, dict): # the node comes with a decl as, basically, its child
 		decl = deserialize(decl, parent)
@@ -257,13 +243,9 @@ def deserialize(data, parent):
 
 
 		try:
-			logging.getLogger("serialization").debug("got %s, lets deref_decl it..."%decl)
-			ddd = deref_decl(decl)
-			logging.getLogger("serialization").debug("ok thats %s" % ddd)
-			return ddd.instance_class.deserialize(data, parent)
+			return deref_decl(decl).instance_class.deserialize(data, parent)
 		except DeserializationException as e:
-			#logging.getLogger("serialization").debug(e)
-			print (e)
+			log(e)
 			#raise
 			return failed_deser(data, parent)
 
@@ -277,9 +259,7 @@ def failed_deser(data, parent):
 	r = Serialized.fresh()
 	r.parent = parent
 	if 'last_rendering' in data:
-		p = Parser()
-		r.ch.last_rendering = p
-		p.items.append(Text(data['last_rendering']))
+		r.ch.last_rendering.pyval = data['last_rendering']
 	r.ch.serialization = to_lemon(data)
 	r.fix_parents()
 	return r
@@ -290,7 +270,7 @@ def find_decl(name, decls):
 	assert isinstance(name, unicode)
 	for i in decls:
 		if name == i.name:
-			logging.getLogger("serialization").debug("found:%s",name)
+			log("found:%s",name)
 			return i
 	raise DeserializationException ("%s not found in %s"% (repr(name), repr(decls)))
 
@@ -298,7 +278,7 @@ def find_decl(name, decls):
 def resolve(data, parent):
 	assert parent
 	assert(data['resolve'])
-	logging.getLogger("serialization").debug("resolving %s", data)
+	log("resolving %s", data)
 	scope = parent.scope()
 
 	if 'decl' in data:
@@ -318,9 +298,9 @@ def resolve(data, parent):
 			for i in scope:
 				#if decl.eq(i.decl) and i.name == name:
 				dd1,dd2 = deref_decl(decl) ,deref_decl(i.decl)
-				logging.getLogger("serialization").debug('dd1:%s, dd2:%s'%(dd1,dd2))
+				log('dd1:%s, dd2:%s'%(dd1,dd2))
 				if dd1 == dd2:
-					logging.getLogger("serialization").debug("in scope:%s",i)
+					log("in scope:%s",i)
 					if i.name == name:
 						return i
 			raise DeserializationException("node not found: %s ,decl: %s"%(data,decl))
@@ -328,13 +308,13 @@ def resolve(data, parent):
 	elif 'class' in data:
 		sought_name = data['name']
 		sought_class_name = data['class']
-		logging.getLogger("serialization").debug("looking for name:%s, class:%s", sought_name, sought_class_name)
+		log("looking for name:%s, class:%s", sought_name, sought_class_name)
 		for i in scope:
 			class_name = i.__class__.__name__.lower()
 
 			if class_name == sought_class_name:
 				name = i.name
-				logging.getLogger("serialization").debug("class:%s, name:%s",class_name, name)
+				log("class:%s, name:%s",class_name, name)
 				if name == sought_name:
 					return i
 		raise DeserializationException("node with name %s and class %s not found"%(sought_name, sought_class_name))
@@ -352,14 +332,13 @@ class NodePersistenceStuff(object):
 	def serialize(s):
 		#assert isinstance(s.decl, Ref) or s.decl.parent == s,  s.decl
 		r = odict(s.serialize_decl())
-		r["last_rendering"] = s.tostr()
 		r.update(s._serialize())
-		print("saving...", json.dumps(r, indent = 4, sort_keys=True))
+		print("saving...", json.dumps(r, indent = 4))
 		return r
 
 	def serialize_decl(s):
 		if s.decl:
-			logging.getLogger("serialization").debug("serializing decl %s of %s"%(s.decl, s))
+			#log("serializing decl %s of %s"%(s.decl, s))
 			return {'decl': s.decl.serialize()}
 		else:
 			return {'class': s.__class__.__name__.lower()}
@@ -373,6 +352,34 @@ class NodePersistenceStuff(object):
 
 	def _serialize(s):
 		return {}
+
+
+"""
+
+	@classmethod
+	def deserialize(cls, data, parent):
+		assert parent
+		placeholder = Text("placeholder")
+		placeholder.parent = parent
+		decl = deserialize(data['decl'], placeholder)
+		r = cls(decl)
+		r.parent = parent
+		for k,v in iteritems(data['children']):
+			r.ch[k] = deserialize(v, r)
+		r.fix_parents()
+		return r
+
+	def _serialize(s):
+		return odict(
+			children = s.serialize_children()
+		)
+
+	def serialize_children(s):
+		r = {}
+		for k, v in iteritems(s.ch._dict):
+			r[k] = v.serialize()
+		return r
+
 
 
 class SyntaxedPersistenceStuff(object):
@@ -395,6 +402,9 @@ class SyntaxedPersistenceStuff(object):
 		for k,v in iteritems(data['children']):
 			r.set_child(k, deserialize(v, r))
 		return r
+
+"""
+
 
 
 class ListPersistenceStuff(object):
@@ -459,9 +469,8 @@ class VarRefPersistenceStuff(BaseRefPersistenceStuff):
 		placeholder = Text("placeholder")
 		placeholder.parent = parent
 		decl = deserialize(data['target']['decl'], placeholder)
-		logging.getLogger("serialization").debug('vardecl decl:%s', decl)
 		for i in parent.vardecls_in_scope:
-			logging.getLogger("serialization").debug('i in parent.vardecls_in_scope:%s',i)
+			log('i in parent.vardecls_in_scope:%s',i)
 			if decl.eq_by_value_and_python_class(i.decl):
 				if i.name == data['target']['name']:
 					r = cls(i)
@@ -492,7 +501,7 @@ class ParserPersistenceStuff(object):
 		assert parent
 		r = cls()
 		r.parent = parent
-		logging.getLogger("serialization").debug("deserializing Parser "+str(data))
+		log("deserializing Parser "+str(data))
 		for i in data['items']:
 			if isinstance(i, unicode):
 				r.add(widgets.Text(666, i))
@@ -540,9 +549,7 @@ def resolve_function(data, parent):
 			if i.ch.sig.eq_by_value_and_python_class(sig):
 				#log("found")
 				return i
-		for i in funcs:
-			logging.getLogger("serialization").debug("function considered:%s"%i)
-		raise DeserializationException("function not found by sig:%s" % sig)#json.dumps(sig, indent = 4, sort_keys=True))
+		raise DeserializationException("function %s not found by sig" % data)
 
 	else:
 		raise DeserializationException("function call without neither sig nor name:%s" % data)
@@ -588,13 +595,18 @@ class Node(NodePersistenceStuff, element.Element):
 	def __init__(s):
 		"""	__init__ usually takes children or value as arguments.
 		fresh() calls it with some defaults (as the user would have it inserted from the menu)
-		each class has a decl, which is an object descending from NodeclBase (nodecl for node declaration).
+		each class has a decl, which is an object descending from Nodecl (nodecl for node declaration).
 		nodecl can be thought of as a type, and objects pointing to them with their decls as values of that type.
 		nodecls have a set of functions for instantiating the values, and those need some cleanup"""
 		super().__init__()
 		s.runtime = Dotdict() #various runtime data herded into one place
 		s.clear_runtime_dict()
 		s.fresh = "i think youre looking for inst_fresh, fresh() is a class method, you called it on an instance"
+		s.forget_symbols()
+		s.decl = None
+
+	def set_decl(s, decl):
+		s.decl = decl
 
 	def clipboard_cut(s):
 		s.clipboard_copy()
@@ -604,13 +616,17 @@ class Node(NodePersistenceStuff, element.Element):
 		print ("copy")
 		s.root["clipboard"].ch.statements.add(s.copy())
 
+	def forget_symbols(s):
+		"""clear marpa symbol ids"""
+		s._symbol  = None
+		s._rule = None
+
 	@property
 	def symbol(s):
-		if not s in node_symbols:
-			logging.getLogger("marpa").debug(("gimme symbol for", s))
+		logging.getLogger("marpa").debug(("gimme node_symbol for", s))
+		if s._symbol == None:
 			s.register_symbol()
-		if s in node_symbols:
-			return node_symbols[s]
+		return s._symbol
 
 	def register_symbol(s):
 		return register_symbol(s)
@@ -672,16 +688,32 @@ class Node(NodePersistenceStuff, element.Element):
 		"all nodes except Parser return themselves"#..hm
 		return s
 
+
+	def deser_scope(s):
+		return s.scope() + s.parent.below(s)
+
 	def scope(s):
-		return scope_after_hiding_and_unhiding(s)
+		"""lexical scope, what does this node see?"""
+		r = []
 
-	def full_scope(s):
-		return what_in_my_module_do_i_see(s) + what_module_sees(s.module)
+		if isinstance(s.parent, List):
+			r += [x.parsed for x in s.parent.above(s)]
 
+		assert s.parent != None, s.long__repr__()
+
+		r += [s.parent]
+		sc = s.parent.scope()
+		if sc != None:
+			r += sc # note:Root has parent None
+
+		assert(r != None)
+		assert(flatten(r) == r)
+
+		return r
 
 	@property
-	def nodecls(s):
-		return [i for i in s.scope() if isinstance(i, (NodeclBase, EnumType))]
+	def nodecls_in_scope(s):
+		return [i for i in s.scope() if is_decl(i)]
 
 	@property
 	def vardecls_in_scope(s):
@@ -752,7 +784,7 @@ class Node(NodePersistenceStuff, element.Element):
 			yield [AttTag(Att.elem, elem), ColorTag(colors.eval_results), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
-				yield [TextTag(str(len(v.items))), TextTag(localized(" values:")), ElementTag(v)]
+				yield [TextTag(str(len(v.items))), TextTag(" values:"), ElementTag(v)]
 			else:
 				for i in v.items:
 					yield ElementTag(i)
@@ -768,7 +800,7 @@ class Node(NodePersistenceStuff, element.Element):
 	def _flatten(s):
 		"per-class implementation of flattening"
 		if not isinstance(s, (WidgetedValue, EnumVal, Ref, SyntaxedNodecl, FunctionCallNodecl,
-			ParametricNodecl, Nodecl, VarRefNodecl, TypeNodecl, VarRef)): #all childless nodes
+		                      ParametricNodecl, BasicNodecl, VarRefNodecl, TypeNodecl, VarRef)): #all childless nodes
 			warn(str(s)+ " flattens to self")
 		return [s]
 
@@ -782,8 +814,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	@property
 	def ddecl(s):
-		"""decl dereferenced to the actual value, thru refs/definitions.."""
-		return deref_decl(s.decl)#i have no idea what im doing
+		return deref_decl(s.decl)
 
 	def eq_by_value_and_python_class(a, b):
 		"""like comparing by type and value, but crappier"""
@@ -806,68 +837,164 @@ class Node(NodePersistenceStuff, element.Element):
 		return s
 
 
-
-
-class CompoundNode(Node):
-	def __init__(s, decl):
+class Compound(Node):
+	brackets = (" ", " ")
+	def __init__(s):
 		super().__init__()
-		assert isinstance(decl, CompoundNodeDef)
-		s.decl = decl
-		s.create_kids()
-		s.fix_parents()
-
-	@classmethod
-	def deserialize(cls, data, parent):
-		assert parent
-		placeholder = Text("placeholder")
-		placeholder.parent = parent
-		decl = deserialize(data['decl'], placeholder)
-		r = cls(decl)
-		r.parent = parent
-		for k,v in iteritems(data['children']):
-			r.ch[k] = deserialize(v, r)
-		r.fix_parents()
-		return r
-
-	def _serialize(s):
-		return odict(
-			children = s.serialize_children()
-		)
-
-	def serialize_children(s):
-		r = {}
-		for k, v in iteritems(s.ch._dict):
-			r[k] = v.serialize()
-		return r
-
-	def fix_parents(s):
-		s._fix_parents(list(s.ch._dict.values()))
+		s.ch = Children()
+		s.chosen_syntax = None
+		# prevent setting new ch keys
+		#s.ch._lock()
+		# prevent setting new attributes
+		#s.lock()
 
 	@property
-	def syntax(s):
-		return deref_decl(s.decl).ch.syntax.parsed.items
+	def builtin_name(s):
+		return s.name
+	"""
+	def set_decl(s, decl):
+		if decl == None:
+			s.m_syntax = List()
+			s.m_syntax.items.add(Text("node type declaration is a type of node"))
+		else:
+			s.m_syntax = None, "default value(__init__)"
+			s.check_slots(s.slots)
+			s.create_kids()
+	"""
+	def set_children(s, children):
+		assert len(children) == len(s.slots), (children, s.slots)
+		for k in iterkeys(s.slots):
+			s.set_child(k, children[k])
 
-	def create_kids(s):
-		s.ch = Dotdict()
-		for i in s.syntax:
-			i = i.parsed
-			if isinstance(i, TypedParameter):
-				p = i.type.parsed
-				if not isinstance(p, Bananas):
-					ch = Parser()
-				else:
-					ch = Text("bad decl")
-				s.ch[i.ch.name.parsed.pyval] = ch
-		s.fix_parents()
+	@staticmethod
+	def check_slots(slots):
+		if __debug__:
+			assert(isinstance(slots, dict))
+			for name, slot in iteritems(slots):
+				assert(isinstance(name, unicode))
+				assert isinstance(slot, (str, Nodecl, Exp, ParametricTypeBase, Compound)), "these slots are fucked up:" + str(slots)
+
+	#def currently_selected_syntax_for_rendering(s):
+	#	assert isinstance(r, list)
+
+	@property
+	def syntax_tags(s):
+		if not s.chosen_syntax:
+			s.ensure_you_have_a_syntax()
+		if s.chosen_syntax:
+			print(s.chosen_syntax.target)
+			return s.syntax_declaration_to_tags(s.chosen_syntax.target.ch.syntax.parsed)
+		return ["a decl-less node"]
+
+	def ensure_you_have_a_syntax(s):
+		syntaxes = list(s.available_syntaxes())
+		print('syntaxes:', syntaxes)
+		if len(syntaxes) == 0:
+			return
+		s.chosen_syntax = syntaxes[0]
+
+	def available_syntaxes(s):
+		if s.decl:
+			yield Ref(s.decl)
+		elif s.__class__.decl:
+			yield Ref(s.__class__.decl)
+		else:
+			print("decl-less:" + str(s))
+
+		#todo for i in flatten(root):
+			#if i is a usable syntax, yield it
 
 	def render(s):
-		for i in s.syntax:
+		print("tags:", (s, s.syntax_tags))
+		for i in s.syntax_tags:
+			yield i
+
+	def syntax_declaration_to_tags(s, d):
+		for i in d.parsed:
 			i = i.parsed
 			if isinstance(i, Text):
 				yield i.pyval
 			elif isinstance(i, TypedParameter):
 				yield ElementTag(s.ch._dict[i.ch.name.parsed.pyval])
+			else:
+				yield "(((666 bad thingie in syntax:" + i.long__repr__() + ")))"
 
+	@classmethod
+	def fresh_kids(cls, slots):
+		cls.check_slots(slots)
+		kids = Dotdict()
+		for k, v in iteritems(slots):
+			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
+			try:
+				easily_instantiable = deref_decl(v).instance_class.easily_instantiable
+			except:
+				easily_instantiable = False
+			if easily_instantiable:
+				a = v.inst_fresh()
+			else:
+				a = Parser()
+			assert(isinstance(a, Node))
+			kids[k] = a
+		return kids
+
+	def create_kids(s):
+		s.ch = s.fresh_kids(s.slots)
+		s.fix_parents()
+
+	def slots_from_syntax(s, sy):
+		slots = {}
+		for i in sy.parsed:
+			i = i.parsed
+			if isinstance(i, TypedParameter):
+				p = i.type.parsed
+				if not isinstance(p, Bananas):
+					slots[i.name.parsed.pyval] = p
+				else:
+					return None #("bad decl")
+		return slots
+
+
+
+	@property
+	def name(s):
+		"override if this doesnt work for your subclass"
+		return s.ch.name.pyval
+
+	@property
+	def slots(s):
+		return s.ddecl.instance_slots
+
+	@property
+	def syntaxes(s):
+		return s.ddecl.instance_syntaxes
+
+	def long__repr__(s):
+		return object.__repr__(s) + "('"+str(s.ch)+"')"
+
+	def eq_by_value(a, b):
+		assert len(a.ch._dict) == len(b.ch._dict) #are you looking for eq_by_value_and_decl?
+		for k,v in iteritems(a.ch._dict):
+			if not b.ch[k].eq_by_value_and_python_class(v):
+				return False
+		return True
+
+	def copy(s):
+		decl = s.decl.copy()
+		r = s.__class__.fresh(decl)
+		for k,v in iteritems(s.ch._dict):
+			r.ch[k] = v.copy()
+		r.fix_parents()
+		return r
+
+	def unparen(s):
+		return s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
+
+	def child_type(s, ch):
+		for k,v in iteritems(s.slots):
+			if s.ch[k] == ch:
+				return v
+		assert False
+	"""
 	def child_type(s, ch):
 		for name,v in iteritems(s.ch._dict):
 			if v == ch:
@@ -877,76 +1004,10 @@ class CompoundNode(Node):
 						if i.ch.name.parsed.pyval == name:
 							return i.ch.type.parsed
 		assert False
-
-	def _flatten(s):
-		assert(isinstance(v, Node) for v in itervalues(s.ch._dict))
-		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
-
-
-class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
-	Syntaxed has some named children, kept in s.ch.
-	their types are in s.slots.
-	syntax is a list of Tags, and it can contain ChildTag
-	"""
-	brackets = ("<", ">")
-	brackets = (" ", " ")
-	default_syntax_index = 0
-	rank = 0
 
-	def __init__(s, children):
-		super().__init__()
-		s.check_slots(s.slots)
-		s.syntax_index = s.__class__.default_syntax_index
-		s.ch = Children()
-
-		assert len(children) == len(s.slots), (children, s.slots)
-
-		#set children from the constructor argument
-		for k in iterkeys(s.slots):
-			s.set_child(k, children[k])
-
-		# prevent setting new ch keys
-		s.ch._lock()
-		# prevent setting new attributes
-		s.lock()
-		#assert isinstance(s.ddecl, SyntaxedNodecl)
-
-	@classmethod
-	def rule_for_syntax(cls, cls_sym, syntax, ddecl):
-		syms = []
-		
-		
-		for i in syntax:
-		#we build up syms child after child, char after char
-		#if autocomplete is on, we create a rule after each addition
-		#otherwise we only create a rule for the final, complete, syms
-
-			ti = type(i)
-
-			if ti == unicode:
-				for ch in i:
-					syms = syms[:]
-					syms.append(m.known_char(ch))
-					if autocomplete:
-						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-			elif ti == ChildTag:
-				child_type = ddecl.instance_slots[i.name]
-				if type(child_type) == Exp:
-					x = B.expression.symbol
-				else:
-					x = deref_decl(child_type).symbol
-				if not x:
-					warn("no type:" + str(i))
-					return None
-				assert x, child_type
-				syms = syms[:]
-				syms.append(x)
-				if autocomplete:
-					m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-		assert len(syms) != 0
-		if not autocomplete:
-			m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+	def fix_parents(s):
+		s._fix_parents(list(iter(s.ch._dict.values())))
 
 	@classmethod
 	def from_parse(cls, p, sy):
@@ -985,15 +1046,17 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		return r
 
 	@classmethod
-	def fresh(cls, decl=None):
-		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
-		if decl:
-			r.decl = decl
+	def fresh(cls, decl_override=None):
+		if not decl_override:
+			decl = cls.decl
+		else:
+			decl = decl_override
+		decl = deref_decl(decl)
+		r = cls()
+		r.decl = decl
+		r.create_kids()
 		r.fix_parents()
 		return r
-
-	def fix_parents(s):
-		s._fix_parents(list(s.ch._dict.values()))
 
 	def set_child(s, name, item):
 		assert isinstance(name, unicode), repr(name)
@@ -1002,7 +1065,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		s.ch[name] = item
 
 	def replace_child(s, child, new):
-		"""child name or child value? thats a good question...its child the value!"""
+		'''child name or child value? thats a good question...its child the value!'''
 		assert(child in itervalues(s.ch))
 		assert(isinstance(new, Node))
 		for k,v in iteritems(s.ch):
@@ -1027,21 +1090,6 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		assert(isinstance(v, Node) for v in itervalues(s.ch._dict))
 		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
 
-	@staticmethod
-	def check_slots(slots):
-		if __debug__:
-			assert(isinstance(slots, dict))
-			for name, slot in iteritems(slots):
-				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
-
-	@property
-	def syntax(s):
-		return s.syntaxes[s.syntax_index]
-
-	def render(s):
-		return s.syntax
-
 	def prev_syntax(s):
 		s.syntax_index  -= 1
 		if s.syntax_index < 0:
@@ -1056,65 +1104,9 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		log("next syntax")
 		return CHANGED
 
-	@classmethod
-	def create_kids(cls, slots):
-		cls.check_slots(slots)
-		kids = {}
-		for k, v in iteritems(slots):
-			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
-			try:
-				easily_instantiable = deref_decl(v).instance_class.easily_instantiable
-			except:
-				easily_instantiable = False
-			if easily_instantiable:
-				a = v.inst_fresh()
-#			elif isinstance(v, ParametricType):
-#				a = v.inst_fresh()
-			else:
-				a = Parser()
-			assert(isinstance(a, Node))
-			kids[k] = a
-		return kids
 
-	@property
-	def name(s):
-		"""override if this doesnt work for your subclass"""
-		return s.ch.name.pyval
 
-	@property
-	def syntaxes(s):
-		return s.ddecl.instance_syntaxes
 
-	@property
-	def slots(s):
-		return s.ddecl.instance_slots
-
-	def child_type(s, ch):
-		for k,v in iteritems(s.slots):
-			if s.ch[k] == ch:
-				return v
-		assert False
-
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+str(s.ch)+"')"
-
-	def eq_by_value(a, b):
-		assert len(a.ch._dict) == len(b.ch._dict) #are you looking for eq_by_value_and_decl?
-		for k,v in iteritems(a.ch._dict):
-			if not b.ch[k].eq_by_value_and_python_class(v):
-				return False
-		return True
-
-	def copy(s):
-		decl = s.decl.copy()
-		r = s.__class__.fresh(decl)
-		for k,v in iteritems(s.ch._dict):
-			r.ch[k] = v.copy()
-		r.fix_parents()
-		return r
-
-	def unparen(s):
-		return s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
 
 
 class Collapsible(Node):
@@ -1261,7 +1253,11 @@ class List(ListPersistenceStuff, Collapsible):
 	def __init__(s):
 		super().__init__()
 		s.items = []
-		s.decl = Ref(B.list_of_anything)
+		try:
+			d = Ref(B.list_of_anything)
+		except:
+			d = Serialized('Ref(B.list_of_anything)')
+		s.decl = d
 		s.parser_class = Parser
 
 	def copy(s):
@@ -1435,7 +1431,11 @@ class Statements(List):
 	def __init__(s):
 		super(Statements, s).__init__()
 		s.view_mode = Collapsible.vm_multiline
-		s.decl = Ref(B.statements)
+		try:
+			d = Ref(B.statements)
+		except:
+			d = Serialized('Ref(B.statements)')
+		s.decl = d
 
 	@classmethod
 	def fresh(cls, decl=None):
@@ -1478,19 +1478,6 @@ class Statements(List):
 		assert False
 
 
-"""
-class SortedView():
-	S_orig = 0
-	S_alpha_type_betically_with_flattened_classes?
-
-	@property
-	def source(s):
-		return (s.parent. #module
-				ch.statements.parsed.items)
-
-"""
-
-
 
 
 class NoValue(Node):
@@ -1505,15 +1492,15 @@ class NoValue(Node):
 
 def banana(text="error text"):
 	return Text(text)#
-	r = CompoundNode(s.root.essentials.banana)
+	r = Compound(s.root.essentials.banana)
 	r.ch.info = Text(text)
 	return r
 
 class Bananas(Node):
 	"""https://www.youtube.com/watch?v=EAmChFTLP4w&feature=youtu.be&t=2m19s"""
 	help=["parsing failure. your code is bananas."]
-	def __init__(s, contents=[]):
-		super(Bananas, s).__init__()
+	def __init__(s):
+		super().__init__()
 		s.contents = contents
 	def render(s):
 		if len(s.contents) > 0:
@@ -1650,15 +1637,20 @@ class Root(Dict):
 	#def okay(s):
 	#	recursively check parents?
 
+	def scope(s):
+		# deserialization needs this
+		return s["builtins"].ch.statements.parsed
 
 
-class Module(Syntaxed):
+
+
+class Module(Compound):
 	"""module or program"""
 	special_scope = None
-	def __init__(s, kids):
-		super(Module, s).__init__(kids)
+	def __init__(s):
+		super().__init__()
 		#s.sortedview = SortableStatements(s)
-		s.ch.statements.view_mode = Collapsible.vm_collapsed
+#		s.ch.statements.view_mode = Collapsible.vm_collapsed
 
 	def add(s, item):
 		s.ch.statements.add(item)
@@ -1701,14 +1693,10 @@ class Module(Syntaxed):
 		#s = yaml.dump(s.serialize(), indent = 4)
 		#open('test_save.lemon', "w").write(s)
 		#log(s)
-
-		for i in s.flatten():
-			if isinstance(i, Serialized):
-				print("warning: saving Serialized:%s"%i)
-		ss = s.serialize()
-
+		#todo easy: find a json module that would preserve odict ordering (or hjson)
 		import json
-		out = json.dumps(ss, indent = 4, sort_keys=True)
+		ss = s.serialize()
+		out = json.dumps(ss, indent = 4)
 		with open(s.file_name, "w") as f:
 			f.write(out)
 			f.close()
@@ -1719,20 +1707,43 @@ class Module(Syntaxed):
 		#	raise e
 
 	def scope(s):
-		return what_module_sees(s)
+
+		if s == s.root["builtins"]:
+			return [] # builtins dont see anything
+		else:
+			if s.special_scope:
+				print ('....')
+				r = []
+				for i in s.special_scope:
+					if isinstance(i, Module):
+					#we dont honor the module's scope()
+						for x in i.ch.statements.parsed.items:
+							r.append(x)
+					else:
+						r.append(i)
+				return r
+			else:
+
+				r = s.root["builtins"].ch.statements.parsed.items[:]
+
+				for module in s.root['library'].items:
+					if not isinstance(module, Module):
+						continue
+					if module != s:
+						r += [x.parsed for x in module.ch.statements.parsed.items]
+					#log(module)
+					#log(r)
+				return r
+
+element.Module = Module
+
+
 
 class BuiltinModule(Module):
-	_name = "some builtin module"
-	@property
-	def name(s):
-		return s._name
+	pass
 class LikiModule(Module):
 	pass
-class ModuleThatDoesntSeeAnythingExceptUnhide(Module):
-	def scope(s):
-		return [B.unhidenode, B.statement, B.text, B.anything, B.expression]
-	def full_scope(s):
-		return what_module_sees(s)
+
 
 # endregion
 
@@ -1771,24 +1782,9 @@ class Ref(RefPersistenceStuff, Node):
 	def copy(s):
 		return Ref(s.target)
 
-
-class VarRef(VarRefPersistenceStuff, Node):
-	def __init__(s, target):
-		super(VarRef, s).__init__()
-		s.target = target
-		assert isinstance(target, (UntypedVar, TypedParameter))
-		#log("varref target:"+str(target))
-
-	def render(s):
-		return [TextTag('$'), ArrowTag(s.target), TextTag(s.name)]
-
-	@property
-	def name(s):
-		return s.target.name
-
 	def _eval(s):
 		#it is already has a value
-		return s.target.runtime.value.val
+		return s.target.eval()
 
 class Exp(Node):
 	"""used to specify that an expression (something that evaluates to, at runtime) of
@@ -1804,18 +1800,27 @@ class Exp(Node):
 	def name(s):
 		return s.type.name + " expr"
 
-class NodeclBase(Node):
-	"""a base for all nodecls. Nodecls declare that some kind of nodes can be created,
-	know their python class ("instance_class"), syntax and shit. Think types.
-	usually does something like instance_class.decl = s, so we can instantiate the
-	classes in code without going thru a corresponding nodecl.inst_fresh()"""
+
+
+
+
+
+
+
+
+
+class Nodecl(Node):
+	"""Nodecls declare that some kind of nodes can be created,
+	know their python class ("instance_class"), instance_syntax etc."""
 	help = None
-	def __init__(s, instance_class):
-		super(NodeclBase, s).__init__()
+	def __init__(s):
+		s.example = None
+		s.instance_class = "666"
+		super().__init__()
+
+	def set_instance_class(s, instance_class):
 		s.instance_class = instance_class
 		instance_class.decl = Ref(s)
-		s.decl = None
-		s.example = None
 
 	def make_example(s):
 		return None
@@ -1843,26 +1848,17 @@ class NodeclBase(Node):
 		yield DedentTag()
 		# t(str(s.instance_class))]
 
-
 	@property
-	def name(s):
+	def builtin_name(s):
 		return s.instance_class.__name__.lower()
 
-	"""
-	@property
-	def name(s):
-		return s.names[lang]
-
-	@property
-	def names(s):
-		return {'en': s.instance_class.__name__.lower(),
-		'cs' : localize(s.names['en'])}
-	"""
 	def instantiate(s, kids):
 		return s.instance_class(kids)
 
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
+		if decl == None:
+			decl = s
 		return s.instance_class.fresh(decl)
 
 	def works_as(s, type):
@@ -1875,132 +1871,46 @@ class NodeclBase(Node):
 		return object.__repr__(s) + "('"+str(s.instance_class)+"')"
 
 
-class TypeNodecl(NodeclBase):
-	""" "pass me a type" kind of value
-	instantiates Refs ..maybe should be TypeRefs
-	"""
-	help = ["points to another node, like using an identifier. Used only for pointing to types."]
+class RefNodecl(Nodecl):
+	help = ["points to another node, like using an identifier. "]
+
 	def __init__(s):
-		super().__init__(Ref)
+		super().__init__()
+		s.insttance_class = Ref
 
 	def make_example(s):
 		return Ref(B.module)
-#so this was my approach...nodes are types..
-#misses a parser aparently
 
 
-
-
-
-
-
-
-class VarRefNodecl(NodeclBase):
-	help=["points to a variable"]
-	def make_example(s):
-		item = B.untypedvar.instantiate({'name':Text("example variable")})
-		items = list_of('text').inst_fresh()
-		items.items = [Text(x) for x in ['a','b','c']]
-		items.view_mode = 1
-		p = FunctionCall(B.print)
-		p.args['expression'] = VarRef(item)
-		body = B.statements.inst_fresh()
-		body.items = [p]#, Annotation(p, "this")]
-		return For({'item': item,
-					'items': items,
-					'body': body})
-
-	def __init__(s):
-		super().__init__(VarRef)
-
-
-class ExpNodecl(NodeclBase):
+class ExpNodecl(Nodecl):
 	def __init__(s):
 		super(ExpNodecl, s).__init__(Exp)
 
-class Nodecl(NodeclBase):
+
+class BasicNodecl(Nodecl):
 	"""for simple nodes (Number, Text, Bool)"""
-	def __init__(s, instance_class):
-		super(Nodecl, s).__init__(instance_class)
-		instance_class.decl = Ref(s)
-		#print("building in",s.name)
-		#build_in(s, s.name)
-		#instance_class.name = s.name
+	def __init__(s):
+		super().__init__()
 
-	def make_example(s):
-		return s.inst_fresh()
+	@classmethod
+	def	with_instance_class(cls, instance_class):
+		x = cls()
+		x.set_instance_class(instance_class)
+		return (x)
 
-class SyntaxedNodecl(NodeclBase):
-	"""
-	A Nodecl for a class derived from Syntaxed.
-	instance_slots holds types of children, not Ref'ed.
-	 children themselves are either Refs (pointing to other nodes),
-	 or owned nodes (their .parent points to us)
-	"""
-	def __init__(s, instance_class, instance_syntaxes, instance_slots):
-		super(SyntaxedNodecl , s).__init__(instance_class)
-		s.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(instance_slots)])
-		if isinstance(instance_syntaxes[0], list):
-			s.instance_syntaxes = instance_syntaxes
-		else:
-			s.instance_syntaxes = [instance_syntaxes]
-		s.example = None
 
 	def make_example(s):
 		return s.inst_fresh()
 
 
-
-class ParametricTypeBase(Syntaxed):
-	def inst_fresh(s, decl=None):
-		r = s.instance_class()
-		if decl == None:
-			decl = s
-		r.decl = Ref(decl)
-		return r
-
-	@property
-	def name(s):
-		return s.instance_class.__name__ + " type"
-
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+str(s.ch)+"')"
+class ParametricTypeBase(Compound):
+	pass
 
 class ParametricDictType(ParametricTypeBase):
 	instance_class = Dict
 
 class ParametricListType(ParametricTypeBase):
 	instance_class = List
-
-
-	#@property
-	#def refsyntax(s):
-	#damn this is just all wrong. name should return something like "list of numbers"
-	#should i expose a wrapper for project that would return a string?
-	#or do we want to display the name as a node?
-	#you cant render a different nodes syntax as your own
-	#make a new kind of tag for this?
-
-
-class ParametricNodecl(SyntaxedNodecl):
-	"""says that "list of <type>" declaration could exist, instantiates it (ParametricType)
-	only non Syntaxed types are parametric now(list and dict),
-	so this contains the type instance's syntax and slots (a bit confusing)"""
-	"""
-	def __init__(s, value_class, type_syntax, type_slots):
-		super(ParametricNodecl, s).__init__(ParametricType)
-		s.instance_slots = type_slots
-		s.instance_syntaxes = [type_syntax]
-		s.value_class = value_class
-
-	def make_type(s, kids):
-		return ParametricType(kids, s)
-
-	def palette(s, scope, text, node):
-		return [PaletteMenuItem(ParametricType.fresh(s))]
-	#def obvious_fresh(s):
-	#if there is only one possible node type to instantiate..
-	"""
 
 
 class EnumVal(Node):
@@ -2073,38 +1983,17 @@ class EnumType(ParametricTypeBase):
 
 
 
-class SyntacticCategory(Syntaxed):
-	help=['this is a syntactical category(?) of nodes, used for "statement" and "expression"']
-
-	def __init__(s, children):
-		super(SyntacticCategory, s).__init__(children)
-
-class WorksAs(Syntaxed):
-	help=["declares a subtype relation between two existing types"]
-	def __init__(s, children):
-		super(WorksAs, s).__init__(children)
-
-	@classmethod
-	def b(cls, sub, sup):
+def borksas(sub, sup):
 		"""building-in helper"""
-		
 		if isinstance(sub, unicode):
 			sub = B[sub]
 		if isinstance(sup, unicode):
 			sup = B[sup]
 			
-		return cls({'sub': Ref(sub), 'sup': Ref(sup)})
-
-	def is_relevant_for(s, scope):
-		if deref_decl(s.ch.sub.parsed) in scope and deref_decl(s.ch.sup.parsed) in scope:
-			return True
+		return Compound(B.worksas, {'sub': Ref(sub), 'sup': Ref(sup)})
 
 
-class BindsTighterThan(Syntaxed):
-	help = ["has higher precedence, goes lower in the parse tree"]
-
-
-class Definition(Syntaxed):
+class Definition(Compound):
 	"""should have type functionality (work as a type)*?*"""
 	help=['used just for types, currently.']
 	def __init__(s, children):
@@ -2117,7 +2006,7 @@ class Definition(Syntaxed):
 	def type(s):
 		return s.ch.type.parsed
 
-class Union(Syntaxed):
+class Union(Compound):
 	help=['an union of types means that any type will satisfy']
 	def __init__(s, children):
 		super(Union, s).__init__(children)
@@ -2135,13 +2024,13 @@ class ListOfAnything(ParametricType):
 	def works_as(s, type):
 		return True
 """
-class UntypedVar(Syntaxed):
+class UntypedVar(Compound):
 	easily_instantiable = True
 	def __init__(s, children):
 		super(UntypedVar, s).__init__(children)
 
 
-class For(Syntaxed):
+class For(Compound):
 	def __init__(s, children):
 		super(For, s).__init__(children)
 
@@ -2163,7 +2052,7 @@ class For(Syntaxed):
 
 		return NoValue()
 
-class VarlessFor(Syntaxed):
+class VarlessFor(Compound):
 	def __init__(s, children):
 		s.it = B.untypedvar.inst_fresh()
 		s.it.ch.name.pyval = "it"
@@ -2182,7 +2071,7 @@ class VarlessFor(Syntaxed):
 		return NoValue()
 
 
-class If(Syntaxed):
+class If(Compound):
 	def __init__(s, children):
 		super(If, s).__init__(children)
 
@@ -2198,7 +2087,7 @@ class If(Syntaxed):
 			log("condition false")
 			return NoValue()
 
-class Else(Syntaxed):
+class Else(Compound):
 	"""a dangling else...dang!"""
 	def __init__(s, children):
 		super(Else, s).__init__(children)
@@ -2230,7 +2119,7 @@ class Else(Syntaxed):
 
 
 """
-class Filter(Syntaxed):
+class Filter(Compound):
 	def __init__(s, kids):
 		super(Filter, s).__init__(kids)
 """
@@ -2330,16 +2219,16 @@ class ParserBase(Node):
 
 	@staticmethod
 	def first_child(node):
-		for i in node.syntax:
+		for i in node.syntax_tags:
 			if isinstance(i, ChildTag):
 				return node.ch[i.name]
 		return node
 
 	def post_insert_move_cursor(s, node):
 		#move cursor to first child or somewhere sensible. this should go somewhere else.
-		if isinstance(node, Syntaxed):
+		if isinstance(node, Compound):
 			fch = s.first_child(node)
-			if isinstance(fch, Syntaxed):
+			if isinstance(fch, Compound):
 				fch = s.first_child(fch)
 				#...
 			s.root.delayed_cursor_move.node = fch
@@ -2367,26 +2256,17 @@ class ParserBase(Node):
 		s.fix_parents()
 
 class Parser(ParserPersistenceStuff, ParserBase):
-	_type = None
 	def __init__(s):
 		super(Parser, s).__init__()
 
 	@property
-	def parsed_symbol(s):
-		return s.type.symbol
-
-	@property
 	def type(s):
-		if s._type:
-			return s._type
 		p = s.parent
 		if isinstance(p, Parser):
 			return p.type
-		elif isinstance(p, (Syntaxed, FunctionCall, CompoundNode)):
+		elif isinstance(p, (Compound, FunctionCall, Compound)):
 			return p.child_type(s)
-		elif isinstance(p, (List, Dict)):
-			return p.item_type
-		elif isinstance(p, Serialized):
+		elif isinstance(p, (List,Dict)):
 			return p.item_type
 
 		else: assert False,    p
@@ -2428,8 +2308,6 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 				if type == B.text:
 					r = Text(i0)
-
-
 
 		r.parent = s
 		return r
@@ -2554,13 +2432,13 @@ class DefaultParserMenuItem(MenuItem):
 
 
 
-class FunctionParameterBase(Syntaxed):
+class FunctionParameterBase(Compound):
 	pass
 
 class TypedParameter(FunctionParameterBase):
 	"""a parameter to a function, with a name and a type specified"""
 	def __init__(s, children):
-		super(TypedParameter, s).__init__(children)
+		super().__init__(B.typedparameter, ch)
 	@property
 	def type(s):
 		return s.ch.type.parsed
@@ -2574,7 +2452,7 @@ class UnevaluatedParameter(FunctionParameterBase):
 	def type(s):
 		return s.ch.argument.type
 
-class FunctionDefinitionBase(Syntaxed):
+class FunctionDefinitionBase(Compound):
 
 	def __init__(s, children):
 		super(FunctionDefinitionBase, s).__init__(children)
@@ -2711,7 +2589,7 @@ class FunctionDefinition(FunctionDefinitionPersistenceStuff, FunctionDefinitionB
 
 
 """
-class PassedFunctionCall(Syntaxed):
+class PassedFunctionCall(Compound):
 	def __init__(s, definition):
 		super(FunctionCall, s).__init__()
 		assert isinstance(definition, FunctionDefinition)
@@ -2914,7 +2792,7 @@ class FunctionCall(FunctionCallPersistenceStuff, Node):
 		return [s] + flatten([v.flatten() for v in itervalues(s.args)])
 
 
-class FunctionCallNodecl(NodeclBase):
+class FunctionCallNodecl(Nodecl):
 	"""a type of FunctionCall nodes,
 	offers function calls thru palette()"""
 	def __init__(s):
@@ -2924,90 +2802,71 @@ class FunctionCallNodecl(NodeclBase):
 # endregion
 
 
-class CompoundNodeDef(Syntaxed):
-	instance_class = CompoundNode
-	def inst_fresh(s, decl=None):
-		""" fresh creates default children"""
-		return CompoundNode(s)
-
-		
-
-
 grammar = None
 
 def make_root():
-	global grammar
-	grammar =  __import__("grammar")
-
-
-
-	if args.kbdbg:
-		return Kbdbg()
-		
-		
-
-
 	r = Root()
 
-	build_in_editor_structure_nodes()
-	build_in_lemon_language()
-	build_in_misc()
+	r["LDL"] = build_in_language_definition_language()
 
-	#for k,v in iteritems(B._dict):
-	#	log(k, v)
+	r.fix_parents()
+	r = transform(r, deserialize, None)
+	return r
 
 
-	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
-
-	r["intro"] = B.builtinmodule.inst_fresh()
-	r["intro"].ch.statements.items = [
-		Comment("""
-
-	the ui of lemon is currently conciped like this:
-	root is a dictionary with keys like "intro", "some program" etc.
-	it's values are mostly modules. modules can be collapsed and expanded and they
-	hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
-
-	Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
-	ctrl-del will delete something. Inserting of nodes happens in the Parser node. it looks like this:"""),
-		Parser(),
-		Comment("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
-		Comment("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
-	]
-
-	r["intro"].ch.statements.view_mode = 0
-
+	r["stuff"] = build_in_stuff()
 
 	r["repl"] = B.builtinmodule.inst_fresh()
-	r["repl"].ch.statements.parser_class                                                                                                             = ReplParser
+	r["repl"].ch.statements.parser_class = ReplParser
 	r["repl"].ch.statements.items = [ReplParser()]
 	r["repl"].ch.statements.newline()
 	r["repl"].ch.statements.view_mode=2
 
 
-	r["empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
-	r["empty module"].ch.statements.view_mode = 2
-	uh = B.unhidenode.inst_fresh()
-	uh.ch.what.view_mode = 2
-	uh.ch.what.add(Text("functioncall"))
-	uh.ch.what.add(Text("builtins"))
 
-	r["empty module"].ch.statements.items = [uh, Parser()]
-
-	r["cli dummy empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
-
+	"""
 	r["builtins"] = B.builtinmodule.inst_fresh()
-	r["builtins"]._name = "builtins"
 	r["builtins"].ch.statements.items = list(itervalues(B._dict))
 	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
 	log("built in %s nodes",len(r["builtins"].ch.statements.items))
 	r["builtins"].ch.statements.add(Comment("---end of builtins---"))
 	r["builtins"].ch.statements.view_mode = 0
+	"""
+
+	"""
+	settings = r["editor settings"] = B.builtinmodule.inst_fresh()
+	settings.ch.statements.items = [Text('sidebar tab')]
+	load_module('settings.lemon.json', settings)
+	"""
 
 
-	#r["loaded program"] = B.module.inst_fresh()
-	#r["loaded program"].ch.name = Text("placeholder")
-	#r["loaded program"].ch.statements.view_mode=0
+
+
+
+
+
+	r["intro"] = B.builtinmodule.inst_fresh()
+	r["intro"].ch.statements.items = [
+		Comment("""
+
+the interface of lemon is currently implemented like this:
+root is a dictionary with keys like "intro", "some program" etc.
+it's values are mostly modules. modules can be collapsed and expanded and they
+hold some code or other stuff in a Statements object. This is a text literal inside a module, too.
+
+Lemon can't do much yet. You can add function calls and maybe define functions. If you are lucky,
+ctrl-del will delete something. Inserting of nodes happens in the Parser node."""),
+		Comment("If cursor is on a parser, a menu will appear in the sidebar."),
+		Comment("todo: working editor, smarter menu, better parser, real languages, fancy projections...")
+	]
+
+	r["intro"].ch.statements.view_mode=0
+
+
+	r["loaded program"] = B.module.inst_fresh()
+	r["loaded program"].ch.name = Text("placeholder")
+	r["loaded program"].ch.statements.view_mode=0
+
 
 	r["clipboard"] = B.module.inst_fresh()
 	r["clipboard"].ch.name = Text("clipboard")
@@ -3016,18 +2875,12 @@ def make_root():
 
 	library = r["library"] = make_list('module')
 	library.view_mode = 0#library.vm_multiline
-
 	import glob
 	for file in glob.glob("library/*.lemon.json"):
 		placeholder = library.add(new_module())
 		placeholder.ch.name.pyval = "placeholder for "+file
 		print(load_module(file, placeholder))
 	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
-
-
-	#essentials = [x.ch.statements for x in library.items if x.ch.name.pyval == "essentials"][0]
-	#r.essentials.banana = essentials.by_name('Banana')
-
 
 
 	r["liki"] = B.likimodule.inst_fresh()
@@ -3037,15 +2890,7 @@ def make_root():
 	load_module("liki.lemon.json", r["liki"])
 
 
-
-
-
 	#r.add(("toolbar", toolbar.build()))
-
-
-
-
-
 	#log(len(r.flatten()))
 	#for i in r.flatten():
 	#		assert isinstance(i, Root) or i.parent, i.long__repr__()
@@ -3072,112 +2917,237 @@ def make_root():
 	return r
 
 
+def stp(name, type):
+	"""
+	serialized_typed_parameter
+	"""
+	return Serialized("""
+	{
+    "decl": {
+        "decl": "ref",
+        "target": {
+            "name": "TypedParameter",
+            "resolve": true,
+        }
+    }
+    "children":
+    {
+        "name":
+        {
+            "decl":
+            {
+                "target":
+                {
+                    "name": "text",
+                    "resolve": true,
+                },
+                "decl": "ref"
+            },
+            "text": '""" + name + """'
+        },
+        "type":
+        {
+			"target":
+            {
+				"name": '""" + type + """',
+				"resolve": true,
+            },
+            "decl": "ref"
+        }
+	}
+	}
+	"""
+	)
 
 
 
-"""
-decide if declarative nodes like SyntacticCategory and Definition should have
-the name as a child node...it doesnt seem to make for a clear reading
 
-#todo: node syntax is a list of ..
-#node children types is a list of ..
+class CompoundNodecl(Nodecl, Compound):
+	@property
+	def instance_slots(s):
+		r = {}
+		for i in s.ch.syntax:
+			i = i.parsed
+			if i.decl == B.typedparameter:
+				n = i.ch["name"].pyval
+				assert not (n in r)
+				r[n] = i.ch['type'].target
+		return r
 
-todo:rename FunctionDefinition to Defun, FunctionCall to Call, maybe remove "Stuff"s
-"""
+	@classmethod
+	def b(cls, name, syntax):
+		r = B.compoundnodeclnodecl.inst_fresh()
+		r.instance_class = Compound
+		r.ch.name = Text(name)
+		for i in syntax:
+			if isinstance(i, tuple):
+				name = i[0]
+				type = i[1]
+				it = B.typedparameter.inst_fresh()
+				it.set_child('name', Text(name))
+				if isinstance(type, Node):
+					type = Ref(type)
+				elif isinstance(type, str):
+					it.ch[name] = type
+				else: assert False
+			else:
+				it = Text(i)
+			r.ch.syntax.append(it)
+		return r
+
+	@property
+	def builtin_name(s):
+		return s._builtin_name
+
+	def __init__(s):#, instance_class, instance_syntaxes, instance_slots):
+		super().__init__()
+		s.example = None
+
+
+	def make_example(s):
+		return s.inst_fresh()
 
 
 
-def build_in_editor_structure_nodes():
+class CompoundNodeclNodecl(Nodecl, Compound):
+	builtin_name = 'CompoundNodeclNodecl'
+	@property
+	def instance_slots(s):
+		return {'name': B.text, 'syntax':'list'}
+	def __init__(s):
+		super().__init__()
+		s.set_instance_class(CompoundNodecl)
 
-	build_in(Nodecl(Text))
-	build_in(Nodecl(Comment))
-	build_in(TypeNodecl(), 'type')
+def fixup(module):
+	for i in module.ch.statements.items:
+		if isinstance(i, CompoundNodecl):
+			for j in i.ch.syntax:
+				assert isinstance(j, Node)
+				if isinstance(j, b.typedparameter):
+					t = j.ch.type
+					if isinstance(t, str):
+						j.set_child('type', Ref(b[t]))
 
-	build_in(
-	ParametricNodecl(ParametricListType,
-					 [TextTag("list of"), ChildTag("itemtype")],
-					 {'itemtype': B.type}),'list')
+def build_in_language_definition_language():
+	r = Module()
+	r.ch["statements"] = Statements()
+	r.add(Comment("here we define a language for defining languages"))
 
-	build_in(
-	SyntaxedNodecl(Definition,
-				   [TextTag("define"), ChildTag("name"), TextTag("as"), ChildTag("type")], #expression?
-				   {'name': 'text', 'type': 'type'}))
+	build_in(r, CompoundNodeclNodecl())
 
+	class NodeTypeNodecl(RefNodecl):
+		"""a singleton class of a node that declares the possibility of existence of
+		a subset of Refs that point to Nodecls and SyntacticCategories"""
+		pass
 
-	build_in(
-		SyntaxedNodecl(SyntacticCategory,
-			[TextTag("syntactic category:"), ChildTag("name")],
-			{'name': 'text'}))
+	build_in(r, NodeTypeNodecl(), 'nodetype')
 
-	build_in(SyntacticCategory({'name': Text("statement")}))
-	build_in(SyntacticCategory({'name': Text("anything")}))
+	build_in(r, [BasicNodecl.with_instance_class(x) for x in [Number, Text]])
 
-	build_in(
-		Definition(
-			{'name': Text("list of anything"),
-			 'type': list_of(B.anything)}))
+	build_in(r, CompoundNodecl.b('TypedParameter', []))
 
-	build_in(Nodecl(Statements))
+	name = Compound()
+	name.decl = B.typedparameter
+	type = Compound()
+	type.decl = B.typedparameter
 
-	build_in(
-	SyntaxedNodecl(Module,
-				   ["module", ChildTag("name"), ', from file', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
-				   {'statements': B.statements,
-				    'name': B.text,
-				    'file': B.text
-				    }))
+	name.ch._dict['name'] = Text('name')
+	name.ch._dict['type'] = Ref (B.text)
+	type.ch._dict['name'] = Text('type')
+	type.ch._dict['type'] = Ref (B.nodetype)
+	B.typedparameter.ch._dict['syntax'] = List()
+	[B.typedparameter.ch.syntax.add(i) for i in [name, Text(' - '), type]]
 
-	build_in(
-	SyntaxedNodecl(BuiltinModule,
+	#build_in(CompoundNodecl.b('UnevaluatedParameter', ["unevaluated", ("name", 'text'), TextTag("-"), ("type",'nodetype')]))
+	build_in(r, CompoundNodecl.b('SyntacticCategory', [("name",'text'), " is a syntactic category"]))
+	build_in(r, CompoundNodecl.b('WorksAs', [("sub",'nodetype'), " works as ", ("sup",'nodetype')]))
+	build_in(r, CompoundNodecl.b('HasPrecedence', [("node",'nodetype'), " has precedence ",  ("precedence",'number')]))
+	build_in(r, CompoundNodecl.b('HasLeftAssociativity', [("node",'nodetype'), " has left associativity."]))
+	build_in(r, CompoundNodecl.b('HasRightAssociativity', [("node",'nodetype'), " has right associativity."]))
+
+	return fixup(r)
+
+def build_in_stuff():
+	r = Module()
+	r.ch["statements"] = Statements()
+
+	build_in(r, BasicNodecl.with_instance_class(Comment))
+	build_in(r, BasicNodecl.with_instance_class(Statements))
+
+	for name in ["anything", "expression", "statement"]:
+		x = Compound()
+		x.decl = B.a_declaration_of_a_syntactic_category
+		x = B.a_declaration_of_a_syntactic_category.inst_fresh()
+		x.set_children({'name': Text(name)})
+		build_in(r, x, name)
+
+	x = CompoundNodecl.b("parametric list type", [TextTag("list of "), stp("itemtype",B.expression)])
+	x.instance_class = ParametricListType
+	build_in(r, x)
+
+	build_in(r, CompoundNodecl.b('definition', [stp("name",B.text), " is ", stp("value",B.expression)]))
+
+	x = Compound()
+	x.decl = B.definition
+	x.set_children({"name": Text("list of anything"),
+			        'value': Serialized('list_of(B.anything)')})
+	build_in(r, x)
+
+	build_in(r, CompoundNodecl.b("enum", ["enum ", stp("name",'text'), ", options:", stp("options",B.list_of_anything)]))
+
+	build_in(r, CompoundNodecl.b('Module',
+		["module", ChildTag("name"), ', from file', ChildTag("file"), ":\n", ChildTag("statements"),  TextTag("end.")],
+		{'statements': B.statements,
+	 	'name': B.text,
+		'file': B.text
+		}))
+	Module.decl = B.module
+	Module.instance_class = B.module
+
+	build_in(r, CompoundNodecl.b('BuiltinModule',
 				   [ChildTag("statements")],
 				   {'statements': B.statements,
 				    }))
+	BuiltinModule.decl = B.builtinmodule
+	B.builtinmodule.instance_class = BuiltinModule
 
-
-	build_in(
-	SyntaxedNodecl(LikiModule,
+	"""
+	build_in(r, CompoundNodecl.b('LikiModule',
 	               [ChildTag("statements")],
 	               {'statements': B.statements,
 	                'file': B.text
 	                }))
+	"""
+	build_in(r, CompoundNodecl.b('Serialized',
+				   ["??", ChildTag("last_rendering"), ChildTag("serialization")],
+				   {'last_rendering': B.text,
+				    'serialization': B.text}))
+	B.serialized.instance_class = Serialized
+
+	return r
 
 
-	build_in(
-	SyntaxedNodecl(ModuleThatDoesntSeeAnythingExceptUnhide,
-	               [ChildTag("statements")],
-	               {'statements': B.statements
-	                }))
 
-def build_in_lemon_language():
+def build_in_language_enums():
 
-	build_in(Comment(
-	"""We start by declaring the existence of some types (decls).
-	Once declared, we can reference them from lemon objects.
-	Internally, each declaration is a Nodecl object.
-	The type name is usually a lowercased
-	name of the python class that implements it."""))
+	print(B.enum.instance_slots)
+	print(B.enum.instance_slots["options"])
+	print(B.enum.instance_slots["options"].name)
+	build_in(r,
+		Compound(B.enum, {'name': Text("language"),
+		'options':deref_decl(B.enum.instance_slots["options"]).inst_fresh()}), 'language')
 
+	B.language.ch.options.items = [Text('english'), Text('czech')]
+
+
+
+def build_in_lemon_lang():
 
 	build_in(VarRefNodecl(), 'varref')
 
-	build_in([Nodecl(x) for x in [Number, Bananas, Identifier, RestrictedIdentifier]])
+	build_in([BasicNodecl(x) for x in [Bananas, Identifier, RestrictedIdentifier]])
 
-	build_in(Nodecl(List), "list_literal")
-
-	build_in([
-		SyntaxedNodecl(WorksAs,
-					   [ChildTag("sub"), TextTag(" works as "), ChildTag("sup")],
-					   {'sub': 'type', 'sup': 'type'}),
-
-		SyntacticCategory({'name': Text("expression")})
-	])
-
-
-	build_in(SyntaxedNodecl(BindsTighterThan,
-				[[ChildTag("a"), " binds tighter than ",  ChildTag("b")]],
-				{'a': 'type', 'b': 'type'}))
-
-
+	build_in(BasicNodecl(List), "list_literal")
 
 
 	build_in(WorksAs.b("statement", "anything"), False)
@@ -3195,69 +3165,28 @@ def build_in_lemon_language():
 	#build_in(WorksAs.b("dict", "expression"), False)
 
 
-
-	#build_in(ListOfAnything({'itemtype':b['anything']}, b['list']), 'list of anything')
-
-	build_in(SyntaxedNodecl(EnumType,
-				   ["enum", ChildTag("name"), ", options:", ChildTag("options")],
-				   {'name': 'text',
-				    'options': B.list_of_anything}))
-				   #'options': list_of('text')}))
-
-	#Definition({'name': Text("bool"), 'type': EnumType({
-	#	'name': Text("bool"),
-	#	'options':b['enumtype'].instance_slots["options"].inst_fresh()})})
 	build_in(EnumType({'name': Text("bool"),
-		'options':B.enumtype.instance_slots["options"].inst_fresh()}), 'bool')
-
+		'options':B.enum.instance_slots["options"].inst_fresh()}), 'bool')
 	B.bool.ch.options.items = [Text('false'), Text('true')]
-	lemon_false, lemon_true = EnumVal(B.bool, 0), EnumVal(B.bool, 1)
-
-	#Definition({'name': Text("statements"), 'type': b['list'].make_type({'itemtype': Ref(b['statement'])})})
 
 	build_in(
 		Definition(
 			{'name': Text("list of types"),
 			 'type': list_of(B.type)}))
 
-	build_in(SyntaxedNodecl(Union,
+	build_in(compound(Union,
 				   [TextTag("union of"), ChildTag("items")],
 				   {'items': list_of(B.type)}))
 				   #todo:should use the definition above instead
 
 	B.union.notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
 
-	class HideNode(Syntaxed):
-		pass
-	class HideExceptNode(Syntaxed):
-		pass
-	class UnhideNode(Syntaxed):
-		pass
 
-	build_in(SyntaxedNodecl(HideNode,
-				   ["hide", " ", ChildTag("what")],
-				   {'what': 'text'}))
-
-	build_in(WorksAs.b("hidenode", "statement"), False)
-
-	build_in(SyntaxedNodecl(HideExceptNode,
-				   ["hide", " ", ChildTag("what"), " ", "except", " ", ChildTag("exceptions")],
-				   {'what': 'text',
-				    'exceptions': list_of(B.text)}))
-
-	build_in(WorksAs.b("hideexceptnode", "statement"), False)
-
-	build_in(SyntaxedNodecl(UnhideNode,
-				   ["unhide ",ChildTag("what")],
-				   {'what': list_of(B.text)}))
-
-	build_in(WorksAs.b("unhidenode", "statement"), False)
-
-	build_in(SyntaxedNodecl(UntypedVar,
+	build_in(compound(UntypedVar,
 				   [ChildTag("name")],
 				   {'name': 'text'}))
 
-	build_in(SyntaxedNodecl(For,
+	build_in(compound(For,
 				   [TextTag("for"), ChildTag("item"), ("in"), ChildTag("items"),
 				        ":\n", ChildTag("body")],
 				   {'item': B.untypedvar,
@@ -3267,14 +3196,14 @@ def build_in_lemon_language():
 				   'body': B.statements}))
 
 
-	build_in(SyntaxedNodecl(VarlessFor,
+	build_in(compound(VarlessFor,
 				   [TextTag("for"), ChildTag("items"),
 				        ":\n", ChildTag("body")],
 				   {'items': Exp(list_of('anything')),
 				   'body': B.statements}))
 
 
-	build_in(SyntaxedNodecl(If,
+	build_in(compound(If,
 				[
 					[TextTag("if "), ChildTag("condition"), ":\n", ChildTag("statements")],
 
@@ -3282,30 +3211,32 @@ def build_in_lemon_language():
 				{'condition': Exp(B.bool),
 				'statements': B.statements}))
 
-	build_in(SyntaxedNodecl(Else,
+	build_in(compound(Else,
 				[
 					[TextTag("else:"), ":\n", ChildTag("statements")],
 
 				],
 				{'statements': B.statements}))
-
-
 	"""...notes: formatting: we can speculate that we will get to having a multiline parser,
 	and that will allow for a more freestyle formatting...
 	"""
 
-	build_in(SyntaxedNodecl(TypedParameter,
-				   [ChildTag("name"), TextTag("-"), ChildTag("type")],
-				   {'name': 'text', 'type': 'type'}))
+	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
 
 
-	builtin_unevaluatedparameter = build_in(SyntaxedNodecl(UnevaluatedParameter,
-				   [TextTag("unevaluated"), ChildTag("argument")],
-				   {'argument': 'typedparameter'}))
+	class After(Compound):
+		pass
+	#how to best choose the syntax from within a parent node?
+	"""
+	build_in(compound(After,
+	                        ['after', ChildTag('function'), ':\n', ChildTag('body')],
+		{'function': B.functionsignatureref,
+		 'body': B.statements}))
+	"""
 
 
+def build_in_lemon_function_nodes():
 
-	#lets define a function signature type
 	tmp = B.union.inst_fresh()
 	tmp.ch["items"].add(Ref(B.text))
 	tmp.ch["items"].add(Ref(B.typedparameter))
@@ -3328,27 +3259,23 @@ def build_in_lemon_language():
 	#tmp = b['list'].make_type({'itemtype': Ref(b['union of custom syntax item types'])})
 
 
-	build_in(SyntaxedNodecl(FunctionDefinition,
-				   [TextTag("def "), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
-				   #[TextTag("def "), ChildTag("sig"), TextTag(":"), MaybeWhitespace() , TextTag("\n"), MaybeWhitespace(), ChildTag("body")],
+	build_in(compound(FunctionDefinition,
+				   [TextTag("deffun:"), ChildTag("sig"), TextTag(":\n"), ChildTag("body")],
 					{'sig': B.function_signature_list,
 					 'body': B.statements}))
 
-	build_in(WorksAs.b("functiondefinition", "statement"), False)
-
-
 	#user cant instantiate it, but we make a decl anyway,
 	#because we need to display it, its in builtins,
-	#its just li ke a normal function, FunctionCall can
+	#its just like a normal function, FunctionCall can
 	#find it there..
-	build_in(SyntaxedNodecl(BuiltinFunctionDecl,
+	build_in(compound(BuiltinFunctionDecl,
 				   [TextTag("builtin function"), ChildTag("name"), TextTag(":"), ChildTag("sig")],
 					{'sig': B.function_signature_list,
 					 'name': B.text}))
 
 
 
-	build_in(SyntaxedNodecl(BuiltinPythonFunctionDecl,
+	build_in(compound(BuiltinPythonFunctionDecl,
 			[
 			TextTag("builtin python function"), ChildTag("name"),
 			TextTag("with signature"), ChildTag("sig"),
@@ -3360,6 +3287,8 @@ def build_in_lemon_language():
 			'name': B.text
 			}))
 
+
+def build_in_builtin_functions():
 
 	#lets keep 'print' a BuiltinFunctionDecl until we have type conversions as first-class functions in lemon,
 	#then it can be just a python library call printing strictly strings and we can dump the to_python_str (?)
@@ -3454,94 +3383,13 @@ def build_in_lemon_language():
 
 
 
-
-	build_in(SyntaxedNodecl(Serialized,
-				   ["failed to deserialize:", ChildTag("last_rendering"), ChildTag("serialization")],
-				   {'last_rendering': B.anything,
-				    'serialization':dict_from_to('text', 'anything')}))
-
-
-	build_in(SyntaxedNodecl(CompoundNodeDef,
-	                        ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
-	                        {'name' : B.text,
-				   'syntax': B.custom_syntax_list}))
-
-	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
-
-
-	class After(Syntaxed):
-		pass
-	#how to best choose the syntax from within a parent node?
-	"""
-	build_in(SyntaxedNodecl(After,
-	                        ['after', ChildTag('function'), ':\n', ChildTag('body')],
-		{'function': B.functionsignatureref,
-		 'body': B.statements}))
-	"""
-
-
-class Serialized(Syntaxed):
-	def __init__(s, children):
-		#s.status = widgets.Text(s, "(status)")
-		#s.status.color = "compiler hint"
-		super(Serialized, s).__init__(children)
-
-	def _eval(s):
-		return banana("deserialize me first")
-
-	def on_keypress(s, e):
-		if e.key == K_d and e.mod & KMOD_CTRL:
-			s.unserialize()
-			return True
-
-	def unserialize(s):
-		data = s.ch.serialization.pyval
-		log("unserializing %s"%data)
-		new = deserialize(data, s)
-		log("voila:%s"%new)
-		s.parent.replace_child(s, new)
-
-
-
-def b_lemon_load_file(root, name):
-	return load_module(name, root["loaded program"])
-
-def load_module(file_name, placeholder):
-	print ("loading "+file_name)
-	try:
-		input = json.load(open(file_name, "r"))
-	except Exception as e:
-		return str(e)
-	d = deserialize(input, placeholder)
-	placeholder.parent.replace_child(placeholder, d)
-	d.ch.file.pyval = file_name
-	d.fix_parents()
-	for i in d.flatten():
-		if isinstance(i, Serialized):
-			i.unserialize()
-			d.fix_parents()
-	bad = False
-	for i in d.flatten():
-		if isinstance(i, Serialized):
-			print("deserialization failed:%s"%i)
-			bad = True
-	if bad:
-		print ("...loaded with warnings")
-		return "warning"
-	else:
-		return "ok"
-
-
-
-
-
 def build_in_misc():
-	class Note(Syntaxed):
+	class Note(Compound):
 		def __init__(s, children):
 			#s.text = widgets.Text(s, "")
 			super(Note,s).__init__(children)
 
-	build_in(SyntaxedNodecl(Note,
+	build_in(compound(Note,
 				   [["note: ", ChildTag("text")]],
 				   {'text': B.text}))
 
@@ -3567,7 +3415,7 @@ def build_in_misc():
 
 
 
-	class PythonEval(Syntaxed):
+	class PythonEval(Compound):
 		def __init__(s, children):
 			super(PythonEval, s).__init__(children)
 
@@ -3577,7 +3425,7 @@ def build_in_misc():
 
 
 
-	class ShellCommand(Syntaxed):
+	class ShellCommand(Compound):
 		info = ["runs a command with os.system"]
 		def __init__(s, children):
 			super(ShellCommand, s).__init__(children)
@@ -3592,12 +3440,12 @@ def build_in_misc():
 
 			return Text(str(o))
 
-	build_in(SyntaxedNodecl(ShellCommand,
+	build_in(compound(ShellCommand,
 				   [["bash:", ChildTag("command")]],
 				   {'command': Exp(B.text)}))
 
 
-	class FilesystemPath(Syntaxed):
+	class FilesystemPath(Compound):
 		def __init__(s, children):
 			s.status = widgets.Text(s, "(status)")
 			s.status.color = colors.parser_hint
@@ -3610,10 +3458,10 @@ def build_in_misc():
 			return Text(p)
 
 
-	#build_in(SyntaxedNodecl(FilesystemPath,
-	#			   [[ChildTag("path")],
-	#			    [ChildTag("path"), MemberTag("status")]],
-	#			   {'path': (B.text)}))
+	build_in(compound(FilesystemPath,
+				   [[ChildTag("path")],
+				    [ChildTag("path"), MemberTag("status")]],
+				   {'path': (B.text)}))
 
 	def b_files_in_dir(dir):
 		import os
@@ -3628,319 +3476,32 @@ def build_in_misc():
 
 
 
-
-
-	class MorningRule(Syntaxed):
+	class MorningRule(Compound):
 		pass
 
-	build_in(SyntaxedNodecl(MorningRule,
+	build_in(compound(MorningRule,
 				   [['every morning at ', ChildTag('hours'), ":", ChildTag('minutes'), ':\n', ChildTag('statements')]],
 				   {'hours': (B.number), 'minutes': Exp(B.number), 'statements': B.statements}))
 
 
 
 
-"""
-BuiltinMenuItem..
-class: based on customnode, one level,
-how to do views?
-add python_env to Module?
-"""
-
-
-"""
-class NodeSyntax(Syntaxed):
-	pass
-
-
-build_in(SyntaxedNodecl(NodeSyntax,
-			   [ChildTag("language"), "syntax:", ChildTag("syntax")],
-			   {'syntax': b['custom syntax list']}))
-"""
-
-
-
-
-
-
-
-
-
-
-
-
-"""PiType is a kind of node.
-PiType has var - a Var
-PiType has type - a Exp
-PiType has ret - a Exp
-PiType has syntax: [Child("var"), ":"
-"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Kbdbg(Node):
-	def __init__(s):
-		super(Kbdbg, s).__init__()
-		s.isroot = True
-		s.parent = None
-		s.decl = None
-		s.delayed_cursor_move = DelayedCursorMove()
-		s.indent_length = 4
-		s.changed = True
-		s.brackets = ("", "")
-		s.items = []
-		s.arrows = []
-		s.loadkb()
-		print (Kbdbg.keys)
-		s.update()
-
-	def render(s):
-		yield ColorTag(colors.fg)
-		print ("RENDER")
-		yield s.items
-		yield EndTag()
-
-	def update(s):
-		#for a in s.arrows:
-			#print (a)
-		print ("UPDATE")
-
-		s.items.clear()
-		for i in s.kb:
-			#print(i.markup)
-			if len(i.markup) != 0:
-				for a in s.arrows:
-					if i.markup == a[0]["markup"]:
-						#print ("OOO", i.markup, "FFF", a[0]["markup"])
-						for j in s.kb:
-							#print("XXX",  j.markup, a[1]["markup"])
-							if j.markup == a[1]["markup"]:
-								style = a[2]
-								s.items.append(ArrowTag(j, style))
-								s.items.append("o")
-					#if i.markup == a[1]["markup"]:
-					#	s.items.append("x")
-
-
-			s.items.append(ElementTag(i))
-
-	def add_step(s):
-		print("adding step")
-		s.steps.append(Dotdict())
-		s.steps[-1].log = []
-		s.steps[-1].vis = []
-
-	def loadkb(s):
-
-		s.steps = []
-		s.add_step()
-		input = json.load(open("kbdbg.json", "r"))
-		s.kb = []
-		for i in input:
-			if isinstance(i, dict):
-				#print (i)
-				if i["type"] == "step":
-					s.add_step()
-				else:
-					s.steps[-1].vis.append(i)
-			elif isinstance(i, unicode):
-				s.steps[-1].log.append(i)
-			elif isinstance(i, list):
-				for x in i:
-					if isinstance(x, str):
-						t = x
-						m = []
-					elif isinstance(x, dict):
-						t = x["text"]
-						m = x["markup"]
-					w = widgets.Text(s, t)
-					w.markup = m
-					s.kb.append(w)
-
-		s.arrows = []
-		s.cache = {}
-		s.step = -1
-		s.step_fwd()
-
-	def print_log(s):
-		for line in s.steps[s.step].log:
-			print(line)
-
-	def step_back(s):
-
-		if s.step != 0:
-			s.step -= 1
-		s.arrows = copy(s.cache[s.step])
-		s.update()
-		if s.step == 0:
-			print()
-			print()
-			print()
-			print()
-			print("START")
-			print()
-			print()
-			print()
-
-		print ("step:", s.step)
-		s.print_log()
-
-	def step_fwd(s):
-
-		if s.step < len(s.steps) -1 :
-			s.step += 1
-			if s.step in s.cache:
-				s.arrows = copy(s.cache[s.step])
-			else:
-				s.do_step(s.step)
-				s.cache[s.step] = copy(s.arrows)
-			s.update()
-		print ("step:", s.step)
-		s.print_log()
-
-	def do_step(s, i):
-
-		for x in s.steps[i].vis:
-			print(x)
-			p = (x["a"], x["b"], x["style"])
-			if x["type"] == "add":
-				print("add" , p)
-				s.arrows.append(p)
-			elif x["type"] == "remove":
-				for y in range(len(s.arrows)):
-					if s.arrows[y] == p:
-						print("remove" , p)
-						s.arrows.remove(p)
-						break
-			else:
-				assert(False)
-
-
-	def has_result(s):
-		for line in s.steps[s.step].log:
-			if line[:6] == "RESULT":
-				return True
-
-
-	def res_back(s,e):
-		while s.step != 0:
-			s.step_back()
-			if s.has_result(): return
-
-	def res_fwd(s,e):
-		while s.step < len(s.steps) -1 :
-			s.step_fwd()
-			if s.has_result(): return
-
-
-element.Module = Module
-
-
-
-
-
-
-
-"""
-build_in(SyntaxedNodecl(Sequence, ['sequence of', ChildTag('min'), 'or more', ChildTag('itemtype')],
-                        {'min': 'number', 'itemtype': B.type})
-build_in(Definition({'name': Text('statementsbody'), 'type': Sequence({'min': Number(0), 'itemtype': B.statement)))
-build_in(SyntaxedNodecl(Statements, ['{', ChildTag('body'), '}'], {'body': B.statementsbody}))
-
-
-class Sequence(Syntaxed):
-	pass
-
-"""
-"""
-todo: try pre-generating grammar for marpa 
-(add sub-rule objects, linearize grammars depth-first up until <reparse tag>,..?
-with or without tail, whatever i can get working
-
-plan b: try gf
-plan c: avoid need of reparsing, force nonambiguous grammar for identifiers, go back to a solution employing the editor
-"""
-
 #misnomer: its not just symbols, rules too
 def register_symbol(s):
 	log = logging.getLogger("marpa").debug
 
-	#if isinstance(s, Sequence):
-	#	syntax_for_parser = []
+	if isinstance(s, Nodecl):
+		s._symbol = s.instance_class.register_class_symbol()
+		return
 
-	"""
-		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
-		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
-		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-		r = m.symbol('Statements literal head')
-		m.rule('statements literal head', r, [m.maybe_whitespace, m.known_char('{'), m.maybe_whitespace, m.known_char('}')], empty_statements_body_from_parse)
-		return r
-	"""
-
-	#if isinstance(s, Definition):
-	#	xxx
-	if isinstance(s, SyntacticCategory):
-		node_symbols[s] = m.symbol(s.name)
-	elif isinstance(s, WorksAs):
-		if s in node_rules:
-			return
-		lhs = s.ch.sup.parsed
-		rhs = s.ch.sub.parsed
-		if not isinstance(lhs, Ref) or not isinstance(rhs, Ref):
-			print ("invalid sub or sup in worksas")
-			return
-		lhs = lhs.target.symbol
-		rhs = rhs.target.symbol
-		if args.log_parsing:
-			log('%s worksas %s\n (%s := %s)'%(s.ch.sub, s.ch.sup, lhs, rhs))
-		if lhs != None and rhs != None:
-			r = m.rule(str(s), lhs, rhs)
-			node_rules[s] = r
-	elif isinstance(s, (ParametricListType)):
-		dd = s.ddecl
-		assert isinstance(dd, ParametricNodecl)
-		for k,v in iteritems(node_symbols):
-			if k.eq_by_value_and_python_class(s): #should be by
-				node_symbols[s] = v
-				return
-		item_symbol = deref_decl(s.ch.itemtype).symbol
-		if item_symbol == None:
-			log = logging.getLogger("marpa").warning("no symbol for %s" % s)
-			return
-		desc = '%s literal' % s.tostr()
-		node_symbols[s] = r = m.symbol(desc)
-		log("registering %s grammar" % desc)
-		optionally_elements = m.symbol('optionally_elements of %s' % desc)
-		m.sequence('optionally_elements of %s' % desc, optionally_elements, item_symbol, ident_list, m.known_char(','), 0)
-		opening, closing = m.known_char('['), m.known_char(']')
-		m.rule('list literal of %s' % desc, r, [opening, optionally_elements, closing], s.instance_class.from_parse)
-	elif isinstance(s, (NodeclBase)):
-		node_symbols[s] = s.instance_class.register_class_symbol()
-	else:
-		log(("no symbol for", s))
-
-
+	log(("no symbol for", s))
 
 
 
 def register_class_symbol(cls):
 	log = logging.getLogger("marpa").debug
 
+	#the ones that walk the scope are magic
 
 	if FunctionCall.__subclasscheck__(cls):
 		top = m.symbol("function_call")
@@ -3953,8 +3514,10 @@ def register_class_symbol(cls):
 					elif isinstance(i, TypedParameter):
 						#TypedParameter means its supposed to be an expression
 						a = B.expression.symbol
+						assert a,  i
 					elif isinstance(i, UnevaluatedArgument):
 						a = deref_decl(i.type).class_symbol
+						assert a,  i
 					assert a,  i
 					rhs.append(a)
 					rhs.append(m.syms.maybe_spaces)
@@ -3971,25 +3534,13 @@ def register_class_symbol(cls):
 	elif Ref.__subclasscheck__(cls):
 		r = m.symbol('ref')
 		for i in m.scope:
-			if is_type(i):#todo: not just types but also functions and..?..
+			if is_type(i) or isinstance(i, (TypedParameter, UntypedVar)):
 				rendering = "*" + i.name
 				debug_name = "ref to"+str(i)
 				sym = m.symbol(debug_name)
 				m.rule(debug_name + "is a ref", r, sym)
 				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
 		return r
-
-	elif VarRef.__subclasscheck__(cls):
-		r = m.symbol('varref')
-		for i in m.scope:
-			if isinstance(i, (TypedParameter, UntypedVar)):
-				rendering = "$" + i.name
-				debug_name = "varref to"+str(i)
-				sym = m.symbol(debug_name)
-				m.rule(debug_name + "is a varref", r, sym)
-				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
-		return r
-
 
 	elif RestrictedIdentifier.__subclasscheck__(cls):
 		body_part = m.symbol('body_part')
@@ -3999,8 +3550,8 @@ def register_class_symbol(cls):
 		allowed.extend([ch for ch in '_-'])
 		for ch in allowed:
 			m.rule('restricted_identifier_body_part_is_', body_part, m.known_char(ch))
-		r = m.symbol('Identifier')
-		m.sequence('identifier is seq of body part', r, body_part, cls.from_parse)
+		r = m.symbol('restricted identifier')
+		m.sequence('restricted identifier is seq of body part', r, body_part, cls.from_parse)
 		return r
 
 
@@ -4046,126 +3597,167 @@ def register_class_symbol(cls):
 		digits = m.symbol('digits')
 		for i in [chr(j) for j in range(ord('0'), ord('9')+1)]:
 			m.rule(i + "_is_a_digit",digit, m.known_char(i))
+
 		m.sequence('digits_is_sequence_of_digit', digits, digit, join)
 		r = m.symbol('number')
 		m.rule('number_is_digits', r, digits, (ident, cls))
 		return r
 
-	elif Statements.__subclasscheck__(cls):
-		("registering Statements grammar")
-		optionally_elements = m.symbol('optionally_elements')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char('\n'), 0)
-		r = m.symbol('Statements')
-		m.rule('list literal', r, [m.known_char('{'), optionally_elements, m.known_char('}')],cls.from_parse)
-		return r
 
 	elif List.__subclasscheck__(cls):
 		log("registering list grammar")
 		optionally_elements = m.symbol('optionally_elements')
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char(','), 0)
 		r = m.symbol('list literal')
 		opening =  m.known_char('[')
 		closing =  m.known_char(']')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char(','), 0)
 		m.rule('list literal', r, [opening, optionally_elements, closing], cls.from_parse)
 		return r
 
-	elif Syntaxed.__subclasscheck__(cls):
+
+	elif Compound.__subclasscheck__(cls):
 		r = m.symbol(cls.__name__)
 		ddecl = deref_decl(cls.decl)
 		for sy in ddecl.instance_syntaxes:
-			cls.rule_for_syntax(r, sy, ddecl)
+			syms = []
+			for i in syntax:
+				ti = type(i)
+				if ti == unicode:
+					for ch in i:
+						syms = syms[:]
+						syms.append(m.known_char(ch))
+						if autocomplete:
+							m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+				elif ti == ChildTag:
+					child_type = ddecl.instance_slots[i.name]
+					if type(child_type) == Exp:
+						x = B.expression.symbol
+					else:
+						x = deref_decl(child_type).symbol
+					if not x:
+						log("no type:" + str(i))
+						return None
+					assert x, child_type
+					syms = syms[:]
+					syms.append(x)
+					if autocomplete:
+						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+			assert len(syms) != 0
+			if not autocomplete:
+				m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
 		return r
+
 
 	log(("no class symbol for", cls))
 
 
+class Serialized(Compound):
+	@classmethod
+	def new(cls, serialization_string):
+		return cls({'last_rendering': Text(),
+		           'serialization':Text(serialization_string)})
+
+	def __init__(s, children):
+		#s.status = widgets.Text(s, "(status)")
+		#s.status.color = "compiler hint"
+		super().__init__()
+
+	def _eval(s):
+		return banana("deserialize me first")
+
+	def on_keypress(s, e):
+		if e.key == K_d and e.mod & KMOD_CTRL:
+			s.unserialize()
+			return True
+
+	def unserialize(s):
+		data = s.ch.serialization.pyval
+		log("unserializing %s"%data)
+		new = deserialize(data, s)
+		log("voila:%s"%new)
+		s.parent.replace_child(s, new)
 
 
-def scope_after_hiding_and_unhiding(s):
-	assert(type(s.parent) != Root)
-	local = what_in_my_module_do_i_see(s)
-	library = s.module.scope()
-	r = library + local
-	full = local + what_module_sees(s.module)
-	for i in local:
-		dd = deref_decl(i.decl)
-		if dd == B.hidenode:
-			what = i.ch.what.parsed.value
-			if what == "everything":
-				r = []
-			else: raise Exception("not implemented")
-		elif dd == B.hideexceptnode:
-			what = i.ch.what.parsed.value
-			exc = i.ch.exceptions.parsed.pyval
-			if what == "everything":
-				r = [x for x in r if x.name in exc]
-			else: raise Exception("not implemented")
-		elif dd == B.unhidenode:
-			what = i.ch.what.parsed.pyval
-			logging.getLogger("scope").debug("unhide:%s"%what)
-			#if what.parsed.eq(Text("everything")):
-			#	r = full[:]
-			#else:
-			for j in full:
-				j = j.parsed
-				try:
-					name = j.name
-				except (KeyError, AttributeError):
-					logging.getLogger("scope").debug("does not have name")
-					continue
-				if isinstance(j, Module):
-					logging.getLogger("scope").debug("considering module %s" % j)
-					if (name in what):
-						logging.getLogger("scope").debug("unhiding module %s:"%j)
-						for k in j.ch.statements.items:
-							k = k.parsed
-							logging.getLogger("scope").debug("-%s" % k)
-							if k not in r:
-								r.append(k)
+def b_lemon_load_file(root, name):
+	return load_module(name, root["loaded program"])
 
-				elif is_decl(j) and (name in what):
-					logging.getLogger("scope").debug("unhiding %s" % j)
-					if j not in r:
-						r.append(j)
+def load_module(file_name, placeholder):
+	print ("loading "+file_name)
+	try:
+		input = json.load(open(file_name, "r"))
+	except Exception as e:
+		return str(e)
+	d = deserialize(input, placeholder)
+	placeholder.parent.replace_child(placeholder, d)
+	d.ch.file.pyval = file_name
+	d.fix_parents()
+	for i in d.flatten():
+		if isinstance(i, Serialized):
+			i.unserialize()
+		d.fix_parents()
+	return "ok"
+
+
+
+"""
+
+[a l:module; statements (
+
+[ a l:function
+
+
+
+
+[ a l:call;  target
+
+"""
+
+"""
+notes on future organization into modules:
+builtin_registry.py:
+def build_in(...
+
+ldl.py:
+from root import root
+
+def build_in_language_definition_language()...
+
+
+
+
+
+"""
+
+"""
+
+#	build_in(cnd('BindsTighterThan',
+#				[ChildTag("a"), " binds tighter than ",  ChildTag("b")],
+#				{'a': 'type', 'b': 'type'}))
+
+
+
+"""
+
+
+def shallow_copy_visitor(s):
+	if isinstance(s, Compound):
+		r = Compound()
+		r.decl = s.decl
+		if s.chosen_syntax:
+			r.chosen_syntax = s.chosen_syntax.copy()
+
+def transform(s, transformer, parent):
+	r = transformer(s, parent)
+	if isinstance(s, Compound):
+		for k,child in iteritems(s.ch._dict):
+			r.set_child(k, transformer(child, s))
+	if isinstance(s, List):
+		for child in s.items:
+			r.append(transformer(child, s))
+	if isinstance(s, Dict):
+		for k,v in iteritems(s.items):
+			r[transformer(k, s)] = transformer(v, s)
 	return r
 
-def collect_modules_seen_by_module(module):
-	if module == module.root["builtins"]:
-		return [] # builtins dont see anything
-	else:
-		modules = [module.root["builtins"]]
-		for m in module.root['library'].items:
-			if not isinstance(m, Module):
-				continue
-			if module != m:
-				modules.append(m)
-			#log(module) #log(r)
-		return modules
 
 
-def what_module_sees(module):
-	assert isinstance(module, Module)
-	r = []
-	for m in collect_modules_seen_by_module(module):
-		r.append(m)
-		for i in m.ch.statements.parsed.items:
-			r.append(i.parsed)
-	return r
-
-def what_in_my_module_do_i_see(s):
-	assert s.parent,     s.long__repr__()
-	r = []
-	p = s.parent
-	r += [p]
-	if isinstance(p, Statements):
-		r += [x.parsed for x in p.above(s)]
-	elif not isinstance(p, Module):
-		r += what_in_my_module_do_i_see(p)
-	assert(r != None)
-	assert_is_flat(r)
-	return r
-
-def assert_is_flat(r):
-	assert flatten(r) == r
-
-#return s["builtins"].ch.statements.parsed
