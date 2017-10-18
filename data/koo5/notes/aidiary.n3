@@ -1,0 +1,57 @@
+@prefix lode: <http://linkedevents.org/ontology/#>
+@prefix time: <http://www.w3.org/2006/time#>
+
+:0 a :purchase;
+ :url "http://www.silcon.cz/index.php?route=product/product&product_id=172"; 
+ :screenshot "files/FireShot Capture 1 - Rigol DS1054Z_ - http___www.silcon.cz_index.php.pdf"; 
+ :product_url "http://www.tequipment.net/Rigol/DS1054Z/Digital-Oscilloscopes/"; 
+ :name "DS1054Z";
+ lode:circa [ a time:Instant;  :inXSDDateTime "2015-06-14T21:01:50+0000"]
+
+
+
+
+
+#http://www.hccp.org/xsd-date.html
+#Generating a correctly formatted xsd:dateTime using the Unix date command
+#> date -u  "+%Y-%m-%dT%H:%M:%SZ"
+# | xclip -i
+#:loggedTime 2015-06-24T03:17:09Z; 
+#lode:circa [ a time:Instant;  :inXSDDateTime
+#[ a lode:event; atTime [ a time:
+
+
+
+
+glycerin stoji na poliklinice zasrane hodne
+u kauflandu nejlip
+
+pozor na nakupy okolo svatku
+
+
+
+
+http://www.cse.chalmers.se/~hallgren/Alfa/Tutorial/GFplugin.html
+
+
+
+{ ?x owns ?y } => { ?x tools available ?y }
+
+
+koo5 owns 
+oscilloscope:
+
+, soldering iron:
+
+, CNC:
+
+saw:
+
+drill:
+
+
+, 
+
+(
+
+

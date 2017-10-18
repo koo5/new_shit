@@ -1,0 +1,88 @@
+
+
+
+new:
+	all types
+	preferred types
+scope:
+	
+
+def expand_types(types):
+	pydatalog?
+	
+
+
+
+	def menu(self):
+		r += [Text(text)]
+		if text.isdigit():
+			r += [Number(text)]
+		r += [SomethingNew(name = text)]
+		#preferred types:
+		r += expand_types(self.types)
+		#all types
+		r += expand_types('all') - expand_types(self.types)
+
+
+MenuItem:
+	def choice(self):
+		if isinstance(self.value, nodes.Node):
+			return self.value
+		if isinstance(self.value, __class__?):
+			return self.value()
+		
+		
+
+
+
+def expand_types(types)
+
+
+
+all --> statement; clock.
+statement --> expression;[assignment];[for].
+expression --> [bool];[text]; [number]; [variableReference].
+
+#----
+
+for x in y
+if 5 == 3
+
+
+syntax([if]) --> ['if', bool, ':', newline, statements]
+syntax([for]) --> ['for', variableDeclaration, 'in', variableReference, ":"].
+
+
+variableDeclaration --> 
+
+
+
+input(options, [
+
+
+scope:
+...
+NodeTypeDeclaration(VariableReference)
+...
+
+
+->
+
+
+preferred = ['all']
+
+node_types = {
+'statement': ['expression'],
+'expression': [Text, Number, VariableReference, Clock]
+}
+
+flatten_types(types):
+	r = []
+	for type in types:
+		if type == 'all':
+			for i in node_types:
+				r += flatten_types(i)
+		else:
+			node_types[type]
+
+

@@ -1,0 +1,37 @@
+* todo p63, only better
+ [link to tag]
+* todo jit
+ [link to tag]
+* todo reasoner/parsers test suite
+
+* wish ci setup
+
+* in existence
+** the "log" / this file(s)
+*** x
+<koo7> http://orgmode.org/manual/Tracking-your-habits.html#Tracking-your-habits
+<koo7> http://orgmode.org/worg/code/org-info-js/index.html#sec-1
+
+async-shell-command
+http://draketo.de/english/emacs/parallel-babel
+
+
+* in developent
+
+* planning
+** gui
+*** desktop
+lets try to talk about a concrete idea: 
+ a driver in python, in charge of drawing this ui and querying tau
+ an ontology that this driver will understand
+ 
+** cnl ui
+*** declarative grammar/syntax/language definition language?
+
+*** langs
+for example narsese wrapper, an unifying interface that the editor/whatever can talk to
+
+
+*#zennet log
+
+

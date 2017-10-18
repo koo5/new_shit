@@ -1,0 +1,11 @@
+gdb -ex r --args ./eyasdisp  --simulation --debug all:DEBUG -s jessie.elektroline.cz -v RM
+
+
+
+
+the 8-segment digit is a kind of thing
+it has 8 segments
+to display 1:
+	turn segment 0 on
+	turn segment 6 on
+

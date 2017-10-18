@@ -658,7 +658,7 @@ yeah to call marpa .symbol and .rule functions
 
 
 
-	so....abs has a Nodecl
+	so....abs has a BasicNodecl
 	and this nodecl would lemonishly be Pitype
 	and thats probably all i can say about all this because i just have no idea
 	i have ParametricNodecls, for example; so these correspond to "type operators" in the
@@ -739,4 +739,101 @@ def build_in_master(r):
 		
 		
 		""")]
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+def new_builtins():
+
+
+	nodedef(
+	node "name" with *english syntax: ["a" - *ref, "bla", "b" - *ref]
+	)
+
+	return
+
+*czech syntax for "BindsTighterThan": ["x"(a), "ma vyssi asociativitu nez", "y"(b)]
+(refers to default syntax)
+
+
+"""
+def	compound(node_class, english_syntax, child_types):
+	r = CompoundNodeDef()
+	r.syntax_language = EnumVal(
+		Serialized.new("""
+{
+    "decl": "ref",
+    "target":
+    {
+        "name": "language",
+        "resolve": true,
+        "decl":
+        {
+            "decl": "ref",
+            "target":
+            {
+                "name": "enumtype",
+                "resolve": true,
+                "class": "syntaxednodecl"
+            }
+        }
+    }
+}
+"""), 0)
+	r.instance_class = node_class
+	for i in english_syntax:
+		if type(i) == str:
+			x = Text(i)
+		elif type(i) == ChildTag:
+			x = TypedParameter()
+			x.ch.name = Text(i.name)
+			x.ch.type = Ref(child_types[i.name])
+		else: assert False, i
+		r.default_syntax.append(x)
+	r.name_node = Text(node_class.__name__)
+	r.fix_parents()
+	return r
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+BuiltinMenuItem..
+class: based on customnode, one level,
+how to do views?
+add python_env to Module?
+
+PiType is a kind of node.
+PiType has var - a Var
+PiType has type - a Exp
+PiType has ret - a Exp
+PiType has syntax: [Child("var"), ":"
+"""
+
+
+
+
+
+
+
+
+
+
 
