@@ -61,8 +61,10 @@ class Editor(ServerFrame):
 	def __init__(s):
 		super(Editor, s).__init__()
 
-		s.root = nodes.make_root()
-		if not args.kbdbg:
+		if args.kbdbg:
+			s.root = Kbdbg()
+		else:
+			s.root = nodes.make_root()
 			lc.build_in_lc1(s.root)
 			lc.build_in_lc2(s.root)
 			lc.build_in_cube(s.root)
@@ -306,12 +308,11 @@ class Menu(SidebarFrame):
 	def update_menu(s):
 		log = logging.getLogger('menu').debug
 		if s.current_parser_node:
-			try:#hack, current_parser_node could have been moved to clipboard,
-				#and theres currently no way to know
-				scope = s.current_parser_node.scope()
-			except AssertionError as e:
-				print ("current_parser_node could have been deleted, assertion error", e)
+			#warning, current_parser_node could have been moved to clipboard or something, and theres currently no way to know
+			if '_deleted' in s.current_parser_node.__dict__:
+				print("deleted node")
 				return
+			scope = s.current_parser_node.scope()
 			s.update_current_text()
 			log("scope:%s items" % len(scope))
 			s.prepare_grammar(scope)

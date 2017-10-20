@@ -65,7 +65,7 @@ if text.startswith("unhide"):
 	if (rr and len(rr)):
 		for i in rr:
 			print("parse result:",i.tostr())
-		p.items = [rr[1]]
+		p.items = [rr[-1]]
 	p = nodes.Parser()
 	module.ch.statements.add(p)
 	p.add(nodes.Text(value=rest_of_lines))
@@ -73,8 +73,8 @@ if text.startswith("unhide"):
 	rr = parse_sync(p, rest_of_lines)
 	if (rr and len(rr)):
 		print("parse results:", rr)
-		p=rr[0]
-		print (p.eval())
+		print("eval:")
+		print (rr[0].eval())
 
 else:
 	print ("no parse")

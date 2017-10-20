@@ -1,2 +1,2 @@
-unhide ["builtins","text"]
-print "x"
+unhide ["builtins","sss","rrr"]
+print "hello world"

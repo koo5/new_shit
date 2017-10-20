@@ -294,7 +294,7 @@ class MarpaThread(LemmacsThread):
 	def __init__(s):
 		super().__init__()
 		if args.log_parsing:
-			s.input.logger = s.output.logger = logging.getLogger("marpa")
+			s.input.logger = s.output.logger = logging.getLogger("marpa_rpc_queue")
 			pass
 
 	def send(s, msg):
