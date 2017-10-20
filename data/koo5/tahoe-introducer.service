@@ -1,0 +1,11 @@
+[Unit]
+Description=Tahoe introducer
+After=network.target
+
+[Service]
+type=forking
+User=tahoe
+ExecStart=/usr/bin/tahoe start /home/tahoe/.tahoe-introducer 
+
+[Install]
+WantedBy=multi-user.target

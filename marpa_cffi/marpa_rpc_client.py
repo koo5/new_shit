@@ -1,4 +1,4 @@
-#in the end i hadnt made it a rpc client, it just spawns a thread
+#not really a rpc client, it just spawns a thread
 
 from typing import *
 int
@@ -141,7 +141,9 @@ class ThreadedMarpa(object):
 		return lhs
 
 	def string2tokens(s,raw):
-		"""return a list with known chars substituted with their corresponding symbol ids"""
+		"""return a list with known chars substituted with their corresponding symbol ids
+		see: known_char
+		"""
 		tokens = []
 		for i, char in enumerate(raw):
 			try:
@@ -159,6 +161,10 @@ class ThreadedMarpa(object):
 	def syms_sorted_by_values(s):
 		return s.sorted_by_values(s.debug_sym_names)
 
+	def check_accessibility(s):
+		for i in s.debug_sym_names._dict.items():
+			if not s.g.symbol_is_accessible(i[1]):
+				raise Exception("inaccessible: %s (%s)"%i)
 	#---------
 
 	@property
@@ -181,13 +187,16 @@ class ThreadedMarpa(object):
 		log("collect_grammar:...")
 
 		#we dont have a separate tokenizer
-		s.named_symbol('nonspecial_char')
+		#any char used in any terminal of the grammar:
 		s.named_symbol('known_char')
+		#all the rest:
+		s.named_symbol('nonspecial_char')
 
 		#these should eventually be defined in lemon lang
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
 
+		#anything means we are parsing for the editor and want to parse any fragments of the language
 		s.named_symbol('whitespace_char')
 		s.named_symbol('maybe_whitespace')
 		for x in ' \n\t':

@@ -1,0 +1,70 @@
+#what is this?
+This is visionary and evolutionary stuff. I meet people who want to do great stuff, but dont have years of free time to spend researching whats out there. I wish i could outline where their dreams fit in the jigsaw and get them started.
+
+#levels
+most ideas can be described on several levels, from the most down-to-earth, realistic and timid, to the crazies take-over-the-world visions.
+
+
+#topics
+that come up, how they relate, what are our options, highest and lowest level visions.
+UIs
+GUIs
+augmentation
+languages
+intelligent agents
+
+
+#(dead) places to hang out in
+STAY PATIENT and KEEP IDLING
+[irc://irc.freenode.net/#fonc]  
+[irc://irc.freenode.net/#tunes]  
+[irc://irc.freenode.net/#swig]  Semantic Web Interest Group
+
+
+
+
+
+#projects
+projects, make an effort to present yourself!
+
+#####lemon
+lemon is what i (koo5) do. We just started out on a new version in java, as a part of [https://github.com/opennars/opennars/] GUI.
+
+#####zennet
+```<HMC_A> 14:34 < sirdancealot> i meet many people that want to change things but i dont know how to build an army of them
+<HMC_A> you don't need to meet them! Just build a "DAC"/"DAO" to do the particular change and if the change is a change worth making the army will come to it?
+<HMC_A> if you want to see some change just fire up your tau client and make some new context in which to start a push for the change...
+<HMC_A> not sure if politics.... or implementation detail ;-)
+<HMC_A> changing things is a game.  It is a process with inputs/state controlled by many participants. As naturalog pointed out wisely, this is the definition of game.
+<HMC_A> build your "MMO change the thing".... whether "the thing" is debian desktop configs or a virtual lab or a club or a theory about magmas or a corporation or a .....
+<HMC_A> and if your change has *value* your army will come to play your game, naturally.
+<HMC_A> I know some "more remote" cultures have words for this concept that I know I lack in english.... hehe```
+
+```<sirsleepalot> even tau is more
+<naturalog> well not really: all tau aims is to generalize the bitcoin's decentralization as broad generalization as possible
+<naturalog> and to be a platform for any other application
+<naturalog> this time, that can be ran synced between distinct nodes
+<naturalog> without assuming trust between them
+<naturalog> this is a new paradigm in software, that began with bitcoin, and we want to generalize it```
+
+##semantic web
+
+visualization
+https://github.com/stoopkid420
+
+building webapps
+https://github.com/jmvanel/semantic_forms
+
+
+
+
+
+
+#chaos, a soup of ideas and people
+
+
+#notes
+http://ipython.org/ipython-doc/stable/interactive/qtconsole.html
+https://github.com/spyder-ide/spyder
+
+https://code.google.com/p/geospatialweb/

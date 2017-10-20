@@ -1,0 +1,8 @@
+/*
+ * //i wont need much in terms of rules..
+{?b memeberof ?a} <= {?a rest ?b}.
+{?b memeberof ?a} <= {?x memberof ?a. ?x rest ?b}.
+// then my data...
+BuiltinsStatements rdf:first ..
+ [ a Compound...
+ */

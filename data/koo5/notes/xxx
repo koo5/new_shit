@@ -1,0 +1,24 @@
+[ an annotation;
+a relation;
+an arrow;
+source [
+	file "atlas-project.log";
+	where-there-is-text "0620005133<stoopkid> wrt foundations of logic, type theory is preferable on the basis of decidability of expressible propositions
+0620005505<stoopkid> naproche uses a system of first-order logic, which is like, a slightly more powerful type theory
+0620005523<stoopkid> slightly more powerful enough to make it only "semi-decidable"
+0620005636<stoopkid> meaning, if the proposition is true, the decision problem to ask whether it's true / false will terminate, i.e. find an answer
+0620005705<stoopkid> on the other hand, if the proposition is not true, then the decision problem is not necessarily guaranteed to terminate
+0620005736<stoopkid> or, iow: everything that's true in first-order logic is provably true, but not everything that's false is provably false
+0620005816<stoopkid> you can sort of see a connection to constructive logic, and why it's decidable";
+];
+destination [a note; value "
+0620005133<stoopkid> wrt foundations of logic, type theory is preferable on the basis of decidability of expressible propositions
+0620005505<stoopkid> naproche uses a system of first-order logic, which is like, a slightly more powerful type theory
+0620005523<stoopkid> slightly more powerful enough to make it only "semi-decidable"
+0620005636<stoopkid> meaning, if the proposition is true, the decision problem to ask whether it's true / false will terminate, i.e. find an answer
+0620005705<stoopkid> on the other hand, if the proposition is not true, then the decision problem is not necessarily guaranteed to terminate
+0620005736<stoopkid> or, iow: everything that's true in first-order logic is provably true, but not everything that's false is provably false
+0620005816<stoopkid> you can sort of see a connection to constructive logic, and why it's decidable
+"
+]
+]

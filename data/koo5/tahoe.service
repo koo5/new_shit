@@ -1,0 +1,10 @@
+[Unit]
+Description=Tahoe introducer
+After=network.target
+
+[Service]
+User=tahoe
+ExecStart=/usr/bin/tahoe /home/tahoe/.tahoe-introducer
+
+[Install]
+WantedBy=multi-user.target

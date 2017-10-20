@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+systemctl stop resilio-sync.service
+killall dash-qt electrum monero-wallet-gui
+sleep 1
+umount /mnt/sdb/2
+umount /mnt/sdb/tonda
+sleep 1
+hdparm -y /dev/sdb
+sleep 1
+hdparm -y /dev/sdb
+umount /mnt/sdb/2
+umount /mnt/sdb/tonda
+sleep 1
+hdparm -y /dev/sdb
+sleep 1
+hdparm -y /dev/sdb
+sleep 1
+hdparm -y /dev/sdb
+sleep 1
+hdparm -y /dev/sdb
+sleep 1
+hdparm -y /dev/sdb
