@@ -173,16 +173,20 @@ def generate(name):
 	print ("done")
 	return graph
 
-def generate2(name):
+def generate2(name, start):
 	print ("generate graph with records:"+name)
 	import graphviz
 	graph = graphviz.Digraph(name)
 	rs = rules + seqs
 	for r in rs:
 		id, lhs, rhs = r[0], r[1], r[2]
-		print (str(lhs) + ":=" + str(rhs))
+		#print (str(lhs) + ":=" + str(rhs))
 		is_seq = (len(r) == 5)
-		ports = '<<TABLE><tr><td port="lhs">' + html.escape(sss(lhs)) + ":=</td>"
+		if start==lhs:
+			maybe_start_marker = "(START) -> "
+		else:
+			maybe_start_marker =""
+		ports = '<<TABLE><tr><td port="lhs">'+ html.escape(maybe_start_marker+sss(lhs)) + ":=</td>"
 		if type(rhs) != list:
 			rhs = [rhs]
 		for port,sym in enumerate(rhs):

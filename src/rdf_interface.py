@@ -14,9 +14,12 @@ ti = Namespace('http://koo5.github.com/lemon/api/textinput#')
 from rdflib import RDF
 command = input.value(None, RDF.type, le.TextInput)
 source = input.value(command, ti.Source, None)
-print('source:'+source)
-assert(source.startswith('file://'))#todo use https://github.com/YAmikep/datasource/tree/master/datasource
-text = open(source[7:]).read()
+if source != None:
+	print('source:'+source)
+	assert(source.startswith('file://'))#todo use https://github.com/YAmikep/datasource/tree/master/datasource
+	text = open(source[7:]).read()
+else:
+	text = input.value(command, ti.Value, None)
 print ("input:\n" + text)
 
 #from IPython import embed;embed()
@@ -49,7 +52,7 @@ def parse_sync(p, text=None):
 		elif msg.message == 'parsed':
 			return msg.results
 		else:
-			raise 666
+			raise Exception(msg.message)
 
 r = nodes.make_root()
 module = r['cli dummy empty module']
@@ -72,9 +75,10 @@ if text.startswith("unhide"):
 	module.fix_parents()
 	rr = parse_sync(p, rest_of_lines)
 	if (rr and len(rr)):
-		print("parse results:", rr)
-		print("eval:")
-		print (rr[0].eval())
+		for i in rr:
+			print("parse result:", i.tostr())
+			print("eval:")
+			print (i.eval())
 
 else:
 	print ("no parse")

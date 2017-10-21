@@ -141,6 +141,18 @@ def deref_decl(d):
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
 
+def deref_def(d):
+	if isinstance(d, Ref):
+		return deref_def(d.target)
+	elif isinstance(d, Definition):
+		return d
+	elif isinstance(d, (CompoundNodeDef, Union)):
+		return d
+	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
+		return d
+	else:
+		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
+
 def make_list(type_name= 'anything'):
 	"instantiate a lemon List of given type"
 	return list_of(type_name).inst_fresh()
@@ -962,7 +974,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		#info((p, cls, sy))
 
 		s2 = []
-		for i in sy:
+		for i in sy.rendering_tags:
 			if type(i) == unicode:
 				for ch in i:
 					s2.append(ch)
@@ -2104,18 +2116,21 @@ class WorksAs(Syntaxed):
 	@classmethod
 	def b(cls, sub, sup):
 		"""building-in helper"""
-		
 		if isinstance(sub, unicode):
-			sub = B[sub]
+			sub = B[sub.replace(' ', '_')]
 		if isinstance(sup, unicode):
-			sup = B[sup]
-			
+			sup = B[sup.replace(' ', '_')]
 		return cls({'sub': Ref(sub), 'sup': Ref(sup)})
 
 	def is_relevant_for(s, scope):
-		if deref_decl(s.ch.sub.parsed) in scope and deref_decl(s.ch.sup.parsed) in scope:
-			return True
-
+		sub = s.ch.sub.parsed
+		sup = s.ch.sup.parsed
+		aa = deref_def(sub)
+		bb = deref_def(sup)
+		a = aa in scope
+		b = bb in scope
+		logging.getLogger("scope").debug("%s is_relevant_for scope? %s %s (%s, %s)", s.tostr(), a, b, aa,bb)
+		return a and b
 
 class BindsTighterThan(Syntaxed):
 	help = ["has higher precedence, goes lower in the parse tree"]
@@ -3373,13 +3388,15 @@ def build_in_lemon_language():
 	tmp.ch["items"].add(Ref(B.parameterasis))
 	build_in(Definition({'name': Text('custom syntax item'), 'type': tmp}))
 	build_in(Definition({'name': Text('custom syntax list'), 'type':list_of(B.custom_syntax_item)}))
+
 	build_in(SyntaxedNodecl(Translation,
 				   [ChildTag("tags"), TextTag(" translation of "), ChildTag("syntaxed_nodecl"), TextTag(":\n"), ChildTag("translation")],
 					{'tags': list_of(B.text),
 					 'syntaxed_nodecl': B.type,
 					 'translation': B.custom_syntax_list
 					 }))
-
+	build_in(WorksAs.b("translation", "statement"), False)
+	build_in(WorksAs.b("custom syntax list", "expression"), False)
 
 	#tmp = b['list'].make_type({'itemtype': Ref(b['union of function signature item types'])})
 	#tmp = b['list'].make_type({'itemtype': Ref(b['union of custom syntax item types'])})
@@ -3949,8 +3966,9 @@ def register_symbol(s):
 		return r
 	"""
 
-	#if isinstance(s, Definition):
-	#	xxx
+	if isinstance(s, Definition):
+		node_symbols[s] = m.symbol(s.name)
+		node_rules[s] = m.rule(str(s), node_symbols[s], s.ch.type.parsed.symbol)
 	if isinstance(s, SyntacticCategory):
 		node_symbols[s] = m.symbol(s.name)
 	elif isinstance(s, WorksAs):
@@ -3991,7 +4009,7 @@ def register_symbol(s):
 	elif isinstance(s, (Union)):
 		lhs = node_symbols[s] = m.symbol(str(s))
 		for i in s.ch.items:
-			rhs = deref_decl(i).symbol
+			rhs = deref_decl(i) .symbol
 			node_rules[s] = m.rule(str(s)+"<-"+str(i), lhs, rhs)
 	else:
 		log(("no symbol for", s))
@@ -4094,7 +4112,7 @@ def register_class_symbol(cls):
 		m.rule(clsstr+'_body_part_is_slashed_end', body_part, slashed_end)
 		m.rule(clsstr+'_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
 		m.rule(clsstr+'_body_part_is_known_char', body_part, m.syms.known_char)
-		body = m.symbol('body')
+		body = m.symbol(clsstr+'body')
 		m.sequence(clsstr+'_body is seq of body part', body, body_part, join)
 		text = m.symbol(clsstr)
 		opening =  m.known_string(cls.brackets[0])
@@ -4174,7 +4192,7 @@ def scope_after_hiding_and_unhiding(s):
 				try:
 					name = j.name
 				except (KeyError, AttributeError):
-					logging.getLogger("scope").debug("does not have name")
+					logging.getLogger("scope").debug("does not have name:%s"%str(j))
 					continue
 				if isinstance(j, Module):
 					logging.getLogger("scope").debug("considering module %s" % j)
@@ -4186,7 +4204,8 @@ def scope_after_hiding_and_unhiding(s):
 							if k not in r:
 								r.append(k)
 
-				elif is_decl(j) and (name in what):
+				#elif is_decl(j) and (name in what):
+				if  (name in what):
 					logging.getLogger("scope").debug("unhiding %s" % j)
 					if j not in r:
 						r.append(j)
