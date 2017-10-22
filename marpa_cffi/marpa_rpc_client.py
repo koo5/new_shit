@@ -455,7 +455,7 @@ class MarpaThread(LemmacsThread):
 		stack2= defaultdict((lambda:evil('default stack2 item, what the beep')))
 
 		v = Valuator(tree)
-		babble = False
+		babble = True
 
 		while True:
 			s = v.step()
@@ -472,13 +472,13 @@ class MarpaThread(LemmacsThread):
 				char = raw[pos]
 				where = v.v.t_result
 				if babble:
-					log ("token %s of type %s, value %s, to stack[%s]"%(pos, symbol2name(sym), repr(char), where))
+					log ("token %s of type %s, value %s, to stack[%s]"%(pos, client.symbol2debug_name(sym), repr(char), where))
 				stack[where] = stack2[where] = char
 			elif s == lib.MARPA_STEP_RULE:
 				r = v.v.t_rule_id#type:int
-				#print ("rule id:%s"%r)
-				if babble:
-					log ("rule:"+rule2name(r))
+				#print ("rule id:%s"%r)`
+				#if babble:
+				#	log ("rule:"+str(client.rule2debug_name(r)))
 				arg0 = v.v.t_arg_0
 				argn = v.v.t_arg_n
 
@@ -493,7 +493,7 @@ class MarpaThread(LemmacsThread):
 				val = [stack2[i] for i in range(arg0, argn+1)]
 
 				if babble:
-					debug_log = str(m.rule2name(r))+":"+str(actions)+"("+repr(val)+")"
+					debug_log = str(client.rule2debug_name(r))+":"+str(actions)+"("+repr(val)+")"
 
 				try:
 					if type(actions) != tuple:

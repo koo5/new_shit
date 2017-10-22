@@ -9,7 +9,7 @@
 
 [ rdf:type api:TextInput;
 textinput:Value """unhide ["custom syntax list","translation","expression","statement","module"]
-[] translation of *module:
+["cs"] translation of *module:
 ["xxx"]""";
 textinput:DebugOptionGenerateGrammarGraphPngOn true
 ].

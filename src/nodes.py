@@ -968,7 +968,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 	@classmethod
 	def from_parse(cls, p, sy):
-		print('Syntaxed from_parse:x=',p, "sy=", sy)
+		logging.getLogger("valuation").debug('Syntaxed from_parse(marpa value: %s   ,Syntax object: %s',p,sy)
 
 		r = cls.fresh()
 		#info((p, cls, sy))
@@ -1292,14 +1292,14 @@ class List(ListPersistenceStuff, Collapsible):
 
 	@classmethod
 	def from_parse(cls, x):
-		log('List from_parse: x=',x)
+		logging.getLogger("valuation").debug('List from_parse: x=%s',x)
 		assert x[0] == '['
 		assert x[2] == ']'
 		if x[1] == 'nulled': x[1] = []
 		assert type(x[1]) == list
 		r = List()
 		r.items = x[1][::2]
-		r.view_mode = r.vm_multiline
+		r.view_mode = r.vm_oneline
 		r.fix_parents()
 		return r
 
@@ -1766,7 +1766,8 @@ class Ref(RefPersistenceStuff, Node):
 
 	@classmethod
 	def from_parse(cls, x):
-		log(x)
+		logging.getLogger("valuation").debug('Ref from_parse:'+str(x))
+		return cls(x)
 
 	def render(s):
 		return [TextTag('*'), ArrowTag(s.target), TextTag(s.name)]
@@ -2112,6 +2113,10 @@ class WorksAs(Syntaxed):
 	help=["declares a subtype relation between two existing types"]
 	def __init__(s, children):
 		super(WorksAs, s).__init__(children)
+
+	@property
+	def name(s):
+		return object.__repr__(s)
 
 	@classmethod
 	def b(cls, sub, sup):
@@ -4019,6 +4024,8 @@ def register_symbol(s):
 
 
 def register_class_symbol(cls):
+	"""a nodecl calls this for its instance class"""
+
 	log = logging.getLogger("marpa").debug
 
 
@@ -4052,11 +4059,11 @@ def register_class_symbol(cls):
 		r = m.symbol('ref')
 		for i in m.scope:
 			if is_type(i):#todo: not just types but also functions and..?..
-				rendering = "*" + i.name
+				rendering = cls.brackets[0]+"*" + i.name + cls.brackets[1]
 				debug_name = "ref to"+str(i)
 				sym = m.symbol(debug_name)
 				m.rule(debug_name + "is a ref", r, sym)
-				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
+				m.rule(debug_name, sym, m.known_string(rendering), lambda parsed_text,target=i: cls.from_parse(target)) #log("wtf x:%s i:%s", x, i))#
 		return r
 
 	elif VarRef.__subclasscheck__(cls):
