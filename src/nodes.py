@@ -3222,8 +3222,6 @@ def build_in_lemon_language():
 				{'a': 'type', 'b': 'type'}))
 
 
-
-
 	build_in(WorksAs.b("statement", "anything"), False)
 	build_in(WorksAs.b("expression", "statement"), False)
 	build_in(WorksAs.b("number", "expression"), False)

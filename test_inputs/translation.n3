@@ -10,6 +10,6 @@
 [ rdf:type api:TextInput;
 textinput:Value """unhide ["custom syntax list","translation","expression","statement","module"]
 ["cs"] translation of *module:
-["xxx"]""";
+["modul",<"jméno"-"name">,"ze souboru",<"soubor"-"file">,":\n",("statements"),  TextTag("end.")]""";
 textinput:DebugOptionGenerateGrammarGraphPngOn true
 ].
