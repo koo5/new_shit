@@ -141,6 +141,18 @@ def deref_decl(d):
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
 
+def deref_def(d):
+	if isinstance(d, Ref):
+		return deref_def(d.target)
+	elif isinstance(d, Definition):
+		return d
+	elif isinstance(d, (CompoundNodeDef, Union)):
+		return d
+	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
+		return d
+	else:
+		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
+
 def make_list(type_name= 'anything'):
 	"instantiate a lemon List of given type"
 	return list_of(type_name).inst_fresh()
@@ -883,6 +895,12 @@ class CompoundNode(Node):
 		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
 
 
+class Syntax:
+	def __init__(s, descriptive_tags, rendering_tags):
+		s.descriptive_tags = descriptive_tags
+		s.rendering_tags = rendering_tags
+
+
 class Syntaxed(SyntaxedPersistenceStuff, Node):
 	"""
 	Syntaxed has some named children, kept in s.ch.
@@ -917,7 +935,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		syms = []
 		
 		
-		for i in syntax:
+		for i in syntax.rendering_tags:
 		#we build up syms child after child, char after char
 		#if autocomplete is on, we create a rule after each addition
 		#otherwise we only create a rule for the final, complete, syms
@@ -950,13 +968,13 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 	@classmethod
 	def from_parse(cls, p, sy):
-		print('Syntaxed from_parse:x=',p, "sy=", sy)
+		logging.getLogger("valuation").debug('Syntaxed from_parse(marpa value: %s   ,Syntax object: %s',p,sy)
 
 		r = cls.fresh()
 		#info((p, cls, sy))
 
 		s2 = []
-		for i in sy:
+		for i in sy.rendering_tags:
 			if type(i) == unicode:
 				for ch in i:
 					s2.append(ch)
@@ -1037,7 +1055,11 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 
 	@property
 	def syntax(s):
-		return s.syntaxes[s.syntax_index]
+		return s.syntaxes[s.syntax_index].rendering_tags
+
+	@property
+	def syntaxes(s):
+		return s.ddecl.instance_syntaxes
 
 	def render(s):
 		return s.syntax
@@ -1080,10 +1102,6 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 	def name(s):
 		"""override if this doesnt work for your subclass"""
 		return s.ch.name.pyval
-
-	@property
-	def syntaxes(s):
-		return s.ddecl.instance_syntaxes
 
 	@property
 	def slots(s):
@@ -1274,14 +1292,14 @@ class List(ListPersistenceStuff, Collapsible):
 
 	@classmethod
 	def from_parse(cls, x):
-		log('List from_parse: x=',x)
+		logging.getLogger("valuation").debug('List from_parse: x=%s',x)
 		assert x[0] == '['
 		assert x[2] == ']'
 		if x[1] == 'nulled': x[1] = []
 		assert type(x[1]) == list
 		r = List()
 		r.items = x[1][::2]
-		r.view_mode = r.vm_multiline
+		r.view_mode = r.vm_oneline
 		r.fix_parents()
 		return r
 
@@ -1748,7 +1766,8 @@ class Ref(RefPersistenceStuff, Node):
 
 	@classmethod
 	def from_parse(cls, x):
-		log(x)
+		logging.getLogger("valuation").debug('Ref from_parse:'+str(x))
+		return cls(x)
 
 	def render(s):
 		return [TextTag('*'), ArrowTag(s.target), TextTag(s.name)]
@@ -1939,12 +1958,23 @@ class SyntaxedNodecl(NodeclBase):
 	"""
 	def __init__(s, instance_class, instance_syntaxes, instance_slots):
 		super(SyntaxedNodecl , s).__init__(instance_class)
+		s.example = None
 		s.instance_slots = dict([(k, B[i] if isinstance(i, unicode) else i) for k,i in iteritems(instance_slots)])
 		if isinstance(instance_syntaxes[0], list):
-			s.instance_syntaxes = instance_syntaxes
+			s._own_instance_syntaxes = [s.to_syntax(i) for i in instance_syntaxes]
 		else:
-			s.instance_syntaxes = [instance_syntaxes]
-		s.example = None
+			s._own_instance_syntaxes = [s.to_syntax(instance_syntaxes)]
+		s.clear_syntaxes()
+
+	def to_syntax(s, rendering_tags):
+		return Syntax(["en"], rendering_tags)
+
+	@property
+	def instance_syntaxes(s):
+		return s._own_instance_syntaxes + s._additional_syntaxes
+
+	def clear_syntaxes(s):
+		s._additional_syntaxes = []
 
 	def make_example(s):
 		return s.inst_fresh()
@@ -2084,21 +2114,28 @@ class WorksAs(Syntaxed):
 	def __init__(s, children):
 		super(WorksAs, s).__init__(children)
 
+	@property
+	def name(s):
+		return object.__repr__(s)
+
 	@classmethod
 	def b(cls, sub, sup):
 		"""building-in helper"""
-		
 		if isinstance(sub, unicode):
-			sub = B[sub]
+			sub = B[sub.replace(' ', '_')]
 		if isinstance(sup, unicode):
-			sup = B[sup]
-			
+			sup = B[sup.replace(' ', '_')]
 		return cls({'sub': Ref(sub), 'sup': Ref(sup)})
 
 	def is_relevant_for(s, scope):
-		if deref_decl(s.ch.sub.parsed) in scope and deref_decl(s.ch.sup.parsed) in scope:
-			return True
-
+		sub = s.ch.sub.parsed
+		sup = s.ch.sup.parsed
+		aa = deref_def(sub)
+		bb = deref_def(sup)
+		a = aa in scope
+		b = bb in scope
+		logging.getLogger("scope").debug("%s is_relevant_for scope? %s %s (%s, %s)", s.tostr(), a, b, aa,bb)
+		return a and b
 
 class BindsTighterThan(Syntaxed):
 	help = ["has higher precedence, goes lower in the parse tree"]
@@ -2494,7 +2531,7 @@ class ReplParser(Parser):
 				ElementTag(item),
 				EndTag()]
 
-		yield str(len(s.menu))
+		#yield str(len(s.menu))
 
 
 
@@ -2939,14 +2976,6 @@ def make_root():
 	global grammar
 	grammar =  __import__("grammar")
 
-
-
-	if args.kbdbg:
-		return Kbdbg()
-		
-		
-
-
 	r = Root()
 
 	build_in_editor_structure_nodes()
@@ -3069,9 +3098,24 @@ def make_root():
 		for i in r.flatten():
 			if not isinstance(i, Root):
 				assert i.parent,  i.long__repr__()
+
+	update_syntaxes(r["repl"].scope())
 	return r
 
 
+
+
+def update_syntaxes(scope):
+	syntax_definitions = []
+	for i in scope:
+		logging.getLogger("update_syntaxes").debug(i.tostr())
+		if isinstance(i, SyntaxedNodecl):
+			i.clear_syntaxes()
+		if i.ddecl == B.translation:
+			syntax_definitions.append(i)
+	for i in syntax_definitions:
+		dd = deref_decl(i.ch.target)
+		dd._additional_syntaxes.append(Syntax(i.ch.tags.pyval, i.to_rendering_tags))
 
 
 
@@ -3176,8 +3220,6 @@ def build_in_lemon_language():
 	build_in(SyntaxedNodecl(BindsTighterThan,
 				[[ChildTag("a"), " binds tighter than ",  ChildTag("b")]],
 				{'a': 'type', 'b': 'type'}))
-
-
 
 
 	build_in(WorksAs.b("statement", "anything"), False)
@@ -3313,16 +3355,51 @@ def build_in_lemon_language():
 	build_in(Definition({'name': Text('function signature node'), 'type': tmp}))
 	tmp = list_of(B.function_signature_node)
 	build_in(Definition({'name': Text('function signature list'), 'type':tmp}))
-	#todo:refactor
+
+
 	#and a custom node syntax type
+
+	class ParameterTranslation(Syntaxed):
+		pass
+
+	class ParameterAsIs(Syntaxed):
+		pass
+
+	class Translation(Syntaxed):
+		def to_rendering_tags(s):
+			r= []
+			for i in s.ch.translation:
+				if isinstance(i, Text):
+					a = i.pyval
+				elif isinstance(i, ParameterTranslation):
+					pass#todo
+				elif isinstance(i, ParameterAsIs):
+					pass#todo
+				r.append(a)
+			return r
+
+	build_in(SyntaxedNodecl(ParameterTranslation,
+	                        [ChildTag("new"), TextTag(" - "), ChildTag("old")],
+	                        {'new': B.text,
+	                         'old': B.text}))
+	build_in(SyntaxedNodecl(ParameterAsIs,
+	                        [ChildTag("parameter")],
+	                        {'parameter': B.text}))
 	tmp = B.union.inst_fresh()
 	tmp.ch["items"].add(Ref(B.text))
-	tmp.ch["items"].add(Ref(B.typedparameter))
-	build_in(Definition({'name': Text('custom syntax node'), 'type': tmp}))
-	tmp = list_of(B.custom_syntax_node)
-	build_in(Definition({'name': Text('custom syntax list'), 'type':tmp}))
+	tmp.ch["items"].add(Ref(B.parametertranslation))
+	tmp.ch["items"].add(Ref(B.parameterasis))
+	build_in(Definition({'name': Text('custom syntax item'), 'type': tmp}))
+	build_in(Definition({'name': Text('custom syntax list'), 'type':list_of(B.custom_syntax_item)}))
 
-
+	build_in(SyntaxedNodecl(Translation,
+				   [ChildTag("tags"), TextTag(" translation of "), ChildTag("syntaxed_nodecl"), TextTag(":\n"), ChildTag("translation")],
+					{'tags': list_of(B.text),
+					 'syntaxed_nodecl': B.type,
+					 'translation': B.custom_syntax_list
+					 }))
+	build_in(WorksAs.b("translation", "statement"), False)
+	build_in(WorksAs.b("custom syntax list", "expression"), False)
 
 	#tmp = b['list'].make_type({'itemtype': Ref(b['union of function signature item types'])})
 	#tmp = b['list'].make_type({'itemtype': Ref(b['union of custom syntax item types'])})
@@ -3892,8 +3969,9 @@ def register_symbol(s):
 		return r
 	"""
 
-	#if isinstance(s, Definition):
-	#	xxx
+	if isinstance(s, Definition):
+		node_symbols[s] = m.symbol(s.name)
+		node_rules[s] = m.rule(str(s), node_symbols[s], s.ch.type.parsed.symbol)
 	if isinstance(s, SyntacticCategory):
 		node_symbols[s] = m.symbol(s.name)
 	elif isinstance(s, WorksAs):
@@ -3931,6 +4009,11 @@ def register_symbol(s):
 		m.rule('list literal of %s' % desc, r, [opening, optionally_elements, closing], s.instance_class.from_parse)
 	elif isinstance(s, (NodeclBase)):
 		node_symbols[s] = s.instance_class.register_class_symbol()
+	elif isinstance(s, (Union)):
+		lhs = node_symbols[s] = m.symbol(str(s))
+		for i in s.ch.items:
+			rhs = deref_decl(i) .symbol
+			node_rules[s] = m.rule(str(s)+"<-"+str(i), lhs, rhs)
 	else:
 		log(("no symbol for", s))
 
@@ -3939,6 +4022,8 @@ def register_symbol(s):
 
 
 def register_class_symbol(cls):
+	"""a nodecl calls this for its instance class"""
+
 	log = logging.getLogger("marpa").debug
 
 
@@ -3972,11 +4057,11 @@ def register_class_symbol(cls):
 		r = m.symbol('ref')
 		for i in m.scope:
 			if is_type(i):#todo: not just types but also functions and..?..
-				rendering = "*" + i.name
+				rendering = cls.brackets[0]+"*" + i.name + cls.brackets[1]
 				debug_name = "ref to"+str(i)
 				sym = m.symbol(debug_name)
 				m.rule(debug_name + "is a ref", r, sym)
-				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
+				m.rule(debug_name, sym, m.known_string(rendering), lambda parsed_text,target=i: cls.from_parse(target)) #log("wtf x:%s i:%s", x, i))#
 		return r
 
 	elif VarRef.__subclasscheck__(cls):
@@ -4022,6 +4107,7 @@ def register_class_symbol(cls):
 
 
 	elif Text.__subclasscheck__(cls):
+		"""should exclude double quote from body parts. will this be solved with precedence when we have body part defined in lemon lang?"""
 		clsstr = str(cls)
 		log("registering "+clsstr+" grammar")
 		double_slash = m.known_string('//')
@@ -4031,7 +4117,7 @@ def register_class_symbol(cls):
 		m.rule(clsstr+'_body_part_is_slashed_end', body_part, slashed_end)
 		m.rule(clsstr+'_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
 		m.rule(clsstr+'_body_part_is_known_char', body_part, m.syms.known_char)
-		body = m.symbol('body')
+		body = m.symbol(clsstr+'body')
 		m.sequence(clsstr+'_body is seq of body part', body, body_part, join)
 		text = m.symbol(clsstr)
 		opening =  m.known_string(cls.brackets[0])
@@ -4111,7 +4197,7 @@ def scope_after_hiding_and_unhiding(s):
 				try:
 					name = j.name
 				except (KeyError, AttributeError):
-					logging.getLogger("scope").debug("does not have name")
+					logging.getLogger("scope").debug("does not have name:%s"%str(j))
 					continue
 				if isinstance(j, Module):
 					logging.getLogger("scope").debug("considering module %s" % j)
@@ -4123,7 +4209,8 @@ def scope_after_hiding_and_unhiding(s):
 							if k not in r:
 								r.append(k)
 
-				elif is_decl(j) and (name in what):
+				#elif is_decl(j) and (name in what):
+				if  (name in what):
 					logging.getLogger("scope").debug("unhiding %s" % j)
 					if j not in r:
 						r.append(j)

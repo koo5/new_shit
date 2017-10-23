@@ -1,0 +1,7 @@
+"udela" je sloveso.
+"neudela" je sloveso.
+"podminka pridani se urciteho poctu lidi" je ["kdyz to", (sloveso - sloveso), "dohromady se mnou alespon", (pocet - cislo), dalsich].
+
+konstatovani je [<budouci akce> kdyz <podminka>].
+
+"pujdu volit piraty" je budouci akce.

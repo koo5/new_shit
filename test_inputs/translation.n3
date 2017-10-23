@@ -1,0 +1,15 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+
+@prefix : <#> . 
+
+
+@prefix api: <http://koo5.github.com/lemon/api#> .
+@prefix textinput: <http://koo5.github.com/lemon/api/textinput#> .
+
+[ rdf:type api:TextInput;
+textinput:Value """unhide ["custom syntax list","translation","expression","statement","module"]
+["cs"] translation of *module:
+["modul",<"jméno"-"name">,"ze souboru",<"soubor"-"file">,":\n",("statements"),  TextTag("end.")]""";
+textinput:DebugOptionGenerateGrammarGraphPngOn true
+].
