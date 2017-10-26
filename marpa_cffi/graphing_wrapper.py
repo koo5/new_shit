@@ -113,6 +113,7 @@ def escape_symbol_name_for_readable_printing(name):
 	return r
 
 def generate_bnf(filename='grammar.bnf'):
+	print ("generate "+filename)
 	f = open(filename, "w")
 
 	for id, lhs, rhs in rules:
@@ -127,7 +128,7 @@ def generate_bnf(filename='grammar.bnf'):
 				#todo:sep
 
 	f.close()
-
+	print("done")
 
 
 def generate_png(graph):
@@ -135,10 +136,11 @@ def generate_png(graph):
 	graph.render()
 
 def generate_gv_dot(graph):
+	print ("save gv")
 	graph.save()
 
 def generate(name):
-	print ("generate graph:"+name)
+	print ("generate "+name)
 	import graphviz
 
 	graph = graphviz.Digraph(name)
@@ -174,7 +176,7 @@ def generate(name):
 	return graph
 
 def generate2(name, start):
-	print ("generate graph with records:"+name)
+	print ("generate "+name)
 	import graphviz
 	graph = graphviz.Digraph(name)
 	rs = rules + seqs

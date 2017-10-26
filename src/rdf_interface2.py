@@ -56,15 +56,20 @@ def parse_sync(p, text=None):
 
 r = nodes.make_root()
 if text.startswith("unhide"):
+	starts_with_unhide = True
 	module = r['cli dummy empty module']
+else:
+	starts_with_unhide = False
+	module = r['repl']
+
+items = text.split('\n-----\n')
+for idx,i in enumerate(items):
 	p = nodes.Parser()
 	module.ch.statements.add(p)
-	p._type = nodes.B.unhidenode
-	split = text.index("\n")
-	first_line = text[:split]
-	rest_of_lines = text[split+1:]
-	p.add(nodes.Text(value = text))
-	rr = parse_sync(p, first_line)
+	if idx == 0 and starts_with_unhide:
+		p._type = nodes.B.unhidenode
+	p.add(nodes.Text(value = i))
+	rr = parse_sync(p, i)
 	if (rr and len(rr)):
 		for i in rr:
 			print("parse result:",i.tostr())
@@ -73,19 +78,6 @@ if text.startswith("unhide"):
 		print ("no parse")
 		exit()
 
-else:
-	rest_of_lines = text
-	module = r['repl']
-
-p = nodes.Parser()
-module.ch.statements.add(p)
-p.add(nodes.Text(value=rest_of_lines))
-module.fix_parents()
-rr = parse_sync(p, rest_of_lines)
-if (rr and len(rr)):
-	for i in rr:
-		print("parse result:", i.tostr())
-		print("eval:")
-		print (i.eval())
+#module.fix_parents()
 
 

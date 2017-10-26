@@ -167,7 +167,8 @@ class Bocage(object):
 		s.b = s.g.check_null(lib.marpa_b_new(r.r, earley_set_ID))
 		log(s.b)
 	def __del__(s):
-		lib.marpa_b_unref(s.b)
+		if 'b' in s.__dict__:
+			lib.marpa_b_unref(s.b)
 
 class Order(object):
 	def __init__(s, bocage):

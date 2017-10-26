@@ -3672,6 +3672,7 @@ def build_in_misc():
 	build_in(SyntaxedNodecl(ShellCommand,
 				   [["bash:", ChildTag("command")]],
 				   {'command': Exp(B.text)}))
+	build_in(WorksAs.b("shellcommand", "expression"), False)
 
 
 	class FilesystemPath(Syntaxed):
@@ -4140,9 +4141,11 @@ def register_class_symbol(cls):
 	elif Statements.__subclasscheck__(cls):
 		("registering Statements grammar")
 		optionally_elements = m.symbol('optionally_elements')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char('\n'), 0)
+		st = m.symbol("statement with whitespace")
+		m.rule("statement with whitespace", st, [m.syms.maybe_whitespace, B.statement.symbol, m.syms.maybe_whitespace])
+		m.sequence('optionally_elements', optionally_elements, st, ident_list, m.known_char('\n'), 0)
 		r = m.symbol('Statements')
-		m.rule('list literal', r, [m.known_char('{'), optionally_elements, m.known_char('}')],cls.from_parse)
+		m.rule('statements literal', r, [m.known_char('{'), optionally_elements, m.known_char('}')],cls.from_parse)
 		return r
 
 	elif List.__subclasscheck__(cls):

@@ -196,7 +196,6 @@ class ThreadedMarpa(object):
 		s.named_symbol('maybe_spaces')
 		s.sequence('maybe_spaces', s.syms.maybe_spaces, s.known_char(' '), action=ignore, min=0)
 
-		#anything means we are parsing for the editor and want to parse any fragments of the language
 		s.named_symbol('whitespace_char')
 		s.named_symbol('maybe_whitespace')
 		for x in ' \n\t':
@@ -204,6 +203,7 @@ class ThreadedMarpa(object):
 		s.sequence('maybe_whitespace', s.syms.maybe_whitespace, s.syms.whitespace_char,action=ignore, min=0)
 
 		s.scope = scope
+		#"anything" means we are parsing for the editor and want to parse any fragment of the language
 		anything = start==None
 		if anything:
 			s.start=s.named_symbol('start')
@@ -280,13 +280,16 @@ class ThreadedMarpa(object):
 
 
 	def enqueue_precomputation(s, for_node):
+		while not s.t.input.empty():
+			s.t.input.get(block=False)
 		s.t.input.put(Dotdict(
 			task = 'precompute_grammar',
 			num_syms = s.num_syms,
 			symbol_ranks = s.symbol_ranks,
 			rules = s.rules[:],
 			for_node = for_node,
-			#debug_sym_names = s.debug_sym_names[:],
+			debug = s.debug,
+			debug_sym_names = s.debug_sym_names[:] if s.debug else None,
 			start=s.start))
 
 	def enqueue_parsing(s, tr):
@@ -327,6 +330,11 @@ class MarpaThread(LemmacsThread):
 
 	def precompute_grammar(s, inp):
 		log('precompute_grammar...')
+
+		s.debug_sym_names = inp.debug_sym_names
+		s.rules = inp.rules
+		s.debug = inp.debug
+
 		graphing_wrapper.clear()
 		s.g = Grammar()
 		# this calls symbol_new() repeatedly inp.num_syms times, and gathers the
@@ -342,8 +350,8 @@ class MarpaThread(LemmacsThread):
 			s.g.symbol_rank_set(k,v)
 			log(("symbol rank:", k, v))
 		
-		if args.log_parsing:
-			log('s.c_syms:%s',s.c_syms)
+		#if args.log_parsing:
+		#	log('s.c_syms:%s',s.c_syms)
 		s.g.start_symbol_set(s.c_syms[inp.start])
 		s.c_rules = []
 		for rule in inp.rules:
@@ -361,20 +369,28 @@ class MarpaThread(LemmacsThread):
 						log(("rank ", rule, rank))
 
 		if args.graph_grammar:
-			graphing_wrapper.generate_bnf()
-			graph = graphing_wrapper.generate('grammar')
-			graphing_wrapper.generate_gv_dot(graph)
-			graphing_wrapper.generate_png(graph)
-			graph = graphing_wrapper.generate2('grammar2', s.c_syms[inp.start])
-			graphing_wrapper.generate_gv_dot(graph)
-			graphing_wrapper.generate_png(graph)
+			def gen():
+				graphing_wrapper.generate_bnf()
+				graph = graphing_wrapper.generate('grammar')
+				graphing_wrapper.generate_gv_dot(graph)
+				import graphviz
+				print ("generate svg")
+				graphviz.render('dot', 'svg', 'grammar.gv')
+				graph = graphing_wrapper.generate2('grammar2', s.c_syms[inp.start])
+				graphing_wrapper.generate_gv_dot(graph)
+				print("generate svg")
+				graphviz.render('dot', 'svg', 'grammar2.gv')
+			import threading
+			thr = threading.Thread(target = gen)
+			thr.run()
+
 
 		if s.g.precompute() == -2:
 			s.send(Dotdict(message = 'precompute error', for_node = inp.for_node))
 
 		for x in s.c_syms:
 			if not s.g.symbol_is_accessible(x):
-				log("inaccessible symbol: %s "%client.symbol2debug_name(x))
+				log("inaccessible symbol: %s "%s.symbol2debug_name(x))
 
 		s.send(Dotdict(message = 'precomputed', for_node = inp.for_node))
 
@@ -387,7 +403,7 @@ class MarpaThread(LemmacsThread):
 		while Marpa_Rule_ID != -1:
 			Marpa_Rule_ID = lib.marpa_r_progress_item ( r.r, position, origin )
 			if Marpa_Rule_ID != -1:
-				log("progress_item:pos:%s origin:%s rule:%s"%(position[0], origin[0], client.rule2debug_name(Marpa_Rule_ID)))
+				log("progress_item:pos:%s origin:%s rule:%s"%(position[0], origin[0], s.rule2debug_name(Marpa_Rule_ID)))
 				count += 1
 		log("%s progress_items"%count)
 		return count
@@ -395,9 +411,9 @@ class MarpaThread(LemmacsThread):
 	def print_events(s):
 		for event_type, event_value in s.g.events():
 			if event_type == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_PREDICTED:
-				log('predicted:%s:%s', event_value, client.symbol2debug_name(event_value))
+				log('predicted:%s:%s', event_value, s.symbol2debug_name(event_value))
 			elif event_type == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_COMPLETED:
-				log('completed:%s:%s', event_value, client.symbol2debug_name(event_value))
+				log('completed:%s:%s', event_value, s.symbol2debug_name(event_value))
 			else:
 				log('event:%s, value:%s', events[event_type], event_value)
 
@@ -415,14 +431,14 @@ class MarpaThread(LemmacsThread):
 			if client.debug:
 				log("parsed so far:%s" % raw[:i])
 			if sym == None:
-				log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
+				log ("input:symid:%s name:%s raw:%s"%(sym, s.symbol2debug_name(sym),raw[i]))
 				log("grammar not implemented, skipping this node")
 			else:
 				s.print_events()
 				#s.print_completions(r)
 
 				if client.debug:
-					log ("input:symid:%s name:%s raw:%s"%(sym, client.symbol2debug_name(sym),raw[i]))
+					log ("input:symid:%s name:%s raw:%s"%(sym, s.symbol2debug_name(sym),raw[i]))
 				r.alternative(s.c_syms[sym], i+1)
 			r.earleme_complete()
 		s.print_events()
@@ -458,11 +474,11 @@ class MarpaThread(LemmacsThread):
 		babble = True
 
 		while True:
-			s = v.step()
+			step = v.step()
 			if babble:
 				log  ("stack:%s"%dict(stack))#convert ordereddict to dict to get neater __repr__
-				log ("step:%s"%codes.steps2[s])
-			if s == lib.MARPA_STEP_TOKEN:
+				log ("step:%s"%codes.steps2[step])
+			if step == lib.MARPA_STEP_TOKEN:
 
 				pos = v.v.t_token_value - 1
 				sym = symbol_int(v.v.t_token_id)
@@ -472,9 +488,9 @@ class MarpaThread(LemmacsThread):
 				char = raw[pos]
 				where = v.v.t_result
 				if babble:
-					log ("token %s of type %s, value %s, to stack[%s]"%(pos, client.symbol2debug_name(sym), repr(char), where))
+					log ("token %s of type %s, value %s, to stack[%s]"%(pos, s.symbol2debug_name(sym), repr(char), where))
 				stack[where] = stack2[where] = char
-			elif s == lib.MARPA_STEP_RULE:
+			elif step == lib.MARPA_STEP_RULE:
 				r = v.v.t_rule_id#type:int
 				#print ("rule id:%s"%r)`
 				#if babble:
@@ -493,7 +509,7 @@ class MarpaThread(LemmacsThread):
 				val = [stack2[i] for i in range(arg0, argn+1)]
 
 				if babble:
-					debug_log = str(client.rule2debug_name(r))+":"+str(actions)+"("+repr(val)+")"
+					debug_log = str(s.rule2debug_name(r))+":"+str(actions)+"("+repr(val)+")"
 
 				try:
 					if type(actions) != tuple:
@@ -509,18 +525,18 @@ class MarpaThread(LemmacsThread):
 
 				stack2[arg0] = val
 
-			elif s == lib.MARPA_STEP_NULLING_SYMBOL:
+			elif step == lib.MARPA_STEP_NULLING_SYMBOL:
 				stack2[v.v.t_result] = "nulled"
-			elif s == lib.MARPA_STEP_INACTIVE:
+			elif step == lib.MARPA_STEP_INACTIVE:
 				if args.log_parsing:
 					log("MARPA_STEP_INACTIVE:i'm done")
 				break
-			elif s == lib.MARPA_STEP_INITIAL:
+			elif step == lib.MARPA_STEP_INITIAL:
 				if args.log_parsing:
 					log("MARPA_STEP_INITIAL:starting...")
 			else:
 				if args.log_parsing:
-					log(marpa_cffi.marpa_codes.steps[s])
+					log(marpa_cffi.marpa_codes.steps[step])
 
 		v.unref()#promise me not to use it from now on
 		#print "tada:"+str(stack[0])
@@ -531,7 +547,19 @@ class MarpaThread(LemmacsThread):
 		return res
 
 
+	def symbol2debug_name(s,symid):
+		if s.debug:
+			if symid < len(s.debug_sym_names):
+				return s.debug_sym_names[symid]
+			else:
+				assert False
+		return str(symid)
 
+	def rule2debug_name(s,r):
+		if s.debug:
+			return s.rules[r]
+		else:
+			return "rule"+str(r)
 
 #maybe could use an action to differentiate a full parse from ..what? not a partial parse, because there would have to be something starting with every node
 #wat? anyway, i will need logpy for this i think
