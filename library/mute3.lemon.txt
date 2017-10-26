@@ -1,0 +1,52 @@
+def ["mute"]:
+{bash:"amixer -c 0 -- sset Master playback 0%"
+}
+-----
+def ["ztlum"]:
+{mute
+}
+-----
+def ["ztlumit"]:
+{
+	mute
+}
+-----
+def ["ticho"]:
+{
+	mute
+}
+-----
+def ["přestaň hrát"]:
+{
+	mute
+}
+-----
+def ["přestat hrát"]:
+{
+	mute
+}
+-----
+def ["nehraj"]:
+{
+	mute
+}
+-----
+def ["ztiš"]:
+{
+	mute
+}
+-----
+def ["ztišit"]:
+{
+	mute
+}
+-----
+def ["zmlkni"]:
+{
+	mute
+}
+-----
+def ["zmlknout"]:
+{
+	mute
+}

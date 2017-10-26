@@ -199,7 +199,7 @@ class ThreadedMarpa(object):
 		s.named_symbol('whitespace_char')
 		s.named_symbol('maybe_whitespace')
 		for x in ' \n\t':
-			s.rule("whitespace_char", s.syms.whitespace_char, s.symbol(x))
+			s.rule("whitespace_char", s.syms.whitespace_char, s.known_char(x))
 		s.sequence('maybe_whitespace', s.syms.maybe_whitespace, s.syms.whitespace_char,action=ignore, min=0)
 
 		s.scope = scope
@@ -323,6 +323,7 @@ class MarpaThread(LemmacsThread):
 					s.precompute_grammar(inp)
 				elif inp.task == 'parse':
 					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
+					log("parsed %s results"%len(r))
 					s.send(Dotdict(message = 'parsed', results = r))
 			except Exception as e:
 				traceback.print_exc(file=sys.stdout)

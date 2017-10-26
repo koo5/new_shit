@@ -1293,11 +1293,13 @@ class List(ListPersistenceStuff, Collapsible):
 	@classmethod
 	def from_parse(cls, x):
 		logging.getLogger("valuation").debug('List from_parse: x=%s',x)
-		assert x[0] == '['
-		assert x[2] == ']'
+		if (len(x) == 4):
+			del(x[1])
+		assert x[0] in '[{'
+		assert x[2] in ']}'
 		if x[1] == 'nulled': x[1] = []
 		assert type(x[1]) == list
-		r = List()
+		r = cls()
 		r.items = x[1][::2]
 		r.view_mode = r.vm_oneline
 		r.fix_parents()
@@ -4010,6 +4012,8 @@ def register_symbol(s):
 		m.rule('list literal of %s' % desc, r, [opening, optionally_elements, closing], s.instance_class.from_parse)
 	elif isinstance(s, (NodeclBase)):
 		node_symbols[s] = s.instance_class.register_class_symbol()
+	elif isinstance(s, (Exp)):
+		node_symbols[s] = B.expression
 	elif isinstance(s, (Union)):
 		lhs = node_symbols[s] = m.symbol(str(s))
 		for i in s.ch.items:
@@ -4140,12 +4144,12 @@ def register_class_symbol(cls):
 
 	elif Statements.__subclasscheck__(cls):
 		("registering Statements grammar")
-		optionally_elements = m.symbol('optionally_elements')
+		optionally_elements = m.symbol('optionally_statements_elements')
 		st = m.symbol("statement with whitespace")
-		m.rule("statement with whitespace", st, [m.syms.maybe_whitespace, B.statement.symbol, m.syms.maybe_whitespace])
-		m.sequence('optionally_elements', optionally_elements, st, ident_list, m.known_char('\n'), 0)
+		m.rule("statement with whitespace", st, [B.statement.symbol, m.syms.maybe_whitespace],lambda x: x[0])
+		m.sequence('optionally_statements_elements', optionally_elements, st, ident_list, m.known_char('\n'), 0)
 		r = m.symbol('Statements')
-		m.rule('statements literal', r, [m.known_char('{'), optionally_elements, m.known_char('}')],cls.from_parse)
+		m.rule('statements literal', r, [m.known_char('{'),m.syms.maybe_whitespace, optionally_elements, m.known_char('}')], cls.from_parse)
 		return r
 
 	elif List.__subclasscheck__(cls):
