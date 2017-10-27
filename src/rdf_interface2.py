@@ -39,11 +39,11 @@ if do_graph_grammar:
 import nodes
 nodes.autocomplete = False
 
-from marpa_cffi.marpa_rpc_client import ThreadedMarpa
-fixmenodes.m = m = ThreadedMarpa(print, True)
+from marpa_cffi.marpa_rpc_client import MarpaClient
+m = MarpaClient(print, True)
 
 def parse_sync(p, text=None):
-	fixmenodes.forget_symbols()
+	m.clear()
 	m.collect_grammar(p.full_scope(), p.scope(), p.type)#parsed_symbol)
 	m.enqueue_precomputation(None)
 	while True:

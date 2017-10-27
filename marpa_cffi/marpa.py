@@ -39,14 +39,13 @@ def tb():
 
 from lemon_args import args
 
-
 from collections import defaultdict
 
 
 
 class Grammar(object):
 	def __init__(s):
-		marpa_config = new_marpa_config()
+		marpa_config = s.new_marpa_config()
 		s.g = ffi.gc(lib.marpa_g_new(marpa_config), lib.marpa_g_unref)
 		s.check_config_error(marpa_config)
 		assert lib.marpa_g_force_valued(s.g) >= 0

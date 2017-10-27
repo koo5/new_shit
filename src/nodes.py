@@ -69,7 +69,7 @@ info=logger.info
 log=logger.debug
 warn=logger.warn
 
-from marpa_cffi.marpa_misc import * # valuator actions
+from marpa_cffi.valuator_actions import *
 
 tags.asselement = element # for assertions
 
@@ -2397,6 +2397,7 @@ class ParserBase(Node):
 		s.fix_parents()
 
 class Parser(ParserPersistenceStuff, ParserBase):
+	_parsed = None
 	_type = None
 	def __init__(s):
 		super(Parser, s).__init__()
@@ -2455,11 +2456,6 @@ class Parser(ParserPersistenceStuff, ParserBase):
 				
 				
 				
-
-
-
-
-
 		r.parent = s
 		return r
 
@@ -3049,9 +3045,9 @@ def make_root():
 		text = open(filename).read()
 		items = text.split('\n-----\n')
 		for idx,i in enumerate(items):
-			p = nodes.Parser()
+			p = Parser()
 			module.ch.statements.add(p)
-			p.add(widgets.Text(value = i))
+			p.add(widgets.Text(p, i))
 
 	for file in glob.glob("library/*.lemon.txt"):
 		mo = library.add(new_module())
@@ -4021,7 +4017,7 @@ def register_symbol(s, m):
 		lhs = m.node_symbols[s] = m.symbol(str(s))
 		for i in s.ch.items:
 			rhs = deref_decl(i) .symbol(m)
-			node_rules[s] = m.rule(str(s)+"<-"+str(i), lhs, rhs)
+			m.node_rules[s] = m.rule(str(s)+"<-"+str(i), lhs, rhs)
 	else:
 		log(("no symbol for", s))
 
@@ -4169,7 +4165,7 @@ def register_class_symbol(cls, m):
 		r = m.symbol(cls.__name__)
 		ddecl = deref_decl(cls.decl)
 		for sy in ddecl.instance_syntaxes:
-			cls.rule_for_syntax(r, sy, ddecl)
+			cls.rule_for_syntax(m, r, sy, ddecl)
 		return r
 
 	log(("no class symbol for", cls))
