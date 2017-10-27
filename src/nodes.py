@@ -24,13 +24,6 @@ class __LINE__(object):
 
 __LINE__ = __LINE__()
 
-node_rules = {}
-node_symbols = {}
-def forget_symbols():
-	node_symbols.clear()
-	node_rules.clear()
-forget_symbols()
-
 
 lang = cs = en = None
 def go_cs():
@@ -616,20 +609,19 @@ class Node(NodePersistenceStuff, element.Element):
 		print ("copy")
 		s.root["clipboard"].ch.statements.add(s.copy())
 
-	@property
-	def symbol(s):
-		if not s in node_symbols:
+	def symbol(s, m):
+		if not s in m.node_symbols:
 			logging.getLogger("marpa").debug(("gimme symbol for", s))
-			s.register_symbol()
-		if s in node_symbols:
-			return node_symbols[s]
+			s.register_symbol(m)
+		if s in m.node_symbols:
+			return m.node_symbols[s]
 
-	def register_symbol(s):
-		return register_symbol(s)
+	def register_symbol(s, m):
+		return register_symbol(s, m)
 
 	@classmethod
-	def register_class_symbol(cls):
-		return register_class_symbol(cls)
+	def register_class_symbol(cls, m):
+		return register_class_symbol(cls, m)
 
 	"""
 	def make_rainbow(s):
@@ -931,7 +923,7 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		#assert isinstance(s.ddecl, SyntaxedNodecl)
 
 	@classmethod
-	def rule_for_syntax(cls, cls_sym, syntax, ddecl):
+	def rule_for_syntax(cls, m, cls_sym, syntax, ddecl):
 		syms = []
 		
 		
@@ -951,9 +943,9 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 			elif ti == ChildTag:
 				child_type = ddecl.instance_slots[i.name]
 				if type(child_type) == Exp:
-					x = B.expression.symbol
+					x = B.expression.symbol(m)
 				else:
-					x = deref_decl(child_type).symbol
+					x = deref_decl(child_type).symbol(m)
 				if not x:
 					warn("no type:" + str(i))
 					return None
@@ -3955,8 +3947,8 @@ plan b: try gf
 plan c: avoid need of reparsing, force nonambiguous grammar for identifiers, go back to a solution employing the editor
 """
 
-#misnomer: its not just symbols, rules too
-def register_symbol(s):
+def register_symbol(s, m):
+	"""register symbols and rules"""
 	log = logging.getLogger("marpa").debug
 
 	#if isinstance(s, Sequence):
@@ -3973,51 +3965,51 @@ def register_symbol(s):
 	"""
 
 	if isinstance(s, Definition):
-		node_symbols[s] = m.symbol(s.name)
-		node_rules[s] = m.rule(str(s), node_symbols[s], s.ch.type.parsed.symbol)
+		m.node_symbols[s] = m.symbol(s.name)
+		m.node_rules[s] = m.rule(str(s), m.node_symbols[s], s.ch.type.parsed.symbol(m))
 	if isinstance(s, SyntacticCategory):
-		node_symbols[s] = m.symbol(s.name)
+		m.node_symbols[s] = m.symbol(s.name)
 	elif isinstance(s, WorksAs):
-		if s in node_rules:
+		if s in m.node_rules:
 			return
 		lhs = s.ch.sup.parsed
 		rhs = s.ch.sub.parsed
 		if not isinstance(lhs, Ref) or not isinstance(rhs, Ref):
 			print ("invalid sub or sup in worksas")
 			return
-		lhs = lhs.target.symbol
-		rhs = rhs.target.symbol
+		lhs = lhs.target.symbol(m)
+		rhs = rhs.target.symbol(m)
 		if args.log_parsing:
 			log('%s worksas %s\n (%s := %s)'%(s.ch.sub, s.ch.sup, lhs, rhs))
 		if lhs != None and rhs != None:
 			r = m.rule(str(s), lhs, rhs)
-			node_rules[s] = r
+			m.node_rules[s] = r
 	elif isinstance(s, (ParametricListType)):
 		dd = s.ddecl
 		assert isinstance(dd, ParametricNodecl)
-		for k,v in iteritems(node_symbols):
-			if k.eq_by_value_and_python_class(s): #should be by
-				node_symbols[s] = v
+		for k,v in iteritems(m.node_symbols):
+			if k.eq_by_value_and_python_class(s): #fixme?
+				m.node_symbols[s] = v
 				return
-		item_symbol = deref_decl(s.ch.itemtype).symbol
+		item_symbol = deref_decl(s.ch.itemtype).symbol(m)
 		if item_symbol == None:
 			log = logging.getLogger("marpa").warning("no symbol for %s" % s)
 			return
 		desc = '%s literal' % s.tostr()
-		node_symbols[s] = r = m.symbol(desc)
+		m.node_symbols[s] = r = m.symbol(desc)
 		log("registering %s grammar" % desc)
 		optionally_elements = m.symbol('optionally_elements of %s' % desc)
 		m.sequence('optionally_elements of %s' % desc, optionally_elements, item_symbol, ident_list, m.known_char(','), 0)
 		opening, closing = m.known_char('['), m.known_char(']')
 		m.rule('list literal of %s' % desc, r, [opening, optionally_elements, closing], s.instance_class.from_parse)
 	elif isinstance(s, (NodeclBase)):
-		node_symbols[s] = s.instance_class.register_class_symbol()
+		m.node_symbols[s] = s.instance_class.register_class_symbol(m)
 	elif isinstance(s, (Exp)):
-		node_symbols[s] = B.expression
+		m.node_symbols[s] = B.expression.symbol()
 	elif isinstance(s, (Union)):
-		lhs = node_symbols[s] = m.symbol(str(s))
+		lhs = m.node_symbols[s] = m.symbol(str(s))
 		for i in s.ch.items:
-			rhs = deref_decl(i) .symbol
+			rhs = deref_decl(i) .symbol(m)
 			node_rules[s] = m.rule(str(s)+"<-"+str(i), lhs, rhs)
 	else:
 		log(("no symbol for", s))
@@ -4026,7 +4018,7 @@ def register_symbol(s):
 
 
 
-def register_class_symbol(cls):
+def register_class_symbol(cls, m):
 	"""a nodecl calls this for its instance class"""
 
 	log = logging.getLogger("marpa").debug
@@ -4042,9 +4034,9 @@ def register_class_symbol(cls):
 						a = m.known_string(i.pyval)
 					elif isinstance(i, TypedParameter):
 						#TypedParameter means its supposed to be an expression
-						a = B.expression.symbol
+						a = B.expression.symbol(m)
 					elif isinstance(i, UnevaluatedArgument):
-						a = deref_decl(i.type).class_symbol
+						a = deref_decl(i.type).class_symbol(m)
 					assert a,  i
 					rhs.append(a)
 					rhs.append(m.syms.maybe_spaces)
@@ -4146,7 +4138,7 @@ def register_class_symbol(cls):
 		("registering Statements grammar")
 		optionally_elements = m.symbol('optionally_statements_elements')
 		st = m.symbol("statement with whitespace")
-		m.rule("statement with whitespace", st, [B.statement.symbol, m.syms.maybe_whitespace],lambda x: x[0])
+		m.rule("statement with whitespace", st, [B.statement.symbol(m), m.syms.maybe_whitespace],lambda x: x[0])
 		m.sequence('optionally_statements_elements', optionally_elements, st, ident_list, m.known_char('\n'), 0)
 		r = m.symbol('Statements')
 		m.rule('statements literal', r, [m.known_char('{'),m.syms.maybe_whitespace, optionally_elements, m.known_char('}')], cls.from_parse)
@@ -4158,7 +4150,7 @@ def register_class_symbol(cls):
 		r = m.symbol('list literal')
 		opening =  m.known_char('[')
 		closing =  m.known_char(']')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.known_char(','), 0)
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol(m), ident_list, m.known_char(','), 0)
 		m.rule('list literal', r, [opening, optionally_elements, closing], cls.from_parse)
 		return r
 

@@ -256,7 +256,7 @@ class Menu(SidebarFrame):
 		editor.on_atts_change.connect(s.update)
 		s.valid_only = False
 		s._changed = True
-		nodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
+		fixmenodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
 		s.palette_results = []
@@ -322,7 +322,7 @@ class Menu(SidebarFrame):
 
 	def prepare_grammar(s, scope):
 		#s.marpa.t.input.clear()
-		nodes.forget_symbols()
+		fixmenodes.forget_symbols()
 		s.marpa.collect_grammar(scope, scope)
 		assert s.current_parser_node
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))

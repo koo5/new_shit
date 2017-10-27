@@ -36,10 +36,10 @@ import nodes
 nodes.autocomplete = False
 
 from marpa_cffi.marpa_rpc_client import ThreadedMarpa
-nodes.m = m = ThreadedMarpa(print, True)
+fixmenodes.m = m = ThreadedMarpa(print, True)
 
 def parse_sync(p, text=None):
-	nodes.forget_symbols()
+	fixmenodes.forget_symbols()
 	m.collect_grammar(p.full_scope(), p.scope(), p.type)#parsed_symbol)
 	m.enqueue_precomputation(None)
 	while True:

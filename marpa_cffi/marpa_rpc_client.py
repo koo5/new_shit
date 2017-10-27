@@ -1,4 +1,11 @@
-#not really a rpc client, it just spawns a thread
+"""
+job:
+currently not really a rpc client, it just spawns a thread
+MarpaThread needs to become a standalone program. The two parts already communicate over json,
+but we need to do a little more untangling:
+valuator "actions": functions like join or ident. we need to store them in ThreadedMarpa,
+and MarpaThread must only pass back what to call.
+"""
 
 from typing import *
 int
@@ -39,27 +46,19 @@ else:
  		marpa = False
 
 
-
-client = None
-
-class ThreadedMarpa(object):
+class MarpaClient(object):
 	def __init__(s, send_thread_message, debug=True):
-		global client
-		client = s
+		s.send_thread_message = send_thread_message
 		s.debug = debug
 		s.clear()
-		#---
-		s.t = MarpaThread()
-		s.t.send_thread_message = send_thread_message
-		s.t.start()
-		s.cancel = False
-		if args.graph_grammar:
-			
-			graphing_wrapper.start()
-			graphing_wrapper.symid2name = s.symbol2debug_name
-			lib.rule_new = graphing_wrapper.rule_new
+
+		s.node_rules = {}
+		s.node_symbols = {}
+		s.forget_symbols()
 
 	def clear(s):
+		s.node_symbols.clear()
+		s.node_rules.clear()
 		if s.debug:
 			s.debug_sym_names = []
 		s.syms = Dotdict()
@@ -69,9 +68,11 @@ class ThreadedMarpa(object):
 		s.symbol_ranks = {}
 		s._parser_symbol = None
 
+	#def kill(s):
+
+
 	def set_symbol_rank(s, sy, r):
 		s.symbol_ranks[sy] = r
-		
 
 	def named_symbol(s,name):
 		"""create a symbol and save it in syms with the name as key"""
@@ -218,22 +219,19 @@ class ThreadedMarpa(object):
 						scope.append(i)
 
 		for i in scope:
-			#the property is accessed here, forcing the registering of the nodes grammars
-			sym = i.symbol
+			i.symbol(s)
 
 		if anything:
 			for i in scope:
-				if i.symbol != None:
+				if i.symbol(s) != None:
 					if args.log_parsing:
-						if s.debug: log(i.symbol)
-						rulename = 'start is %s' % s.symbol2debug_name(i.symbol)
+						if s.debug: log(i.symbol(s))
+						rulename = 'start is %s' % s.symbol2debug_name(i.symbol(s))
 					else:
 						rulename = ""
-					s.rule(rulename , s.start, i.symbol)
+					s.rule(rulename , s.start, i.symbol(s))
 
-		#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
 		#ok here we're gonna walk thru WorkAssess and BindsTighters and do the precedence and associativity magic
-
 		"""
 		sups = DefaultDict(list)
 		pris = DefaultDict(list)
@@ -276,12 +274,16 @@ class ThreadedMarpa(object):
 				level = 0
 				while sub._losers
 		"""
+		#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
 
 
 
 	def enqueue_precomputation(s, for_node):
-		while not s.t.input.empty():
-			s.t.input.get(block=False)
+		s.t = MarpaThread()
+		s.t.send_thread_message = s.send_thread_message
+		s.t.start()
+		#while not s.t.input.empty():
+		#	s.t.input.get(block=False)
 		s.t.input.put(Dotdict(
 			task = 'precompute_grammar',
 			num_syms = s.num_syms,
@@ -307,18 +309,18 @@ class MarpaThread(LemmacsThread):
 		if args.log_parsing:
 			s.input.logger = s.output.logger = logging.getLogger("marpa_rpc_queue")
 			pass
+		if args.graph_grammar:
+			graphing_wrapper.start()
+			graphing_wrapper.symid2name = s.symbol2debug_name
+			lib.rule_new = graphing_wrapper.rule_new
 
 	def send(s, msg):
 		s.send_to_main_thread(msg)
 
 	def run(s):
-		"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4
-		imho unbased requirement that all operations are done in one thread..
-		anyway, lets make a little event loop here"""
 		while True:
 			try:
 				inp = s.input.get()
-				if not marpa: continue
 				if inp.task == 'precompute_grammar':
 					s.precompute_grammar(inp)
 				elif inp.task == 'parse':
@@ -337,6 +339,8 @@ class MarpaThread(LemmacsThread):
 		s.debug = inp.debug
 
 		graphing_wrapper.clear()
+
+
 		s.g = Grammar()
 		# this calls symbol_new() repeatedly inp.num_syms times, and gathers the
 		# results in a list # this is too smart. also, todo: make symbol_new throw exceptions
@@ -429,7 +433,7 @@ class MarpaThread(LemmacsThread):
 
 		for i, sym in enumerate(tokens):
 			#assert type(sym) == symbol_int
-			if client.debug:
+			if s.debug:
 				log("parsed so far:%s" % raw[:i])
 			if sym == None:
 				log ("input:symid:%s name:%s raw:%s"%(sym, s.symbol2debug_name(sym),raw[i]))
@@ -438,7 +442,7 @@ class MarpaThread(LemmacsThread):
 				s.print_events()
 				#s.print_completions(r)
 
-				if client.debug:
+				if s.debug:
 					log ("input:symid:%s name:%s raw:%s"%(sym, s.symbol2debug_name(sym),raw[i]))
 				r.alternative(s.c_syms[sym], i+1)
 			r.earleme_complete()
@@ -495,7 +499,7 @@ class MarpaThread(LemmacsThread):
 				r = v.v.t_rule_id#type:int
 				#print ("rule id:%s"%r)`
 				#if babble:
-				#	log ("rule:"+str(client.rule2debug_name(r)))
+				#	log ("rule:"+str(s.rule2debug_name(r)))
 				arg0 = v.v.t_arg_0
 				argn = v.v.t_arg_n
 
@@ -602,3 +606,5 @@ parse_result = [i for i in parse_result if not i in nope]
 			log(m.syms_sorted_by_values)
 			log(m.rules)
 """
+
+"""https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4"""

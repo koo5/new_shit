@@ -27,10 +27,6 @@ from .marpa_cffi import *
 from .marpa_misc import *
 from .marpa_codes import events
 
-marpa_config = ffi.new("Marpa_Config*")
-lib.marpa_c_init(marpa_config)
-#Always succeeds.
-
 
 import logging
 logger=logging.getLogger("marpa")
@@ -50,15 +46,22 @@ from collections import defaultdict
 
 class Grammar(object):
 	def __init__(s):
+		marpa_config = new_marpa_config()
 		s.g = ffi.gc(lib.marpa_g_new(marpa_config), lib.marpa_g_unref)
-		s.check_config_error()
+		s.check_config_error(marpa_config)
 		assert lib.marpa_g_force_valued(s.g) >= 0
-		s.check_config_error()
+		s.check_config_error(marpa_config)
 		#log(s.g)
-	
-	def check_config_error(s):
+
+	def new_marpa_config(s):
+		marpa_config = ffi.new("Marpa_Config*")
+		lib.marpa_c_init(marpa_config)  # Always succeeds.
+		return marpa_config
+
+	def check_config_error(s, marpa_config):
 		msg = ffi.new("char **")
-		assert lib.marpa_c_error(marpa_config, msg) == lib.MARPA_ERR_NONE,  msg
+		if lib.marpa_c_error(marpa_config, msg) != lib.MARPA_ERR_NONE:
+			raise Exception(msg)
 
 	def check_int(s, result):
 		if result == -2:
