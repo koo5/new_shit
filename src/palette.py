@@ -22,11 +22,18 @@ def palette(s, scope, text, parser):
 		r = [PaletteMenuItem(tb(), EnumVal(s, i)) for i in range(len(s.ch.options.items))] + [PaletteMenuItem(tb(), Ref(s))]
 		return r
 	elif isinstance(s, Nodecl):
+
+#				i0 = i0.text
+#				if type == b['number'] and Number.match(i0):
+#					r = Number(i0)
+#				if type == B.text:
+#					r = Text(i0)
+
 		i = s.instance_class
 		m = i.match(text)
 		if m:
 			value = i(text)
-			score = 300
+			score = 3000
 		else:
 			value = i()
 			score = 0

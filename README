@@ -10,6 +10,8 @@ irc: [irc://irc.freenode.net/lemonparty](irc://irc.freenode.net/lemonparty)
 
 getting it to run - ubuntu16.4
 ===
+
+
 sudo apt-get install  -y git \
   cwebx texinfo  git  mercurial python3-dev python3-numpy libav-tools \
     libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
@@ -17,11 +19,6 @@ sudo apt-get install  -y git \
         libfreetype6-dev   python3-pip   python3-levenshtein   \
         build-essential autoconf automake libtool libffi-dev
 
-
-pip3 install --user \
-  cffi \
-  fuzzywuzzy \
-  hg+http://bitbucket.org/pygame/pygame
 
 
 git clone https://github.com/jeffreykegler/libmarpa.git
@@ -32,6 +29,23 @@ cd dist;
 make;
 sudo make install ;
 cd ../../
+
+
+
+#optionally:
+virtualenv -p python3  env
+. env/bin/activate.fish
+
+
+
+pip install -r requirements.txt
+#or: pip3 install --user \
+  cffi \
+  fuzzywuzzy \
+  hg+http://bitbucket.org/pygame/pygame
+
+
+
 
 
 git clone https://github.com/koo5/new_shit.git
@@ -108,8 +122,6 @@ license
 ===
 not decided yet, some standard license or this experiment: <https://github.com/koo5/Free-Man-License> 
 For now: By contributing to lemon, you agree to granting me nonexclusive rights to use your contribution (with attribution) within lemon, in any way, including relicensing and reselling. Also, the patent claim protection clauses like in http://www.gnu.org/licenses/agpl-3.0.html apply.:)
-
-
 
 
 
