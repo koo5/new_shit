@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 
 """
@@ -2437,28 +2436,27 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 	@property
 	def parsed(s):
-		#default result:		#raise an exception?
+		#default result:
 		r = Bananas(s.items)
 
 		if len(s.items) == 1:
 			i0 = s.items[0]
 			if isinstance(i0, Node):
 				r = i0
-			else: #widgets.Text
-				#demodemodemo
+			else: 
+				assert isinstance(i0, widgets.Text)
+
 				type = s.type
-				if isinstance(s.type, Exp):
-					type = s.type.type
-				if isinstance(type, Ref):
-					type = deref_decl(type)
+				#if isinstance(s.type, Exp):
+				#	type = s.type.type
+				#if isinstance(type, Ref):
+				#	type = deref_decl(type)
+				type = deref_def(type)
+				
+				
+				
 
-				i0 = i0.text
-#				if type == b['number']:
-				if Number.match(i0):
-					r = Number(i0)
 
-				if type == B.text:
-					r = Text(i0)
 
 
 
@@ -3046,6 +3044,19 @@ def make_root():
 		placeholder.ch.name.pyval = "placeholder for "+file
 		print(load_module(file, placeholder))
 	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
+
+	def load_txt_module(filename, module):
+		text = open(filename).read()
+		items = text.split('\n-----\n')
+		for idx,i in enumerate(items):
+			p = nodes.Parser()
+			module.ch.statements.add(p)
+			p.add(widgets.Text(value = i))
+
+	for file in glob.glob("library/*.lemon.txt"):
+		mo = library.add(new_module())
+		mo.ch.name.pyval = file
+		print(load_txt_module(file, mo))
 
 
 	#essentials = [x.ch.statements for x in library.items if x.ch.name.pyval == "essentials"][0]
