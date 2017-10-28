@@ -326,7 +326,11 @@ class Menu(SidebarFrame):
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
 
 	def on_thread_message(s):
-		m = s.marpa.t.output.get(block=False)
+		import queue
+		try:
+			m = s.marpa.t.output.get_nowait()
+		except queue.Empty:
+			return
 		if not m:
 			return
 		if m.message == 'precomputed':
@@ -486,8 +490,8 @@ class Menu(SidebarFrame):
 				symbols.extend(s.marpa.string2tokens(i.text))
 				text += i.text
 			else:
-				symbols.append(i.symbol)
-				text += "X"
+				symbols.append(i.symbol())
+				print ("%s in marpa input tokens"%s)
 		return symbols, text
 
 	def signal_change(s):

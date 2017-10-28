@@ -28,6 +28,8 @@ else:
  		marpa = False
 from marpa_cffi.valuator_actions import *
 
+if args.graph_grammar:
+	graphing_wrapper.start()
 
 class MarpaThread(LemmacsThread):
 	def __init__(s):
@@ -36,9 +38,10 @@ class MarpaThread(LemmacsThread):
 			s.input.logger = s.output.logger = logging.getLogger("marpa_rpc_queue")
 			pass
 		if args.graph_grammar:
-			graphing_wrapper.start()
+
+			graphing_wrapper.clear()
 			graphing_wrapper.symid2name = s.symbol2debug_name
-			lib.rule_new = graphing_wrapper.rule_new
+			#lib.rule_new = graphing_wrapper.rule_new
 
 	def send(s, msg):
 		s.send_to_main_thread(msg)
@@ -52,6 +55,8 @@ class MarpaThread(LemmacsThread):
 				elif inp.task == 'parse':
 					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
 					log("parsed %s results" % len(r))
+					for i in r:
+						log("%s" % (r))
 					s.send(Dotdict(message='parsed', results=r))
 			except Exception as e:
 				traceback.print_exc(file=sys.stdout)
