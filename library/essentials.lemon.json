@@ -24,7 +24,7 @@
                             "decl": {
                                 "target": {
                                     "resolve": true,
-                                    "name": "compoundnodedef",
+                                    "name": "customnodedef",
                                     "class": "syntaxednodecl"
                                 },
                                 "decl": "ref"

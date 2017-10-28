@@ -81,7 +81,9 @@ B = Dotdict()
 B._dict = odict()
 
 def build_in(node, name=None, builtins_table = B):
-	"""add node to B"""
+	"""add node to B
+	:rtype:Node
+	"""
 	if isinstance(node, list):
 		#python lets you do this kind of name overriding?
 		#how does it know which node is the node you want
@@ -126,7 +128,7 @@ def deref_decl(d):
 		return deref_decl(d.target)
 	elif isinstance(d, Definition):
 		return deref_decl(d.type)
-	elif isinstance(d, (CompoundNodeDef, Union)):
+	elif isinstance(d, (CustomNodeDef, Union)):
 		return d
 	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
 		return d
@@ -138,7 +140,7 @@ def deref_def(d):
 		return deref_def(d.target)
 	elif isinstance(d, Definition):
 		return d
-	elif isinstance(d, (CompoundNodeDef, Union)):
+	elif isinstance(d, (CustomNodeDef, Union)):
 		return d
 	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
 		return d
@@ -814,7 +816,7 @@ class Node(NodePersistenceStuff, element.Element):
 class CompoundNode(Node):
 	def __init__(s, decl):
 		super().__init__()
-		assert isinstance(decl, CompoundNodeDef)
+		assert isinstance(decl, CustomNodeDef)
 		s.decl = decl
 		s.create_kids()
 		s.fix_parents()
@@ -2120,16 +2122,6 @@ class WorksAs(Syntaxed):
 			sup = B[sup.replace(' ', '_')]
 		return cls({'sub': Ref(sub), 'sup': Ref(sup)})
 
-	def is_relevant_for(s, scope):
-		sub = s.ch.sub.parsed
-		sup = s.ch.sup.parsed
-		aa = deref_def(sub)
-		bb = deref_def(sup)
-		a = aa in scope
-		b = bb in scope
-		logging.getLogger("scope").debug("%s is_relevant_for scope? %s %s (%s, %s)", s.tostr(), a, b, aa,bb)
-		return a and b
-
 class BindsTighterThan(Syntaxed):
 	help = ["has higher precedence, goes lower in the parse tree"]
 
@@ -2949,7 +2941,7 @@ class FunctionCallNodecl(NodeclBase):
 # endregion
 
 
-class CompoundNodeDef(Syntaxed):
+class CustomNodeDef(Syntaxed):
 	instance_class = CompoundNode
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
@@ -3539,10 +3531,16 @@ def build_in_lemon_language():
 				    'serialization':dict_from_to('text', 'anything')}))
 
 
-	build_in(SyntaxedNodecl(CompoundNodeDef,
+	tmp = B.union.inst_fresh()
+	tmp.ch["items"].add(Ref(B.text))
+	tmp.ch["items"].add(Ref(B.typedparameter))
+
+	build_in(SyntaxedNodecl(CustomNodeDef,
 	                        ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
 	                        {'name' : B.text,
-				   'syntax': B.custom_syntax_list}))
+				   'syntax': B.number}))#list_of(tmp)}))
+	build_in(WorksAs.b("customnodedef", "statement"), False)
+
 
 	build_in(Definition({'name': Text('lvalue'), 'type':make_union([Ref(B.identifier), Ref(B.varref)])}))
 

@@ -767,7 +767,7 @@ def new_builtins():
 
 """
 def	compound(node_class, english_syntax, child_types):
-	r = CompoundNodeDef()
+	r = CustomNodeDef()
 	r.syntax_language = EnumVal(
 		Serialized.new("""
 {

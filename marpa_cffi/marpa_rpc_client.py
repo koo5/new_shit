@@ -197,9 +197,20 @@ class MarpaClient(object):
 			s.start = start.symbol(s)
 		if s.debug:	log("start=%s", s.symbol2debug_name(s.start) )
 
+		import nodes
+		def is_relevant_for(s, scope):
+			sub = s.ch.sub.parsed
+			sup = s.ch.sup.parsed
+			aa = nodes.deref_def(sub)
+			bb = nodes.deref_def(sup)
+			a = aa in scope
+			b = bb in scope
+			logging.getLogger("scope").debug("%s is_relevant_for scope? %s %s (%s, %s)", s.tostr(), a, b, aa, bb)
+			return a and b
+
 		for i in full_scope:
 			if type(i).__name__ == "WorksAs":
-				if i.is_relevant_for(scope):
+				if is_relevant_for(i, scope):
 					if not i in scope:
 						scope.append(i)
 
@@ -217,6 +228,171 @@ class MarpaClient(object):
 					s.rule(rulename , s.start, i.symbol(s))
 
 		#ok here we're gonna walk thru WorkAssess and BindsTighters and do the precedence and associativity magic
+		# http://pages.cs.wisc.edu/~fischer/cs536.s08/course.hold/html/NOTES/3.CFG.html#prec
+		# https://metacpan.org/pod/distribution/Marpa-R2/pod/Scanless/DSL.pod#priority
+
+
+		"""
+		"exp" is a syntactic category
+		*number works as *exp
+		node "division" with syntax: [("op1"-*exp), "/", ("op2"-*exp)]
+		node "subtraction" with syntax: [("op1"-*exp), "-", ("op2"-*exp)]
+		*division works as *exp
+		*subtraction works as *exp
+		//both are left associative
+		*division has priority 100
+		*subtraction has priority 50
+		"""
+		"""
+		nodes = DefaultDict(list)
+		asoc  = DefaultDict(lambda: "left")
+		pris = DefaultDict(lambda: 1000)
+
+		for n in scope:
+			if n.__class__.__name__ in ['SyntaxedNodecl']:
+				nodes.append(n)
+			if n.__class__.__name__ == 'HasPriority':
+				k = deref_def(n.ch.node)
+				assert k not in pris
+				pris[k] = n.ch.value.pyval
+			if n.__class__.__name__ == 'HasAssociativity':
+				k = deref_def(n.ch.node)
+				assert k not in asoc
+				asoc[k] = n.ch.value.pyval
+
+		for sub,sup in worksases:
+			
+
+		for n in nodes:
+			syntaxed_symbols[n] = m.symbol(str(n))
+
+		for lhs, levels in nodes:
+			for level_index in range(len(levels)):
+				level = levels[level_index]
+				if level_index == len(levels)
+					next_level_index = 0
+				else
+					next_level_index = level_index + 1
+				next_level = levels[next_level_index]	
+				next_level_symbol = m.known_symbol(str(lhs)+str(next_level_index))
+				
+				for rhs in level:
+					symbol_for_the_syntaxed = syntaxed_symbols[rhs]
+					syntax_for_the_syntaxed = []
+					for i in rhs.syntax:
+						if isinstance(i, TextTag):
+							syntax_for_the_syntaxed.append(i.value)
+						else
+							slot = rhs.slots[i.value]
+							if slot != lhs:
+								if nodes.SyntaxedNodecl.subclasscheck(slot):
+								    syntax_for_the_syntaxed.append(syntaxed_symbols[slot])
+								else:
+									syntax_for_the_syntaxed.append(slot.symbol(m))
+							else:
+								syntax_for_the_syntaxed.append(next_level_symbol)
+
+
+		for sup,levels in iteritems(worksas2):
+			for level in levels:
+				for sub in level:
+					if asoc[node] == "left":
+						rules[sup].append(
+
+		for sup,subs in iteritems(worksas):
+			for sub in subs:
+				worksas2[k][pris[v]].append(v)
+
+
+
+
+
+					if asoc[node] == "right":
+
+
+
+		"""
+		"""
+		nodes = DefaultDict(list)
+		asoc  = DefaultDict(lambda: "left")
+		pris = DefaultDict(lambda: 1000)
+
+		for n in scope:
+			if n.__class__.__name__ in ['SyntaxedNodecl']:
+				nodes.append(n)
+			
+			if n.__class__.__name__ == 'HasPriority':
+				k = deref_def(n.ch.node)
+				assert k not in pris
+				pris[k] = n.ch.value.pyval
+			if n.__class__.__name__ == 'HasAssociativity':
+				k = deref_def(n.ch.node)
+				assert k not in asoc
+				asoc[k] = n.ch.value.pyval
+
+		for sup,subs in iteritems(worksas):
+			for sub in subs:
+				worksas2[k][pris[v]].append(v)
+
+		for sup,levels in iteritems(worksas2):
+			for level in levels:
+				for sub in level:
+					if asoc[node] == "left":
+						rules[sup].append(
+
+
+
+
+
+					if asoc[node] == "right":
+
+
+
+
+		"""
+		"""
+		worksas = DefaultDict(list)
+		asoc  = DefaultDict(lambda: "left")
+		pris = DefaultDict(lambda: 1000)
+		
+		for i in scope:
+			if i.__class__.__name__ == 'WorksAs':
+				worksas[i.ch.sup.target].append(i.ch.sub.target)
+			if n.__class__.__name__ == 'HasPriority':
+				k = deref_def(n.ch.node)
+				assert k not in pris
+				pris[k] = n.ch.value.pyval
+			if n.__class__.__name__ == 'HasAssociativity':
+				k = deref_def(n.ch.node)
+				assert k not in asoc
+				asoc[k] = n.ch.value.pyval
+			
+		for sup,subs in iteritems(worksas):
+			for sub in subs:
+				worksas2[k][pris[v]].append(v)
+		
+		for sup,levels in iteritems(worksas2):
+			for level in levels:
+				for sub in level:
+					if asoc[node] == "left":
+						rules[sup].append(
+						
+						
+						
+						
+						
+					if asoc[node] == "right":
+		
+
+		
+		
+		"""
+		"""
+		levels = {}
+		import collections
+		levels = collections.OrderedDict(sorted(levels.items()))
+		for k,v 
+		"""
 		"""
 		sups = DefaultDict(list)
 		pris = DefaultDict(list)

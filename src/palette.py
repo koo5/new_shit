@@ -7,7 +7,7 @@ def tb():
 
 def palette(s, scope, text, parser):
 	"create menu items"
-	if isinstance(s, CompoundNodeDef):
+	if isinstance(s, CustomNodeDef):
 		return [PaletteMenuItem(tb(), Ref(s)), PaletteMenuItem(tb(), CompoundNode(s))]
 	elif isinstance(s, FunctionCallNodecl):
 		decls = [x for x in scope if isinstance(x, (FunctionDefinitionBase))]

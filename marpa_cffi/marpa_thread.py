@@ -68,7 +68,7 @@ class MarpaThread(LemmacsThread):
 		s.debug_sym_names = inp.debug_sym_names
 		s.rules = inp.rules
 		s.debug = inp.debug
-
+		                     
 		graphing_wrapper.clear()
 
 		s.g = Grammar()
