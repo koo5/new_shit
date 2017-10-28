@@ -34,7 +34,7 @@ import elements_keybindings
 from elements_keybindings import LEFT, RIGHT, UNICODE
 import keys
 
-from marpa_cffi.marpa_rpc_client import ThreadedMarpa
+from marpa_cffi.marpa_rpc_client import MarpaClient
 
 
 
@@ -256,7 +256,7 @@ class Menu(SidebarFrame):
 		editor.on_atts_change.connect(s.update)
 		s.valid_only = False
 		s._changed = True
-		fixmenodes.m = s.marpa = ThreadedMarpa(send_thread_message, args.graph_grammar or args.log_parsing)
+		s.marpa = MarpaClient(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
 		s.palette_results = []
@@ -321,14 +321,14 @@ class Menu(SidebarFrame):
 			s.signal_change()
 
 	def prepare_grammar(s, scope):
-		#s.marpa.t.input.clear()
-		fixmenodes.forget_symbols()
 		s.marpa.collect_grammar(scope, scope)
 		assert s.current_parser_node
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
 
 	def on_thread_message(s):
-		m = s.marpa.t.output.get()
+		m = s.marpa.t.output.get(block=False)
+		if not m:
+			return
 		if m.message == 'precomputed':
 			#if m.for_node == s.current_parser_node:
 				node = m.for_node()
