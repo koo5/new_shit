@@ -230,25 +230,17 @@ class MarpaClient(object):
 		#ok here we're gonna walk thru WorkAssess and BindsTighters and do the precedence and associativity magic
 		# http://pages.cs.wisc.edu/~fischer/cs536.s08/course.hold/html/NOTES/3.CFG.html#prec
 		# https://metacpan.org/pod/distribution/Marpa-R2/pod/Scanless/DSL.pod#priority
+		"""
 
-
-		"""
-		"exp" is a syntactic category
-		*number works as *exp
-		node "division" with syntax: [("op1"-*exp), "/", ("op2"-*exp)]
-		node "subtraction" with syntax: [("op1"-*exp), "-", ("op2"-*exp)]
-		*division works as *exp
-		*subtraction works as *exp
-		//both are left associative
-		*division has priority 100
-		*subtraction has priority 50
-		"""
-		"""
 		nodes = DefaultDict(list)
 		asoc  = DefaultDict(lambda: "left")
 		pris = DefaultDict(lambda: 1000)
+		worksas = DefaultDict(list)
+
 
 		for n in scope:
+			if n.__class__.__name__ == 'WorksAs':
+				worksas[n.ch.sup.target].append(n.ch.sub.target)
 			if n.__class__.__name__ in ['SyntaxedNodecl']:
 				nodes.append(n)
 			if n.__class__.__name__ == 'HasPriority':
@@ -260,9 +252,9 @@ class MarpaClient(object):
 				assert k not in asoc
 				asoc[k] = n.ch.value.pyval
 
-		for sub,sup in worksases:
+		#for sub,sup in worksases:
 			
-
+		
 		for n in nodes:
 			syntaxed_symbols[n] = m.symbol(str(n))
 
@@ -293,6 +285,11 @@ class MarpaClient(object):
 								syntax_for_the_syntaxed.append(next_level_symbol)
 
 
+		"""
+
+
+
+		"""
 		for sup,levels in iteritems(worksas2):
 			for level in levels:
 				for sub in level:
@@ -304,11 +301,7 @@ class MarpaClient(object):
 				worksas2[k][pris[v]].append(v)
 
 
-
-
-
 					if asoc[node] == "right":
-
 
 
 		"""
