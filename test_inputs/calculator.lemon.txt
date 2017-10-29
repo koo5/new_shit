@@ -1,0 +1,25 @@
+unhide ["ref", "statement", "syntacticcategory", "worksas", "customnodedef", "comment", "number"]
+-----
+*comment works as *statement
+-----
+*syntacticcategory works as *statement
+-----
+"exp" is a syntactic category
+-----
+*number works as *exp
+-----
+node "division" with syntax: ["op1"-*exp, "/", "op2"-*exp]
+-----
+node "subtraction" with syntax: ["op1"-*exp, "-", "op2"-*exp]
+-----
+*division works as *exp
+-----
+*subtraction works as *exp
+-----
+node "haspriority" with syntax: ["node"-*ref, " has priority ", "priority"-*number]
+-----
+/*both are left associative*/
+-----
+*division has priority 100
+-----
+*subtraction has priority 50

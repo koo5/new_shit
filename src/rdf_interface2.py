@@ -73,6 +73,8 @@ for idx,i in enumerate(items):
 	if idx == 0 and starts_with_unhide:
 		p._type = nodes.B.unhidenode
 	p.add(nodes.Text(value = i))
+	if i == "":
+		continue
 	rr = parse_sync(p, i)
 	if (rr and len(rr)):
 		for i in rr:

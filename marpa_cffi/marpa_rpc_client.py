@@ -22,7 +22,7 @@ info=logger.info
 
 from lemon_utils.dotdict import Dotdict
 
-from lemon_utils.lemon_six import unicode
+from lemon_utils.lemon_six import unicode, iteritems
 from lemon_utils.utils import uniq
 from lemon_args import args
 
@@ -52,6 +52,7 @@ class MarpaClient(object):
 		s.rules = []
 		s.symbol_ranks = {}
 		s._parser_symbol = None
+		s.excepts = {}
 
 	#def kill(s):
 
@@ -118,6 +119,11 @@ class MarpaClient(object):
 			r = s.known_chars[char] = s.symbol(char)
 			s.rule(char+"_is_known_char", s.syms.known_char, r)
 			return r
+
+	def known_char_except(s, e):
+		if e not in s.excepts:
+			s.excepts[e] = s.symbol("except "+e)
+		return s.excepts[e]
 
 	def known_string(s, string):
 		"""create a symbol for a string"""
@@ -430,7 +436,10 @@ class MarpaClient(object):
 		"""
 		#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
 
-
+		for k, v in iteritems(s.excepts):
+			for ch, sym in iteritems(s.known_chars):
+				if ch != k:
+					s.rule(ch + " is anything except "+k, v, [sym])
 
 	def enqueue_precomputation(s, for_node):
 		s.t = MarpaThread()

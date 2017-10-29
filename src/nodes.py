@@ -119,9 +119,9 @@ def make_union(items: list):
 
 
 def is_decl(node):
-	return isinstance(node, (NodeclBase, ParametricTypeBase, ParametricNodecl))
+	return isinstance(node, (CustomNodeDef, NodeclBase, ParametricTypeBase, ParametricNodecl))
 def is_type(node):
-	return is_decl(node) or isinstance(node, (Ref, Exp, Definition, SyntacticCategory, EnumType))
+	return is_decl(node) or isinstance(node, (Ref, Union, Exp, Definition, SyntacticCategory, EnumType))
 
 def deref_decl(d):
 	if isinstance(d, Ref):
@@ -788,7 +788,7 @@ class Node(NodePersistenceStuff, element.Element):
 	@property
 	def ddecl(s):
 		"""decl dereferenced to the actual value, thru refs/definitions.."""
-		return deref_decl(s.decl)#i have no idea what im doing
+		return deref_decl(s.decl)
 
 	def eq_by_value_and_python_class(a, b):
 		"""like comparing by type and value, but crappier"""
@@ -798,7 +798,7 @@ class Node(NodePersistenceStuff, element.Element):
 		return a.eq_by_value(b)
 
 	def delete_child(s, child):
-		log("not implemented, go delete someone else's children")
+		log("not implemented, go delete someone else's child")
 
 	@staticmethod
 	def match(v):
@@ -812,8 +812,206 @@ class Node(NodePersistenceStuff, element.Element):
 
 
 
+class SyntaxedBase(Node):
 
-class CompoundNode(Node):
+	@classmethod
+	def rule_for_syntax(cls, m, cls_sym, syntax, ddecl):
+		syms = []
+
+		for i in syntax.rendering_tags:
+			# we build up syms child after child, char after char
+			# if autocomplete is on, we create a rule after each addition
+			# otherwise we only create a rule for the final, complete, syms
+
+			ti = type(i)
+
+			if ti == unicode:
+				for ch in i:
+					syms = syms[:]
+					syms.append(m.known_char(ch))
+					if autocomplete:
+						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+			elif ti == ChildTag:
+				child_type = ddecl.instance_slots[i.name]
+				if type(child_type) == Exp:
+					x = B.expression.symbol(m)
+				else:
+					x = deref_decl(child_type).symbol(m)
+				if not x:
+					warn("no type:" + str(i))
+					return None
+				assert x, child_type
+				syms = syms[:]
+				syms.append(x)
+				if autocomplete:
+					m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+		assert len(syms) != 0
+		if not autocomplete:
+			m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+
+	@classmethod
+	def from_parse(cls, p, sy):
+		logging.getLogger("valuation").debug('Syntaxed from_parse(marpa value: %s   ,Syntax object: %s', p, sy)
+
+		r = cls.fresh()
+		# info((p, cls, sy))
+
+		s2 = []
+		for i in sy.rendering_tags:
+			if type(i) == unicode:
+				for ch in i:
+					s2.append(ch)
+			else:
+				s2.append(i)
+
+		# print(sy)
+		# print(s2)
+
+		si = 0  # syntax_item_index
+
+		for i in p:
+			if type(i) == unicode:
+				assert type(s2[si] == unicode)
+			else:
+				assert isinstance(i, Element), i
+				r.ch[s2[si].name] = i
+
+			si += 1
+
+		# if j == len(p): break
+
+		r.fix_parents()
+		return r
+
+	def fix_parents(s):
+		s._fix_parents(list(s.ch._dict.values()))
+
+	def set_child(s, name, item):
+		assert isinstance(name, unicode), repr(name)
+		assert isinstance(item, Node)
+		item.parent = s
+		s.ch[name] = item
+
+	def replace_child(s, child, new):
+		"""child name or child value? thats a good question...its child the value!"""
+		assert (child in itervalues(s.ch))
+		assert (isinstance(new, Node))
+		for k, v in iteritems(s.ch):
+			if v == child:
+				s.ch[k] = new
+				new.parent = s
+				return
+		raise Exception("i dont have that child: " + child)
+
+	# todo:refactor into find_child or something
+
+	def delete_child(s, child):
+		for k, v in iteritems(s.ch._dict):
+			if v == child:
+				s.ch[k] = s.create_kids(s.slots)[k]
+				s.ch[k].parent = s
+				return
+
+		raise Exception("We should never get here")
+
+	# s.replace_child(child, Parser(b["text"])) #toho: create new_child()
+
+	def _flatten(s):
+		assert (isinstance(v, Node) for v in itervalues(s.ch._dict))
+		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
+
+	@staticmethod
+	def check_slots(slots):
+		if __debug__:
+			assert (isinstance(slots, dict))
+			for name, slot in iteritems(slots):
+				assert (isinstance(name, unicode))
+				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition,
+				                         SyntacticCategory)), "these slots are fucked up:" + str(slots)
+
+	@property
+	def syntax(s):
+		return s.syntaxes[s.syntax_index].rendering_tags
+
+	@property
+	def syntaxes(s):
+		return s.ddecl.instance_syntaxes
+
+	def render(s):
+		return s.syntax
+
+	def prev_syntax(s):
+		s.syntax_index -= 1
+		if s.syntax_index < 0:
+			s.syntax_index = 0
+		log("previous syntax")
+		return CHANGED
+
+	def next_syntax(s):
+		s.syntax_index += 1
+		if s.syntax_index == len(s.syntaxes):
+			s.syntax_index = len(s.syntaxes) - 1
+		log("next syntax")
+		return CHANGED
+
+	@classmethod
+	def create_kids(cls, slots):
+		cls.check_slots(slots)
+		kids = {}
+		for k, v in iteritems(slots):
+			# print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
+			try:
+				easily_instantiable = deref_decl(v).instance_class.easily_instantiable
+			except:
+				easily_instantiable = False
+			if easily_instantiable:
+				a = v.inst_fresh()
+			# elif isinstance(v, ParametricType):
+			#				a = v.inst_fresh()
+			else:
+				a = Parser()
+			assert (isinstance(a, Node))
+			kids[k] = a
+		return kids
+
+	@property
+	def name(s):
+		"""override if this doesnt work for your subclass"""
+		return s.ch.name.pyval
+
+	@property
+	def slots(s):
+		return s.ddecl.instance_slots
+
+	def child_type(s, ch):
+		for k, v in iteritems(s.slots):
+			if s.ch[k] == ch:
+				return v
+		assert False
+
+	def long__repr__(s):
+		return object.__repr__(s) + "('" + str(s.ch) + "')"
+
+	def eq_by_value(a, b):
+		assert len(a.ch._dict) == len(b.ch._dict)  # are you looking for eq_by_value_and_decl?
+		for k, v in iteritems(a.ch._dict):
+			if not b.ch[k].eq_by_value_and_python_class(v):
+				return False
+		return True
+
+	def copy(s):
+		decl = s.decl.copy()
+		r = s.__class__.fresh(decl)
+		for k, v in iteritems(s.ch._dict):
+			r.ch[k] = v.copy()
+		r.fix_parents()
+		return r
+
+	def unparen(s):
+		return s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
+
+
+class CustomNode(SyntaxedBase):
 	def __init__(s, decl):
 		super().__init__()
 		assert isinstance(decl, CustomNodeDef)
@@ -824,9 +1022,12 @@ class CompoundNode(Node):
 	@classmethod
 	def deserialize(cls, data, parent):
 		assert parent
+
+
 		placeholder = Text("placeholder")
 		placeholder.parent = parent
 		decl = deserialize(data['decl'], placeholder)
+
 		r = cls(decl)
 		r.parent = parent
 		for k,v in iteritems(data['children']):
@@ -894,7 +1095,7 @@ class Syntax:
 		s.rendering_tags = rendering_tags
 
 
-class Syntaxed(SyntaxedPersistenceStuff, Node):
+class Syntaxed(SyntaxedPersistenceStuff, SyntaxedBase):
 	"""
 	Syntaxed has some named children, kept in s.ch.
 	their types are in s.slots.
@@ -924,78 +1125,6 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		#assert isinstance(s.ddecl, SyntaxedNodecl)
 
 	@classmethod
-	def rule_for_syntax(cls, m, cls_sym, syntax, ddecl):
-		syms = []
-		
-		
-		for i in syntax.rendering_tags:
-		#we build up syms child after child, char after char
-		#if autocomplete is on, we create a rule after each addition
-		#otherwise we only create a rule for the final, complete, syms
-
-			ti = type(i)
-
-			if ti == unicode:
-				for ch in i:
-					syms = syms[:]
-					syms.append(m.known_char(ch))
-					if autocomplete:
-						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-			elif ti == ChildTag:
-				child_type = ddecl.instance_slots[i.name]
-				if type(child_type) == Exp:
-					x = B.expression.symbol(m)
-				else:
-					x = deref_decl(child_type).symbol(m)
-				if not x:
-					warn("no type:" + str(i))
-					return None
-				assert x, child_type
-				syms = syms[:]
-				syms.append(x)
-				if autocomplete:
-					m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-		assert len(syms) != 0
-		if not autocomplete:
-			m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-
-	@classmethod
-	def from_parse(cls, p, sy):
-		logging.getLogger("valuation").debug('Syntaxed from_parse(marpa value: %s   ,Syntax object: %s',p,sy)
-
-		r = cls.fresh()
-		#info((p, cls, sy))
-
-		s2 = []
-		for i in sy.rendering_tags:
-			if type(i) == unicode:
-				for ch in i:
-					s2.append(ch)
-			else:
-				s2.append(i)
-
-
-		#print(sy)
-		#print(s2)
-
-		si = 0#syntax_item_index
-
-		for i in p:
-			if type(i) == unicode:
-				assert type(s2[si] == unicode)
-			else:
-				assert isinstance(i, Element),    i
-				r.ch[s2[si].name] = i
-
-			si+=1
-
-
-			#if j == len(p): break
-
-		r.fix_parents()
-		return r
-
-	@classmethod
 	def fresh(cls, decl=None):
 		r = cls(cls.create_kids(deref_decl(cls.decl).instance_slots))
 		if decl:
@@ -1003,129 +1132,6 @@ class Syntaxed(SyntaxedPersistenceStuff, Node):
 		r.fix_parents()
 		return r
 
-	def fix_parents(s):
-		s._fix_parents(list(s.ch._dict.values()))
-
-	def set_child(s, name, item):
-		assert isinstance(name, unicode), repr(name)
-		assert isinstance(item, Node)
-		item.parent = s
-		s.ch[name] = item
-
-	def replace_child(s, child, new):
-		"""child name or child value? thats a good question...its child the value!"""
-		assert(child in itervalues(s.ch))
-		assert(isinstance(new, Node))
-		for k,v in iteritems(s.ch):
-			if v == child:
-				s.ch[k] = new
-				new.parent = s
-				return
-		raise Exception("i dont have that child: "+child)
-		#todo:refactor into find_child or something
-
-	def delete_child(s, child):
-		for k,v in iteritems(s.ch._dict):
-			if v == child:
-				s.ch[k] = s.create_kids(s.slots)[k]
-				s.ch[k].parent = s
-				return
-
-		raise Exception("We should never get here")
-		#s.replace_child(child, Parser(b["text"])) #toho: create new_child()
-
-	def _flatten(s):
-		assert(isinstance(v, Node) for v in itervalues(s.ch._dict))
-		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
-
-	@staticmethod
-	def check_slots(slots):
-		if __debug__:
-			assert(isinstance(slots, dict))
-			for name, slot in iteritems(slots):
-				assert(isinstance(name, unicode))
-				assert isinstance(slot, (NodeclBase, Exp, ParametricTypeBase, Definition, SyntacticCategory)), "these slots are fucked up:" + str(slots)
-
-	@property
-	def syntax(s):
-		return s.syntaxes[s.syntax_index].rendering_tags
-
-	@property
-	def syntaxes(s):
-		return s.ddecl.instance_syntaxes
-
-	def render(s):
-		return s.syntax
-
-	def prev_syntax(s):
-		s.syntax_index  -= 1
-		if s.syntax_index < 0:
-			s.syntax_index = 0
-		log("previous syntax")
-		return CHANGED
-
-	def next_syntax(s):
-		s.syntax_index  += 1
-		if s.syntax_index == len(s.syntaxes):
-			s.syntax_index = len(s.syntaxes)-1
-		log("next syntax")
-		return CHANGED
-
-	@classmethod
-	def create_kids(cls, slots):
-		cls.check_slots(slots)
-		kids = {}
-		for k, v in iteritems(slots):
-			#print v # and : #todo: definition, syntaxclass. proxy is_literal(), or should that be inst_fresh?
-			try:
-				easily_instantiable = deref_decl(v).instance_class.easily_instantiable
-			except:
-				easily_instantiable = False
-			if easily_instantiable:
-				a = v.inst_fresh()
-#			elif isinstance(v, ParametricType):
-#				a = v.inst_fresh()
-			else:
-				a = Parser()
-			assert(isinstance(a, Node))
-			kids[k] = a
-		return kids
-
-	@property
-	def name(s):
-		"""override if this doesnt work for your subclass"""
-		return s.ch.name.pyval
-
-	@property
-	def slots(s):
-		return s.ddecl.instance_slots
-
-	def child_type(s, ch):
-		for k,v in iteritems(s.slots):
-			if s.ch[k] == ch:
-				return v
-		assert False
-
-	def long__repr__(s):
-		return object.__repr__(s) + "('"+str(s.ch)+"')"
-
-	def eq_by_value(a, b):
-		assert len(a.ch._dict) == len(b.ch._dict) #are you looking for eq_by_value_and_decl?
-		for k,v in iteritems(a.ch._dict):
-			if not b.ch[k].eq_by_value_and_python_class(v):
-				return False
-		return True
-
-	def copy(s):
-		decl = s.decl.copy()
-		r = s.__class__.fresh(decl)
-		for k,v in iteritems(s.ch._dict):
-			r.ch[k] = v.copy()
-		r.fix_parents()
-		return r
-
-	def unparen(s):
-		return s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
 
 
 class Collapsible(Node):
@@ -1518,7 +1524,7 @@ class NoValue(Node):
 
 def banana(text="error text"):
 	return Text(text)#
-	r = CompoundNode(s.root.essentials.banana)
+	r = CustomNode(s.root.essentials.banana)
 	r.ch.info = Text(text)
 	return r
 
@@ -1899,10 +1905,10 @@ class TypeNodecl(NodeclBase):
 
 	def make_example(s):
 		return Ref(B.module)
-#so this was my approach...nodes are types..
-#misses a parser aparently
 
-
+	#@property
+	#def name(s):
+	#	return 'type'
 
 
 
@@ -2143,6 +2149,9 @@ class Union(Syntaxed):
 	help=['an union of types means that any type will satisfy']
 	def __init__(s, children):
 		super(Union, s).__init__(children)
+	@property
+	def name(s):
+		return object.__repr__(s)
 
 # endregion
 """
@@ -2405,7 +2414,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 		p = s.parent
 		if isinstance(p, Parser):
 			return p.type
-		elif isinstance(p, (Syntaxed, FunctionCall, CompoundNode)):
+		elif isinstance(p, (Syntaxed, FunctionCall, CustomNode)):
 			return p.child_type(s)
 		elif isinstance(p, (List, Dict)):
 			return p.item_type
@@ -2942,10 +2951,10 @@ class FunctionCallNodecl(NodeclBase):
 
 
 class CustomNodeDef(Syntaxed):
-	instance_class = CompoundNode
+	instance_class = CustomNode
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
-		return CompoundNode(s)
+		return CustomNode(s)
 
 		
 
@@ -3143,7 +3152,8 @@ def build_in_editor_structure_nodes():
 
 	build_in(
 		SyntaxedNodecl(SyntacticCategory,
-			[TextTag("syntactic category:"), ChildTag("name")],
+			[[ChildTag("name"), TextTag(" is a syntactic category")],
+			[TextTag("syntactic category:"), ChildTag("name")]],
 			{'name': 'text'}))
 
 	build_in(SyntacticCategory({'name': Text("statement")}))
@@ -3216,6 +3226,7 @@ def build_in_lemon_language():
 
 
 	build_in(WorksAs.b("statement", "anything"), False)
+	build_in(WorksAs.b("worksas", "statement"), False)
 	build_in(WorksAs.b("expression", "statement"), False)
 	build_in(WorksAs.b("number", "expression"), False)
 	build_in(WorksAs.b("text", "expression"), False)
@@ -3260,7 +3271,7 @@ def build_in_lemon_language():
 				   {'items': list_of(B.type)}))
 				   #todo:should use the definition above instead
 
-	B.union.notes="""should appear as "type or type or type", but a Syntaxed with a list is an easier implementation for now"""
+	B.union.notes="""should appear as "type or type or type", but a Syntaxed with a list is easier for now"""
 
 	class HideNode(Syntaxed):
 		pass
@@ -3536,9 +3547,9 @@ def build_in_lemon_language():
 	tmp.ch["items"].add(Ref(B.typedparameter))
 
 	build_in(SyntaxedNodecl(CustomNodeDef,
-	                        ["node", ChildTag('name'), "with syntax:", ChildTag("syntax")],
+	                        ["node ", ChildTag('name'), " with syntax: ", ChildTag("syntax")],
 	                        {'name' : B.text,
-				   'syntax': B.number}))#list_of(tmp)}))
+				   'syntax': list_of(tmp)}))#B.number}))#
 	build_in(WorksAs.b("customnodedef", "statement"), False)
 
 
@@ -4004,11 +4015,17 @@ def register_symbol(s, m):
 		m.node_symbols[s] = r = m.symbol(desc)
 		log("registering %s grammar" % desc)
 		optionally_elements = m.symbol('optionally_elements of %s' % desc)
-		m.sequence('optionally_elements of %s' % desc, optionally_elements, item_symbol, ident_list, m.known_char(','), 0)
+		sep = m.symbol('comma with whitespace')
+		m.rule('comma with whitespace', sep, [m.syms.maybe_whitespace, m.known_char(','), m.syms.maybe_whitespace], action=ignore)
+		m.sequence('optionally_elements of %s' % desc, optionally_elements, item_symbol, ident_list, sep, 0)
 		opening, closing = m.known_char('['), m.known_char(']')
 		m.rule('list literal of %s' % desc, r, [opening, optionally_elements, closing], s.instance_class.from_parse)
 	elif isinstance(s, (NodeclBase)):
 		m.node_symbols[s] = s.instance_class.register_class_symbol(m)
+	elif isinstance(s, (CustomNodeDef)):
+		m.node_symbols[s] = m.symbol(s.ch.name.pyval)
+		for sy in s.instance_syntaxes:
+			s.rule_for_syntax(m, m.node_symbols[s], sy)
 	elif isinstance(s, (Exp)):
 		m.node_symbols[s] = B.expression.symbol()
 	elif isinstance(s, (Union)):
@@ -4118,7 +4135,7 @@ def register_class_symbol(cls, m):
 		m.rule(clsstr+'_body_part_is_double_slash', body_part, double_slash)
 		m.rule(clsstr+'_body_part_is_slashed_end', body_part, slashed_end)
 		m.rule(clsstr+'_body_part_is_nonspecial_char', body_part, m.syms.nonspecial_char)
-		m.rule(clsstr+'_body_part_is_known_char', body_part, m.syms.known_char)
+		m.rule(clsstr+'_body_part_is_known_char', body_part, m.known_char_except(cls.brackets[1]))
 		body = m.symbol(clsstr+'body')
 		m.sequence(clsstr+'_body is seq of body part', body, body_part, join)
 		text = m.symbol(clsstr)
@@ -4150,12 +4167,15 @@ def register_class_symbol(cls, m):
 		return r
 
 	elif List.__subclasscheck__(cls):
+		assert False
 		log("registering list grammar")
 		optionally_elements = m.symbol('optionally_elements')
 		r = m.symbol('list literal')
 		opening =  m.known_char('[')
 		closing =  m.known_char(']')
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol(m), ident_list, m.known_char(','), 0)
+		sep = m.symbol('comma with whitespace')
+		m.rule('comma with whitespace', sep, [m.syms.maybe_whitespace, m.known_char(','), m.syms.maybe_whitespace])
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol(m), ident_list, sep, 0)
 		m.rule('list literal', r, [opening, optionally_elements, closing], cls.from_parse)
 		return r
 
@@ -4203,21 +4223,24 @@ def scope_after_hiding_and_unhiding(s):
 				except (KeyError, AttributeError):
 					logging.getLogger("scope").debug("does not have name:%s"%str(j))
 					continue
-				if isinstance(j, Module):
-					logging.getLogger("scope").debug("considering module %s" % j)
-					if (name in what):
+				if (name in what):
+					if isinstance(j, Module):
 						logging.getLogger("scope").debug("unhiding module %s:"%j)
 						for k in j.ch.statements.items:
 							k = k.parsed
 							logging.getLogger("scope").debug("-%s" % k)
 							if k not in r:
 								r.append(k)
-
-				#elif is_decl(j) and (name in what):
-				if  (name in what):
 					logging.getLogger("scope").debug("unhiding %s" % j)
 					if j not in r:
 						r.append(j)
+					what.remove(name)
+				else:
+					print(name, what)
+					logging.getLogger("scope").debug("stays hidden: %s" % j)
+			if len(what):
+				print("failed to unhide %s"%what)
+				exit()
 	return r
 
 def collect_modules_seen_by_module(module):

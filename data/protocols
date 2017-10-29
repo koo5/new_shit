@@ -5,7 +5,7 @@ https://thrift.apache.org/tutorial/
 
 
 serialization:
-
+http://www.oilshell.org/blog/2017/01/09.html
 http://cbor2.readthedocs.io/en/latest/usage.html
 https://en.wikipedia.org/wiki/Apache_Avro
 https://github.com/google/flatbuffers
