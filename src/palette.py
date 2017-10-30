@@ -61,7 +61,7 @@ def palette(s, scope, text, parser):
 				return r
 		"""
 	elif isinstance(s, TypeNodecl):
-		nodecls = [x for x in scope if is_type(x))]
+		nodecls = [x for x in scope if is_type(x)]
 		return [PaletteMenuItem(tb(), Ref(x)) for x in nodecls]
 	elif isinstance(s, NodeclBase):
 		return [PaletteMenuItem(tb(), s.instance_class.fresh())]
