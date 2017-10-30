@@ -2966,9 +2966,10 @@ class CustomNodeDef(Syntaxed):
 				r.append(i.pyval)
 			else:
 				assert isinstance(i, TypedParameter)
-				r.append(ChildTag(i.ch.name.pyval))
+				name = i.ch.name.pyval
+				r.append(ChildTag(name))
+				s.instance_slots[name] = i.ch.type
 		return r
-
 
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
@@ -2986,7 +2987,7 @@ class CustomNodeDef(Syntaxed):
 
 	def clear_syntaxes(s):
 		s._additional_syntaxes = []
-
+		s.instance_slots = {}
 
 
 grammar = None

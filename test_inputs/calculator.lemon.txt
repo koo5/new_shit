@@ -18,8 +18,14 @@ node "subtraction" with syntax: ["op1"-*exp, "-", "op2"-*exp]
 -----
 node "haspriority" with syntax: ["node"-*ref, " has priority ", "priority"-*number]
 -----
+*haspriority works as *statement
+-----
 /*both are left associative*/
 -----
 *division has priority 100
 -----
 *subtraction has priority 50
+-----
+*exp works as *statement
+-----
+5/4-7/45/878799/2-6
