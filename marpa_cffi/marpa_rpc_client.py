@@ -253,7 +253,7 @@ class MarpaClient(object):
 		worksases2 = collections.defaultdict(lambda: collections.defaultdict(list))
 		log("magic:")
 		import nodes
-		simple = 1
+		simple = 0
 		for n in scope:
 			if n.__class__.__name__ == 'WorksAs':
 				sup = n.ch.sup.parsed
@@ -292,10 +292,11 @@ class MarpaClient(object):
 				worksases2[sup][pris[sub]].append(sub)
 
 		for sup, priority_levels in iteritems(worksases2):
+			priority_levels = [v for k, v in sorted(priority_levels.items())]
 			this_level = sup
 			for level_index in range(len(priority_levels)):
 				this_level = priority_levels[level_index]
-				if level_index == len(priority_levels):
+				if level_index == len(priority_levels) -1:
 					next_level_index = 0
 				else:
 					next_level_index = level_index + 1
@@ -304,14 +305,14 @@ class MarpaClient(object):
 				for sub in this_level:
 					syntax = []
 					for i in sub.syntax:
-						if isinstance(i, TextTag):
-							syntax.append(m.known_string(i.value))
+						if isinstance(i, str):
+							syntax.append(s.known_string(i))
 						else:
-							slot = sub.slots[i.value]
+							slot = sub.slots[i.name]
 							if slot == sup:
 								syntax.append(next_level_symbol)
 							else:
-								syntax.append(slot.symbol(m))
+								syntax.append(slot.symbol(s))
 				sup = next_level
 
 
