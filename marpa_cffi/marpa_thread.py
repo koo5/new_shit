@@ -55,8 +55,8 @@ class MarpaThread(LemmacsThread):
 				elif inp.task == 'parse':
 					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
 					log("parsed %s results" % len(r))
-					for i in r:
-						log("%s" % (r))
+					#for i in r:
+					#	log("%s" % (i))
 					s.send(Dotdict(message='parsed', results=r))
 			except Exception as e:
 				traceback.print_exc(file=sys.stdout)

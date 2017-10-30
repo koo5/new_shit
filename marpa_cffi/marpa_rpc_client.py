@@ -13,7 +13,7 @@ int
 import sys, traceback
 import operator
 import types
-
+import collections
 
 import logging
 logger=logging.getLogger("marpa")
@@ -233,66 +233,86 @@ class MarpaClient(object):
 						rulename = ""
 					s.rule(rulename , s.start, i.symbol(s))
 
+		s.worksas_magic(scope)
+		s.anything_excepts()
+
+	def worksas_magic(s, scope):
 		#ok here we're gonna walk thru WorkAssess and BindsTighters and do the precedence and associativity magic
 		# http://pages.cs.wisc.edu/~fischer/cs536.s08/course.hold/html/NOTES/3.CFG.html#prec
 		# https://metacpan.org/pod/distribution/Marpa-R2/pod/Scanless/DSL.pod#priority
 		"""
-
-		nodes = DefaultDict(list)
-		asoc  = DefaultDict(lambda: "left")
-		pris = DefaultDict(lambda: 1000)
-		worksas = DefaultDict(list)
-
-
+		so, i think we should walk thru all syntaxeds
+		some appear in other nodes grammar literally, like a TypedParameter in a list_of(TypedParameter).
+		for this reason, i would assign each syntaxed a symbol.
+		Additionally, some are denoted with "*sub works as *sup", to work as, for example, an expression.
+		presumably, there will be only one sup for any sub.
+		"""
+		worksases  = collections.defaultdict(list)
+		asoc = collections.defaultdict(lambda: "left")
+		pris = collections.defaultdict(lambda:  1000)
+		worksases2 = collections.defaultdict(lambda: collections.defaultdict(list))
+		log("magic:")
+		import nodes
+		simple = 1
 		for n in scope:
 			if n.__class__.__name__ == 'WorksAs':
-				worksas[n.ch.sup.target].append(n.ch.sub.target)
-			if n.__class__.__name__ in ['SyntaxedNodecl']:
-				nodes.append(n)
-			if n.__class__.__name__ == 'HasPriority':
+				sup = n.ch.sup.parsed
+				sub = n.ch.sub.parsed
+				if not isinstance(sup, nodes.Ref) or not isinstance(sub, nodes.Ref):
+					print("invalid sub or sup in worksas")
+					return
+				sup_target = sup.target
+				sub_target = sub.target
+				worksases[sup_target].append(sub_target)
+
+				if simple:
+					rule_lhs = sup_target.symbol(s)
+					rule_rhs = sub_target.symbol(s)
+					if args.log_parsing:
+						log('%s worksas %s\n (%s := %s)'%(sub_target, sup_target, rule_lhs, rule_rhs))
+					if rule_lhs != None and rule_rhs != None:
+						r = s.rule(str(n), rule_lhs, rule_rhs)
+					else:
+						print('%s or %s is None'%(rule_lhs, rule_rhs))
+
+			elif n.__class__.__name__ == 'HasPriority':
 				k = deref_def(n.ch.node)
 				assert k not in pris
 				pris[k] = n.ch.value.pyval
-			if n.__class__.__name__ == 'HasAssociativity':
+			elif n.__class__.__name__ == 'HasAssociativity':
 				k = deref_def(n.ch.node)
 				assert k not in asoc
 				asoc[k] = n.ch.value.pyval
 
-		#for sub,sup in worksases:
-			
-		
-		for n in nodes:
-			syntaxed_symbols[n] = m.symbol(str(n))
+		if simple:
+			return
 
-		for lhs, levels in nodes:
-			for level_index in range(len(levels)):
-				level = levels[level_index]
-				if level_index == len(levels)
+		for sup,subs in iteritems(worksases):
+			for sub in subs:
+				worksases2[sup][pris[sub]].append(sub)
+
+		for sup, priority_levels in iteritems(worksases2):
+			this_level = sup
+			for level_index in range(len(priority_levels)):
+				this_level = priority_levels[level_index]
+				if level_index == len(priority_levels):
 					next_level_index = 0
-				else
+				else:
 					next_level_index = level_index + 1
-				next_level = levels[next_level_index]	
-				next_level_symbol = m.known_symbol(str(lhs)+str(next_level_index))
-				
-				for rhs in level:
-					symbol_for_the_syntaxed = syntaxed_symbols[rhs]
-					syntax_for_the_syntaxed = []
-					for i in rhs.syntax:
+				next_level = priority_levels[next_level_index]	
+				next_level_symbol = s.named_symbol(str(sup)+str(next_level_index))
+				for sub in this_level:
+					syntax = []
+					for i in sub.syntax:
 						if isinstance(i, TextTag):
-							syntax_for_the_syntaxed.append(i.value)
-						else
-							slot = rhs.slots[i.value]
-							if slot != lhs:
-								if nodes.SyntaxedNodecl.subclasscheck(slot):
-								    syntax_for_the_syntaxed.append(syntaxed_symbols[slot])
-								else:
-									syntax_for_the_syntaxed.append(slot.symbol(m))
+							syntax.append(m.known_string(i.value))
+						else:
+							slot = sub.slots[i.value]
+							if slot == sup:
+								syntax.append(next_level_symbol)
 							else:
-								syntax_for_the_syntaxed.append(next_level_symbol)
-
-
-		"""
-
+								syntax.append(slot.symbol(m))
+				sup = next_level
 
 
 		"""
@@ -301,15 +321,7 @@ class MarpaClient(object):
 				for sub in level:
 					if asoc[node] == "left":
 						rules[sup].append(
-
-		for sup,subs in iteritems(worksas):
-			for sub in subs:
-				worksas2[k][pris[v]].append(v)
-
-
 					if asoc[node] == "right":
-
-
 		"""
 		"""
 		nodes = DefaultDict(list)
@@ -319,7 +331,6 @@ class MarpaClient(object):
 		for n in scope:
 			if n.__class__.__name__ in ['SyntaxedNodecl']:
 				nodes.append(n)
-			
 			if n.__class__.__name__ == 'HasPriority':
 				k = deref_def(n.ch.node)
 				assert k not in pris
@@ -338,16 +349,7 @@ class MarpaClient(object):
 				for sub in level:
 					if asoc[node] == "left":
 						rules[sup].append(
-
-
-
-
-
 					if asoc[node] == "right":
-
-
-
-
 		"""
 		"""
 		worksas = DefaultDict(list)
@@ -375,16 +377,7 @@ class MarpaClient(object):
 				for sub in level:
 					if asoc[node] == "left":
 						rules[sup].append(
-						
-						
-						
-						
-						
 					if asoc[node] == "right":
-		
-
-		
-		
 		"""
 		"""
 		levels = {}
@@ -411,8 +404,6 @@ class MarpaClient(object):
 					if n.__class__.__name__ == 'HasAssociativity':
 						asoc[n.ch.value.pyval].append(n.ch.node)
 
-
-
 		for k,v in sups:
 			for sub in v:
 				pri = pris[sub]
@@ -436,6 +427,7 @@ class MarpaClient(object):
 		"""
 		#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
 
+	def anything_excepts(s):
 		for k, v in iteritems(s.excepts):
 			for ch, sym in iteritems(s.known_chars):
 				if ch != k:

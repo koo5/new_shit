@@ -4017,20 +4017,7 @@ def register_symbol(s, m):
 	if isinstance(s, SyntacticCategory):
 		m.node_symbols[s] = m.symbol(s.name)
 	elif isinstance(s, WorksAs):
-		if s in m.node_rules:
-			return
-		lhs = s.ch.sup.parsed
-		rhs = s.ch.sub.parsed
-		if not isinstance(lhs, Ref) or not isinstance(rhs, Ref):
-			print ("invalid sub or sup in worksas")
-			return
-		lhs = lhs.target.symbol(m)
-		rhs = rhs.target.symbol(m)
-		if args.log_parsing:
-			log('%s worksas %s\n (%s := %s)'%(s.ch.sub, s.ch.sup, lhs, rhs))
-		if lhs != None and rhs != None:
-			r = m.rule(str(s), lhs, rhs)
-			m.node_rules[s] = r
+		pass
 	elif isinstance(s, (ParametricListType)):
 		dd = s.ddecl
 		assert isinstance(dd, ParametricNodecl)
