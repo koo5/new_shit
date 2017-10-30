@@ -812,50 +812,46 @@ class Node(NodePersistenceStuff, element.Element):
 
 
 
-class SyntaxedBase(Node):
 
-	@classmethod
-	def rule_for_syntax(cls, m, cls_sym, syntax, ddecl):
-		syms = []
-
-		for i in syntax.rendering_tags:
-			# we build up syms child after child, char after char
-			# if autocomplete is on, we create a rule after each addition
-			# otherwise we only create a rule for the final, complete, syms
-
-			ti = type(i)
-
-			if ti == unicode:
-				for ch in i:
-					syms = syms[:]
-					syms.append(m.known_char(ch))
-					if autocomplete:
-						m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-			elif ti == ChildTag:
-				child_type = ddecl.instance_slots[i.name]
-				if type(child_type) == Exp:
-					x = B.expression.symbol(m)
-				else:
-					x = deref_decl(child_type).symbol(m)
-				if not x:
-					warn("no type:" + str(i))
-					return None
-				assert x, child_type
+def register_rules_for_syntax(name, m, cls_sym, syntax, ddecl):
+	syms = []
+	assert len(syntax.rendering_tags)
+	for i in syntax.rendering_tags:
+		# we build up syms child after child, char after char
+		# if autocomplete is on, we create a rule after each addition
+		# otherwise we only create a rule for the final, complete, syms
+		ti = type(i)
+		if ti == unicode:
+			for ch in i:
 				syms = syms[:]
-				syms.append(x)
+				syms.append(m.known_char(ch))
 				if autocomplete:
-					m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
-		assert len(syms) != 0
-		if not autocomplete:
-			m.rule(cls.__name__, cls_sym, syms, action=lambda x: cls.from_parse(x, syntax))
+					m.rule(name, cls_sym, syms, action=lambda x: SyntaxedBase.from_parse(ddecl, syntax, x))
+		elif ti == ChildTag:
+			child_type = ddecl.instance_slots[i.name]
+			if type(child_type) == Exp:
+				x = B.expression.symbol(m)
+			else:
+				x = deref_decl(child_type).symbol(m)
+			if not x:
+				warn("no type:" + str(i))
+				return None
+			assert x, child_type
+			syms = syms[:]
+			syms.append(x)
+			if autocomplete:
+				m.rule(name, cls_sym, syms, action=lambda x: SyntaxedBase.from_parse(ddecl, syntax, x))
+	assert len(syms) != 0
+	if not autocomplete:
+		m.rule(name, cls_sym, syms, action=lambda x: SyntaxedBase.from_parse(ddecl, syntax, x))
 
-	@classmethod
-	def from_parse(cls, p, sy):
-		logging.getLogger("valuation").debug('Syntaxed from_parse(marpa value: %s   ,Syntax object: %s', p, sy)
 
-		r = cls.fresh()
+class SyntaxedBase(Node):
+	@staticmethod
+	def from_parse(decl, sy, data):
+		logging.getLogger("valuation").debug('SyntaxedBase from_parse(marpa value: %s   ,Syntax object: %s', data, sy)
+		r = decl.inst_fresh()
 		# info((p, cls, sy))
-
 		s2 = []
 		for i in sy.rendering_tags:
 			if type(i) == unicode:
@@ -863,13 +859,10 @@ class SyntaxedBase(Node):
 					s2.append(ch)
 			else:
 				s2.append(i)
-
 		# print(sy)
 		# print(s2)
-
 		si = 0  # syntax_item_index
-
-		for i in p:
+		for i in data:
 			if type(i) == unicode:
 				assert type(s2[si] == unicode)
 			else:
@@ -877,9 +870,7 @@ class SyntaxedBase(Node):
 				r.ch[s2[si].name] = i
 
 			si += 1
-
 		# if j == len(p): break
-
 		r.fix_parents()
 		return r
 
@@ -1011,6 +1002,9 @@ class SyntaxedBase(Node):
 		return s.__class__(dict([(k, v.unparen()) for k, v in iteritems(s.ch._dict)]))
 
 
+
+
+
 class CustomNode(SyntaxedBase):
 	def __init__(s, decl):
 		super().__init__()
@@ -1023,7 +1017,7 @@ class CustomNode(SyntaxedBase):
 	def deserialize(cls, data, parent):
 		assert parent
 
-
+		#not sure what this is about
 		placeholder = Text("placeholder")
 		placeholder.parent = parent
 		decl = deserialize(data['decl'], placeholder)
@@ -1084,9 +1078,7 @@ class CustomNode(SyntaxedBase):
 							return i.ch.type.parsed
 		assert False
 
-	def _flatten(s):
-		assert(isinstance(v, Node) for v in itervalues(s.ch._dict))
-		return [s] + [v.flatten() for v in itervalues(s.ch._dict)]
+
 
 
 class Syntax:
@@ -1132,6 +1124,15 @@ class Syntaxed(SyntaxedPersistenceStuff, SyntaxedBase):
 		r.fix_parents()
 		return r
 
+	@classmethod
+	def rule_for_syntax(cls, m, cls_sym, syntax, ddecl):
+		return register_rules_for_syntax(cls.__name__, m, cls_sym, syntax, ddecl)
+
+	@classmethod
+	def from_parse(cls, data, syntax):
+		r = cls.fresh()
+		SyntaxedBase.from_parse(r, data, syntax)
+		return r
 
 
 class Collapsible(Node):
@@ -1968,6 +1969,7 @@ class SyntaxedNodecl(NodeclBase):
 		s.clear_syntaxes()
 
 	def to_syntax(s, rendering_tags):
+		assert len(rendering_tags)
 		return Syntax(["en"], rendering_tags)
 
 	@property
@@ -2952,11 +2954,39 @@ class FunctionCallNodecl(NodeclBase):
 
 class CustomNodeDef(Syntaxed):
 	instance_class = CustomNode
+	def __init__(s, children):
+		super().__init__(children)
+		s._own_instance_syntaxes = None
+		s.clear_syntaxes()
+
+	def instance_syntax_as_tags(s):
+		r = []
+		for i in s.ch.syntax.parsed.items:
+			if isinstance(i, Text):
+				r.append(i.pyval)
+			else:
+				assert isinstance(i, TypedParameter)
+				r.append(ChildTag(i.ch.name.pyval))
+		return r
+
+
 	def inst_fresh(s, decl=None):
 		""" fresh creates default children"""
 		return CustomNode(s)
 
-		
+	def to_syntax(s, rendering_tags):
+		assert len(rendering_tags)
+		return Syntax(["en"], rendering_tags)
+
+	@property
+	def instance_syntaxes(s):
+		if not s._own_instance_syntaxes:
+			s._own_instance_syntaxes = [s.to_syntax(s.instance_syntax_as_tags())]
+		return s._own_instance_syntaxes + s._additional_syntaxes
+
+	def clear_syntaxes(s):
+		s._additional_syntaxes = []
+
 
 
 grammar = None
@@ -4025,7 +4055,7 @@ def register_symbol(s, m):
 	elif isinstance(s, (CustomNodeDef)):
 		m.node_symbols[s] = m.symbol(s.ch.name.pyval)
 		for sy in s.instance_syntaxes:
-			s.rule_for_syntax(m, m.node_symbols[s], sy)
+			register_rules_for_syntax(s.name, m, m.node_symbols[s], sy, s)
 	elif isinstance(s, (Exp)):
 		m.node_symbols[s] = B.expression.symbol()
 	elif isinstance(s, (Union)):
