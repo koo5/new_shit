@@ -311,21 +311,28 @@ class MarpaClient(object):
 			for level_index in range(len(priority_levels)):
 				lhs = lhs_symbol(level_index)
 				next_level_lhs = lhs_symbol(level_index+1)
+				if lhs != next_level_lhs and level_index != len(priority_levels)-1:
+					s.rule("|"+s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(next_level_lhs), lhs, next_level_lhs)
 				for sub in priority_levels[level_index]:
 					if not isinstance(sub, (nodes.SyntaxedNodecl, nodes.CustomNodeDef)):
 						s.rule(s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(sub.symbol(s)), lhs, sub.symbol(s))
 						continue
 					for sy in sub.instance_syntaxes:
 						syntax = []
+						slot_idx = 0
 						for i in sy.rendering_tags:
 							if isinstance(i, str):
 								a = s.known_string(i)
 							else:
 								slot = nodes.deref_decl(sub.instance_slots[i.name])
 								if slot == sup:
-									a = next_level_lhs
+									if slot_idx == 0:
+										a = lhs
+									else:
+										a = next_level_lhs
 								else:
 									a = slot.symbol(s)
+								slot_idx+=1
 							syntax.append(a)
 						s.rule(s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]),
 						lhs, syntax,
