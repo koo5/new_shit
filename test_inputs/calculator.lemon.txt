@@ -30,4 +30,6 @@ node "haspriority" with syntax: ["node"-*ref, " has priority ", "priority"-*numb
 -----
 *exp works as *statement
 -----
-5/4-7/45/878799/2-6
+/*5/4-7/45/878799/2-6*/
+-----
+3/5-4

@@ -67,6 +67,12 @@ class MarpaClient(object):
 		r = s.syms[name] = s.symbol(name)
 		return r
 
+	def named_symbol2(s,name):
+		if name not in s.syms._dict:
+			r = s.syms[name] = s.symbol(name)
+			return r
+		return s.syms[name]
+
 	def symbol(s,debug_name):
 		if s.debug:
 			s.debug_sym_names.append(graphing_wrapper.escape_symbol_name_for_readable_printing(debug_name))
@@ -301,7 +307,7 @@ class MarpaClient(object):
 				if level_index == 0:
 					return sup.symbol(s)
 				else:
-					return s.symbol(sup.name + str(level_index))
+					return s.named_symbol2(sup.name + str(level_index))
 			for level_index in range(len(priority_levels)):
 				lhs = lhs_symbol(level_index)
 				next_level_lhs = lhs_symbol(level_index+1)
