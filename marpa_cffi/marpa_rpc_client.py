@@ -263,6 +263,8 @@ class MarpaClient(object):
 					return
 				sup_target = sup.target
 				sub_target = sub.target
+				#if not isinstance(sub_target, (nodes.SyntaxedNodecl, nodes.CustomNodeDef)):
+				#	continue
 				worksases[sup_target].append(sub_target)
 
 				if simple:
@@ -275,10 +277,10 @@ class MarpaClient(object):
 					else:
 						print('%s or %s is None'%(rule_lhs, rule_rhs))
 
-			elif n.__class__.__name__ == 'HasPriority':
-				k = deref_def(n.ch.node)
+			elif n.__class__ == nodes.CustomNode and n.decl.name == 'haspriority':
+				k = nodes.deref_def(n.ch.node)
 				assert k not in pris
-				pris[k] = n.ch.value.pyval
+				pris[k] = n.ch.priority.pyval
 			elif n.__class__.__name__ == 'HasAssociativity':
 				k = deref_def(n.ch.node)
 				assert k not in asoc
@@ -293,27 +295,35 @@ class MarpaClient(object):
 
 		for sup, priority_levels in iteritems(worksases2):
 			priority_levels = [v for k, v in sorted(priority_levels.items())]
-			this_level = sup
-			for level_index in range(len(priority_levels)):
-				this_level = priority_levels[level_index]
-				if level_index == len(priority_levels) -1:
-					next_level_index = 0
+			def lhs_symbol(level_index):
+				if level_index == len(priority_levels):
+					level_index = 0
+				if level_index == 0:
+					return sup.symbol(s)
 				else:
-					next_level_index = level_index + 1
-				next_level = priority_levels[next_level_index]	
-				next_level_symbol = s.named_symbol(str(sup)+str(next_level_index))
-				for sub in this_level:
-					syntax = []
-					for i in sub.syntax:
-						if isinstance(i, str):
-							syntax.append(s.known_string(i))
-						else:
-							slot = sub.slots[i.name]
-							if slot == sup:
-								syntax.append(next_level_symbol)
+					return s.symbol(sup.name + str(level_index))
+			for level_index in range(len(priority_levels)):
+				lhs = lhs_symbol(level_index)
+				next_level_lhs = lhs_symbol(level_index+1)
+				for sub in priority_levels[level_index]:
+					if not isinstance(sub, (nodes.SyntaxedNodecl, nodes.CustomNodeDef)):
+						s.rule(s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(sub.symbol(s)), lhs, sub.symbol(s))
+						continue
+					for sy in sub.instance_syntaxes:
+						syntax = []
+						for i in sy.rendering_tags:
+							if isinstance(i, str):
+								a = s.known_string(i)
 							else:
-								syntax.append(slot.symbol(s))
-				sup = next_level
+								slot = nodes.deref_decl(sub.instance_slots[i.name])
+								if slot == sup:
+									a = next_level_lhs
+								else:
+									a = slot.symbol(s)
+							syntax.append(a)
+						s.rule(s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]),
+						lhs, syntax,
+						       action=lambda x,decl=sub,syntax=sy: nodes.SyntaxedBase.from_parse(decl, syntax, x, whole_words=True))
 
 
 		"""

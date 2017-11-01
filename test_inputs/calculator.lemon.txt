@@ -2,6 +2,8 @@ unhide ["ref", "statement", "syntacticcategory", "worksas", "customnodedef", "co
 -----
 *comment works as *statement
 -----
+/*this is a test*/
+-----
 *syntacticcategory works as *statement
 -----
 "exp" is a syntactic category

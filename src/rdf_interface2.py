@@ -78,7 +78,9 @@ for idx,i in enumerate(items):
 	rr = parse_sync(p, i)
 	if (rr and len(rr)):
 		for i in rr:
-			print("parse result:",i.tostr() if isinstance(i, nodes.Element) else str(i))
+			print("parse result:%s"%i)
+			if isinstance(i, nodes.Element):
+				print(" - %s"%i.tostr())
 		p.items = [rr[-1]]
 	else:
 		print ("no parse")

@@ -848,19 +848,23 @@ def register_rules_for_syntax(name, m, cls_sym, syntax, ddecl):
 
 class SyntaxedBase(Node):
 	@staticmethod
-	def from_parse(decl, sy, data):
+	def from_parse(decl, sy, data, whole_words=False):
 		logging.getLogger("valuation").debug('SyntaxedBase from_parse(marpa value: %s   ,Syntax object: %s', data, sy)
 		r = decl.inst_fresh()
 		# info((p, cls, sy))
-		s2 = []
-		for i in sy.rendering_tags:
-			if type(i) == unicode:
-				for ch in i:
-					s2.append(ch)
-			else:
-				s2.append(i)
-		# print(sy)
-		# print(s2)
+		if not whole_words:
+			s2 = []
+			for i in sy.rendering_tags:
+				if type(i) == unicode:
+					for ch in i:
+						s2.append(ch)
+				else:
+					s2.append(i)
+		else:
+			s2=sy.rendering_tags
+		print('sy:',sy)
+		print(s2)
+		print (data)
 		si = 0  # syntax_item_index
 		for i in data:
 			if type(i) == unicode:
@@ -1129,9 +1133,9 @@ class Syntaxed(SyntaxedPersistenceStuff, SyntaxedBase):
 		return register_rules_for_syntax(cls.__name__, m, cls_sym, syntax, ddecl)
 
 	@classmethod
-	def from_parse(cls, data, syntax):
+	def from_parse(cls, data, syntax, whole_words=False):
 		r = cls.fresh()
-		SyntaxedBase.from_parse(r, data, syntax)
+		SyntaxedBase.from_parse(r, data, syntax, whole_words)
 		return r
 
 
