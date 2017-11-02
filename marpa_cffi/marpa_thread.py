@@ -38,7 +38,6 @@ class MarpaThread(LemmacsThread):
 			s.input.logger = s.output.logger = logging.getLogger("marpa_rpc_queue")
 			pass
 		if args.graph_grammar:
-
 			graphing_wrapper.clear()
 			graphing_wrapper.symid2name = s.symbol2debug_name
 			#lib.rule_new = graphing_wrapper.rule_new

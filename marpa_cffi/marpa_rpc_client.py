@@ -466,7 +466,7 @@ class MarpaClient(object):
 		s.t.input.put(Dotdict(
 			task = 'precompute_grammar',
 			num_syms = s.num_syms,
-			symbol_ranks = s.symbol_ranks,
+			symbol_ranks = dict(s.symbol_ranks),
 			rules = s.rules[:],
 			for_node = for_node,
 			debug = s.debug,

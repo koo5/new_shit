@@ -972,7 +972,7 @@ class SyntaxedBase(Node):
 	@property
 	def name(s):
 		"""override if this doesnt work for your subclass"""
-		return s.ch.name.pyval
+		return s.ch.name.parsed.pyval
 
 	@property
 	def slots(s):
@@ -2966,13 +2966,14 @@ class CustomNodeDef(Syntaxed):
 	def instance_syntax_as_tags(s):
 		r = []
 		for i in s.ch.syntax.parsed.items:
+			i=i.parsed
 			if isinstance(i, Text):
 				r.append(i.pyval)
 			else:
 				assert isinstance(i, TypedParameter)
-				name = i.ch.name.pyval
+				name = i.ch.name.parsed.pyval
 				r.append(ChildTag(name))
-				s.instance_slots[name] = i.ch.type
+				s.instance_slots[name] = i.ch.type.parsed
 		return r
 
 	def inst_fresh(s, decl=None):

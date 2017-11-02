@@ -96,6 +96,9 @@ def sss(sym):
 	return escape_symbol_name_for_readable_printing(symid2name(sym))
 	return (str(sym) + '_' + esc(symid2name(sym))).replace('\\', '\\\\')
 
+import re
+HTML_STRING = re.compile(r'<.*>$', re.DOTALL)
+
 def escape_symbol_name_for_readable_printing(name):
 	if name == "":
 		return "<empty name>"
@@ -110,7 +113,9 @@ def escape_symbol_name_for_readable_printing(name):
 			r+=ch
 		else:
 			r+="<"+str(ch.encode(encoding='utf-8'))+">"
-	return r
+	if HTML_STRING.match(r):
+		r = '"'  + r + '"'
+	return r.replace(" ", "_")
 
 def generate_bnf(filename='grammar.bnf'):
 	print ("generate "+filename)
