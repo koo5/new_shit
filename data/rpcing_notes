@@ -1,14 +1,21 @@
-i wanted to rpc seamlessly. (after an appropriate redesign) (the redesign was finished.). This needs acessing multiple objects on the server. Currently im leaning towards rewriting clientserver.py in pizco. The multiobject branch seems
-unfinished, repeating functionality and was made against an old version. The file isnt long,
-keeping intact some of the pizco functionality like 'instantiate' could require more investigation
-and not sure if worth it. (at least for a start i could drop it). The things touching the io loop
-are a bit arcane, maybe the gevent fork can help. Other option is to not rpc so seamlessly, give up on seamless object/attribute access and make the interface from method calls.
+rpc in python: natively seamplessly acessing multiple objects on the server. 
 
+pizco.  
+Qt-like (and Qt compatible!) signal and slot mechanism.
+https://github.com/hgrecco/pizco/tree/_multiobject
+The multiobject branch seems unfinished, repeating functionality and was made against an old version. The file isnt long,
+keeping intact some of the pizco functionality like 'instantiate' could require more investigation
+and not sure if worth it. (at least for a start i could drop "instantiate"). The things touching the io loop
+are a bit arcane, maybe the gevent fork can help. 
+Other option is to not rpc so seamlessly, give up on seamless object/attribute access and make the interface from method calls.
 At any case, the priority of splitting lemon into rpcing components has decreased, as ive optimized it to run quite nicely as a single process (with marpa in a thread). Disorganized notes follow.
 
-zerorpc doesnt have any remote attributes. Other libraries seem to be even worse off, requiring
+zerorpc 
+doesnt have any remote attributes. Other libraries seem to be even worse, requiring
 various declarations and stuff. One thing zerorpc has is streaming generators.
 
+
+misc
 http://morepypy.blogspot.cz/2014/11/tornado-without-gil-on-pypy-stm.html
 http://nanomsg.org/
 
@@ -107,8 +114,56 @@ for tag in tags:
   if type(tag) == ElementTag:
     proxy[len(proxy)] = weakref(node)
 
-
-
-
-
 incrementing render(transmission) id
+
+
+
+
+
+
+
+
+
+protocols:
+
+http://www.jsonrpc.org/specification
+https://github.com/grpc/grpc
+https://thrift.apache.org/tutorial/
+
+
+
+serialization:
+http://www.oilshell.org/blog/2017/01/09.html
+http://cbor2.readthedocs.io/en/latest/usage.html
+https://en.wikipedia.org/wiki/Apache_Avro
+https://github.com/google/flatbuffers
+https://developers.google.com/protocol-buffers/docs/techniques
+
+unsuitable:swagger
+
+
+misc:
+https://code.visualstudio.com/blogs/2016/06/27/common-language-protocol
+https://cloud.google.com/speech/reference/rpc/
+
+
+
+
+jena,redis,rethink
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://pypi.python.org/pypi/ladon
+
+

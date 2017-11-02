@@ -1,48 +1,7 @@
-from nodes import *
-
-lc1 = Dotdict() #a helper dict to hold the nodes being built in and to reference them easily
-lc1._dict = odict()
-
-#interesting vim glitch made it look like it was commented out
-#if i search "/def build_in_lc(" from the top, i guess it doesn't
-#parse the whole file but sees this \"\"\" above
-#scroll up and back down and it goes away
-def build_in_lc1(r):
-	"""creates a new module with definitions for a language separate from
-	the lemon stuff
-	eventually, this would all be just data in lemon,
-	but for now, we "build it in"
-	"""
-	
-
-	r["lc1"] = B.builtinmodule.inst_fresh()
-	r["lc1"].ch.statements.items = [
-		Comment("""untyped lambda calculus""")]
-
-	""" whats the lc1-test for """
-	#well the gui shows a "root", a tree with a couple of entries,
-	#so thats like where you would type in your lambda calculus program	
-	r["lc1-test"] = B.builtinmodule.inst_fresh()
-	r["lc1-test"].special_scope = [r["lc1"], 
-		#B.restrictedidentifier#i will remove this once Syntaxed parser is done, its only to pull in the grammar
-		];
-		
-		
-
-	build_in(SyntacticCategory({'name': Text("exp")}), None, lc1)
-	lc1.exp.help = ["a lambda expression"]
-	
-
-	class Var(Syntaxed):
-		brackets = ("", "")
-		help = ["a variable"]
-		@property
-		def varName(s):
-			return s.ch.name.pyval
-		@varName.setter
-		def varName(s, v):
-			s.ch.name.pyval = v
-		
+/*untyped lambda calculus*/
+"exp" is a syntactic category
+*exp has note "a lambda expression"
+node "var" with syntax: ["name"-*restrictedidentifier]
 	build_in(SyntaxedNodecl(Var,
 		[ChildTag("name")],
 		{'name': B.restrictedidentifier}), None, lc1)

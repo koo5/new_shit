@@ -1,0 +1,14 @@
+unhide ["ref", "statement", "syntacticcategory", "worksas", "customnodedef", "comment", "number"]
+-----
+/*říj 30 22:19:55 <erg>   "define a new function that takes three arguments and has a case statement for a variable foo"
+*/
+-----
+*comment works as *statement
+-----
+*syntacticcategory works as *statement
+-----
+"command" is a syntactic category
+-----
+node "define a new function" with syntax: ["define a new function"]
+-----
+*define a new function works as *command

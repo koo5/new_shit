@@ -130,7 +130,7 @@ def deref_decl(d):
 		return deref_decl(d.type)
 	elif isinstance(d, (CustomNodeDef, Union)):
 		return d
-	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
+	elif is_type(d) or d == None or isinstance(d, SyntacticCategory):
 		return d
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
@@ -142,7 +142,7 @@ def deref_def(d):
 		return d
 	elif isinstance(d, (CustomNodeDef, Union)):
 		return d
-	elif is_decl(d) or d == None or isinstance(d, SyntacticCategory):
+	elif is_type(d) or d == None or isinstance(d, SyntacticCategory):
 		return d
 	else:
 		raise Exception("i dont knwo how to deref "+repr(d)+", it should be a type or something")
@@ -4017,7 +4017,7 @@ def register_symbol(s, m):
 
 	if isinstance(s, Definition):
 		m.node_symbols[s] = m.symbol(s.name)
-		m.node_rules[s] = m.rule(str(s), m.node_symbols[s], s.ch.type.parsed.symbol(m))
+		m.node_rules[s] = m.rule(str(s), m.node_symbols[s], deref_decl(s.ch.type.parsed).symbol(m))
 	if isinstance(s, SyntacticCategory):
 		m.node_symbols[s] = m.symbol(s.name)
 	elif isinstance(s, WorksAs):
@@ -4049,7 +4049,7 @@ def register_symbol(s, m):
 		for sy in s.instance_syntaxes:
 			register_rules_for_syntax(s.name, m, m.node_symbols[s], sy, s)
 	elif isinstance(s, (Exp)):
-		m.node_symbols[s] = B.expression.symbol()
+		m.node_symbols[s] = B.expression.symbol(m)
 	elif isinstance(s, (Union)):
 		lhs = m.node_symbols[s] = m.symbol(str(s))
 		for i in s.ch.items:
@@ -4189,7 +4189,7 @@ def register_class_symbol(cls, m):
 		return r
 
 	elif List.__subclasscheck__(cls):
-		assert False
+		#assert False
 		log("registering list grammar")
 		optionally_elements = m.symbol('optionally_elements')
 		r = m.symbol('list literal')
