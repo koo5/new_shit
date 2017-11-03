@@ -1159,10 +1159,10 @@ class Collapsible(Node):
 		s.view_mode_widget.value = m
 
 	def render(s):
-		yield [MemberTag('view_mode_widget'), IndentTag()]
+		yield [MemberTag('view_mode_widget')]#, IndentTag()]
 		if s.view_mode > 0:
 			yield s.render_items()
-		yield DedentTag()
+		#yield DedentTag()
 
 	@classmethod
 	def fresh(cls, decl):
@@ -4303,6 +4303,7 @@ def what_in_my_module_do_i_see(s):
 	return r
 
 def assert_is_flat(r):
+
 	assert flatten(r) == r
 
 #return s["builtins"].ch.statements.parsed

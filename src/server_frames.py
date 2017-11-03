@@ -490,7 +490,7 @@ class Menu(SidebarFrame):
 				symbols.extend(s.marpa.string2tokens(i.text))
 				text += i.text
 			else:
-				symbols.append(i.symbol())
+				symbols.append(i.symbol(s.marpa))
 				print ("%s in marpa input tokens"%s)
 		return symbols, text
 

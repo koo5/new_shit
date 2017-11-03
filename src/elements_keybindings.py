@@ -221,7 +221,7 @@ add_keys(n.List, -1,
 		K((),           K_RETURN): H(newline, None, RIGHT)})
 
 def run_line(self, e):
-	index = self.item_index(e)
+	index = self.item_index(e.any)
 	result = self.items[index].eval()
 	result.parent = self
 	self.items.insert(index + 1, result)
