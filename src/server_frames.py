@@ -397,7 +397,7 @@ class Menu(SidebarFrame):
 
 		s.current_parser_node.menu = s.sorted_everything
 		"""
-		log = logging.getLogger('menu').debug
+		log = logging.getLogger('menu').debug   
 		log("MENU:")
 		for i in s.sorted_everything:
 			log(i.value.tostr())

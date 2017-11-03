@@ -53,9 +53,11 @@ class MarpaThread(LemmacsThread):
 					s.precompute_grammar(inp)
 				elif inp.task == 'parse':
 					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
-					log("parsed %s results" % len(r))
-					#for i in r:
-					#	log("%s" % (i))
+					info("parsed %s results" % len(r))
+					for i in r:
+						info("%s" % (i))
+						#info(" - %s"%i.tostr())
+
 					s.send(Dotdict(message='parsed', results=r))
 			except Exception as e:
 				traceback.print_exc(file=sys.stdout)
