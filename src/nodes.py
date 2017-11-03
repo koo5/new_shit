@@ -1772,7 +1772,7 @@ class Ref(RefPersistenceStuff, Node):
 
 	@classmethod
 	def from_parse(cls, x):
-		logging.getLogger("valuation").debug('Ref from_parse:'+str(x))
+		logging.getLogger("valuation").debug(cls.__name__ + ' from_parse:'+str(x))
 		return cls(x)
 
 	def render(s):
@@ -1803,6 +1803,11 @@ class VarRef(VarRefPersistenceStuff, Node):
 		s.target = target
 		assert isinstance(target, (UntypedVar, TypedParameter))
 		#log("varref target:"+str(target))
+
+	@classmethod
+	def from_parse(cls, x):
+		logging.getLogger("valuation").debug(cls.__name__ + ' from_parse:'+str(x))
+		return cls(x)
 
 	def render(s):
 		return [TextTag('$'), ArrowTag(s.target), TextTag(s.name)]
@@ -4114,7 +4119,7 @@ def register_class_symbol(cls, m):
 				debug_name = "varref to"+str(i)
 				sym = m.symbol(debug_name)
 				m.rule(debug_name + "is a varref", r, sym)
-				m.rule(debug_name, sym, m.known_string(rendering), cls.from_parse)
+				m.rule(debug_name, sym, m.known_string(rendering), lambda parsed_text,target=i: cls.from_parse(target))
 		return r
 
 
@@ -4216,10 +4221,23 @@ def register_class_symbol(cls, m):
 
 def scope_after_hiding_and_unhiding(s):
 	assert(type(s.parent) != Root)
-	local = what_in_my_module_do_i_see(s)
-	library = s.module.scope()
+	module = s.module
+
+	glob = []
+	local = []
+	library = []
+
+	if module:
+		local = what_in_my_module_do_i_see(s)
+		library = module.scope()
+
+	glob = what_module_sees(s.module, s.root)
+	if not module:
+		return glob
+
+	full = local + glob
 	r = library + local
-	full = local + what_module_sees(s.module)
+
 	for i in local:
 		dd = deref_decl(i.decl)
 		if dd == B.hidenode:
@@ -4266,12 +4284,12 @@ def scope_after_hiding_and_unhiding(s):
 				exit()
 	return r
 
-def collect_modules_seen_by_module(module):
-	if module == module.root["builtins"]:
+def collect_modules_seen_by_module(root, module):
+	if module and module == module.root["builtins"]:
 		return [] # builtins dont see anything
 	else:
-		modules = [module.root["builtins"]]
-		for m in module.root['library'].items:
+		modules = [root["builtins"]]
+		for m in root['library'].items:
 			if not isinstance(m, Module):
 				continue
 			if module != m:
@@ -4280,16 +4298,20 @@ def collect_modules_seen_by_module(module):
 		return modules
 
 
-def what_module_sees(module):
-	assert isinstance(module, Module)
+def what_module_sees(module, root = None):
+	if root is None:
+		root = module.root
+	assert isinstance(module, Module) or module is None
 	r = []
-	for m in collect_modules_seen_by_module(module):
+	for m in collect_modules_seen_by_module(root, module):
 		r.append(m)
 		for i in m.ch.statements.parsed.items:
 			r.append(i.parsed)
 	return r
 
 def what_in_my_module_do_i_see(s):
+	#if not s.parent:
+	#	return []
 	assert s.parent,     s.long__repr__()
 	r = []
 	p = s.parent
@@ -4303,7 +4325,7 @@ def what_in_my_module_do_i_see(s):
 	return r
 
 def assert_is_flat(r):
-
-	assert flatten(r) == r
+	if __debug__:
+		assert flatten(r) == r
 
 #return s["builtins"].ch.statements.parsed

@@ -4,7 +4,6 @@ from weakref import ref as weakref
 from types import GeneratorType
 
 
-import tags
 from tags import *
 from lemon_utils.utils import Evil
 from lemon_colors import colors
@@ -72,7 +71,7 @@ class Element():
 				return s.parent.module
 			else:
 				log ("%s has no parent", s)
-				assert False
+				assert s.__class__.__name__ == 'Root',    s
 				return None
 
 	def on_keypress(self, event):
@@ -201,4 +200,5 @@ def _collect_tags(elem, tags):
 
 
 
+import tags
 tags.Element = Element
