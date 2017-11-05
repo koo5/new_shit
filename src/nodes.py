@@ -43,6 +43,7 @@ from copy import copy
 import json
 import collections
 from pprint import pformat as pp
+from proxy import make_proxy
 
 from lemon_utils.pizco_signal.util import Signal
 
@@ -754,7 +755,7 @@ class Node(NodePersistenceStuff, element.Element):
 		if "value" in elem.runtime._dict \
 				and "evaluated" in elem.runtime._dict \
 				and not isinstance(elem.parent, Parser): #dont show evaluation results of parser's direct children
-			yield [AttTag(Att.elem, elem), ColorTag(colors.eval_results), TextTag("->")]
+			yield [ElemTag(elem), ColorTag(colors.eval_results), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
 				yield [TextTag(str(len(v.items))), TextTag(localized(" values:")), ElementTag(v)]
@@ -1313,7 +1314,7 @@ class List(ListPersistenceStuff, Collapsible):
 		opening, between, closing = ('[', ', ', ']') if s.view_mode == 1 else ('[ \n', '\n', '\n]')
 		yield opening
 		for i, item in enumerate(s.items):
-			yield [AttTag(Att.item_index, (s, i)), zwe_tag]
+			yield [ItemIndexTag(s, i), zwe_tag]
 			if i != 0: yield between
 			yield [ElementTag(item),EndTag()]
 		yield [AttTag('list_end',555), zwe_tag, closing, EndTag()]
@@ -2366,7 +2367,7 @@ class ParserBase(Node):
 
 		for i, item in enumerate(s.items):
 			yield [
-				AttTag(Att.item_index, (s, i)),
+				ItemIndexTag( s, i),
 				ElementTag(item),
 				EndTag()]
 
@@ -2527,7 +2528,7 @@ class ReplParser(Parser):
 
 		for i, item in enumerate(s.items):
 			yield [
-				AttTag(Att.item_index, (s, i)),
+				ItemIndexTag(s, i),
 				ElementTag(item),
 				EndTag()]
 

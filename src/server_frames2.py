@@ -45,7 +45,7 @@ class Atts(object):
 		# umm we could make a key to cycle the any if needed
 
 
-
+import tag_collector
 class ServerFrame(object):
 	def __init__(s):
 		s.draw_signal = Signal(0)
@@ -57,6 +57,15 @@ class ServerFrame(object):
 			l = list(b)
 			#print(l)
 			yield l
+
+	@Pyro4.expose
+	@Pyro4.oneway
+	def start_collecting_tags(s, callback):
+		print("start_collecting_tags(%s)"%s)
+		print(callback._pyroSerializer)# = "pickle"
+		callback._pyroSerializer = "pickle"
+		s._tag_collector = tag_collector.Collector(s, callback)
+		s._tag_collector.start()
 
 	def on_elem_mouse_press(s, elem, button):
 		pass
