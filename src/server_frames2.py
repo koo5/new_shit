@@ -51,14 +51,6 @@ class ServerFrame(object):
 		s.draw_signal = Signal(0)
 
 	@Pyro4.expose
-	def collect_tags(s):
-		print("collect_tags(%s)"%s)
-		for b in batch(_collect_tags(s, s.tags())):
-			l = list(b)
-			#print(l)
-			yield l
-
-	@Pyro4.expose
 	@Pyro4.oneway
 	def start_collecting_tags(s, callback):
 		print("start_collecting_tags(%s)"%s)

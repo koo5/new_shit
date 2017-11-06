@@ -54,6 +54,7 @@ class ServerFrame(object):
 	def collect_tags(s):
 		print("collect_tags(%s)"%s)
 		for b in batch(_collect_tags(s, s.tags())):
+		#for b in batch(range(1000)):
 			l = list(b)
 			#print(l)
 			yield l

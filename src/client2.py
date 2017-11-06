@@ -23,15 +23,15 @@ log.setLevel(logging.WARNING)
 class CallbackHandler(object):
 	@Pyro4.oneway
 	@Pyro4.expose
-	@Pyro4.callback
+#	@Pyro4.callback
 	def callback(self, tags):
 		#print(tags)
 		for j in tags:
-			#continue
+			
 			if type(j) == str:
 				continue
 				sys.stdout.write(j)
-			if j == -1:
+			elif j == -1:
 				print ("done")
 				#from IPython import embed; embed()
 				daemon.shutdown()
@@ -39,8 +39,8 @@ class CallbackHandler(object):
 
 
 obj = Pyro4.core.Proxy("PYRONAME:lemmacs.server_frames2.editor")
-obj._pyroSerializer = "msgpack"
-obj._pyroSerializer = "pickle"
+#obj._pyroSerializer = "msgpack"
+#obj._pyroSerializer = "pickle"
 
 
 daemon=0
@@ -60,4 +60,5 @@ def collect():
 
 
 if __name__ == "__main__":
-	collect()
+	for i in range(5):	
+		collect()

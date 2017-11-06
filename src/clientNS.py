@@ -4,17 +4,17 @@
 import sys
 import time
 import Pyro4
+
 #Pyro4.config.SERIALIZER = "marshal"
 #Pyro4.config.SERIALIZER = "msgpack"
 
 print("Autoreconnect using Name Server.")
-# We create a proxy with a PYRONAME uri.
-# That allows Pyro to look up the object again in the NS when
-# it needs to reconnect later.
 obj = Pyro4.core.Proxy("PYRONAME:lemmacs.editor")
+
 obj._pyroSerializer = "msgpack"
 obj._pyroSerializer = "pickle"
 #obj._pyroSerializer = "marshal"
+
 #from IPython import embed; embed()
 
 def collect_tags(obj):
@@ -23,15 +23,11 @@ def collect_tags(obj):
 	#print(t)
 	for i in t:
 		for j in i:
-			continue
+			#continue
 			if type(j) == str:
 				sys.stdout.write(j)
 
 
-
-if __name__ == "__main__":
-    while True:
-        loop()
 
 def loop():
     print("call...")
@@ -43,3 +39,9 @@ def loop():
         print("Connection lost. REBINDING...")
         print("(restart the server now)")
         obj._pyroReconnect()
+
+
+
+if __name__ == "__main__":
+    while True:
+        loop()
