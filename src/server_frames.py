@@ -46,6 +46,25 @@ class Atts(object):
 
 
 
+
+import tag_collector
+
+def collect():
+	import sys
+	for i in editor.collect_tags():
+		for j in i:
+			if type(j) == str:
+				continue
+				sys.stdout.write(j)
+
+def collect2():
+	import sys
+	for i in _collect_tags(editor, editor.tags()):
+		if type(i) == str:
+			continue
+			sys.stdout.write(i)
+
+
 class ServerFrame(object):
 	def __init__(s):
 		s.draw_signal = Signal(0)
@@ -53,11 +72,37 @@ class ServerFrame(object):
 	@Pyro4.expose
 	def collect_tags(s):
 		print("collect_tags(%s)"%s)
-		for b in batch(_collect_tags(s, s.tags())):
-		#for b in batch(range(1000)):
+
+		#return(list(_collect_tags(editor, editor.tags())))
+		for b in s.source2():
+			yield list(b)
+		#return "s.source()"
+		#for b in s.source():
+		#	l = list(b)
+			#yield l
+		#return r
+
+	@Pyro4.expose
+	@Pyro4.oneway
+	def start_collecting_tags(s, callback):
+		print("start_collecting_tags(%s)"%s)
+		print(callback._pyroSerializer)# = "pickle"
+		callback._pyroSerializer = "pickle"
+		s._tag_collector = tag_collector.Collector(s, callback, s.source2())
+		s._tag_collector.start()
+
+	def source(s):
+		r = []
+		for b in s.source2():
 			l = list(b)
+			r.append(l)
 			#print(l)
-			yield l
+			#yield l
+		return r
+	def source2(s):
+		return batch(_collect_tags(s, s.tags()))
+		#return batch(range(100000).__iter__())
+
 
 	def on_elem_mouse_press(s, elem, button):
 		pass

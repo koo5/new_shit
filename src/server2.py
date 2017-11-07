@@ -5,6 +5,7 @@ import time
 import Pyro4.naming
 
 
+Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.ONEWAY_THREADED = False
 Pyro4.config.SERIALIZERS_ACCEPTED.add('msgpack')
 Pyro4.config.SERIALIZERS_ACCEPTED.add('pickle')
@@ -13,9 +14,9 @@ Pyro4.config.SERIALIZERS_ACCEPTED.add('pickle')
 print("Autoreconnect using Pyro Name Server.")
 
 
-import server_frames2
+import server_frames
 
-objs = [("editor", server_frames2.editor)]
+objs = [("editor2", server_frames.editor)]
 
 
 
@@ -33,13 +34,15 @@ objs = [("editor", server_frames2.editor)]
 ns = Pyro4.naming.locateNS()
 
 for name, obj in objs:
-    name = "lemmacs.server_frames2." + name
+    name = "lemmacs.server_frames." + name
+    
+    import os
+    if os.path.exists("example_unix.sock"):
+        os.remove("example_unix.sock")
+
     try:
         existing = ns.lookup(name)
-        print("Object still exists in Name Server with id: %s" % existing.object)
-        print("Previous daemon socket port: %d" % existing.port)
-        # start the daemon on the previous port
-        daemon = Pyro4.core.Daemon(port=existing.port)
+        daemon = Pyro4.core.Daemon(unixsocket="example_unix.sock")#port=existing.port)
 
         # register the object in the daemon with the old objectId
         daemon.register(obj, objectId=existing.object)
@@ -47,7 +50,7 @@ for name, obj in objs:
     except Pyro4.errors.NamingError:
         print("There was no previous registration in the name server.")
         # just start a new daemon on a random port
-        daemon = Pyro4.core.Daemon()
+        daemon = Pyro4.core.Daemon(unixsocket="example_unix.sock")#)
         # register the object in the daemon and let it get a new objectId
         # also need to register in name server because it's not there yet.
 

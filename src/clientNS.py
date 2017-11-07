@@ -21,9 +21,9 @@ def collect_tags(obj):
 	print("collect_tags(%s)"%obj)
 	t = (obj.collect_tags())
 	#print(t)
-	for i in t:
+	for i in [t]:
 		for j in i:
-			#continue
+			continue
 			if type(j) == str:
 				sys.stdout.write(j)
 
