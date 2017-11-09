@@ -524,3 +524,44 @@ parse_result = [i for i in parse_result if not i in nope]
 """
 
 """https://groups.google.com/forum/#!topic/marpa-parser/DzgMMeooqT4"""
+
+
+
+
+
+
+
+
+
+
+"""
+
+r=[]
+for lhs, rhs in syntaxes:
+	new = []
+	rule(half_lhss[lhs], half_lhs[
+	half_lhss[lhs].append(
+
+	for sym in rhs:
+		if sym != Reparse:
+			new.append(sym)
+		else:
+			sss = s.symbol()
+			s.rule(sss, anything, action=lambda x:Parser(text=x, grammar=
+			new.append(sss)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
