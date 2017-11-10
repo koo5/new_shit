@@ -1,4 +1,4 @@
-#from typing import Iterable
+# from typing import Iterable
 
 from weakref import ref as weakref
 from types import GeneratorType
@@ -7,8 +7,8 @@ from pprint import pformat as pp
 
 from lemon_utils.pizco_signal.util import Signal
 
-#import sys
-#sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
+# import sys
+# sys.path.insert(0, 'fuzzywuzzy') #git version is needed for python3 (git submodule init; git submodule update)
 from fuzzywuzzy import fuzz
 
 from lemon_utils.lemon_six import iteritems, unicode
@@ -18,9 +18,10 @@ from lemon_colors import colors
 from lemon_utils.dotdict import Dotdict
 
 import logging
-logger=logging.getLogger("root")
-info=logger.info
-log=logger.debug
+
+logger = logging.getLogger("root")
+info = logger.info
+log = logger.debug
 
 import nodes
 import palette
@@ -37,16 +38,18 @@ import keys
 from marpa_cffi.marpa_rpc_client import MarpaClient
 
 
-
 class Atts(object):
 	def __init__(s, a) -> int:
-		#s.by_priority = [a['middle'], a['left'], a['right']]
+		# s.by_priority = [a['middle'], a['left'], a['right']]
 		s.middle, s.left, s.right = a['middle'], a['left'], a['right']
 		s.any = s.middle or s.left or s.right or {}
-		# umm we could make a key to cycle the any if needed
+
+	# umm we could make a key to cycle the any if needed
+
 
 class ServerFrame(object):
 	"""base class for the server parts of frames"""
+
 	def __init__(s):
 		s.draw_signal = Signal(0)
 
@@ -71,7 +74,7 @@ class Editor(ServerFrame):
 			mltt.build_in_MLTT(s.root)
 
 		s.root.fix_parents()
-		s.atts = Atts(dict(left={},right={},middle={}))
+		s.atts = Atts(dict(left={}, right={}, middle={}))
 		s.on_serverside_change = Signal(1)
 		s.on_atts_change = Signal(0)
 
@@ -87,17 +90,17 @@ class Editor(ServerFrame):
 
 	def signal_change(s, force=False):
 		if force or s.root.changed or s.root.ast_changed:
-			#s.on_serverside_change.emit(s.root.ast_changed)
-			#log("s.draw_signal.emit()")
+			# s.on_serverside_change.emit(s.root.ast_changed)
+			# log("s.draw_signal.emit()")
 			s.draw_signal.emit()
 
 	def must_recollect(s):
-		#log('must_recollect(%s)', s)
+		# log('must_recollect(%s)', s)
 		if s.root.changed or s.root.ast_changed:
 			s.root.changed = s.root.ast_changed = False
-			#log("true")
+			# log("true")
 			return True
-		#log("false")
+		# log("false")
 
 	@property
 	def element_under_cursor(s):
@@ -110,10 +113,11 @@ class Editor(ServerFrame):
 		return editor.root.delayed_cursor_move
 
 	def set_atts(editor, atts):
-		log("setting atts under cursor to %s",pp(atts))
+		log("setting atts under cursor to %s", pp(atts))
 		editor.atts = Atts(atts)
 		editor.on_atts_change.emit()
-		#editor.draw_signal.emit()
+
+	# editor.draw_signal.emit()
 
 	def run_active_program(editor):
 		editor.root.some_program.run()
@@ -127,7 +131,7 @@ class Editor(ServerFrame):
 		editor.root.some_program.clear()
 		editor.signal_change()
 
-	def	dump_root_to_file(editor):
+	def dump_root_to_file(editor):
 		pass
 
 	def keypress(s, event):
@@ -144,11 +148,11 @@ class Editor(ServerFrame):
 
 		if r:
 			elem, handler_result = r
-			#if handler_result:
-				#module = elem.module
-				#if module:
-					#event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
-					#log('history.append(%s)..',event)
+			# if handler_result:
+			# module = elem.module
+			# if module:
+			# event.final_root_state = deepcopy(editor.root) #for undo and redo. todo.
+			# log('history.append(%s)..',event)
 			s.root.changed = True
 			s.signal_change()
 
@@ -157,28 +161,27 @@ def handle_keypress(e):
 	ph = potential_handlers(e.trip)
 	log(e)
 	for k, (elem, handler) in ph:
-		#log("matching with %s:%s..", k, handler)
+		# log("matching with %s:%s..", k, handler)
 		if (
-			(e.mods == k.mods and e.key == k.key)
-		or
-		    (k.key == UNICODE
-		     and e.uni
-		     and len(e.mods) == 0
-		     and e.key not in (keys.K_ESCAPE, keys.K_BACKSPACE, keys.K_DELETE))):
+					(e.mods == k.mods and e.key == k.key)
+				or
+					(k.key == UNICODE
+					 and e.uni
+					 and len(e.mods) == 0
+					 and e.key not in (keys.K_ESCAPE, keys.K_BACKSPACE, keys.K_DELETE))):
+			e.any = e.trip.middle or e.trip.left or e.trip.right
 
-				e.any = e.trip.middle or e.trip.left or e.trip.right
+			e.left, e.middle, e.right = (
+				e.trip.left if e.trip.left and e.trip.left.get(Att.elem) == elem else None,
+				e.trip.middle if e.trip.middle and e.trip.middle.get(Att.elem) == elem else None,
+				e.trip.right if e.trip.right and e.trip.right.get(Att.elem) == elem else None)
 
-				e.left, e.middle, e.right = (
-					e.trip.left   if e.trip.left and e.trip.left.get(Att.elem) == elem else None,
-					e.trip.middle if e.trip.middle and e.trip.middle.get(Att.elem) == elem else None,
-					e.trip.right  if e.trip.right and e.trip.right.get(Att.elem) == elem else None)
+			e.atts = e.middle or e.left or e.right
+			# this should be named "my", to reflect that is corresponds to the node thats gonna handle it,
+			# not some of its children (as opposed to "any")
 
-				e.atts = e.middle or e.left or e.right
-				#this should be named "my", to reflect that is corresponds to the node thats gonna handle it,
-				# not some of its children (as opposed to "any")
-
-				log("match:%s.%s", elem, handler.func)
-				return elem, handler.func(elem, e)
+			log("match:%s.%s", elem, handler.func)
+			return elem, handler.func(elem, e)
 
 
 def potential_handlers(trip):
@@ -191,9 +194,9 @@ def potential_handlers(trip):
 
 	while any(elems):
 		for elem, sidedness, atts in [
-								(elems[0], None, trip.middle),
-		                        (elems[1], LEFT, trip.left),
-								(elems[2], RIGHT, trip.right)]:
+			(elems[0], None, trip.middle),
+			(elems[1], LEFT, trip.left),
+			(elems[2], RIGHT, trip.right)]:
 			if elem:
 				for keys, handler in iteritems(elem.keys):
 					if handler.sidedness in (None, sidedness):
@@ -203,11 +206,10 @@ def potential_handlers(trip):
 								output[keys] = True
 		for i in range(3):
 			if elems[i]:
-				elems[i] =  elems[i].parent
+				elems[i] = elems[i].parent
 
 
 def handlers_info(trip):
-
 	for k, (elem, handler) in potential_handlers(trip):
 
 		element_name = elem.__class__.__name__
@@ -219,7 +221,6 @@ def handlers_info(trip):
 			kstr = key_to_name(k.key)
 		kmods = mods_to_str(k.mods)
 		yield ' '.join(kmods + [kstr]) + ": " + element_name + "." + function_name
-
 
 	"""
 
@@ -241,18 +242,21 @@ def handlers_info(trip):
 							yield elem, handler, func
 	"""
 
+
 class SidebarFrame(ServerFrame):
 	def __init__(s):
 		super().__init__()
 		s.sel = -1
+
 	def move(s, y):
 		pass
+
 
 class Menu(SidebarFrame):
 	def __init__(s):
 		super().__init__()
 		s.editor = editor
-		#editor.on_serverside_change.connect(s.on_editor_change)
+		# editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.update)
 		s.valid_only = False
 		s._changed = True
@@ -264,11 +268,12 @@ class Menu(SidebarFrame):
 		s._current_parser_node = None
 		s.must_update = True
 
-	#weakref wrapper
+	# weakref wrapper
 	@property
 	def current_parser_node(s):
 		if s._current_parser_node:
 			return s._current_parser_node()
+
 	@current_parser_node.setter
 	def current_parser_node(s, x):
 		s._current_parser_node = weakref(x)
@@ -307,7 +312,7 @@ class Menu(SidebarFrame):
 	def update_menu(s):
 		log = logging.getLogger('menu').debug
 		if s.current_parser_node:
-			#warning, current_parser_node could have been moved to clipboard or something, and theres currently no way to know
+			# warning, current_parser_node could have been moved to clipboard or something, and theres currently no way to know
 			if '_deleted' in s.current_parser_node.__dict__:
 				print("deleted node")
 				return
@@ -334,16 +339,16 @@ class Menu(SidebarFrame):
 		if not m:
 			return
 		if m.message == 'precomputed':
-			#if m.for_node == s.current_parser_node:
-				node = m.for_node()
-				if node:#brainfart
-					s.marpa.enqueue_parsing(s.parser_items2tokens(node))
+			# if m.for_node == s.current_parser_node:
+			node = m.for_node()
+			if node:  # brainfart
+				s.marpa.enqueue_parsing(s.parser_items2tokens(node))
 		elif m.message == 'parsed':
-				log (m.results)
-				s.parse_results = [nodes.ParserMenuItem(['a parse'], x, 5500) for x in m.results]
-				s.update_items()
-				#	r.append(ParserMenuItem(i, 333))
-				s.signal_change()
+			log(m.results)
+			s.parse_results = [nodes.ParserMenuItem(['a parse'], x, 5500) for x in m.results]
+			s.update_items()
+			#	r.append(ParserMenuItem(i, 333))
+			s.signal_change()
 
 	@staticmethod
 	def parser_node_item(parser, atts):
@@ -360,7 +365,7 @@ class Menu(SidebarFrame):
 		text = ""
 		if i != None:
 
-			try:# we're gonna need to first re-project the editor,
+			try:  # we're gonna need to first re-project the editor,
 				# then have the frontend call a more general editor.after-project, that updates
 				# the atts and notifies the menu. We have outdated atts here now.
 
@@ -377,23 +382,23 @@ class Menu(SidebarFrame):
 		log = logging.getLogger('menu').debug
 		s.palette_results = []
 		for x in scope:
-			log("scope item:%s:"%x)
+			log("scope item:%s:" % x)
 			a = palette.palette(x, scope, s.current_text, parser)
 			s.palette_results += a
 			for i in a:
 				log(i.value.tostr())
 
 		s.palette_results = flatten(s.palette_results)
-		log("palette_results:%s"% len(s.palette_results))
+		log("palette_results:%s" % len(s.palette_results))
 
 		s.update_items()
 
 	def update_items(s):
 		log = logging.getLogger('menu').debug
-		log("parse_results:%s"% len(s.parse_results))
+		log("parse_results:%s" % len(s.parse_results))
 		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results,
 		                                     s.current_text, s.current_parser_node.type)
-		log("sorted_everything:%s"% len(s.sorted_everything))
+		log("sorted_everything:%s" % len(s.sorted_everything))
 
 		s.current_parser_node.menu = s.sorted_everything
 		"""
@@ -407,11 +412,12 @@ class Menu(SidebarFrame):
 				log(v)
 			log("")
 		"""
+
 	@staticmethod
 	def sort_palette(items, text, decl):
 		assert type(text) == unicode
 
-		#0-100
+		# 0-100
 		matchf = fuzz.token_set_ratio
 
 		if isinstance(decl, nodes.Exp):
@@ -433,7 +439,7 @@ class Menu(SidebarFrame):
 				item.scores.name_matchf = matchf(name, text)
 
 			assert type(v.decl.name) == str
-			item.scores.declname_matchf =  matchf(v.decl.name, text)
+			item.scores.declname_matchf = matchf(v.decl.name, text)
 			item.scores.declname = v.decl.name
 
 			if item.value.decl.works_as(decl):
@@ -441,15 +447,15 @@ class Menu(SidebarFrame):
 			else:
 				item.invalid = True
 
-			#search thru syntaxes
-			#if isinstance(v, Syntaxed):
+			# search thru syntaxes
+			# if isinstance(v, Syntaxed):
 			#	for i in v.syntax:
 			#   		if isinstance(i, t):
 			#			item.score += fuzz.partial_ratio(i.text, s.pyval)
-			#search thru an actual rendering(including children)
-			tags =     v.render()
+			# search thru an actual rendering(including children)
+			tags = v.render()
 			texts = [i for i in tags if type(i) == unicode]
-			#print texts
+			# print texts
 			texttags = " ".join(texts)
 			item.scores.texttags_matchf = matchf(texttags, text)
 			item.scores.texttags = texttags
@@ -458,8 +464,6 @@ class Menu(SidebarFrame):
 			return item
 
 		return sorted(map(score_item, items), key=lambda i: -i.score)
-
-
 
 	"""
 	def generate_items(s):
@@ -474,14 +478,12 @@ class Menu(SidebarFrame):
 
 	@property
 	def items(s):
-		return [#nodes.DefaultParserMenuItem(s.current_text)
+		return [  # nodes.DefaultParserMenuItem(s.current_text)
 		       ] + s.sorted_everything
-
 
 	def get_items(s):
 		for i in s.items:
 			yield _collect_tags(666, [ColorTag(colors.fg), ElementTag(i)])
-
 
 	def parser_items2tokens(s, items):
 		symbols, text = [], ""
@@ -491,7 +493,7 @@ class Menu(SidebarFrame):
 				text += i.text
 			else:
 				symbols.append(i.symbol(s.marpa))
-				print ("%s in marpa input tokens"%s)
+				print("%s in marpa input tokens" % s)
 		return symbols, text
 
 	def signal_change(s):
@@ -499,7 +501,9 @@ class Menu(SidebarFrame):
 		s.draw_signal.emit()
 
 	def tags4item(s, i: int) -> list:
-		return _collect_tags(666, [ColorTag(colors.fg), AttTag(Att.item_index, (s, i)),  ElementTag(s.items[i]), EndTag(), EndTag()])
+		return _collect_tags(666,
+		                     [ColorTag(colors.fg), AttTag(Att.item_index, (s, i)), ElementTag(s.items[i]), EndTag(),
+		                      EndTag()])
 
 	"""
 	def tags(s):
@@ -514,6 +518,7 @@ class Menu(SidebarFrame):
 
 		yield ["---", EndTag()]
 	"""
+
 	def toggle_valid(s):
 		s.valid_only = not s.valid_only
 		s.signal_change()
@@ -523,7 +528,6 @@ class Menu(SidebarFrame):
 		atts = s.root.atts
 		if e != None:
 			e.menu(atts, True)
-
 
 	def accept(s):
 		if s.sel >= 0:
@@ -552,15 +556,11 @@ class Menu(SidebarFrame):
 			s.editor.run_line()
 			s.editor.changed_dude()
 
-
 			return True
-
 
 	def move(s, y):
 		s.sel = clamp(s.sel + y, -1, len(s.items))
 		s.signal_change()
-
-
 
 
 class StaticInfoFrame(SidebarFrame):
@@ -577,7 +577,6 @@ class StaticInfoFrame(SidebarFrame):
 		if s._changed:
 			s._changed = False
 			return True
-
 
 
 class NodeInfo(StaticInfoFrame):
@@ -617,6 +616,8 @@ class NodeDebug(StaticInfoFrame):
 		s.items += ["left:", str(editor.atts.left)]
 		s.items += ["middle:", str(editor.atts.middle)]
 		s.items += ["right:", str(editor.atts.right)]
+
+
 """		uc = editor.under_cursor
 		while uc != None:
 			if isinstance(uc, nodes.FunctionCall):
@@ -630,6 +631,7 @@ class NodeDebug(StaticInfoFrame):
 			uc = uc.parent
 """
 
+
 class Log(ServerFrame):
 	def __init__(s):
 		super(Log, s).__init__()
@@ -637,18 +639,17 @@ class Log(ServerFrame):
 		s.on_add = Signal(1)
 		s._dirty = True
 
-
 	def must_recollect(s):
 		if s._dirty:
 			s._dirty = False
 			return True
 
 	def add(s, msg):
-		#timestamp, topics, text = msg
-		#if type(text) != unicode:
+		# timestamp, topics, text = msg
+		# if type(text) != unicode:
 		s.items.append(str(msg))
 		print(str(msg))
-		s.on_add.emit(msg) #
+		s.on_add.emit(msg)  #
 		s._dirty = True
 
 	def is_dirty(s):
@@ -662,7 +663,7 @@ def init(thread_message_signal_, send_thread_message_):
 
 	logframe = Log()
 
-	#intro = Intro()
+	# intro = Intro()
 
 	editor = Editor()
 
@@ -677,8 +678,7 @@ def element_click(element):
 
 
 def load(name):
-	assert(isinstance(name, unicode))
+	assert (isinstance(name, unicode))
 	nodes.b_lemon_load_file(editor.root, name)
 	editor.render()
 	try_move_cursor(root.root.loaded_program)
-
