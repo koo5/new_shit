@@ -1,3 +1,4 @@
+import pygame
 # from typing import Iterable
 
 from weakref import ref as weakref
@@ -18,6 +19,7 @@ from lemon_colors import colors
 from lemon_utils.dotdict import Dotdict
 
 import logging
+import queue
 
 logger = logging.getLogger("root")
 info = logger.info
@@ -293,7 +295,7 @@ class Menu(SidebarFrame):
 		old_text = s.current_text
 		s.update_current_text()
 		if s.current_parser_node and (node_changed or old_text != s.current_text):
-			s.update_menu()
+			pygame.time.set_timer(pygame.USEREVENT + 3, 100)
 
 	def parser_changed(s):
 		def relevant_parser(e):
@@ -310,6 +312,7 @@ class Menu(SidebarFrame):
 			return True
 
 	def update_menu(s):
+		pygame.time.set_timer(pygame.USEREVENT + 3, 0)
 		log = logging.getLogger('menu').debug
 		if s.current_parser_node:
 			# warning, current_parser_node could have been moved to clipboard or something, and theres currently no way to know
@@ -327,11 +330,11 @@ class Menu(SidebarFrame):
 	def prepare_grammar(s, scope):
 		s.marpa = MarpaClient(send_thread_message, args.graph_grammar or args.log_parsing)
 		s.marpa.collect_grammar(scope, scope)
+		s.tokens = s.parser_items2tokens(s.marpa, s.current_parser_node)
 		assert s.current_parser_node
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
 
 	def on_thread_message(s):
-		import queue
 		try:
 			m = s.marpa.t.output.get_nowait()
 		except queue.Empty:
@@ -342,7 +345,9 @@ class Menu(SidebarFrame):
 			# if m.for_node == s.current_parser_node:
 			node = m.for_node()
 			if node:  # brainfart
-				s.marpa.enqueue_parsing(s.parser_items2tokens(node))
+				#hack, parser_items2tokens potentially creates symbols and rules, we need to do that before precomputation,
+				#we should keep track of whether we need to re-generate grammar also with this in mind
+				s.marpa.enqueue_parsing(s.tokens)
 		elif m.message == 'parsed':
 			log(m.results)
 			s.parse_results = [nodes.ParserMenuItem(['a parse'], x, 5500) for x in m.results]
@@ -485,15 +490,22 @@ class Menu(SidebarFrame):
 		for i in s.items:
 			yield _collect_tags(666, [ColorTag(colors.fg), ElementTag(i)])
 
-	def parser_items2tokens(s, items):
+	def parser_items2tokens(s, marpa, items):
 		symbols, text = [], ""
 		for i in items:
 			if isinstance(i, widgets.Text):
-				symbols.extend(s.marpa.string2tokens(i.text))
+				symbols.extend(marpa.string2tokens(i.text))
 				text += i.text
 			else:
-				symbols.append(i.symbol(s.marpa))
-				print("%s in marpa input tokens" % s)
+				dd = i.ddecl.symbol(marpa)
+				if dd is None:
+					assert False
+				name = "terminal for %s"%str(dd)
+				new = marpa.symbol(name)
+				marpa.rule(name, dd, new)
+				symbols.append(new)
+				text += "❆"
+				print("%s in marpa input tokens" % name)
 		return symbols, text
 
 	def signal_change(s):

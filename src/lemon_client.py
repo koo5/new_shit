@@ -89,7 +89,7 @@ class Client():
 		# if args.lesh:
 		#	something = root.root.lesh.command_line
 		# else:
-		something = s.editor.counterpart.root.empty_module.ch.statements.items[1]
+		something = s.editor.counterpart.root.repl.ch.statements.items[1]
 		s.editor.move_cursor(something)
 
 	def after_sidebar_changed(s):

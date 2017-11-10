@@ -156,7 +156,7 @@ class MarpaThread(LemmacsThread):
 		r = Recce(s.g)
 		r.start_input()
 
-		ce = lib.marpa_r_current_earleme(r.r);
+		ce = lib.marpa_r_current_earleme(r.r)
 		log("current earleme: %s" % ce)
 		lib.marpa_r_progress_report_start(r.r, ce)
 
@@ -170,7 +170,6 @@ class MarpaThread(LemmacsThread):
 			else:
 				s.print_events()
 				# s.print_completions(r)
-
 				if s.debug:
 					log("input:symid:%s name:%s raw:%s" % (sym, s.symbol2debug_name(sym), raw[i]))
 				r.alternative(s.c_syms[sym], i + 1)

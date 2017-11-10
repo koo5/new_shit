@@ -10,10 +10,12 @@ logger=logging.getLogger("root")
 langs = {'cs': {
 		" values:":" hodnoty:",
 		"builtins":"zabudováno",
+		"clipboard":"schránka",
 		"intro":"úvod",
 		"some program":"nějaký program",
 		"library":"knihovna",
-		"":""
+		"welcome":"vítejte",
+		"Press F1 to cycle the sidebar!": "stisknete F1 pro prepnuti bocniho menu"
 		}
 }
 

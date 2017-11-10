@@ -3034,7 +3034,7 @@ def make_root():
 	#	log(k, v)
 
 
-	r.translatable['welcome'] = Comment("Press F1 to cycle the sidebar!")
+	r.translatable['welcome'] = Comment(tr("Press F1 to cycle the sidebar!"))
 
 	m = r.translatable[("intro")] = B.builtinmodule.inst_fresh()
 	m.ch.statements.items = [
@@ -3062,7 +3062,7 @@ def make_root():
 
 
 	m = r.empty_module = r.translatable[("empty module")] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
-	m.ch.statements.view_mode = 2
+	m.ch.statements.view_mode = 0
 	uh = B.unhidenode.inst_fresh()
 	uh.ch.what.view_mode = 2
 	uh.ch.what.add(Text("functioncall"))
@@ -3070,7 +3070,6 @@ def make_root():
 
 	m.ch.statements.items = [uh, Parser()]
 
-	r.translatable["cli dummy empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
 
 	m = r.builtins = r.translatable[("builtins")] = B.builtinmodule.inst_fresh()
 	m._name = ("builtins")
@@ -3101,6 +3100,9 @@ def make_root():
 
 	m = r.library = r.translatable[("library")] = make_list('module')
 	m.view_mode = 0#library.vm_multiline
+
+	r.translatable["cli dummy empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
+
 
 
 	#r.add(("toolbar", toolbar.build()))
@@ -3676,6 +3678,7 @@ def load_module(file_name, placeholder):
 		print ("...loaded with warnings")
 		return "warning"
 	else:
+		d.ch.statements.view_mode = 0
 		return "ok"
 
 
@@ -4024,6 +4027,10 @@ plan c: avoid need of reparsing, force nonambiguous grammar for identifiers, go 
 """
 
 def register_symbol(s, m):
+	register_def_symbol(s, m)
+
+
+def register_def_symbol(s, m):
 	"""register symbols and rules"""
 	log = logging.getLogger("marpa").debug
 

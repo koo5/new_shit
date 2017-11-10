@@ -214,6 +214,9 @@ def process_event(event):
 	elif event.type == pygame.USEREVENT + 2:
 		thread_message_signal . emit ()
 
+	elif event.type == pygame.USEREVENT + 3:
+		c.menu.counterpart.update_menu()
+
 	elif event.type == pygame.KEYDOWN:
 		handle(KeypressEvent(pygame.key.get_pressed(), event.unicode, event.key, event.mod))
 
