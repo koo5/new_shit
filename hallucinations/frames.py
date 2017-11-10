@@ -197,13 +197,13 @@ class Root(Frame):
 		log("hmpf")
 
 	def run(s):
-		s.root['some program'].run()
+		s.root.some_program.run()
 
 	def run_line(s):
-		s.root['some program'].run_line(s.under_cursor)
+		s.root.some_program.run_line(s.under_cursor)
 
 	def clear(s):
-		s.root['some program'].clear()
+		s.root.some_program.clear()
 
 	def toggle_arrows(s):
 		s.arrows_visible = not s.arrows_visible

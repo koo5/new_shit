@@ -181,7 +181,7 @@
  def render():
  	root.render()
 @@ -202,7 +202,7 @@
- 		root.cursor_c, root.cursor_r = project.find(root.root['program'].ch.statements.items[0], root.lines)
+ 		root.cursor_c, root.cursor_r = project.find(root.root[tr('program')].ch.statements.items[0], root.lines)
  		root.cursor_c += 1
  	except Exception as e:
 -		print e, ", cant set initial cursor position"

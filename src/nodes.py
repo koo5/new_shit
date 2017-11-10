@@ -24,17 +24,25 @@ class __LINE__(object):
 __LINE__ = __LINE__()
 
 
-lang = cs = en = None
+
+
+
+import localization
+from localization import tr
 def go_cs():
-	lang = "cs"
-	cs = True
-	en = False
+	localization.lang = "cs"
+	localization.cs = True
+	localization.en = False
 def go_en():
-	lang = "en"
-	en = True
-	cs = False
+	localization.lang = "en"
+	localization.en = True
+	localization.cs = False
 go_cs()
-from localization import localized
+
+
+
+
+
 
 autocomplete = True
 
@@ -608,7 +616,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	def clipboard_copy(s):
 		print ("copy")
-		s.root["clipboard"].ch.statements.add(s.copy())
+		s.root.clipboard.ch.statements.add(s.copy())
 
 	def symbol(s, m):
 		if not s in m.node_symbols:
@@ -1277,6 +1285,9 @@ class Dict(Collapsible):
 		return val
 	"""
 
+	def clear(s):
+		s.items.clear()
+
 class List(ListPersistenceStuff, Collapsible):
 	easily_instantiable = True
 	#todo: view sorting:how and why? separate view objects?
@@ -1660,6 +1671,12 @@ class Root(Dict):
 		s.indent_length = 4 #not really used but would be nice to have it variable
 		s.changed = True
 		s.essentials = Dotdict()
+		s.translatable = odict()
+
+	def translate(root):
+		root.clear()
+		for k,v in iteritems(root.translatable):
+			root[tr(k)] = v
 
 	def render(s):
 		#there has to be some default color for everything, the rendering routine looks for it..
@@ -2324,7 +2341,7 @@ class ParserBase(Node):
 
 	def clipboard_paste(s):
 		print ("paste")
-		s.add(s.root["clipboard"].ch.statements[-1].copy())
+		s.add(s.root.clipboard.ch.statements[-1].copy())
 
 	@property
 	def items(s):
@@ -3002,6 +3019,7 @@ class CustomNodeDef(Syntaxed):
 
 grammar = None
 
+
 def make_root():
 	global grammar
 	grammar =  __import__("grammar")
@@ -3016,10 +3034,10 @@ def make_root():
 	#	log(k, v)
 
 
-	r['welcome'] = Comment("Press F1 to cycle the sidebar!")
+	r.translatable['welcome'] = Comment("Press F1 to cycle the sidebar!")
 
-	r["intro"] = B.builtinmodule.inst_fresh()
-	r["intro"].ch.statements.items = [
+	m = r.translatable[("intro")] = B.builtinmodule.inst_fresh()
+	m.ch.statements.items = [
 		Comment("""
 
 	the ui of lemon is currently conciped like this:
@@ -3033,89 +3051,59 @@ def make_root():
 		Comment("If cursor is on a parser, a menu will appear in the sidebar. you can scroll and click it. have fun."),
 		Comment("todo: working editor, smarter menu, better parser, real language, fancy projections...;)")
 	]
-
-	r["intro"].ch.statements.view_mode = 0
-
-
-	r["repl"] = B.builtinmodule.inst_fresh()
-	r["repl"].ch.statements.parser_class                                                                                                             = ReplParser
-	r["repl"].ch.statements.items = [ReplParser()]
-	r["repl"].ch.statements.newline()
-	r["repl"].ch.statements.view_mode=2
+	m.ch.statements.view_mode = 0
 
 
-	r["empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
-	r["empty module"].ch.statements.view_mode = 2
+	m = r.repl = r.translatable[("repl")] = B.builtinmodule.inst_fresh()
+	m.ch.statements.parser_class                                                                                                             = ReplParser
+	m.ch.statements.items = [ReplParser()]
+	m.ch.statements.newline()
+	m.ch.statements.view_mode=2
+
+
+	m = r.empty_module = r.translatable[("empty module")] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
+	m.ch.statements.view_mode = 2
 	uh = B.unhidenode.inst_fresh()
 	uh.ch.what.view_mode = 2
 	uh.ch.what.add(Text("functioncall"))
 	uh.ch.what.add(Text("builtins"))
 
-	r["empty module"].ch.statements.items = [uh, Parser()]
+	m.ch.statements.items = [uh, Parser()]
 
-	r["cli dummy empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
+	r.translatable["cli dummy empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
 
-	r["builtins"] = B.builtinmodule.inst_fresh()
-	r["builtins"]._name = "builtins"
-	r["builtins"].ch.statements.items = list(itervalues(B._dict))
-	assert len(r["builtins"].ch.statements.items) == len(B) and len(B) > 0
-	log("built in %s nodes",len(r["builtins"].ch.statements.items))
-	r["builtins"].ch.statements.add(Comment("---end of builtins---"))
-	r["builtins"].ch.statements.view_mode = 0
+	m = r.builtins = r.translatable[("builtins")] = B.builtinmodule.inst_fresh()
+	m._name = ("builtins")
+	m.ch.statements.items = list(itervalues(B._dict))
+	assert len(m.ch.statements.items) == len(B) and len(B) > 0
+	log("built in %s nodes",len(m.ch.statements.items))
+	m.ch.statements.add(Comment("---end of builtins---"))
+	m.ch.statements.view_mode = 0
 
 
 	#r["loaded program"] = B.module.inst_fresh()
 	#r["loaded program"].ch.name = Text("placeholder")
 	#r["loaded program"].ch.statements.view_mode=0
 
-	r["clipboard"] = B.module.inst_fresh()
-	r["clipboard"].ch.name = Text("clipboard")
-	r["clipboard"].ch.statements.view_mode=1
-
-
-	library = r["library"] = make_list('module')
-	library.view_mode = 0#library.vm_multiline
-
-	import glob
-	for file in glob.glob("library/*.lemon.json"):
-		placeholder = library.add(new_module())
-		placeholder.ch.name.pyval = "placeholder for "+file
-		print(load_module(file, placeholder))
-	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
-
-	def load_txt_module(filename, module):
-		text = open(filename).read()
-		items = text.split('\n-----\n')
-		for idx,i in enumerate(items):
-			p = Parser()
-			module.ch.statements.add(p)
-			p.add(widgets.Text(p, i))
-
-	for file in glob.glob("library/*.lemon.txt"):
-		mo = library.add(new_module())
-		mo.ch.name.pyval = file
-		print(load_txt_module(file, mo))
-
+	m = r.clipboard = r.translatable[("clipboard")] = r.clipboard = B.module.inst_fresh()
+	m.ch.name = Text(tr("clipboard"))
+	m.ch.statements.view_mode=1
 
 	#essentials = [x.ch.statements for x in library.items if x.ch.name.pyval == "essentials"][0]
 	#r.essentials.banana = essentials.by_name('Banana')
 
 
-
-	r["liki"] = B.likimodule.inst_fresh()
-	r["liki"].ch.statements.newline()
-	r["liki"].ch.statements.view_mode=2
-	r["liki"].ch.file.pyval = "liki.lemon.json"
-	load_module("liki.lemon.json", r["liki"])
+	m = r.liki = r.translatable["liki"] = B.likimodule.inst_fresh()
+	m.ch.statements.newline()
+	m.ch.statements.view_mode=2
+	m.ch.file.pyval = "liki.lemon.json"
 
 
-
+	m = r.library = r.translatable[("library")] = make_list('module')
+	m.view_mode = 0#library.vm_multiline
 
 
 	#r.add(("toolbar", toolbar.build()))
-
-
-
 
 
 	#log(len(r.flatten()))
@@ -3135,17 +3123,48 @@ def make_root():
 	#r["some program"].save()
 	#log("ok")
 
-
+	r.translate()
 	r.fix_parents()
+
+
+	load_library(r)
+	load_module("liki.lemon.json", r["liki"])
+
+
 	if __debug__:
 		for i in r.flatten():
 			if not isinstance(i, Root):
 				assert i.parent,  i.long__repr__()
 
-	update_syntaxes(r["repl"].scope())
+
+	update_syntaxes(r.repl.scope())
+
+
+
 	return r
 
 
+
+def load_library(r):
+	import glob
+	for file in glob.glob("library/*.lemon.json"):
+		placeholder = r.library.add(new_module())
+		placeholder.ch.name.pyval = "placeholder for "+file
+		print(load_module(file, placeholder))
+	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
+
+	def load_txt_module(filename, module):
+		text = open(filename).read()
+		items = text.split('\n-----\n')
+		for idx,i in enumerate(items):
+			p = Parser()
+			module.ch.statements.add(p)
+			p.add(widgets.Text(p, i))
+
+	for file in glob.glob("library/*.lemon.txt"):
+		mo = r.library.add(new_module())
+		mo.ch.name.pyval = file
+		print(load_txt_module(file, mo))
 
 
 def update_syntaxes(scope):
@@ -3632,7 +3651,7 @@ class Serialized(Syntaxed):
 
 
 def b_lemon_load_file(root, name):
-	return load_module(name, root["loaded program"])
+	return load_module(name, root.loaded_program)
 
 def load_module(file_name, placeholder):
 	print ("loading "+file_name)
@@ -4277,19 +4296,18 @@ def scope_after_hiding_and_unhiding(s):
 						r.append(j)
 					what.remove(name)
 				else:
-					print(name, what)
-					logging.getLogger("scope").debug("stays hidden: %s" % j)
+					logging.getLogger("scope").debug("stays hidden: %s (with name:%s), want:%s" % (j, name, what))
 			if len(what):
 				print("failed to unhide %s"%what)
 				exit()
 	return r
 
 def collect_modules_seen_by_module(root, module):
-	if module and module == module.root["builtins"]:
+	if module and module == module.root.builtins:
 		return [] # builtins dont see anything
 	else:
-		modules = [root["builtins"]]
-		for m in root['library'].items:
+		modules = [root.builtins]
+		for m in root.library.items:
 			if not isinstance(m, Module):
 				continue
 			if module != m:

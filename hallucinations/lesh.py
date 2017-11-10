@@ -89,7 +89,7 @@ class LeshCommandLine(ParserBase):
 			else:
 				text = self.items[i]
 
-		scope = self.root["builtins"].ch.statements.parsed
+		scope = self.root.builtins.ch.statements.parsed
 		menu = flatten([x.palette(scope, text, self) for x in scope if isinstance(x, LeshSnippetDeclaration)])
 
 		matchf = fuzz.token_set_ratio#partial_ratio

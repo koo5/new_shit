@@ -116,7 +116,7 @@ class Editor(ServerFrame):
 		#editor.draw_signal.emit()
 
 	def run_active_program(editor):
-		editor.root['some program'].run()
+		editor.root.some_program.run()
 		editor.signal_change()
 
 	def run_line(editor):
@@ -124,7 +124,7 @@ class Editor(ServerFrame):
 		editor.signal_change()
 
 	def clear(editor):
-		editor.root['some program'].clear()
+		editor.root.some_program.clear()
 		editor.signal_change()
 
 	def	dump_root_to_file(editor):
@@ -256,7 +256,6 @@ class Menu(SidebarFrame):
 		editor.on_atts_change.connect(s.update)
 		s.valid_only = False
 		s._changed = True
-		s.marpa = MarpaClient(send_thread_message, args.graph_grammar or args.log_parsing)
 		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
 		s.palette_results = []
@@ -321,6 +320,7 @@ class Menu(SidebarFrame):
 			s.signal_change()
 
 	def prepare_grammar(s, scope):
+		s.marpa = MarpaClient(send_thread_message, args.graph_grammar or args.log_parsing)
 		s.marpa.collect_grammar(scope, scope)
 		assert s.current_parser_node
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
@@ -680,5 +680,5 @@ def load(name):
 	assert(isinstance(name, unicode))
 	nodes.b_lemon_load_file(editor.root, name)
 	editor.render()
-	try_move_cursor(root.root['loaded program'])
+	try_move_cursor(root.root.loaded_program)
 

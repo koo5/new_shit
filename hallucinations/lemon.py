@@ -73,9 +73,9 @@ def start():
 
 	try:
 		#if args.lesh:
-		#	something = root.root['lesh'].command_line
+		#	something = root.root[('lesh')].command_line
 		#else:
-		something = root.root['some program'].ch.statements.items[1]
+		something = root.root.some_program.ch.statements.items[1]
 
 		root.cursor_c, root.cursor_r = project.find(something, root.lines)
 		#root.cursor_c += 1
@@ -83,7 +83,7 @@ def start():
 		log (e.__repr__(), ", cant set initial cursor position")
 
 	#import parser_test
-	#parser_test.test(root.root['some program'].ch.statements.items[0])
+	#parser_test.test(root.root[('some program')].ch.statements.items[0])
 
 
 
@@ -92,7 +92,7 @@ def start():
 
 	if args.run:
 		load(args.run)
-		root.root['loaded program'].run()
+		root.root.loaded_program.run()
 
 	if args.replay:
 		do_replay(False)
@@ -101,7 +101,7 @@ def load(name):
 	assert(isinstance(name, unicode))
 	frames.nodes.b_lemon_load_file(root.root, name)
 	root.render()
-	try_move_cursor(root.root['loaded program'])
+	try_move_cursor(root.root.loaded_program)
 
 
 def try_move_cursor(n):

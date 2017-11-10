@@ -2,6 +2,8 @@
 
 """(sdl/curses)-agnostic frontend stuff"""
 
+from localization import tr
+
 import sys
 
 import rpcing_frames
@@ -62,7 +64,7 @@ class Client():
 
 		if args.run:
 			rpcing_frames.server.load(args.run)
-			s.editor.root['loaded program'].run()
+			s.editor.root.loaded_program.run()
 
 		if not args.kbdbg:
 			s.initially_position_cursor()
@@ -85,9 +87,9 @@ class Client():
 
 	def _initially_position_cursor(s):
 		# if args.lesh:
-		#	something = root.root['lesh'].command_line
+		#	something = root.root.lesh.command_line
 		# else:
-		something = s.editor.counterpart.root['empty module'].ch.statements.items[1]
+		something = s.editor.counterpart.root.empty_module.ch.statements.items[1]
 		s.editor.move_cursor(something)
 
 	def after_sidebar_changed(s):
