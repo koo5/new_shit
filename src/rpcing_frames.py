@@ -20,7 +20,7 @@ from keys import *
 from server_side import server
 
 if SDL:
-	import pygameÓ
+	import pygame
 	from pygame import Rect
 
 import logging

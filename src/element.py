@@ -176,8 +176,7 @@ def _collect_tags(elem, tags):
 		#print (tag)
 		if ty in (GeneratorType, list):
 			#recurse
-			for i in _collect_tags(elem, tag):
-				yield i
+			yield from _collect_tags(elem, tag)
 
 		#elif ty == tuple and tag[0] == Att.elem:
 		#	yield Att.elem, make_proxy(tag[1])

@@ -32,8 +32,10 @@ class CallbackHandler(object):
 			#process_tags(j)
 		process_tags(tags)
 
+end = False
 def process_tags(l):
 	global end
+	end = False
 	if l == -1:
 		print ("done")
 		#from IPython import embed; embed()
@@ -49,17 +51,20 @@ def process_tags(l):
 			#from IPython import embed; embed()
 			daemon.shutdown()
 			end = True
-end = False
 
 obj = Pyro4.core.Proxy("PYRONAME:lemmacs.server_frames.editor2")
 #obj._pyroSerializer = "msgpack"
 obj._pyroSerializer = "pickle"
 
+use_unix_socket = False
+if use_unix_socket:
+	import os
+	if os.path.exists("example_unix2.sock"):
+		os.remove("example_unix2.sock")
+	daemon = Pyro4.core.Daemon(unixsocket="example_unix2.sock")
+else:
+	daemon = Pyro4.core.Daemon()
 
-import os
-if os.path.exists("example_unix2.sock"):
-	os.remove("example_unix2.sock")
-daemon = Pyro4.core.Daemon(unixsocket="example_unix2.sock")
 
 
 callback_handler = CallbackHandler()
@@ -67,6 +72,8 @@ daemon.register(callback_handler)
 
 
 def collect():
+	global end
+	end = False
 
 	print("start_collecting_tags(%s)"%obj)
 	obj.start_collecting_tags(callback_handler)
