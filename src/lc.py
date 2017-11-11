@@ -699,7 +699,7 @@ App := Expr " " Expr
 			func_t = type_check(expr.ch.e1, env)
 			if isinstance(func_t,FunType):
 				arg_t = type_check(expr.ch.e2, env)
-				if arg_t.eq_by_value_and_python_class(func_t.ch._dict["from"]):
+				if arg_t.eq_by_value_and_decl(func_t.ch._dict["from"]):
 					return func_t.ch.to
 				else:
 					print("Bad argument type")

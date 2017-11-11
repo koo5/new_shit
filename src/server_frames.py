@@ -350,7 +350,26 @@ class Menu(SidebarFrame):
 				s.marpa.enqueue_parsing(s.tokens)
 		elif m.message == 'parsed':
 			log(m.results)
-			s.parse_results = [nodes.ParserMenuItem(['a parse'], x, 5500) for x in m.results]
+			results = []
+			def update_existing(score, note, node):
+				return False#todo all nodes need to have eq_by_value
+				for idx, i in enumerate(results):
+					ii = i.value#type: nodes.Node
+					if ii.eq_by_value_and_decl(node):
+						if i.score < score:
+							results[idx] = nodes.ParserMenuItem([note], node, score)
+						return True
+
+			def maybe_add(score, note, node):
+				if not update_existing(score, note, node):
+					results.append(nodes.ParserMenuItem([note], node, score))
+
+			for x in m.results:
+				if isinstance(x, nodes.Autocompletion):
+					maybe_add(4444, "autocomplete", x.value)
+				else:
+					maybe_add(5555, "a parse", x)
+			s.parse_results = results
 			s.update_items()
 			#	r.append(ParserMenuItem(i, 333))
 			s.signal_change()
@@ -502,7 +521,8 @@ class Menu(SidebarFrame):
 					assert False
 				name = "terminal for %s"%str(dd)
 				new = marpa.symbol(name)
-				marpa.rule(name, dd, new)
+				i = i.copy()
+				marpa.rule(name, dd, new, action=lambda x:i)
 				symbols.append(new)
 				text += "❆"
 				print("%s in marpa input tokens" % name)

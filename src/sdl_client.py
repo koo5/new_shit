@@ -105,7 +105,7 @@ def change_font_size(by = 0):
 	args.font_size += by
 	if args.font_size < 1:
 		args.font_size = 1
-	log("font size:%s", args.font_size)
+	info("font size:%s", args.font_size)
 
 
 

@@ -81,6 +81,15 @@ from marpa_cffi.valuator_actions import *
 
 tags.asselement = element # for assertions
 
+
+
+
+class Autocompletion:
+	def __init__(s, value):
+		s.value = value
+
+
+
 # endregion
 AST_CHANGED = 2
 
@@ -476,7 +485,7 @@ class VarRefPersistenceStuff(BaseRefPersistenceStuff):
 		logging.getLogger("serialization").debug('vardecl decl:%s', decl)
 		for i in parent.vardecls_in_scope:
 			logging.getLogger("serialization").debug('i in parent.vardecls_in_scope:%s',i)
-			if decl.eq_by_value_and_python_class(i.decl):
+			if decl.eq_by_value_and_decl(i.decl):
 				if i.name == data['target']['name']:
 					r = cls(i)
 					r.parent = parent
@@ -551,7 +560,7 @@ def resolve_function(data, parent):
 		sig = deserialize(data['sig'], parent)
 		assert isinstance(sig, List)
 		for i in funcs:
-			if i.ch.sig.eq_by_value_and_python_class(sig):
+			if i.ch.sig.eq_by_value_and_decl(sig):
 				#log("found")
 				return i
 		for i in funcs:
@@ -798,7 +807,7 @@ class Node(NodePersistenceStuff, element.Element):
 		"""decl dereferenced to the actual value, thru refs/definitions.."""
 		return deref_decl(s.decl)
 
-	def eq_by_value_and_python_class(a, b):
+	def eq_by_value_and_decl(a, b):
 		"""like comparing by type and value, but crappier"""
 		a,b = a.parsed, b.parsed
 		if a.__class__ != b.__class__:
@@ -834,7 +843,7 @@ def register_rules_for_syntax(name, m, cls_sym, syntax, ddecl):
 				syms = syms[:]
 				syms.append(m.known_char(ch))
 				if autocomplete:
-					m.rule(name, cls_sym, syms, action=lambda x: SyntaxedBase.from_parse(ddecl, syntax, x))
+					m.rule(name, cls_sym, syms, action=lambda x: Autocompletion(SyntaxedBase.from_parse(ddecl, syntax, x)))
 		elif ti == ChildTag:
 			child_type = ddecl.instance_slots[i.name]
 			if type(child_type) == Exp:
@@ -848,7 +857,7 @@ def register_rules_for_syntax(name, m, cls_sym, syntax, ddecl):
 			syms = syms[:]
 			syms.append(x)
 			if autocomplete:
-				m.rule(name, cls_sym, syms, action=lambda x: SyntaxedBase.from_parse(ddecl, syntax, x))
+				m.rule(name, cls_sym, syms, action=lambda x: Autocompletion(SyntaxedBase.from_parse(ddecl, syntax, x)))
 	assert len(syms) != 0
 	if not autocomplete:
 		m.rule(name, cls_sym, syms, action=lambda x: SyntaxedBase.from_parse(ddecl, syntax, x))
@@ -998,7 +1007,7 @@ class SyntaxedBase(Node):
 	def eq_by_value(a, b):
 		assert len(a.ch._dict) == len(b.ch._dict)  # are you looking for eq_by_value_and_decl?
 		for k, v in iteritems(a.ch._dict):
-			if not b.ch[k].eq_by_value_and_python_class(v):
+			if not b.ch[k].eq_by_value_and_decl(v):
 				return False
 		return True
 
@@ -1222,7 +1231,7 @@ class Dict(Collapsible):
 
 	def find(s, key):
 		for k in iterkeys(s.items):
-			if k.eq_by_value_and_python_class(key): #should be by decl
+			if k.eq_by_value_and_decl(key): #should be by decl
 				return k
 
 	def __getitem__(s, key):
@@ -1457,7 +1466,7 @@ class List(ListPersistenceStuff, Collapsible):
 			return False
 		#otherwise..
 		for i,v in enumerate(a.items):
-			if not v.eq_by_value_and_python_class(b.items[i]):
+			if not v.eq_by_value_and_decl(b.items[i]):
 				return False
 		return True
 
@@ -1536,6 +1545,7 @@ class NoValue(Node):
 	def to_python_str(s):
 		return "no value"
 	def eq_by_value(a, b):
+		assert False
 		return True
 
 def banana(text="error text"):
@@ -1544,7 +1554,7 @@ def banana(text="error text"):
 	r.ch.info = Text(text)
 	return r
 
-class Bananas(Node):
+class Bananas(Node):#todo convert to CustomNode
 	"""https://www.youtube.com/watch?v=EAmChFTLP4w&feature=youtu.be&t=2m19s"""
 	help=["parsing failure. your code is bananas."]
 	def __init__(s, contents=[]):
@@ -1670,8 +1680,16 @@ class Root(Dict):
 		## but before re-rendering, it might move it beyond the end of file
 		s.indent_length = 4 #not really used but would be nice to have it variable
 		s.changed = True
-		s.essentials = Dotdict()
 		s.translatable = odict()
+		s.essentials = odict()
+
+	def replace_child(s, old, new):
+		s.translatable = replace_thing_in_odict(s.translatable, old, new)
+		for k,v in iteritems(s.__dict__):
+			if v == old:
+				s.__dict__[k] = new
+		s.translate()
+		s.fix_parents()
 
 	def translate(root):
 		root.clear()
@@ -1808,7 +1826,7 @@ class Ref(RefPersistenceStuff, Node):
 		return object.__repr__(s) + "('"+str(s.target)+"')"
 	def eq_by_value(a, b):
 			if a.target == b.target:
-				log("saying %s equals %s"%(a,b))
+				log("%s equals %s"%(a,b))
 				return True
 	def copy(s):
 		return Ref(s.target)
@@ -3067,7 +3085,6 @@ def make_root():
 	uh.ch.what.view_mode = 2
 	uh.ch.what.add(Text("functioncall"))
 	uh.ch.what.add(Text("builtins"))
-
 	m.ch.statements.items = [uh, Parser()]
 
 
@@ -3080,29 +3097,40 @@ def make_root():
 	m.ch.statements.view_mode = 0
 
 
+	m = r.translatable["essentials"] = B.module.inst_fresh()
+	m.parent = r
+	load_module("essentials.lemon.json", m)
+	r.translatable["essentials"].ch.statements.view_mode=0
+	for i in r.translatable["essentials"].ch.statements:
+		i = i.parsed
+		try:
+			name = i.name
+		except AttributeError:
+			continue
+		r.essentials[name] = i
+
+
 	#r["loaded program"] = B.module.inst_fresh()
 	#r["loaded program"].ch.name = Text("placeholder")
 	#r["loaded program"].ch.statements.view_mode=0
+
 
 	m = r.clipboard = r.translatable[("clipboard")] = r.clipboard = B.module.inst_fresh()
 	m.ch.name = Text(tr("clipboard"))
 	m.ch.statements.view_mode=1
 
-	#essentials = [x.ch.statements for x in library.items if x.ch.name.pyval == "essentials"][0]
-	#r.essentials.banana = essentials.by_name('Banana')
-
 
 	m = r.liki = r.translatable["liki"] = B.likimodule.inst_fresh()
 	m.ch.statements.newline()
-	m.ch.statements.view_mode=2
+	m.ch.statements.view_mode=0
 	m.ch.file.pyval = "liki.lemon.json"
 
 
 	m = r.library = r.translatable[("library")] = make_list('module')
 	m.view_mode = 0#library.vm_multiline
 
-	r.translatable["cli dummy empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
 
+	r.translatable["cli dummy empty module"] = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
 
 
 	#r.add(("toolbar", toolbar.build()))
@@ -3125,13 +3153,14 @@ def make_root():
 	#r["some program"].save()
 	#log("ok")
 
+
 	r.translate()
 	r.fix_parents()
 
 
 	load_library(r)
-	load_module("liki.lemon.json", r["liki"])
-
+	load_module("liki.lemon.json", r.liki)
+	r.liki.ch.statements.view_mode=0
 
 	if __debug__:
 		for i in r.flatten():
@@ -3651,9 +3680,9 @@ class Serialized(Syntaxed):
 		s.parent.replace_child(s, new)
 
 
-
 def b_lemon_load_file(root, name):
 	return load_module(name, root.loaded_program)
+
 
 def load_module(file_name, placeholder):
 	print ("loading "+file_name)
@@ -4058,7 +4087,7 @@ def register_def_symbol(s, m):
 		dd = s.ddecl
 		assert isinstance(dd, ParametricNodecl)
 		for k,v in iteritems(m.node_symbols):
-			if k.eq_by_value_and_python_class(s): #fixme?
+			if k.eq_by_value_and_decl(s): #fixme?
 				m.node_symbols[s] = v
 				return
 		item_symbol = deref_decl(s.ch.itemtype).symbol(m)
