@@ -1,0 +1,54 @@
+{
+    "children": {
+        "file": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "class": "nodecl",
+                    "name": "text",
+                    "resolve": true
+                }
+            },
+            "last_rendering": "\"library/xrandr.lemon.json\"",
+            "text": "library/xrandr.lemon.json"
+        },
+        "name": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "class": "nodecl",
+                    "name": "text",
+                    "resolve": true
+                }
+            },
+            "last_rendering": "\"xrandr\"",
+            "text": "xrandr"
+        },
+        "statements": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "class": "nodecl",
+                    "name": "statements",
+                    "resolve": true
+                }
+            },
+            "items": [
+                {
+                    "decl": "Parser",
+                    "items": []
+                }
+            ],
+            "last_rendering": "+"
+        }
+    },
+    "decl": {
+        "decl": "ref",
+        "target": {
+            "class": "syntaxednodecl",
+            "name": "module",
+            "resolve": true
+        }
+    },
+    "last_rendering": " module\"xrandr\", from file\"library/xrandr.lemon.json\":\n+end. "
+}

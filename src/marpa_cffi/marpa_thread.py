@@ -2,6 +2,7 @@
 from lemon_utils.lemmacsthread import LemmacsThread
 from lemon_utils.lemon_six import iteritems
 
+import typing
 
 import logging
 logger=logging.getLogger("marpa")
@@ -52,7 +53,7 @@ class MarpaThread(LemmacsThread):
 				if inp.task == 'precompute_grammar':
 					s.precompute_grammar(inp)
 				elif inp.task == 'parse':
-					r = list(s.parse(inp.tokens, inp.raw, inp.rules))
+					r = list(s.parse(inp.tokens, inp.raw, inp.rules)) #type: typing.List[nodes.Node]
 					info("parsed %s results" % len(r))
 					for i in r:
 						info("%s" % (i))
