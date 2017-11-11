@@ -236,8 +236,8 @@ class MarpaThread(LemmacsThread):
 				# args = [stack[i] for i in range(arg0, argn+1)]
 				# stack[arg0] = (rule2name(r), args)
 
-				if babble:
-					log(rules[r])
+				#if babble:
+				#	log(rules[r])
 				actions = rules[r][4]
 
 				val = [stack2[i] for i in range(arg0, argn + 1)]

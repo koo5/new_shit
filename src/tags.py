@@ -1,14 +1,16 @@
 from lemon_utils.lemon_six import unicode
+from proxy import make_proxy
 
 
 
 #from enum import Enum, unique
 #@unique
-class Att():#Enum):
-	elem  = 0
-	color = 1
-	char_index = 2
-	item_index = 3
+class Att():
+	#these could start from zero but this is clearer
+	elem  = 10
+	color = 11
+	char_index = 12
+	item_index = 13
 
 
 
@@ -25,13 +27,19 @@ reparse = 9
 
 
 
+def ItemIndexTag(elem, index):
+	return Att.item_index, (make_proxy(elem), index)
+
+def ElemTag(elem):
+	return Att.elem, make_proxy(elem)
+
 def TextTag(text):
 	""" now evaluates to the text itself, used only perhaps for clarity"""
 	assert isinstance(text, unicode)
 	return text
 
 def AttTag(k,v):
-	"""a tuple containing an attribute"""
+	"""key,value"""
 	return k,v
 
 def ColorTag(value):
@@ -49,7 +57,7 @@ def DedentTag():
 	return dedent_tag
 
 def ArrowTag(target, style="normal"):
-	return {"arrow": target, "style":style}
+	return {"arrow": make_proxy(target), "style":style}
 
 def NewlineTag(Tag):
 	return "\n"

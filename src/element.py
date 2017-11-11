@@ -83,7 +83,7 @@ class Element():
 		return False
 
 	def tags(elem):
-		yield [AttTag(Att.elem, elem),
+		yield [ElemTag(elem),
 
 				element_start_graphic_indicator,
 
@@ -168,28 +168,33 @@ class Element():
 			yield t
 
 
+
 def _collect_tags(elem, tags):
 	"""make a flat list, expanding child elements"""
 	for tag in tags:
-		if type(tag) in (GeneratorType, list):
+		ty = type(tag)
+		#print (tag)
+		if ty in (GeneratorType, list):
 			#recurse
-			for i in _collect_tags(elem, tag):
-				yield i
+			yield from _collect_tags(elem, tag)
 
-		elif type(tag) == TextTag:
-			yield tag.text
+		#elif ty == tuple and tag[0] == Att.elem:
+		#	yield Att.elem, make_proxy(tag[1])
 
-		elif type(tag) == ChildTag:
+		#elif ty == tuple and tag[0] == Att.item_index:
+		#	yield Att.item_index, (make_proxy(tag[1][0]), tag[1][1])
+
+		elif ty == ChildTag:
 			e = elem.ch[tag.name]
 			for i in e.collect_tags():
 				yield i
 
-		elif type(tag) == MemberTag:
+		elif ty == MemberTag:
 			e = elem.__dict__[tag.name] #get the element as an attribute #i think this should be getattr, but it seems to work
 			for i in e.collect_tags():
 				yield i
 
-		elif type(tag) == ElementTag:
+		elif ty == ElementTag:
 			e = tag.element
 			for i in e.collect_tags():
 				yield i

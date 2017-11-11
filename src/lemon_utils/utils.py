@@ -46,7 +46,7 @@ class Evil(object):
 from itertools import *
 
 
-def batch(it, n=100):
+def batch(it, n=100000):
 	m = n - 1
 	while True: #islice wont throw an ExhaustedIterator exception when its source is exhausted
 		# so we peek one element with next(), then chain it to the isliced rest. next throws
