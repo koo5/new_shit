@@ -1,6 +1,7 @@
 from lemon_utils.lemon_six import unicode
-from proxy import make_proxy
+from proxy import make_proxy, unproxy
 
+from lemon_utils.lemon_six import iteritems
 
 
 #from enum import Enum, unique
@@ -25,13 +26,24 @@ element_end_graphic_indicator = 7
 maybe_whitespace = 8
 reparse = 9
 
-
+def unproxy_atts(dict_of_atts):
+	r = {}
+	for k,v in iteritems(dict_of_atts):
+		if k == Att.item_index:
+			r [k] = unproxy(v[0]), v[1]
+		elif k == Att.elem:
+			r [k] = unproxy(v)
+		else: r[k] = v
+	return r
 
 def ItemIndexTag(elem, index):
 	return Att.item_index, (make_proxy(elem), index)
 
 def ElemTag(elem):
 	return Att.elem, make_proxy(elem)
+
+def ArrowTag(target, style="normal"):
+	return {"arrow": make_proxy(target), "style":style}
 
 def TextTag(text):
 	""" now evaluates to the text itself, used only perhaps for clarity"""
@@ -55,9 +67,6 @@ def IndentTag():
 
 def DedentTag():
 	return dedent_tag
-
-def ArrowTag(target, style="normal"):
-	return {"arrow": make_proxy(target), "style":style}
 
 def NewlineTag(Tag):
 	return "\n"

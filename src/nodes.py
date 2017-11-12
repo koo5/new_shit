@@ -3171,6 +3171,7 @@ def make_root():
 
 	update_syntaxes(r.repl.scope())
 
+	r.fix_parents()
 
 
 	return r

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from proxy import unproxy
+
 import pygame
 # from typing import Iterable
 
@@ -55,9 +57,6 @@ class Atts(object):
 	# umm we could make a key to cycle the any if needed
 
 
-
-
-
 import tag_collector
 
 def collect():
@@ -81,7 +80,7 @@ class ServerFrame(object):
 	def __init__(s):
 		s.draw_signal = Signal(0)
 
-    def collect_tags(s):
+	def collect_tags(s):
 		return batch(_collect_tags(s, s.tags()))
 
 
@@ -147,7 +146,7 @@ class Editor(ServerFrame):
 		s.signal_change(True)
 
 	def on_elem_mouse_press(s, elem, button):
-		if elem.on_mouse_press(button):
+		if unproxy(elem).on_mouse_press(button):
 			s.root.changed = True
 			s.signal_change()
 			return True
@@ -176,7 +175,15 @@ class Editor(ServerFrame):
 	def get_delayed_cursor_move(editor):
 		return editor.root.delayed_cursor_move
 
-	def set_atts(editor, atts):
+	def set_atts(editor, proxied_atts):
+		atts = {}
+
+		for k,v in iteritems(proxied_atts):
+			if v:
+				atts[k] = unproxy_atts(v)
+			else:
+				atts[k] = None
+
 		log("setting atts under cursor to %s", pp(atts))
 		editor.atts = Atts(atts)
 		editor.on_atts_change.emit()
@@ -323,7 +330,6 @@ class Menu(SidebarFrame):
 		# editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.update)
 		s._changed = True
-		thread_message_signal.connect(s.on_thread_message)
 		s.parse_results = []
 		s.palette_results = []
 		s.sorted_everything = []
@@ -747,18 +753,6 @@ class Log(ServerFrame):
 		return s._dirty
 
 
-logframe = Log()
-#intro = Intro()
-editor = Editor()
-editor.root["builtins"].ch.statements.view_mode=2
-
-# intro = Intro()
-menu = Menu()
-
-node_info = NodeInfo(editor)
-node_debug = NodeDebug(editor)
-
-
 def element_click(element):
 	return element.on_mouse_press(e)
 
@@ -770,9 +764,22 @@ def load(name):
 	try_move_cursor(root.root.loaded_program)
 
 
+def init(_thread_message_signal, _send_thread_message):
+	global send_thread_message, editor, logframe, menu, node_info, node_debug
 
+	logframe = Log()
+	#intro = Intro()
+	editor = Editor()
+	#editor.root.builtins.ch.statements.view_mode=2
 
+	# intro = Intro()
+	menu = Menu()
 
+	node_info = NodeInfo(editor)
+	node_debug = NodeDebug(editor)
+
+	send_thread_message = _send_thread_message
+	_thread_message_signal.connect(menu.on_thread_message)
 
 
 
@@ -780,3 +787,4 @@ def load(name):
 #@zerorpc.stream
 #def collect_tags_of_editor():
 #	return editor.collect_tags()
+

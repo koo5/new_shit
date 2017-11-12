@@ -16,5 +16,5 @@ def make_proxy(x):
 		reverse[counter] = x
 		return counter
 
-def reverse_proxy(num):
+def unproxy(num):
 	return reverse[num]

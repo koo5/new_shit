@@ -747,6 +747,8 @@ class Editor(ClientFrame):
 		f.close()
 
 	def move_cursor(s, something, coff=0, roff=0):
+		"""move cursor to a given element, + optional offset.
+		if element is not found, raises an exception"""
 		s.cursor_c, s.cursor_r = s.find_element(something)
 		s.cursor_c += coff
 		s.cursor_r += roff
