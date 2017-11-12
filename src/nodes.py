@@ -243,6 +243,25 @@ class Children(Dotdict):
 
 # endregion
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # region persistence
 
 class DeserializationException(Exception):
@@ -448,7 +467,7 @@ class ListPersistenceStuff(object):
 
 		r.view_mode = 2
 		return r
-
+#StatementsPersistenceStuff?
 class BaseRefPersistenceStuff(object):
 	pass
 
@@ -516,7 +535,7 @@ class ParserPersistenceStuff(object):
 		assert parent
 		r = cls()
 		r.parent = parent
-		logging.getLogger("serialization").debug("deserializing Parser "+str(data))
+		logging.getLogger("serialization").debug("deserializing Parser "+json.dumps(data, indent=True, sort_keys=True))
 		for i in data['items']:
 			if isinstance(i, unicode):
 				r.add(widgets.Text(666, i))
@@ -566,7 +585,9 @@ def resolve_function(data, parent):
 				return i
 		for i in funcs:
 			logging.getLogger("serialization").debug("function considered:%s"%i)
-		raise DeserializationException("function not found by sig:%s" % sig)#json.dumps(sig, indent = 4, sort_keys=True))
+
+		scope = parent.scope()
+		raise DeserializationException("function not found by sig:%s" %sig)#% json.dumps(sig, indent = 4, sort_keys=True))
 
 	else:
 		raise DeserializationException("function call without neither sig nor name:%s" % data)
@@ -597,6 +618,23 @@ class WidgetedValuePersistenceStuff(object):
 		return r
 
 # endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # region basic node classes
 
@@ -3111,9 +3149,9 @@ def make_root():
 		r.essentials[name] = i
 
 
-	#r["loaded program"] = B.module.inst_fresh()
-	#r["loaded program"].ch.name = Text("placeholder")
-	#r["loaded program"].ch.statements.view_mode=0
+	m = r.loaded_program = r.translatable["loaded program"] = B.module.inst_fresh()
+	m.ch.name = Text("placeholder")
+	m.ch.statements.view_mode=0
 
 
 	m = r.clipboard = r.translatable[("clipboard")] = r.clipboard = B.module.inst_fresh()
@@ -3682,8 +3720,78 @@ class Serialized(Syntaxed):
 		s.parent.replace_child(s, new)
 
 
-def b_lemon_load_file(root, name):
-	return load_module(name, root.loaded_program)
+def b_lemon_load_file(root, name: str):
+	global autocomplete
+	if name.upper().endswith(".LEMON.TXT"):
+		autocomplete = False
+		return load_txt(name, root.loaded_program)
+		autocomplete = True
+	elif name.upper().endswith(".LEMON.JSON"):
+		return load_module(name, root.loaded_program)
+	else:
+		raise Exception(name + " file extension not recognized")
+
+
+from marpa_cffi.marpa_rpc_client import MarpaClient
+
+def load_txt(file_name, placeholder):
+
+	text = open(file_name, "r").read()
+	if text.startswith("unhide"):
+		starts_with_unhide = True
+		module = B.modulethatdoesntseeanythingexceptunhide.inst_fresh()
+	else:
+		starts_with_unhide = False
+		module = B.module.inst_fresh()
+	module.ch.file.pyval = file_name
+	#module._parent = root
+	placeholder.parent.replace_child(placeholder, module)
+
+
+	items = text.split('\n-----\n')
+	for idx,i in enumerate(items):
+		p = Parser()
+		module.ch.statements.add(p)
+		if idx == 0 and starts_with_unhide:
+			p._type = nodes.B.unhidenode
+		p.add(Text(value = i))
+		if i == "":
+			continue
+
+		rr = parse_sync(p, i)
+
+		if (rr and len(rr)):
+			for i in rr:
+				print("parse result:%s"%i)
+				if isinstance(i, element.Element):
+					print(" - %s"%i.tostr())
+			p.items = [rr[-1]]
+		else:
+			print ("no parse")
+			exit()
+
+	module.fix_parents()
+
+
+
+def parse_sync(p, text=None):
+	m = MarpaClient(print, True)
+	m.clear()
+	m.collect_grammar(p.full_scope(), p.scope(), p.type)#parsed_symbol)
+	m.enqueue_precomputation(None)
+	while True:
+		msg = m.t.output.get()
+		if msg.message == 'precomputed':
+			ts = m.string2tokens(text)
+			print ("tokens", ts)
+			m.enqueue_parsing([ts, text])
+			#recurse to wait for 'parsed'
+		elif msg.message == 'parsed':
+			return msg.results
+		else:
+			raise Exception(msg.message)
+
+
 
 
 def load_module(file_name, placeholder):
