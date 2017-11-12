@@ -759,7 +759,7 @@ def element_click(element):
 
 def load(name):
 	assert (isinstance(name, unicode))
-	nodes.b_lemon_load_file(editor.root, name)
+	nodes.b_lemon_load_file(name, editor.root.loaded_program)
 	#editor.render()
 	#try_move_cursor(root.root.loaded_program)
 

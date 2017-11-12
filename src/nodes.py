@@ -273,6 +273,7 @@ def deserialize(data, parent):
 	parent is a dummy node placed at the point where the deserialized node should go,
 	this makes things like List.above() work while getting scope
 	"""
+	logging.getLogger("serialization").debug("%s"%parent.ancestors)
 	assert parent
 	if 'resolve' in data: # create a Ref pointing to another node
 		return resolve(data, parent)
@@ -461,6 +462,7 @@ class ListPersistenceStuff(object):
 		assert(r.items == [])
 		for i, item_data in enumerate(data['items']):
 			pl = Text("placeholder")
+			pl.parent = r
 			r.add(pl)
 			r.items[i] = deserialize(item_data, pl)
 			r.items[i].parent = r
@@ -550,7 +552,6 @@ class FunctionCallPersistenceStuff(object):
 		return odict(
 			target = s.target.unresolvize(),
 		    args = s.serialize_args()
-
 		)
 
 	def serialize_args(s):
@@ -3221,21 +3222,12 @@ def load_library(r):
 	for file in glob.glob("library/*.lemon.json"):
 		placeholder = r.library.add(new_module())
 		placeholder.ch.name.pyval = "placeholder for "+file
-		print(load_module(file, placeholder))
+		print(b_lemon_load_file(file, placeholder))
 	#todo: walk thru weakrefs to serialized, count successful deserializations, if > 0 repeat?
-
-	def load_txt_module(filename, module):
-		text = open(filename).read()
-		items = text.split('\n-----\n')
-		for idx,i in enumerate(items):
-			p = Parser()
-			module.ch.statements.add(p)
-			p.add(widgets.Text(p, i))
-
 	for file in glob.glob("library/*.lemon.txt"):
 		mo = r.library.add(new_module())
 		mo.ch.name.pyval = file
-		print(load_txt_module(file, mo))
+		print(b_lemon_load_file(file, mo))
 
 
 def update_syntaxes(scope):
@@ -3720,14 +3712,16 @@ class Serialized(Syntaxed):
 		s.parent.replace_child(s, new)
 
 
-def b_lemon_load_file(root, name: str):
+def b_lemon_load_file(name: str, placeholder: Module):
 	global autocomplete
+	assert type(name) == str
+	assert type(placeholder) == Module
 	if name.upper().endswith(".LEMON.TXT"):
 		autocomplete = False
-		return load_txt(name, root.loaded_program)
+		return load_txt(name, placeholder)
 		autocomplete = True
 	elif name.upper().endswith(".LEMON.JSON"):
-		return load_module(name, root.loaded_program)
+		return load_module(name, placeholder)
 	else:
 		raise Exception(name + " file extension not recognized")
 
@@ -4480,9 +4474,9 @@ def what_in_my_module_do_i_see(s):
 	r = []
 	p = s.parent
 	r += [p]
-	if isinstance(p, Statements):
+	if isinstance(p, List):
 		r += [x.parsed for x in p.above(s)]
-	elif not isinstance(p, Module):
+	if not isinstance(p, Module):
 		r += what_in_my_module_do_i_see(p)
 	assert(r != None)
 	assert_is_flat(r)

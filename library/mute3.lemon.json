@@ -1,0 +1,1258 @@
+{
+    "children": {
+        "file": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "class": "nodecl",
+                    "name": "text",
+                    "resolve": true
+                }
+            },
+            "last_rendering": "\"library/mute3.lemon.json\"",
+            "text": "library/mute3.lemon.json"
+        },
+        "name": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "class": "nodecl",
+                    "name": "text",
+                    "resolve": true
+                }
+            },
+            "last_rendering": "\"\"",
+            "text": ""
+        },
+        "statements": {
+            "decl": {
+                "decl": "ref",
+                "target": {
+                    "class": "nodecl",
+                    "name": "statements",
+                    "resolve": true
+                }
+            },
+            "items": [
+                {
+                    "decl": "Parser",
+                    "items": []
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "children": {
+                                                "command": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "class": "nodecl",
+                                                            "name": "text",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "last_rendering": "\"amixer -c 0 -- sset Master playback 0%\"",
+                                                    "text": "amixer -c 0 -- sset Master playback 0%"
+                                                }
+                                            },
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "shellcommand",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": " bash:\"amixer -c 0 -- sset Master playback 0%\" "
+                                        }
+                                    ],
+                                    "last_rendering": "v[ bash:\"amixer -c 0 -- sset Master playback 0%\" ]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"mute\"",
+                                            "text": "mute"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"mute\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"mute\"]:\nv[ bash:\"amixer -c 0 -- sset Master playback 0%\" ] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"ztlum\"",
+                                            "text": "ztlum"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"ztlum\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"ztlum\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"ztlumit\"",
+                                            "text": "ztlumit"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"ztlumit\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"ztlumit\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"ticho\"",
+                                            "text": "ticho"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"ticho\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"ticho\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"p\u0159esta\u0148 hr\u00e1t\"",
+                                            "text": "p\u0159esta\u0148 hr\u00e1t"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"p\u0159esta\u0148 hr\u00e1t\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"p\u0159esta\u0148 hr\u00e1t\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"p\u0159estat hr\u00e1t\"",
+                                            "text": "p\u0159estat hr\u00e1t"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"p\u0159estat hr\u00e1t\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"p\u0159estat hr\u00e1t\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"nehraj\"",
+                                            "text": "nehraj"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"nehraj\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"nehraj\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"zti\u0161\"",
+                                            "text": "zti\u0161"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"zti\u0161\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"zti\u0161\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"zti\u0161it\"",
+                                            "text": "zti\u0161it"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"zti\u0161it\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"zti\u0161it\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"zmlkni\"",
+                                            "text": "zmlkni"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"zmlkni\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"zmlkni\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        {
+                            "children": {
+                                "body": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "class": "nodecl",
+                                            "name": "statements",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "args": {},
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "functioncallnodecl",
+                                                    "name": "functioncall",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "mute",
+                                            "target": {
+                                                "decl": "defun",
+                                                "resolve": true,
+                                                "sig": {
+                                                    "decl": {
+                                                        "decl": "ref",
+                                                        "target": {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "syntaxednodecl",
+                                                                    "name": "definition",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "name": "list of anything",
+                                                            "resolve": true
+                                                        }
+                                                    },
+                                                    "items": [
+                                                        {
+                                                            "decl": {
+                                                                "decl": "ref",
+                                                                "target": {
+                                                                    "class": "nodecl",
+                                                                    "name": "text",
+                                                                    "resolve": true
+                                                                }
+                                                            },
+                                                            "last_rendering": "\"mute\"",
+                                                            "text": "mute"
+                                                        }
+                                                    ],
+                                                    "last_rendering": "v[\"mute\"]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "last_rendering": "v[mute]"
+                                },
+                                "sig": {
+                                    "decl": {
+                                        "decl": "ref",
+                                        "target": {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "syntaxednodecl",
+                                                    "name": "definition",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "name": "list of anything",
+                                            "resolve": true
+                                        }
+                                    },
+                                    "items": [
+                                        {
+                                            "decl": {
+                                                "decl": "ref",
+                                                "target": {
+                                                    "class": "nodecl",
+                                                    "name": "text",
+                                                    "resolve": true
+                                                }
+                                            },
+                                            "last_rendering": "\"zmlknout\"",
+                                            "text": "zmlknout"
+                                        }
+                                    ],
+                                    "last_rendering": "v[\"zmlknout\"]"
+                                }
+                            },
+                            "decl": {
+                                "decl": "ref",
+                                "target": {
+                                    "class": "syntaxednodecl",
+                                    "name": "functiondefinition",
+                                    "resolve": true
+                                }
+                            },
+                            "last_rendering": " def v[\"zmlknout\"]:\nv[mute] "
+                        }
+                    ]
+                },
+                {
+                    "decl": "Parser",
+                    "items": [
+                        ""
+                    ]
+                }
+            ],
+            "last_rendering": "-[ \n  \n  def v[\"mute\"]:\nv[ bash:\"amixer -c 0 -- sset Master playback 0%\" ]  \n  def v[\"ztlum\"]:\nv[mute]  \n  def v[\"ztlumit\"]:\nv[mute]  \n  def v[\"ticho\"]:\nv[mute]  \n  def v[\"p\u0159esta\u0148 hr\u00e1t\"]:\nv[mute]  \n  def v[\"p\u0159estat hr\u00e1t\"]:\nv[mute]  \n  def v[\"nehraj\"]:\nv[mute]  \n  def v[\"zti\u0161\"]:\nv[mute]  \n  def v[\"zti\u0161it\"]:\nv[mute]  \n  def v[\"zmlkni\"]:\nv[mute]  \n  def v[\"zmlknout\"]:\nv[mute]  \n  \n]"
+        }
+    },
+    "decl": {
+        "decl": "ref",
+        "target": {
+            "class": "syntaxednodecl",
+            "name": "module",
+            "resolve": true
+        }
+    },
+    "last_rendering": " module\"\", from file\"library/mute3.lemon.json\":\n-[ \n  \n  def v[\"mute\"]:\nv[ bash:\"amixer -c 0 -- sset Master playback 0%\" ]  \n  def v[\"ztlum\"]:\nv[mute]  \n  def v[\"ztlumit\"]:\nv[mute]  \n  def v[\"ticho\"]:\nv[mute]  \n  def v[\"p\u0159esta\u0148 hr\u00e1t\"]:\nv[mute]  \n  def v[\"p\u0159estat hr\u00e1t\"]:\nv[mute]  \n  def v[\"nehraj\"]:\nv[mute]  \n  def v[\"zti\u0161\"]:\nv[mute]  \n  def v[\"zti\u0161it\"]:\nv[mute]  \n  def v[\"zmlkni\"]:\nv[mute]  \n  def v[\"zmlknout\"]:\nv[mute]  \n  \n]end. "
+}

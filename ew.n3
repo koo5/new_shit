@@ -1,0 +1,18 @@
+{
+statementsDef a CustomNodeDef.
+statementsDef name Statements.
+statementsDef syntax statementsDefSyntax.
+statementsDefSyntax a List.
+statementsDefSyntax items 
+(
+	[a Text; value "{"],
+	[
+		"type": "CustomNode"
+		,"lemonType": "TypedParameter"
+		,"children": (
+			[
+				"type" : "Text"
+				"value": "body"]
+			
+			
+			], "}");

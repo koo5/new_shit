@@ -1,0 +1,2 @@
+def requestAutocompletionOptions(node: URI):
+	
