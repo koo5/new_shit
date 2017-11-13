@@ -125,8 +125,7 @@ For now: By contributing to lemon, you agree to granting me nonexclusive rights 
 
 
 
-
-todo
+linux system control dependencies
 ===
-* define czech syntaxes for some stuff, make it a module-wise setting to prefer them
-* 
+sudo apt install wmctrl xbacklight xrandr 
+ 

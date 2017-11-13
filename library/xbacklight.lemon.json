@@ -56,7 +56,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n   o = output of bash: \n  ]"
+                                    "last_rendering": "-[ \n o = output of bash: \n]"
                                 },
                                 "sig": {
                                     "decl": {
@@ -136,7 +136,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n   \"toggle window maximized state by name\" \n    \"name\"- *text   \n  ]"
+                                    "last_rendering": "-[ \n \"toggle window maximized state by name\" \n  \"name\"- *text   \n]"
                                 }
                             },
                             "decl": {
@@ -147,7 +147,7 @@
                                     "resolve": true
                                 }
                             },
-                            "last_rendering": " def -[ \n   \"toggle window maximized state by name\" \n    \"name\"- *text   \n  ]:\n-[ \n   o = output of bash: \n  ] "
+                            "last_rendering": " def -[ \n \"toggle window maximized state by name\" \n  \"name\"- *text   \n]:\n-[ \n o = output of bash: \n] "
                         }
                     ]
                 },
@@ -178,7 +178,18 @@
                                                         "command": {
                                                             "decl": "Parser",
                                                             "items": [
-                                                                "wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz"
+                                                                {
+                                                                    "decl": {
+                                                                        "decl": "ref",
+                                                                        "target": {
+                                                                            "class": "nodecl",
+                                                                            "name": "text",
+                                                                            "resolve": true
+                                                                        }
+                                                                    },
+                                                                    "last_rendering": "\"wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz\"",
+                                                                    "text": "wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz"
+                                                                }
                                                             ]
                                                         }
                                                     },
@@ -190,12 +201,12 @@
                                                             "resolve": true
                                                         }
                                                     },
-                                                    "last_rendering": " bash: wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz  "
+                                                    "last_rendering": " bash: \"wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz\"  "
                                                 }
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n    bash: wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz   \n  ]"
+                                    "last_rendering": "-[ \n  bash: \"wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz\"   \n]"
                                 },
                                 "sig": {
                                     "decl": {
@@ -232,7 +243,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n   \"toggle maximized state of active window\" \n  ]"
+                                    "last_rendering": "-[ \n \"toggle maximized state of active window\" \n]"
                                 }
                             },
                             "decl": {
@@ -243,7 +254,7 @@
                                     "resolve": true
                                 }
                             },
-                            "last_rendering": " def -[ \n   \"toggle maximized state of active window\" \n  ]:\n-[ \n    bash: wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz   \n  ] "
+                            "last_rendering": " def -[ \n \"toggle maximized state of active window\" \n]:\n-[ \n  bash: \"wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz\"   \n] "
                         }
                     ]
                 },
@@ -408,7 +419,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n    bash:  \"xbacklight = \" + str $percent     \n  ]"
+                                    "last_rendering": "-[ \n  bash:  \"xbacklight = \" + str $percent     \n]"
                                 },
                                 "sig": {
                                     "decl": {
@@ -505,7 +516,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n   \"change backlight brightness to\" \n    \"percent\"- *number   \n   \"%\" \n  ]"
+                                    "last_rendering": "-[ \n \"change backlight brightness to\" \n  \"percent\"- *number   \n \"%\" \n]"
                                 }
                             },
                             "decl": {
@@ -516,7 +527,7 @@
                                     "resolve": true
                                 }
                             },
-                            "last_rendering": " def -[ \n   \"change backlight brightness to\" \n    \"percent\"- *number   \n   \"%\" \n  ]:\n-[ \n    bash:  \"xbacklight = \" + str $percent     \n  ] "
+                            "last_rendering": " def -[ \n \"change backlight brightness to\" \n  \"percent\"- *number   \n \"%\" \n]:\n-[ \n  bash:  \"xbacklight = \" + str $percent     \n] "
                         }
                     ]
                 },
@@ -542,7 +553,20 @@
                                                     "children": {
                                                         "last_rendering": {
                                                             "decl": "Parser",
-                                                            "items": []
+                                                            "items": [
+                                                                {
+                                                                    "decl": {
+                                                                        "decl": "ref",
+                                                                        "target": {
+                                                                            "class": "nodecl",
+                                                                            "name": "text",
+                                                                            "resolve": true
+                                                                        }
+                                                                    },
+                                                                    "last_rendering": "\" failed to deserialize:  + \"",
+                                                                    "text": " failed to deserialize:  + "
+                                                                }
+                                                            ]
                                                         },
                                                         "serialization": {
                                                             "decl": {
@@ -571,12 +595,12 @@
                                                             "resolve": true
                                                         }
                                                     },
-                                                    "last_rendering": " failed to deserialize:  + "
+                                                    "last_rendering": " failed to deserialize: \" failed to deserialize:  + \" + "
                                                 }
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n    failed to deserialize:  +  \n  ]"
+                                    "last_rendering": "-[ \n  failed to deserialize: \" failed to deserialize:  + \" +  \n]"
                                 },
                                 "sig": {
                                     "decl": {
@@ -673,7 +697,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n   \"nastav sv\u011btlost obrazovky na\" \n    \"procent\"- *number   \n   \"procent\" \n  ]"
+                                    "last_rendering": "-[ \n \"nastav sv\u011btlost obrazovky na\" \n  \"procent\"- *number   \n \"procent\" \n]"
                                 }
                             },
                             "decl": {
@@ -684,7 +708,7 @@
                                     "resolve": true
                                 }
                             },
-                            "last_rendering": " def -[ \n   \"nastav sv\u011btlost obrazovky na\" \n    \"procent\"- *number   \n   \"procent\" \n  ]:\n-[ \n    failed to deserialize:  +  \n  ] "
+                            "last_rendering": " def -[ \n \"nastav sv\u011btlost obrazovky na\" \n  \"procent\"- *number   \n \"procent\" \n]:\n-[ \n  failed to deserialize: \" failed to deserialize:  + \" +  \n] "
                         }
                     ]
                 },
@@ -710,7 +734,20 @@
                                                     "children": {
                                                         "last_rendering": {
                                                             "decl": "Parser",
-                                                            "items": []
+                                                            "items": [
+                                                                {
+                                                                    "decl": {
+                                                                        "decl": "ref",
+                                                                        "target": {
+                                                                            "class": "nodecl",
+                                                                            "name": "text",
+                                                                            "resolve": true
+                                                                        }
+                                                                    },
+                                                                    "last_rendering": "\" failed to deserialize:  + \"",
+                                                                    "text": " failed to deserialize:  + "
+                                                                }
+                                                            ]
                                                         },
                                                         "serialization": {
                                                             "decl": {
@@ -739,12 +776,12 @@
                                                             "resolve": true
                                                         }
                                                     },
-                                                    "last_rendering": " failed to deserialize:  + "
+                                                    "last_rendering": " failed to deserialize: \" failed to deserialize:  + \" + "
                                                 }
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n    failed to deserialize:  +  \n  ]"
+                                    "last_rendering": "-[ \n  failed to deserialize: \" failed to deserialize:  + \" +  \n]"
                                 },
                                 "sig": {
                                     "decl": {
@@ -841,7 +878,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n   \"set backlight brigtness to\" \n    \"percent\"- *number   \n   \"%\" \n  ]"
+                                    "last_rendering": "-[ \n \"set backlight brigtness to\" \n  \"percent\"- *number   \n \"%\" \n]"
                                 }
                             },
                             "decl": {
@@ -852,7 +889,7 @@
                                     "resolve": true
                                 }
                             },
-                            "last_rendering": " def -[ \n   \"set backlight brigtness to\" \n    \"percent\"- *number   \n   \"%\" \n  ]:\n-[ \n    failed to deserialize:  +  \n  ] "
+                            "last_rendering": " def -[ \n \"set backlight brigtness to\" \n  \"percent\"- *number   \n \"%\" \n]:\n-[ \n  failed to deserialize: \" failed to deserialize:  + \" +  \n] "
                         }
                     ]
                 },
@@ -961,7 +998,7 @@
                                                                     ]
                                                                 }
                                                             ],
-                                                            "last_rendering": "-[ \n   x=[+]+str($percent) \n  ]"
+                                                            "last_rendering": "-[ \n x=[+]+str($percent) \n]"
                                                         }
                                                     },
                                                     "decl": {
@@ -972,7 +1009,7 @@
                                                             "resolve": true
                                                         }
                                                     },
-                                                    "last_rendering": " if   $percent >= 1  :\n-[ \n   x=[+]+str($percent) \n  ] "
+                                                    "last_rendering": " if   $percent >= 1  :\n-[ \n x=[+]+str($percent) \n] "
                                                 }
                                             ]
                                         },
@@ -998,7 +1035,7 @@
                                                                     ]
                                                                 }
                                                             ],
-                                                            "last_rendering": "-[ \n   x = [-]+str($percent) \n  ]"
+                                                            "last_rendering": "-[ \n x = [-]+str($percent) \n]"
                                                         }
                                                     },
                                                     "decl": {
@@ -1009,7 +1046,7 @@
                                                             "resolve": true
                                                         }
                                                     },
-                                                    "last_rendering": " else::\n-[ \n   x = [-]+str($percent) \n  ] "
+                                                    "last_rendering": " else::\n-[ \n x = [-]+str($percent) \n] "
                                                 }
                                             ]
                                         },
@@ -1085,7 +1122,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n    if   $percent >= 1  :\n  -[ \n     x=[+]+str($percent) \n    ]  \n    else::\n  -[ \n     x = [-]+str($percent) \n    ]  \n    bash:  \"xbacklight \" + $x    \n  ]"
+                                    "last_rendering": "-[ \n  if   $percent >= 1  :\n-[ \n x=[+]+str($percent) \n]  \n  else::\n-[ \n x = [-]+str($percent) \n]  \n  bash:  \"xbacklight \" + $x    \n]"
                                 },
                                 "sig": {
                                     "decl": {
@@ -1165,7 +1202,7 @@
                                             ]
                                         }
                                     ],
-                                    "last_rendering": "-[ \n   \"change backlight brightness by\" \n    \"percent\"- *number   \n  ]"
+                                    "last_rendering": "-[ \n \"change backlight brightness by\" \n  \"percent\"- *number   \n]"
                                 }
                             },
                             "decl": {
@@ -1176,7 +1213,7 @@
                                     "resolve": true
                                 }
                             },
-                            "last_rendering": " def -[ \n   \"change backlight brightness by\" \n    \"percent\"- *number   \n  ]:\n-[ \n    if   $percent >= 1  :\n  -[ \n     x=[+]+str($percent) \n    ]  \n    else::\n  -[ \n     x = [-]+str($percent) \n    ]  \n    bash:  \"xbacklight \" + $x    \n  ] "
+                            "last_rendering": " def -[ \n \"change backlight brightness by\" \n  \"percent\"- *number   \n]:\n-[ \n  if   $percent >= 1  :\n-[ \n x=[+]+str($percent) \n]  \n  else::\n-[ \n x = [-]+str($percent) \n]  \n  bash:  \"xbacklight \" + $x    \n] "
                         }
                     ]
                 },
@@ -1187,7 +1224,7 @@
                     ]
                 }
             ],
-            "last_rendering": "-[ \n    def -[ \n     \"toggle window maximized state by name\" \n      \"name\"- *text   \n    ]:\n  -[ \n     o = output of bash: \n    ]  \n    \n    def -[ \n     \"toggle maximized state of active window\" \n    ]:\n  -[ \n      bash: wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz   \n    ]  \n    \n    \n    \n    \n    \n    def -[ \n     \"change backlight brightness to\" \n      \"percent\"- *number   \n     \"%\" \n    ]:\n  -[ \n      bash:  \"xbacklight = \" + str $percent     \n    ]  \n    def -[ \n     \"nastav sv\u011btlost obrazovky na\" \n      \"procent\"- *number   \n     \"procent\" \n    ]:\n  -[ \n      failed to deserialize:  +  \n    ]  \n    def -[ \n     \"set backlight brigtness to\" \n      \"percent\"- *number   \n     \"%\" \n    ]:\n  -[ \n      failed to deserialize:  +  \n    ]  \n    \n    def -[ \n     \"change backlight brightness by\" \n      \"percent\"- *number   \n    ]:\n  -[ \n      if   $percent >= 1  :\n    -[ \n       x=[+]+str($percent) \n      ]  \n      else::\n    -[ \n       x = [-]+str($percent) \n      ]  \n      bash:  \"xbacklight \" + $x    \n    ]  \n    \n  ]"
+            "last_rendering": "-[ \n  def -[ \n \"toggle window maximized state by name\" \n  \"name\"- *text   \n]:\n-[ \n o = output of bash: \n]  \n  \n  def -[ \n \"toggle maximized state of active window\" \n]:\n-[ \n  bash: \"wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz\"   \n]  \n  \n  \n  \n  \n  \n  def -[ \n \"change backlight brightness to\" \n  \"percent\"- *number   \n \"%\" \n]:\n-[ \n  bash:  \"xbacklight = \" + str $percent     \n]  \n  def -[ \n \"nastav sv\u011btlost obrazovky na\" \n  \"procent\"- *number   \n \"procent\" \n]:\n-[ \n  failed to deserialize: \" failed to deserialize:  + \" +  \n]  \n  def -[ \n \"set backlight brigtness to\" \n  \"percent\"- *number   \n \"%\" \n]:\n-[ \n  failed to deserialize: \" failed to deserialize:  + \" +  \n]  \n  \n  def -[ \n \"change backlight brightness by\" \n  \"percent\"- *number   \n]:\n-[ \n  if   $percent >= 1  :\n-[ \n x=[+]+str($percent) \n]  \n  else::\n-[ \n x = [-]+str($percent) \n]  \n  bash:  \"xbacklight \" + $x    \n]  \n  \n]"
         }
     },
     "decl": {
@@ -1198,5 +1235,5 @@
             "resolve": true
         }
     },
-    "last_rendering": " module\"backlight\", from file\"library/xbacklight.lemon.json\":\n-[ \n    def -[ \n     \"toggle window maximized state by name\" \n      \"name\"- *text   \n    ]:\n  -[ \n     o = output of bash: \n    ]  \n    \n    def -[ \n     \"toggle maximized state of active window\" \n    ]:\n  -[ \n      bash: wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz   \n    ]  \n    \n    \n    \n    \n    \n    def -[ \n     \"change backlight brightness to\" \n      \"percent\"- *number   \n     \"%\" \n    ]:\n  -[ \n      bash:  \"xbacklight = \" + str $percent     \n    ]  \n    def -[ \n     \"nastav sv\u011btlost obrazovky na\" \n      \"procent\"- *number   \n     \"procent\" \n    ]:\n  -[ \n      failed to deserialize:  +  \n    ]  \n    def -[ \n     \"set backlight brigtness to\" \n      \"percent\"- *number   \n     \"%\" \n    ]:\n  -[ \n      failed to deserialize:  +  \n    ]  \n    \n    def -[ \n     \"change backlight brightness by\" \n      \"percent\"- *number   \n    ]:\n  -[ \n      if   $percent >= 1  :\n    -[ \n       x=[+]+str($percent) \n      ]  \n      else::\n    -[ \n       x = [-]+str($percent) \n      ]  \n      bash:  \"xbacklight \" + $x    \n    ]  \n    \n  ]end. "
+    "last_rendering": " module\"backlight\", from file\"library/xbacklight.lemon.json\":\n-[ \n  def -[ \n \"toggle window maximized state by name\" \n  \"name\"- *text   \n]:\n-[ \n o = output of bash: \n]  \n  \n  def -[ \n \"toggle maximized state of active window\" \n]:\n-[ \n  bash: \"wmctrl -r :ACTIVE: -b toggle,maximized_vert,maximized_horz\"   \n]  \n  \n  \n  \n  \n  \n  def -[ \n \"change backlight brightness to\" \n  \"percent\"- *number   \n \"%\" \n]:\n-[ \n  bash:  \"xbacklight = \" + str $percent     \n]  \n  def -[ \n \"nastav sv\u011btlost obrazovky na\" \n  \"procent\"- *number   \n \"procent\" \n]:\n-[ \n  failed to deserialize: \" failed to deserialize:  + \" +  \n]  \n  def -[ \n \"set backlight brigtness to\" \n  \"percent\"- *number   \n \"%\" \n]:\n-[ \n  failed to deserialize: \" failed to deserialize:  + \" +  \n]  \n  \n  def -[ \n \"change backlight brightness by\" \n  \"percent\"- *number   \n]:\n-[ \n  if   $percent >= 1  :\n-[ \n x=[+]+str($percent) \n]  \n  else::\n-[ \n x = [-]+str($percent) \n]  \n  bash:  \"xbacklight \" + $x    \n]  \n  \n]end. "
 }

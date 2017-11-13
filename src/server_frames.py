@@ -419,7 +419,7 @@ class Menu(SidebarFrame):
 			log(m.results)
 			results = []
 			def update_existing(score, note, node):
-				return False#todo all nodes need to have eq_by_value
+				#return False#todo all nodes need to have eq_by_value
 				for idx, i in enumerate(results):
 					ii = i.value#type: nodes.Node
 					if ii.eq_by_value_and_decl(node):

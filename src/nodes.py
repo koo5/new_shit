@@ -814,7 +814,7 @@ class Node(NodePersistenceStuff, element.Element):
 			yield [ElemTag(elem), ColorTag(colors.eval_results), TextTag("->")]
 			v = elem.runtime.value
 			if len(v.items) > 1:
-				yield [TextTag(str(len(v.items))), TextTag(localized(" values:")), ElementTag(v)]
+				yield [TextTag(str(len(v.items))), TextTag(tr(" values:")), ElementTag(v)]
 			else:
 				for i in v.items:
 					yield ElementTag(i)
@@ -1249,8 +1249,7 @@ class Dict(Collapsible):
 		s.items = odict()
 
 	def copy(s):
-		r = s.__class__.fresh()
-		r.decl = s.decl.copy()
+		r = s.__class__.fresh(s.decl.copy())
 		for k,v in iteritems(s.items):
 			r.ch[k.copy()] = v.copy()
 		r.fix_parents()
@@ -1386,7 +1385,7 @@ class List(ListPersistenceStuff, Collapsible):
 		v.parent = s
 
 	def fix_parents(s):
-		super(List, s).fix_parents()
+		super().fix_parents()
 		s._fix_parents(s.items)
 
 	def item_index(s, atts):
@@ -1395,14 +1394,14 @@ class List(ListPersistenceStuff, Collapsible):
 			return li[1]
 
 	def _eval(s):
-		r = List()
+		r = s.__class__()
 		r.decl = s.decl.copy()
 		r.items = [i.eval() for i in s.items]
 		r.fix_parents()
 		return r
 
 	def copy(s):
-		r = List()
+		r = s.__class__()
 		r.decl = s.decl.copy()
 		r.items = [i.copy() for i in s.items]
 		r.fix_parents()
@@ -1504,7 +1503,6 @@ class List(ListPersistenceStuff, Collapsible):
 	def eq_by_value(a, b):
 		if len(a.items) != len(b.items):
 			return False
-		#otherwise..
 		for i,v in enumerate(a.items):
 			if not v.eq_by_value_and_decl(b.items[i]):
 				return False
@@ -1585,7 +1583,7 @@ class NoValue(Node):
 	def to_python_str(s):
 		return "no value"
 	def eq_by_value(a, b):
-		assert False
+		assert a.ddecl == b.ddecl
 		return True
 
 def banana(text="error text"):
@@ -1609,6 +1607,8 @@ class Bananas(Node):#todo convert to CustomNode
 		return "couldnt parse " + str(len(s.contents)) + " items:"+str(s.contents)
 	def _eval(s):
 		return Bananas(s.contents)
+	def eq_by_value(a,b):
+		return a.contents == b.contents
 
 class WidgetedValue(WidgetedValuePersistenceStuff, Node):
 	"""basic one-widget value"""
@@ -2540,7 +2540,7 @@ class Parser(ParserPersistenceStuff, ParserBase):
 				#if isinstance(type, Ref):
 				#	type = deref_decl(type)
 				type = deref_def(type)
-				
+
 				
 				
 		r.parent = s
