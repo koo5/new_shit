@@ -2524,9 +2524,10 @@ class Parser(ParserPersistenceStuff, ParserBase):
 
 	@property
 	def parsed(s):
-		#default result:
-		r = Bananas(s.items)
+		if s._parsed:
+			return _parsed
 
+		r = Bananas(s.items)
 		if len(s.items) == 1:
 			i0 = s.items[0]
 			if isinstance(i0, Node):
@@ -2541,7 +2542,11 @@ class Parser(ParserPersistenceStuff, ParserBase):
 				#	type = deref_decl(type)
 				type = deref_def(type)
 
-				
+				#here we should probably open a new window where the parsing takes place, and a result is
+				#confirmed
+				#then put the result to s._parsed
+				#_parsed needs to be nulled on the "changed" signal, which needs to be made to propagate upwards
+				#across the whole tree of elements
 				
 		r.parent = s
 		return r
