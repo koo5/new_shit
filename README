@@ -129,3 +129,20 @@ linux system control dependencies
 ===
 sudo apt install wmctrl xbacklight xrandr 
  
+
+
+
+
+
+plans
+===
+splitting the program into the server, the pygame editor frontend window, and a new QT-based sidebar window. After researching several options im leaning
+towards using gRPC for this.
+(possibly both-ways) integrations with: 
+https://www.kickstarter.com/projects/xiki/xikihub-the-social-command-line
+https://github.com/MycroftAI
+gnome3/unity/whatever menu
+only one way:
+solr or ES for searching through local documents from within newshit
+i would also like to do some front-ending for https://github.com/researchstudio-sat/webofneeds
+as well as further develop ./hallucinations/koord.lemon.txt , which could be integrated in webofneeds

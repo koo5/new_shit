@@ -1,0 +1,18 @@
+MSAN and ASAN are mutually exclusive. valgrind is exclusive with both. 
+ASAN does not check for use of uninitialized memory. MSAN requires all libraries be
+recompiled with it
+
+
+
+
+
+
+ASAN_OPTIONS=symbolize=1,detect_leaks=0,strict_init_order=1,check_initialization_order=1,verbosity=1,detect_stack_use_after_return=1
+qmake:
+msan: CONFIG+=sanitizer CONFIG+=sanitize_memory CONFIG+=sanitize_undefined  QMAKE_CXXFLAGS+="-fno-optimize-sibling-calls -fsanitize-memory-track-origins -fPIE -pie -fno-optimize-sibling-calls -fsanitize-address-use-after-scope  "
+asan: CONFIG+=sanitizer CONFIG+=sanitize_address CONFIG+=sanitize_undefined  QMAKE_CXXFLAGS+="-fno-optimize-sibling-calls -fsanitize-memory-track-origins -fsanitize-trap=undefined"
+
+
+
+
+
