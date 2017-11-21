@@ -322,6 +322,8 @@ class SidebarFrame(ServerFrame):
 	def move(s, y):
 		pass
 
+from queue import Queue
+import threading
 
 class Menu(SidebarFrame):
 	def __init__(s):
@@ -330,6 +332,7 @@ class Menu(SidebarFrame):
 		# editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.update)
 		s._changed = True
+		s.solr_results = []
 		s.parse_results = []
 		s.palette_results = []
 		s.sorted_everything = []
@@ -337,15 +340,25 @@ class Menu(SidebarFrame):
 		s._current_parser_node = None
 		s.must_update = True
 
-		from urllib.request import urlopen
-		try:
-			connection = urlopen('http://localhost:8983/solr/techproducts/select?q=cheese&wt=python')
-		except UrlError, HTTPError:
-			pass
-		r1 = connection.read()
-		r2 = eval(r1)
-		docs = r2['response']['docs']
-		
+	def make_solr_request(s, text):
+		def solr_query(solr_results):
+			from urllib.request import urlopen
+			from urllib.parse import urlencode
+			from urllib.error import URLError, HTTPError, ContentTooShortError
+			try:
+				connection = urlopen('http://localhost:8983/solr/docs/select?'+urlencode({'q':text,'wt':'python'}))
+			except (URLError, HTTPError, ContentTooShortError):
+				return
+			r1 = connection.read()
+			r2 = eval(r1)
+			docs = r2['response']['docs']
+			solr_results.put(docs)
+			send_thread_message()
+
+		s.solr_result_queue = Queue()
+		s.solr_thread = threading.Thread(target=solr_query, args=(s.solr_result_queue,))
+		s.solr_thread.run()
+
 
 	# weakref wrapper
 	@property
@@ -396,9 +409,9 @@ class Menu(SidebarFrame):
 			if '_deleted' in s.current_parser_node.__dict__:
 				print("deleted node")
 				return
-
-			scope = s.current_parser_node.scope()
 			s.update_current_text()
+			s.make_solr_request(s.current_text)
+			scope = s.current_parser_node.scope()
 			log("scope:%s items" % len(scope))
 			s.prepare_grammar(scope)
 			log("scope:%s items" % len(scope))
@@ -413,44 +426,52 @@ class Menu(SidebarFrame):
 		s.marpa.enqueue_precomputation(weakref(s.current_parser_node))
 
 	def on_thread_message(s):
+		m = solr_result = None
 		try:
 			m = s.marpa.t.output.get_nowait()
 		except queue.Empty:
-			return
-		if not m:
-			return
-		if m.message == 'precomputed':
-			# if m.for_node == s.current_parser_node:
-			node = m.for_node()
-			if node:  # brainfart
-				#hack, parser_items2tokens potentially creates symbols and rules, we need to do that before precomputation,
-				#we should keep track of whether we need to re-generate grammar also with this in mind
-				s.marpa.enqueue_parsing(s.tokens)
-		elif m.message == 'parsed':
-			log(m.results)
-			results = []
-			def update_existing(score, note, node):
-				#return False#todo all nodes need to have eq_by_value
-				for idx, i in enumerate(results):
-					ii = i.value#type: nodes.Node
-					if ii.eq_by_value_and_decl(node):
-						if i.score < score:
-							results[idx] = nodes.ParserMenuItem([note], node, score)
-						return True
+			pass
+		try:
+			solr_result = s.solr_result_queue.get_nowait()
+		except queue.Empty:
+			pass
+		if solr_result:
+			s.solr_results = []
+			for i,v in enumerate(solr_result):
+				s.solr_results.append(nodes.SolrMenuItem([], v["id"], {'solr_results_order':100-i}))
+		if m:
+			if m.message == 'precomputed':
+				# if m.for_node == s.current_parser_node:
+				node = m.for_node()
+				if node:  # brainfart
+					#hack, parser_items2tokens potentially creates symbols and rules, we need to do that before precomputation,
+					#we should keep track of whether we need to re-generate grammar also with this in mind
+					s.marpa.enqueue_parsing(s.tokens)
+			elif m.message == 'parsed':
+				log(m.results)
+				results = []
+				def update_existing(score, note, node):
+					#return False#todo all nodes need to have eq_by_value
+					for idx, i in enumerate(results):
+						ii = i.value#type: nodes.Node
+						if ii.eq_by_value_and_decl(node):
+							if i.score < score:
+								results[idx] = nodes.ParserMenuItem([note], node, score)
+							return True
 
-			def maybe_add(score, note, node):
-				if not update_existing(score, note, node):
-					results.append(nodes.ParserMenuItem([note], node, score))
+				def maybe_add(score, note, node):
+					if not update_existing(score, note, node):
+						results.append(nodes.ParserMenuItem([note], node, score))
 
-			for x in m.results:
-				if isinstance(x, nodes.Autocompletion):
-					maybe_add(4444, "autocomplete", x.value)
-				else:
-					maybe_add(5555, "a parse", x)
-			s.parse_results = results
-			s.update_items()
-			#	r.append(ParserMenuItem(i, 333))
-			s.signal_change()
+				for x in m.results:
+					if isinstance(x, nodes.Autocompletion):
+						maybe_add(4444, "autocomplete", x.value)
+					else:
+						maybe_add(5555, "a parse", x)
+				s.parse_results = results
+				s.update_items()
+				#	r.append(ParserMenuItem(i, 333))
+				s.signal_change()
 
 	@staticmethod
 	def parser_node_item(parser, atts):
@@ -498,7 +519,7 @@ class Menu(SidebarFrame):
 	def update_items(s):
 		log = logging.getLogger('menu').debug
 		log("parse_results:%s" % len(s.parse_results))
-		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results,
+		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results + s.solr_results,
 		                                     s.current_text, s.current_parser_node.type)
 		log("sorted_everything:%s" % len(s.sorted_everything))
 

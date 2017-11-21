@@ -2644,6 +2644,10 @@ class ParserMenuItem(MenuItem):
 	def long__repr__(s):
 		return object.__repr__(s) + "('"+str(s.value)+"')"
 
+class SolrMenuItem(ParserMenuItem):
+	def tags(s):
+		return [MemberTag('value')]
+
 class PaletteMenuItem(ParserMenuItem):
 	def __init__(s, notes, value, score=0):
 		super().__init__(notes, value, score)
