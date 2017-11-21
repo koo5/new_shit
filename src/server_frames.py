@@ -337,6 +337,16 @@ class Menu(SidebarFrame):
 		s._current_parser_node = None
 		s.must_update = True
 
+		from urllib.request import urlopen
+		try:
+			connection = urlopen('http://localhost:8983/solr/techproducts/select?q=cheese&wt=python')
+		except UrlError, HTTPError:
+			pass
+		r1 = connection.read()
+		r2 = eval(r1)
+		docs = r2['response']['docs']
+		
+
 	# weakref wrapper
 	@property
 	def current_parser_node(s):
@@ -386,6 +396,7 @@ class Menu(SidebarFrame):
 			if '_deleted' in s.current_parser_node.__dict__:
 				print("deleted node")
 				return
+
 			scope = s.current_parser_node.scope()
 			s.update_current_text()
 			log("scope:%s items" % len(scope))

@@ -13,3 +13,4 @@ doc/build/
 */*/__pycache__
 site-packages/fuzzywuzzy/
 grammar*
+dump.txt
