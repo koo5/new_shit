@@ -340,6 +340,13 @@ class Menu(SidebarFrame):
 		s._current_parser_node = None
 		s.must_update = True
 
+	def send_items_to_menu_process(category, items):
+		pass
+
+	def signal_change(s):
+		s._changed = True
+		s.draw_signal.emit()
+
 	def make_solr_request(s, text):
 		def solr_query(solr_results):
 			from urllib.request import urlopen
@@ -385,7 +392,7 @@ class Menu(SidebarFrame):
 		old_text = s.current_text
 		s.update_current_text()
 		if s.current_parser_node and (node_changed or old_text != s.current_text):
-			pygame.time.set_timer(pygame.USEREVENT + 3, 100)
+			pygame.time.set_timer(pygame.USEREVENT + 3, 50)
 
 	def parser_changed(s):
 		def relevant_parser(e):
@@ -439,6 +446,10 @@ class Menu(SidebarFrame):
 			s.solr_results = []
 			for i,v in enumerate(solr_result):
 				s.solr_results.append(nodes.SolrMenuItem([], v["id"], {'solr_results_order':100-i}))
+
+				s.send_items_to_menu_process('solr', s.solr_results)				
+				s.update_items()
+
 		if m:
 			if m.message == 'precomputed':
 				# if m.for_node == s.current_parser_node:
@@ -469,9 +480,9 @@ class Menu(SidebarFrame):
 					else:
 						maybe_add(5555, "a parse", x)
 				s.parse_results = results
+				s.send_items_to_menu_process('parse', s.parse_results)
 				s.update_items()
 				#	r.append(ParserMenuItem(i, 333))
-				s.signal_change()
 
 	@staticmethod
 	def parser_node_item(parser, atts):
@@ -514,6 +525,7 @@ class Menu(SidebarFrame):
 		s.palette_results = flatten(s.palette_results)
 		log("palette_results:%s" % len(s.palette_results))
 
+		s.send_items_to_menu_process('palette', s.palette_results)
 		s.update_items()
 
 	def update_items(s):
@@ -535,6 +547,7 @@ class Menu(SidebarFrame):
 				log(v)
 			log("")
 		"""
+		s.signal_change()
 
 	@staticmethod
 	def sort_palette(items, text, decl):
@@ -626,10 +639,6 @@ class Menu(SidebarFrame):
 				text += "❆"
 				print("%s in marpa input tokens" % name)
 		return symbols, text
-
-	def signal_change(s):
-		s._changed = True
-		s.draw_signal.emit()
 
 	def tags4item(s, i: int) -> list:
 		return _collect_tags(666, [ColorTag(colors.fg), ItemIndexTag( s, i),  ElementTag(s.items[i]), EndTag(), EndTag()])

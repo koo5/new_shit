@@ -4496,3 +4496,30 @@ def assert_is_flat(r):
 		assert flatten(r) == r
 
 #return s["builtins"].ch.statements.parsed
+
+
+
+
+
+
+
+"""
+how to avoid rendering all the way from the root:
+replace Att and End tags with a type that carries the attributes and the contents in a single tag.
+then tell element and tag_idx from cursor pos, then:
+
+def render_left_starting_from_tag(s, tag_idx):
+	if isinstance(s, 
+
+
+	if isinstance(s, Text):
+		for i in range(tag_idx, 0, -1)
+			yield s.tags[i]
+	
+	
+	yield from 
+
+
+
+
+"""
