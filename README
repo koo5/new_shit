@@ -7,6 +7,21 @@ irc: [irc://irc.freenode.net/lemonparty](irc://irc.freenode.net/lemonparty)
 
 
 
+fedora 27
+===
+ sudo yum install git python3-devel python3-numpy freetype-devel autoconf automake libtool libffi-devel
+ 
+ i didnt succeed in building libmarpa under fedora, but you can use:
+
+git clone git@github.com:lemon-operating-language/libmarpa-dist.git 
+cd libmarpa-dist/dist/
+autoreconf -i
+./configure 
+make
+sudo make install
+
+
+
 
 getting it to run - ubuntu16.4
 ===
@@ -146,3 +161,7 @@ only one way:
 solr or ES for searching through local documents from within newshit
 i would also like to do some front-ending for https://github.com/researchstudio-sat/webofneeds
 as well as further develop ./hallucinations/koord.lemon.txt , which could be integrated in webofneeds
+
+
+
+

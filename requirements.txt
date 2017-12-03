@@ -5,3 +5,5 @@ pycparser==2.18
 pygame==1.9.3
 pyparsing==2.2.0
 rdflib==4.2.2
+fuzzywuzzy
+python-Levenshtein

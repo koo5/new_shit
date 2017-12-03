@@ -5,7 +5,7 @@ from proxy import unproxy
 import pygame
 # from typing import Iterable
 
-import Pyro4
+#import Pyro4
 
 from weakref import ref as weakref
 from types import GeneratorType
@@ -84,7 +84,7 @@ class ServerFrame(object):
 		return batch(_collect_tags(s, s.tags()))
 
 
-	@Pyro4.expose
+	#@Pyro4.expose
 	def rpc_collect_tags(s):
 		print("collect_tags(%s)"%s)
 		#return(list(_collect_tags(editor, editor.tags())))
@@ -96,8 +96,8 @@ class ServerFrame(object):
 			#yield l
 		#return r
 
-	@Pyro4.expose
-	@Pyro4.oneway
+	#@Pyro4.expose
+	#@Pyro4.oneway
 	def rpc_start_collecting_tags(s, callback):
 		print("start_collecting_tags(%s)"%s)
 		print(callback._pyroSerializer)# = "pickle"
@@ -122,7 +122,7 @@ class ServerFrame(object):
 		pass
 
 
-@Pyro4.expose
+#@Pyro4.expose
 class Editor(ServerFrame):
 	def __init__(s):
 		super(Editor, s).__init__()
