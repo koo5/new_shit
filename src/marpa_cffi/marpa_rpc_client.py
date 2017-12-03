@@ -313,31 +313,41 @@ class MarpaClient(object):
 				next_level_lhs = lhs_symbol(level_index+1)
 				if lhs != next_level_lhs and level_index != len(priority_levels)-1:
 					s.rule("|"+s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(next_level_lhs), lhs, next_level_lhs)
-				for sub in priority_levels[level_index]:
+				level = priority_levels[level_index]
+				for sub in level:
 					if not isinstance(sub, (nodes.SyntaxedNodecl, nodes.CustomNodeDef)):
 						s.rule(s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(sub.symbol(s)), lhs, sub.symbol(s))
 						continue
 					for sy in sub.instance_syntaxes:
-						syntax = []
-						slot_idx = 0
-						for i in sy.rendering_tags:
-							if isinstance(i, str):
-								a = s.known_string(i)
-							else:
-								slot = nodes.deref_decl(sub.instance_slots[i.name])
-								if slot == sup:
-									if slot_idx == 0:
-										a = lhs
-									else:
-										a = next_level_lhs
+						while True:
+							syntax = []
+							slot_idx = 0
+							seen_tags = set()
+							for i in sy.rendering_tags:
+								if isinstance(i, str):
+									a = s.known_string(i)
 								else:
-									a = slot.symbol(s)
-								slot_idx+=1
-							syntax.append(a)
-						s.rule(s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]),
-						lhs, syntax,
-						       action=lambda x,decl=sub,syntax=sy: nodes.SyntaxedBase.from_parse(decl, syntax, x, whole_words=True))
+									slot = nodes.deref_decl(sub.instance_slots[i.name])
+									if slot == sup:
+										if slot_idx == 0:
+											a = lhs
+										else:
+											a = next_level_lhs
+									else:
+										a = slot.symbol(s)
+									slot_idx+=1
+								syntax.append(a)
+								if isinstance(i, ChildTag):
+									if i not in seen_tags:
+										seen_tags.append(i)
+										break
 
+							s.rule(
+								s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]), lhs, syntax,
+								action=lambda x,decl=sub,syntax=sy: nodes.SyntaxedBase.from_parse(decl, syntax, x, whole_words=True),
+								rank = -len(seen_tags))
+							if i is sy.rendering_tags[-1]:
+								break
 
 		"""
 		for sup,levels in iteritems(worksas2):

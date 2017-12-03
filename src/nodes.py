@@ -3931,6 +3931,14 @@ def build_in_misc():
 				   {'hours': (B.number), 'minutes': Exp(B.number), 'statements': B.statements}))
 
 
+	"""class MorningRule(Syntaxed):
+		pass
+
+	build_in(SyntaxedNodecl(MorningRule,
+				   [['every morning at ', ChildTag('hours'), ":", ChildTag('minutes'), ':\n', ChildTag('statements')]],
+				   {'hours': (B.number), 'minutes': Exp(B.number), 'statements': B.statements}))
+	"""
+
 
 
 """
@@ -4499,10 +4507,14 @@ def assert_is_flat(r):
 
 
 
+"""
+compilation to python
 
 
 
 
+
+"""
 """
 how to avoid rendering all the way from the root:
 replace Att and End tags with a type that carries the attributes and the contents in a single tag.
@@ -4519,6 +4531,12 @@ def render_left_starting_from_tag(s, tag_idx):
 	
 	yield from 
 
+
+
+
+"""
+"""
+grammar(
 
 
 
