@@ -319,12 +319,30 @@ class MarpaClient(object):
 						s.rule(s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(sub.symbol(s)), lhs, sub.symbol(s))
 						continue
 					for sy in sub.instance_syntaxes:
-						while True:
-							syntax = []
-							slot_idx = 0
-							seen_tags = set()
-							for i in sy.rendering_tags:
-								if isinstance(i, str):
+						segments = [[]]
+						for i in sy.rendering_tags:
+							segments[-1].append(i)
+							if isinstance(i, ChildTag):
+								segments.append(list())
+
+						syntax = []
+						slot_idx = 0
+						for segment in segments:
+							"""lets say 
+							start := module | partial_parse_of_module
+							
+							
+							first segment is ["for(",ChildTag(type=vardecl)]
+							we make a rule that goes := ["for(",vardecl,rest]
+							
+							"""
+
+
+
+
+							for tag in segment:
+
+								if isinstance(tag, str):
 									a = s.known_string(i)
 								else:
 									slot = nodes.deref_decl(sub.instance_slots[i.name])
@@ -337,10 +355,6 @@ class MarpaClient(object):
 										a = slot.symbol(s)
 									slot_idx+=1
 								syntax.append(a)
-								if isinstance(i, ChildTag):
-									if i not in seen_tags:
-										seen_tags.append(i)
-										break
 
 							s.rule(
 								s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]), lhs, syntax,

@@ -1,0 +1,25 @@
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.helloworld";
+option java_outer_classname = "HelloWorldProto";
+option objc_class_prefix = "HLW";
+
+package lemon;
+
+import "google/protobuf/empty.proto";
+
+service MenuGui {
+  rpc noticeThatServerDataChanged (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
