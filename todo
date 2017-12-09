@@ -1,24 +1,66 @@
+plans
+===
+splitting the program into the server, the pygame editor frontend window, and a new QT-based sidebar window. After researching several options im leaning
+towards using gRPC for this.
+
+(possibly both-ways) integrations with: 
+https://www.kickstarter.com/projects/xiki/xikihub-the-social-command-line
+https://github.com/MycroftAI
+gnome3/unity/whatever menu
+only one way:
+solr or ES for searching through local documents from within newshit
+i would also like to do some front-ending for https://github.com/researchstudio-sat/webofneeds
+as well as further develop ./hallucinations/koord.lemon.txt , which could be integrated in webofneeds
+
+
+
+
+
+misc/not core newshit
+----------------
+pyin
+webofneeds
+
+set up a vps, post a bounty for fixing editable-log reconnecting
+use koding?
+
+
+
+
+
+
+
+
+
+
+
+
+newshit
+----------
+
 * finish the parser
-* finish snipplr integration
+
+* optimize rendering of scrolled frames: new tag rendering system
 
 
-* experiment with mycroft skills
-* experiment with storing nodes in a triplestore
-* new gui framework: sseehh's or pyside or whatever
+* integrate sources of content/functionality/commands: snipplr, mycroft, xiki
+
+
+
+* experiment with storing nodes in a triplestore/declaratively
+
+* split off menu frontend with grpc
 
 
 * continue hacking on the mockup language: add Identifier as a fallback for parsing identifiers not in scope(?)
 
 
-* subclass module into a repl, move cursor into it upon start
 
-
-* continue work on user-defined syntax, at this point, functions serve that role, completely? (?)
+* functions vs syntax definition
 we have unevaluated arguments, so a function body can be thought of as a rule for
 evaluating the node. there could be other rules: display, debugging..?..
 
 
-* optimize rendering of scrolled frames
 
 * new languages:
 ** narsese
