@@ -319,49 +319,26 @@ class MarpaClient(object):
 						s.rule(s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(sub.symbol(s)), lhs, sub.symbol(s))
 						continue
 					for sy in sub.instance_syntaxes:
-						segments = [[]]
-						for i in sy.rendering_tags:
-							segments[-1].append(i)
-							if isinstance(i, ChildTag):
-								segments.append(list())
-
 						syntax = []
 						slot_idx = 0
-						for segment in segments:
-							"""lets say 
-							start := module | partial_parse_of_module
-							
-							
-							first segment is ["for(",ChildTag(type=vardecl)]
-							we make a rule that goes := ["for(",vardecl,rest]
-							
-							"""
-
-
-
-
-							for tag in segment:
-
-								if isinstance(tag, str):
-									a = s.known_string(i)
-								else:
-									slot = nodes.deref_decl(sub.instance_slots[i.name])
-									if slot == sup:
-										if slot_idx == 0:
-											a = lhs
-										else:
-											a = next_level_lhs
+						for i in sy.rendering_tags:
+							if isinstance(i, str):
+								a = s.known_string(i)
+							else:
+								slot = nodes.deref_decl(sub.instance_slots[i.name])
+								if slot == sup:
+									if slot_idx == 0:
+										a = lhs
 									else:
-										a = slot.symbol(s)
-									slot_idx+=1
-								syntax.append(a)
+										a = next_level_lhs
+								else:
+									a = slot.symbol(s)
+								slot_idx+=1
+							syntax.append(a)
+						s.rule(s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]),
+						lhs, syntax,
+						       action=lambda x,decl=sub,syntax=sy: nodes.SyntaxedBase.from_parse(decl, syntax, x, whole_words=True))
 
-							s.rule(
-								s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]), lhs, syntax,
-								action=lambda x,decl=sub,syntax=sy: nodes.SyntaxedBase.from_parse(decl, syntax, x, whole_words=True),
-								rank = -len(seen_tags))
-							if i is sy.rendering_tags[-1]:
-								break
 
 		"""
 		for sup,levels in iteritems(worksas2):

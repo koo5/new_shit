@@ -18,3 +18,15 @@ when collecting grammar, the half-parsed For is put into the marpa input stream 
 
 
 * this can probably be simplified to assume any child tag means a need for reparse
+
+
+
+	"""
+		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
+		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
+		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+		r = m.symbol('Statements literal head')
+		m.rule('statements literal head', r, [m.maybe_whitespace, m.known_char('{'), m.maybe_whitespace, m.known_char('}')], empty_statements_body_from_parse)
+		return r
+	"""
