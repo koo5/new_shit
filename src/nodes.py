@@ -673,6 +673,9 @@ class Node(NodePersistenceStuff, element.Element):
 			s.register_symbol(m)
 		if s in m.node_symbols:
 			return m.node_symbols[s]
+		else:
+			#assert False
+			pass
 
 	def register_symbol(s, m):
 		return register_symbol(s, m)
@@ -4222,7 +4225,8 @@ def register_def_symbol(s, m):
 	elif isinstance(s, (Union)):
 		lhs = m.node_symbols[s] = m.symbol(str(s))
 		for i in s.ch.items:
-			rhs = deref_decl(i) .symbol(m)
+			dd = deref_decl(i)
+			rhs = dd.symbol(m)
 			m.node_rules[s] = m.rule(str(s)+"<-"+str(i), lhs, rhs)
 	else:
 		log(("no symbol for", s))
