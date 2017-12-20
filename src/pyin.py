@@ -296,23 +296,25 @@ def pred(p, args):
 
 from collections import defaultdict
 
-if __name__ == "__main__":
+def query(input_rules, input_query):
+	global preds
 	preds = defaultdict(list)
-
-	for r in [
-	Rule(Triple('a', ['?X', 'mortal']), Graph([Triple('a', ['?X', 'man']), Triple('not', ['?X', 'superman'])])),
-	Rule(Triple('a', ['socrates', 'man'])),
-	Rule(Triple('a', ['koo', 'man'])),
-	Rule(Triple('not', ['?nobody', 'superman']))]:
+	for r in input_rules:
 		preds[r.head.pred].append(r)
+	for nyan in Rule(None, input_query).match():
+		yield nyan
 
-	for nyan in Rule(None, Graph([Triple('a', ['socrates', 'mortal'])])).match():
+	for nyan in Rule(None, Graph([Triple('a', ['socrates', 'mortal'])])).match():Autocompletion
 		print ("#he's mortal, and he's dead")
-
 	print ("#who is mortal?")
 	#for nyan in pred('a', [v, 'mortal']):
 	#v = Var('?who who')
 	w = '?who'
-	r = Rule(None, Graph([Triple('a', [w, 'mortal'])]))
-	for nyan in r.match():
+	input_query = Graph([Triple('a', [w, 'mortal'])])
+	for nyan in query(input_rules, input_query):
 		print ('#'+str(nyan[w]) + " is mortal, and he's dead")
+
+
+if __name__ == "__main__":
+	test1()
+

@@ -673,6 +673,9 @@ class Node(NodePersistenceStuff, element.Element):
 			s.register_symbol(m)
 		if s in m.node_symbols:
 			return m.node_symbols[s]
+		else:
+			#assert False
+			pass
 
 	def register_symbol(s, m):
 		return register_symbol(s, m)
@@ -4184,19 +4187,6 @@ def register_def_symbol(s, m):
 	"""register symbols and rules"""
 	log = logging.getLogger("marpa").debug
 
-	#if isinstance(s, Sequence):
-	#	syntax_for_parser = []
-
-	"""
-		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
-		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
-		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
-		r = m.symbol('Statements literal head')
-		m.rule('statements literal head', r, [m.maybe_whitespace, m.known_char('{'), m.maybe_whitespace, m.known_char('}')], empty_statements_body_from_parse)
-		return r
-	"""
-
 	if isinstance(s, Definition):
 		m.node_symbols[s] = m.symbol(s.name)
 		m.node_rules[s] = m.rule(str(s), m.node_symbols[s], deref_decl(s.ch.type.parsed).symbol(m))
@@ -4235,7 +4225,8 @@ def register_def_symbol(s, m):
 	elif isinstance(s, (Union)):
 		lhs = m.node_symbols[s] = m.symbol(str(s))
 		for i in s.ch.items:
-			rhs = deref_decl(i) .symbol(m)
+			dd = deref_decl(i)
+			rhs = dd.symbol(m)
 			m.node_rules[s] = m.rule(str(s)+"<-"+str(i), lhs, rhs)
 	else:
 		log(("no symbol for", s))
@@ -4246,9 +4237,7 @@ def register_def_symbol(s, m):
 
 def register_class_symbol(cls, m):
 	"""a nodecl calls this for its instance class"""
-
 	log = logging.getLogger("marpa").debug
-
 
 	if FunctionCall.__subclasscheck__(cls):
 		top = m.symbol("function_call")
@@ -4383,14 +4372,16 @@ def register_class_symbol(cls, m):
 		m.rule('list literal', r, [opening, optionally_elements, closing], cls.from_parse)
 		return r
 
-	elif Syntaxed.__subclasscheck__(cls):
-		r = m.symbol(cls.__name__)
-		ddecl = deref_decl(cls.decl)
-		for sy in ddecl.instance_syntaxes:
-			cls.rule_for_syntax(m, r, sy, ddecl)
-		return r
+	#elif Syntaxed.__subclasscheck__(cls):
+	#	r = m.symbol(cls.__name__)
+	#	ddecl = deref_decl(cls.decl)
+	#	for sy in ddecl.instance_syntaxes:
+	#		cls.rule_for_syntax(m, r, sy, ddecl)
+	#	return r
 
 	log(("no class symbol for", cls))
+
+
 
 
 

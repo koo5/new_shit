@@ -319,161 +319,27 @@ class MarpaClient(object):
 						s.rule(s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(sub.symbol(s)), lhs, sub.symbol(s))
 						continue
 					for sy in sub.instance_syntaxes:
-						segments = [[]]
-						for i in sy.rendering_tags:
-							segments[-1].append(i)
-							if isinstance(i, ChildTag):
-								segments.append(list())
-
 						syntax = []
 						slot_idx = 0
-						for segment in segments:
-							"""lets say 
-							start := module | partial_parse_of_module
-							
-							
-							first segment is ["for(",ChildTag(type=vardecl)]
-							we make a rule that goes := ["for(",vardecl,rest]
-							
-							"""
-
-
-
-
-							for tag in segment:
-
-								if isinstance(tag, str):
-									a = s.known_string(i)
-								else:
-									slot = nodes.deref_decl(sub.instance_slots[i.name])
-									if slot == sup:
-										if slot_idx == 0:
-											a = lhs
-										else:
-											a = next_level_lhs
+						for i in sy.rendering_tags:
+							if isinstance(i, str):
+								a = s.known_string(i)
+							else:
+								slot = nodes.deref_decl(sub.instance_slots[i.name])
+								if slot == sup:
+									if slot_idx == 0:
+										a = lhs
 									else:
-										a = slot.symbol(s)
-									slot_idx+=1
-								syntax.append(a)
+										a = next_level_lhs
+								else:
+									a = slot.symbol(s)
+								slot_idx+=1
+							syntax.append(a)
+						s.rule_with_reparses(s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]),
+						lhs, syntax,
+						       action=lambda parsed, parsed_count, decl=sub, syntax=sy: nodes.SyntaxedBase.from_parse(decl, syntax, x, whole_words=True, parsed_count=parsed_count))
 
-							s.rule(
-								s.symbol2debug_name(lhs) + ":=" + "".join([s.symbol2debug_name(i) for i in syntax]), lhs, syntax,
-								action=lambda x,decl=sub,syntax=sy: nodes.SyntaxedBase.from_parse(decl, syntax, x, whole_words=True),
-								rank = -len(seen_tags))
-							if i is sy.rendering_tags[-1]:
-								break
 
-		"""
-		for sup,levels in iteritems(worksas2):
-			for level in levels:
-				for sub in level:
-					if asoc[node] == "left":
-						rules[sup].append(
-					if asoc[node] == "right":
-		"""
-		"""
-		nodes = DefaultDict(list)
-		asoc  = DefaultDict(lambda: "left")
-		pris = DefaultDict(lambda: 1000)
-
-		for n in scope:
-			if n.__class__.__name__ in ['SyntaxedNodecl']:
-				nodes.append(n)
-			if n.__class__.__name__ == 'HasPriority':
-				k = deref_def(n.ch.node)
-				assert k not in pris
-				pris[k] = n.ch.value.pyval
-			if n.__class__.__name__ == 'HasAssociativity':
-				k = deref_def(n.ch.node)
-				assert k not in asoc
-				asoc[k] = n.ch.value.pyval
-
-		for sup,subs in iteritems(worksas):
-			for sub in subs:
-				worksas2[k][pris[v]].append(v)
-
-		for sup,levels in iteritems(worksas2):
-			for level in levels:
-				for sub in level:
-					if asoc[node] == "left":
-						rules[sup].append(
-					if asoc[node] == "right":
-		"""
-		"""
-		worksas = DefaultDict(list)
-		asoc  = DefaultDict(lambda: "left")
-		pris = DefaultDict(lambda: 1000)
-		
-		for i in scope:
-			if i.__class__.__name__ == 'WorksAs':
-				worksas[i.ch.sup.target].append(i.ch.sub.target)
-			if n.__class__.__name__ == 'HasPriority':
-				k = deref_def(n.ch.node)
-				assert k not in pris
-				pris[k] = n.ch.value.pyval
-			if n.__class__.__name__ == 'HasAssociativity':
-				k = deref_def(n.ch.node)
-				assert k not in asoc
-				asoc[k] = n.ch.value.pyval
-			
-		for sup,subs in iteritems(worksas):
-			for sub in subs:
-				worksas2[k][pris[v]].append(v)
-		
-		for sup,levels in iteritems(worksas2):
-			for level in levels:
-				for sub in level:
-					if asoc[node] == "left":
-						rules[sup].append(
-					if asoc[node] == "right":
-		"""
-		"""
-		levels = {}
-		import collections
-		levels = collections.OrderedDict(sorted(levels.items()))
-		for k,v 
-		"""
-		"""
-		sups = DefaultDict(list)
-		pris = DefaultDict(list)
-		asoc = DefaultDict(-1)
-
-		for i in scope:
-			#sub._losers = []
-			if i.__class__.__name__ == 'WorksAs':
-				#sub WorksAS sup, these are Refs
-				sups[i.ch.sup.target].append(i.ch.sub.target)
-
-		for k,v in sups:
-			for sub in v:
-				for n in scope:
-					if n.__class__.__name__ == 'HasPriority':
-						pris[n.ch.value.pyval].append(n.ch.node)
-					if n.__class__.__name__ == 'HasAssociativity':
-						asoc[n.ch.value.pyval].append(n.ch.node)
-
-		for k,v in sups:
-			for sub in v:
-				pri = pris[sub]
-				if not pri in level_syms[sup]:
-					level_syms[sup][pri] = s.symbol(sup.name + pri)
-				lhs = level_syms[sup][pri]
-				rhs =
-				pris[sub]
-
-		for k,v in sups:
-			for sub in v:
-				for n in scope:
-					if n.__class__.__name__ == 'BindsTighterThan':
-						if n.ch.b.target == sub:
-							sub._tighter_ones.append(n.ch.a.target)
-
-		for k, v in sups:
-			for sub in v:
-				level = 0
-				while sub._losers
-		"""
-		#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
 
 	def anything_excepts(s):
 		for k, v in iteritems(s.excepts):
@@ -578,14 +444,143 @@ for lhs, rhs in syntaxes:
 
 
 
+"""
+"""
+how reparsing could work:
+lets presume sequences (like for List) are transformed into recursions of Syntaxed
+we are generating a marpa grammar for syntaxed as we are now, but:
+we go until first Reparse tag. We proceed until first Child tag after that. Before the child tag:
+we generate first rule: rhs is what we've seen up until now, perhaps: ["for", <vardecl>, "in"]. *
+lhs: look up or generate a new symbol for the For node parsed up until the first reparse.
+
+we go until the second need for reparse, and create a new rule, we create the lhs the same way, but rhs:
+for the part up until the first need for reparse, we dont use the "half parsed For", we just generated, instead, 
+we use the rhs of the first rule, that is, the symbols for the syntax tags themselves. This ensures that
+it is not possible to go on parsing the whole For, but only the part until the first need for reparse.
+
+The action for these rules is creating a For with an indicator that it has been only parsed up until the respective reparse.
+or rather, the action creates a new Parser, with the half-parsed For followed by the unparsed text
+
+when collecting grammar, the half-parsed For is put into the marpa input stream as the constituent tag symbols
 
 
 
-
-
-
-
-
-
+* this can probably be simplified to assume any child tag means a need for reparse
 
 """
+
+"""
+		statement_followed_by_parser = m.symbol('statement_followed_by_parser')
+		m.rule('statement_followed_by_parser', statement_followed_by_parser, [B.statement, parser])
+		m.sequence('optionally_elements_followed_by_parser', optionally_elements_followed_by_parser, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+		m.sequence('optionally_elements', optionally_elements, B.anything.symbol, ident_list, m.maybe_whitespace, 0)
+		r = m.symbol('Statements literal head')
+		m.rule('statements literal head', r, [m.maybe_whitespace, m.known_char('{'), m.maybe_whitespace, m.known_char('}')], empty_statements_body_from_parse)
+		return r
+"""
+"""
+for sup,levels in iteritems(worksas2):
+	for level in levels:
+		for sub in level:
+			if asoc[node] == "left":
+				rules[sup].append(
+			if asoc[node] == "right":
+"""
+"""
+nodes = DefaultDict(list)
+asoc  = DefaultDict(lambda: "left")
+pris = DefaultDict(lambda: 1000)
+for n in scope:
+	if n.__class__.__name__ in ['SyntaxedNodecl']:
+		nodes.append(n)
+	if n.__class__.__name__ == 'HasPriority':
+		k = deref_def(n.ch.node)
+		assert k not in pris
+		pris[k] = n.ch.value.pyval
+	if n.__class__.__name__ == 'HasAssociativity':
+		k = deref_def(n.ch.node)
+		assert k not in asoc
+		asoc[k] = n.ch.value.pyval
+for sup,subs in iteritems(worksas):
+	for sub in subs:
+		worksas2[k][pris[v]].append(v)
+for sup,levels in iteritems(worksas2):
+	for level in levels:
+		for sub in level:
+			if asoc[node] == "left":
+				rules[sup].append(
+			if asoc[node] == "right":
+"""
+"""
+worksas = DefaultDict(list)
+asoc  = DefaultDict(lambda: "left")
+pris = DefaultDict(lambda: 1000)
+
+for i in scope:
+	if i.__class__.__name__ == 'WorksAs':
+		worksas[i.ch.sup.target].append(i.ch.sub.target)
+	if n.__class__.__name__ == 'HasPriority':
+		k = deref_def(n.ch.node)
+		assert k not in pris
+		pris[k] = n.ch.value.pyval
+	if n.__class__.__name__ == 'HasAssociativity':
+		k = deref_def(n.ch.node)
+		assert k not in asoc
+		asoc[k] = n.ch.value.pyval
+	
+for sup,subs in iteritems(worksas):
+	for sub in subs:
+		worksas2[k][pris[v]].append(v)
+
+for sup,levels in iteritems(worksas2):
+	for level in levels:
+		for sub in level:
+			if asoc[node] == "left":
+				rules[sup].append(
+			if asoc[node] == "right":
+"""
+"""
+levels = {}
+import collections
+levels = collections.OrderedDict(sorted(levels.items()))
+for k,v 
+"""
+"""
+sups = DefaultDict(list)
+pris = DefaultDict(list)
+asoc = DefaultDict(-1)
+for i in scope:
+	#sub._losers = []
+	if i.__class__.__name__ == 'WorksAs':
+		#sub WorksAS sup, these are Refs
+		sups[i.ch.sup.target].append(i.ch.sub.target)
+for k,v in sups:
+	for sub in v:
+		for n in scope:
+			if n.__class__.__name__ == 'HasPriority':
+				pris[n.ch.value.pyval].append(n.ch.node)
+			if n.__class__.__name__ == 'HasAssociativity':
+				asoc[n.ch.value.pyval].append(n.ch.node)
+for k,v in sups:
+	for sub in v:
+		pri = pris[sub]
+		if not pri in level_syms[sup]:
+			level_syms[sup][pri] = s.symbol(sup.name + pri)
+		lhs = level_syms[sup][pri]
+		rhs =
+		pris[sub]
+for k,v in sups:
+	for sub in v:
+		for n in scope:
+			if n.__class__.__name__ == 'BindsTighterThan':
+				if n.ch.b.target == sub:
+					sub._tighter_ones.append(n.ch.a.target)
+for k, v in sups:
+	for sub in v:
+		level = 0
+		while sub._losers
+"""
+#hmm how is this gonna mesh out with the "anything" rules and with autocompletion rules?
+
+
+
