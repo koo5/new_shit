@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from weakref import ref as weakref
-#import rdflib
-#from rdflib import Graph
+import rdflib
+from rdflib import Graph
 import sys
 #import common_utils
 #g = common_utils.parse_input()
 import logging
 import urllib.parse
+from collections import defaultdict
 
 formatter = logging.Formatter('#%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -294,7 +295,15 @@ def pred(p, args):
 			yield i
 
 
-from collections import defaultdict
+import click
+
+@click.command()
+@click.argument('kb', type=click.File('r'))
+@click.argument('goal', type=click.File('r'))
+def query_from_files(kb, goal):
+	graph = Graph()
+	graph.parse(kb, 'nq')
+
 
 def query(input_rules, input_query):
 	global preds
@@ -304,7 +313,16 @@ def query(input_rules, input_query):
 	for nyan in Rule(None, input_query).match():
 		yield nyan
 
-	for nyan in Rule(None, Graph([Triple('a', ['socrates', 'mortal'])])).match():Autocompletion
+def test1():
+
+	input_rules = [
+		Rule(Triple('a', ['?X', 'mortal']),
+		Graph([Triple('a', ['?X', 'man']), Triple('not', ['?X', 'superman'])])),
+		Rule(Triple('a', ['socrates', 'man'])),
+		Rule(Triple('a', ['koo', 'man'])),
+		Rule(Triple('not', ['?nobody', 'superman']))]
+	input_query = Graph([Triple('a', ['socrates', 'mortal'])])
+	for nyan in query(input_rules, input_query):
 		print ("#he's mortal, and he's dead")
 	print ("#who is mortal?")
 	#for nyan in pred('a', [v, 'mortal']):
@@ -313,7 +331,6 @@ def query(input_rules, input_query):
 	input_query = Graph([Triple('a', [w, 'mortal'])])
 	for nyan in query(input_rules, input_query):
 		print ('#'+str(nyan[w]) + " is mortal, and he's dead")
-
 
 if __name__ == "__main__":
 	test1()
