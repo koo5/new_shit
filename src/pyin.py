@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from weakref import ref as weakref
+from rdflib import URIRef
 import rdflib
-from rdflib import Graph
 import sys
 #import common_utils
 #g = common_utils.parse_input()
@@ -49,7 +49,7 @@ class Triple():
 		s.pred = pred
 		s.args = args
 	def __str__(s):
-		return s.pred + "(" + printify(s.args, ", ") + ")"
+		return str(s.pred) + "(" + printify(s.args, ", ") + ")"
 
 class Graph(list):
 	def __str__(s):
@@ -76,7 +76,7 @@ class Atom(AtomVar):
 		super().__init__(value, debug_locals)
 		s.value = value
 	def __str__(s):
-		return s.kbdbg_name + '("'+s.value+'")'
+		return s.kbdbg_name + '("'+str(s.value)+'")'
 
 class Var(AtomVar):
 	def __init__(s, debug_name, debug_locals=None):
@@ -273,7 +273,8 @@ def success(msg):
 	yield msg
 
 def is_var(x):
-	return x.startswith('?')
+	#return x.startswith('?')
+	return '?' in x
 
 def get_value(x):
 	asst(x)
@@ -298,11 +299,34 @@ def pred(p, args):
 import click
 
 @click.command()
-@click.argument('kb', type=click.File('r'))
-@click.argument('goal', type=click.File('r'))
+@click.argument('kb', type=click.File('rb'))
+@click.argument('goal', type=click.File('rb'))
 def query_from_files(kb, goal):
-	graph = Graph()
-	graph.parse(kb, 'nq')
+	graph = rdflib.ConjunctiveGraph()
+	graph.parse(kb, format='nquads')
+
+	rules = []
+
+	for s,o in graph.subject_objects(URIRef("http://www.w3.org/2000/10/swap/log#implies")):
+		for head_triple in graph.get_context(o):
+			print()
+			print(head_triple, "<=")
+			body = Graph()
+			for body_triple in graph.get_context(s):
+				print(body_triple)
+				body.append(Triple(str(body_triple[1]), [str(body_triple[0]), str(body_triple[2])]))
+			rules.append(Rule(Triple(str(head_triple[1]), [str(head_triple[0]), str(head_triple[1])]), body))
+
+	graph = rdflib.Graph()
+	graph.parse(goal, format='nquads')
+
+	goal = Graph()
+	for s,p,o in graph.triples((None, None, None)):
+		goal.append(Triple(str(p), [str(s),str(o)]))
+
+	for i in query(rules, goal):
+		print ('RESULT: ',i)
+
 
 
 def query(input_rules, input_query):
@@ -313,8 +337,8 @@ def query(input_rules, input_query):
 	for nyan in Rule(None, input_query).match():
 		yield nyan
 
-def test1():
 
+def test1():
 	input_rules = [
 		Rule(Triple('a', ['?X', 'mortal']),
 		Graph([Triple('a', ['?X', 'man']), Triple('not', ['?X', 'superman'])])),
@@ -333,5 +357,5 @@ def test1():
 		print ('#'+str(nyan[w]) + " is mortal, and he's dead")
 
 if __name__ == "__main__":
-	test1()
+	query_from_files()
 
