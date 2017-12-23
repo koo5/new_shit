@@ -17,7 +17,7 @@ console_debug_out = logging.StreamHandler()
 console_debug_out.setFormatter(formatter)
 
 logger=logging.getLogger()
-#logger.addHandler(console_debug_out)
+logger.addHandler(console_debug_out)
 logger.setLevel(logging.DEBUG)
 logger.debug("hi")
 
@@ -71,24 +71,30 @@ class AtomVar(Kbdbgable):
 			s.kbdbg_name = debug_locals.kbdbg_frame
 		s.kbdbg_name += "_" + urllib.parse.quote_plus(debug_name)
 
+	def __short__str__(s):
+		return get_value(s).___short__str__()
+
 class Atom(AtomVar):
 	def __init__(s, value, debug_locals=None):
 		super().__init__(value, debug_locals)
 		s.value = value
 	def __str__(s):
-		return s.kbdbg_name + '("'+str(s.value)+'")'
+		return s.kbdbg_name + s.___short__str__()
+	def ___short__str__(s):
+		return '("'+str(s.value)+'")'
 
 class Var(AtomVar):
 	def __init__(s, debug_name, debug_locals=None):
 		super().__init__(debug_name, debug_locals)
 		s.bound_to = None
 	def __str__(s):
-		if s.bound_to:
-			desc = '=' + str(s.bound_to)
-		else:
-			desc = '(free)'
-		return s.kbdbg_name + desc
+		return s.kbdbg_name + s.___short__str__()
 		# + " in " + str(s.debug_locals())
+	def ___short__str__(s):
+		if s.bound_to:
+			return ' = ' + (s.bound_to.__short__str__())
+		else:
+			return '(free)'
 
 	def _bind_to(x, y):
 		assert x.bound_to == None
@@ -124,6 +130,9 @@ class Locals(dict):
 			r += ":\n#" + printify([str(k) + ": " + str(v) for k, v in s.items()], ", ")
 		return r
 
+	def __short__str__(s):
+		return printify([str(k) + ": " + v.__short__str__() for k, v in s.items()], ", ")
+
 	def new(s, kbdbg_frame):
 		log("cloning " + str(s))
 		s.debug_last_instance_id += 1
@@ -145,8 +154,10 @@ class Rule(Kbdbgable):
 		s.ep_heads = []
 
 		kbdbg(":"+s.kbdbg_name + ' a ' + 'kbdbg:rule')
-		head = ":"+s.kbdbg_name + "Head"
-		kbdbg(":"+s.kbdbg_name + ' kbdbg:has_head ' + head)
+		head_uri = ":"+s.kbdbg_name + "Head"
+		kbdbg(":"+s.kbdbg_name + ' kbdbg:has_head ' + head_uri)
+		kbdbg(":"+head_uri + ' kbdbg:has_text ' + str(s.head))
+
 
 	def __str__(s):
 		return "{" + str(s.head) + "} <= " + str(s.body)
@@ -228,7 +239,7 @@ class Rule(Kbdbgable):
 		log ("..no match")
 
 	def match(s, args=[]):
-		s.ep_heads.append(args)
+		s.ep_heads.append(args)#.copy())
 		for i in s.unify(args):
 			s.ep_heads.pop()
 			yield i
@@ -242,6 +253,7 @@ def ep_match(a, b):
 			return
 		if type(j) == str and b[i] != j:
 			return
+	kbdbg("EP!")
 	return True
 
 def asst(x):
@@ -302,20 +314,26 @@ import click
 @click.argument('kb', type=click.File('rb'))
 @click.argument('goal', type=click.File('rb'))
 def query_from_files(kb, goal):
-	graph = rdflib.ConjunctiveGraph()
+	default_graph = '@default'
+	implies = URIRef("http://www.w3.org/2000/10/swap/log#implies")
+
+	graph = rdflib.ConjunctiveGraph(identifier=default_graph)
 	graph.parse(kb, format='nquads')
 
 	rules = []
 
-	for s,o in graph.subject_objects(URIRef("http://www.w3.org/2000/10/swap/log#implies")):
-		for head_triple in graph.get_context(o):
-			print()
-			print(head_triple, "<=")
-			body = Graph()
-			for body_triple in graph.get_context(s):
-				print(body_triple)
-				body.append(Triple(str(body_triple[1]), [str(body_triple[0]), str(body_triple[2])]))
-			rules.append(Rule(Triple(str(head_triple[1]), [str(head_triple[0]), str(head_triple[1])]), body))
+	for s,p,o in graph.triples((None, None, None, default_graph)):
+		if p != implies:
+			rules.append(Rule(Triple(str(p), [str(s), str(o)]), Graph()))
+		else:
+			for head_triple in graph.get_context(o):
+				print()
+				print(head_triple, "<=")
+				body = Graph()
+				for body_triple in graph.get_context(s):
+					print(body_triple)
+					body.append(Triple(str(body_triple[1]), [str(body_triple[0]), str(body_triple[2])]))
+				rules.append(Rule(Triple(str(head_triple[1]), [str(head_triple[0]), str(head_triple[2])]), body))
 
 	graph = rdflib.Graph()
 	graph.parse(goal, format='nquads')
@@ -325,7 +343,9 @@ def query_from_files(kb, goal):
 		goal.append(Triple(str(p), [str(s),str(o)]))
 
 	for i in query(rules, goal):
-		print ('RESULT: ',i)
+		print ('RESULT: ')
+		print (i.__short__str__())
+		print ()
 
 
 
