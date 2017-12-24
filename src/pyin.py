@@ -11,20 +11,16 @@ import logging
 import urllib.parse
 from collections import defaultdict
 
-formatter = logging.Formatter('#%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
+formatter = logging.Formatter('%(message)s')
 console_debug_out = logging.StreamHandler()
 console_debug_out.setFormatter(formatter)
 
 logger=logging.getLogger()
 logger.addHandler(console_debug_out)
 logger.setLevel(logging.DEBUG)
-logger.debug("hi")
-
-logger=logging.getLogger("pyin")
 log=logger.debug
 
-kbdbg_out = logging.StreamHandler(sys.stdout)
+kbdbg_out = logging.FileHandler('kbdbg.nt')
 kbdbg_out.setLevel(logging.DEBUG)
 kbdbg_out.setFormatter(logging.Formatter('%(message)s.'))
 logger=logging.getLogger("kbdbg")
@@ -327,11 +323,11 @@ def query_from_files(kb, goal):
 			rules.append(Rule(Triple(str(p), [str(s), str(o)]), Graph()))
 		else:
 			for head_triple in graph.get_context(o):
-				print()
-				print(head_triple, "<=")
+				#print()
+				#print(head_triple, "<=")
 				body = Graph()
 				for body_triple in graph.get_context(s):
-					print(body_triple)
+					#print(body_triple)
 					body.append(Triple(str(body_triple[1]), [str(body_triple[0]), str(body_triple[2])]))
 				rules.append(Rule(Triple(str(head_triple[1]), [str(head_triple[0]), str(head_triple[2])]), body))
 
