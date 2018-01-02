@@ -12,7 +12,7 @@ class Dotdict(object):
 	see:
 	https://docs.python.org/3/library/types.html#types.SimpleNamespace
 	https://docs.python.org/3/library/collections.html#collections.namedtuple
-
+	https://github.com/TriOptima/tri.named-struct
 	"""
 	def __init__(s, seq=[], **kwargs):
 		object.__setattr__(s, "_dict", dict(seq, **kwargs))
