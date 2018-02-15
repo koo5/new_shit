@@ -67,7 +67,7 @@ class MarpaClient(object):
 		r = s.syms[name] = s.symbol(name)
 		return r
 
-	def named_symbol2(s,name):
+	def ensure_named_symbol_exists(s, name):
 		if name not in s.syms._dict:
 			r = s.syms[name] = s.symbol(name)
 			return r
@@ -259,7 +259,7 @@ class MarpaClient(object):
 		worksases2 = collections.defaultdict(lambda: collections.defaultdict(list))
 		log("magic:")
 		import nodes
-		simple = 0
+
 		for n in scope:
 			if n.__class__.__name__ == 'WorksAs':
 				sup = n.ch.sup.parsed
@@ -272,17 +272,6 @@ class MarpaClient(object):
 				#if not isinstance(sub_target, (nodes.SyntaxedNodecl, nodes.CustomNodeDef)):
 				#	continue
 				worksases[sup_target].append(sub_target)
-
-				if simple:
-					rule_lhs = sup_target.symbol(s)
-					rule_rhs = sub_target.symbol(s)
-					if args.log_parsing:
-						log('%s worksas %s\n (%s := %s)'%(sub_target, sup_target, rule_lhs, rule_rhs))
-					if rule_lhs != None and rule_rhs != None:
-						r = s.rule(str(n), rule_lhs, rule_rhs)
-					else:
-						print('%s or %s is None'%(rule_lhs, rule_rhs))
-
 			elif n.__class__ == nodes.CustomNode and n.decl.name == 'haspriority':
 				k = nodes.deref_def(n.ch.node)
 				assert k not in pris
@@ -291,9 +280,6 @@ class MarpaClient(object):
 				k = deref_def(n.ch.node)
 				assert k not in asoc
 				asoc[k] = n.ch.value.pyval
-
-		if simple:
-			return
 
 		for sup,subs in iteritems(worksases):
 			for sub in subs:
@@ -305,12 +291,14 @@ class MarpaClient(object):
 				if level_index == len(priority_levels):
 					level_index = 0
 				if level_index == 0:
-					return sup.symbol(s)
+					return sup, sup.symbol(s)
 				else:
-					return s.named_symbol2(sup.name + str(level_index))
+					return sup, s.ensure_named_symbol_exists(sup.name + str(level_index))
 			for level_index in range(len(priority_levels)):
-				lhs = lhs_symbol(level_index)
-				next_level_lhs = lhs_symbol(level_index+1)
+
+				lhs =               lhs_symbol(level_index)
+				next_level_lhs =    lhs_symbol(level_index + 1)
+
 				if lhs != next_level_lhs and level_index != len(priority_levels)-1:
 					s.rule("|"+s.symbol2debug_name(lhs) + ":=" + s.symbol2debug_name(next_level_lhs), lhs, next_level_lhs)
 				level = priority_levels[level_index]

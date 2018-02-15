@@ -4203,17 +4203,26 @@ def register_def_symbol(s, m):
 				return
 		item_symbol = deref_decl(s.ch.itemtype).symbol(m)
 		if item_symbol == None:
-			log = logging.getLogger("marpa").warning("no symbol for %s" % s)
+			logging.getLogger("marpa").warning("no symbol for %s" % s)
 			return
 		desc = '%s literal' % s.tostr()
 		m.node_symbols[s] = r = m.symbol(desc)
 		log("registering %s grammar" % desc)
+
+
+
 		optionally_elements = m.symbol('optionally_elements of %s' % desc)
 		sep = m.symbol('comma with whitespace')
 		m.rule('comma with whitespace', sep, [m.syms.maybe_whitespace, m.known_char(','), m.syms.maybe_whitespace], action=ignore)
 		m.sequence('optionally_elements of %s' % desc, optionally_elements, item_symbol, ident_list, sep, 0)
 		opening, closing = m.known_char('['), m.known_char(']')
+
+
 		m.rule('list literal of %s' % desc, r, [opening, optionally_elements, closing], s.instance_class.from_parse)
+
+
+
+
 	elif isinstance(s, (NodeclBase)):
 		m.node_symbols[s] = s.instance_class.register_class_symbol(m)
 	elif isinstance(s, (CustomNodeDef)):
