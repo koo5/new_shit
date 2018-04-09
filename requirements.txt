@@ -7,3 +7,4 @@ pyparsing==2.2.0
 rdflib==4.2.2
 fuzzywuzzy
 python-Levenshtein
+json-rpc
