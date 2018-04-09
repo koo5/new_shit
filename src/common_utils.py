@@ -7,8 +7,6 @@ le = Namespace('http://koo5.github.com/lemon/api#')
 ti = Namespace('http://koo5.github.com/lemon/api/textinput#')
 from rdflib import RDF
 
-
-
 def parse_input():
 	input_graph = Graph()
 

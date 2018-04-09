@@ -6,8 +6,8 @@ import sys
 import nodes
 nodes.autocomplete  = False
 
-from marpa_cffi.marpa_rpc_client import ThreadedMarpa
-fixmenodes.m = m = ThreadedMarpa(print, True)
+from marpa_cffi.marpa_rpc_client import MarpaClient
+m = MarpaClient(print, True)
 
 def handle(text=None):
 	msg = m.t.output.get()
@@ -29,7 +29,7 @@ def parse(text):
 
 r = nodes.make_root()
 scope = r['repl'].scope()
-m.collect_grammar(scope,nodes.B.statement)
+m.collect_grammar(scope,scope,nodes.B.statement)
 
 if __name__=='__main__':
 	if len(sys.argv) == 3 and sys.argv[1] == '-c':

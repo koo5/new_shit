@@ -3,7 +3,7 @@ job:
 currently not really a rpc client, it just spawns a thread
 MarpaThread needs to become a standalone program. The two parts already communicate over json,
 but we need to do a little more untangling:
-valuator "actions": functions like join or ident. we need to store them in ThreadedMarpa,
+valuator "actions": functions like join or ident. we need to store them in MarpaClient,
 and MarpaThread must only pass back what to call.
 """
 
