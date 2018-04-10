@@ -20,7 +20,7 @@ langs = {'cs': {
 }
 
 def tr(x):
-	print("tr(",x)
+	#print("tr(",x)
 	if lang in langs:
 		if x in langs[lang]:
 			x = langs[lang][x]
@@ -28,5 +28,5 @@ def tr(x):
 			logger.debug('missing translation for: %s'%x)
 	if type(x) == tuple:
 		x = x[0]
-	print("result:",x)
+	#print("result:",x)
 	return x

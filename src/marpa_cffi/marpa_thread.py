@@ -65,12 +65,12 @@ class MarpaThread(LemmacsThread):
 				s.send(Dotdict(message='eeerror', traceback=traceback.format_exc()))
 
 	def precompute_grammar(s, inp):
-		log('precompute_grammar...')
+		logging.getLogger("precompute_grammar").debug('precompute_grammar...')
 
 		s.debug_sym_names = inp.debug_sym_names
 		s.rules = inp.rules
 		s.debug = inp.debug
-		                     
+
 		graphing_wrapper.clear()
 
 		s.g = Grammar()
@@ -83,14 +83,14 @@ class MarpaThread(LemmacsThread):
 
 		for k, v in iteritems(inp.symbol_ranks):
 			s.g.symbol_rank_set(k, v)
-			log(("symbol rank:", k, v))
+			logging.getLogger("precompute_grammar").debug(("symbol rank:", k, v))
 
 		# if args.log_parsing:
 		#	log('s.c_syms:%s',s.c_syms)
 		s.g.start_symbol_set(s.c_syms[inp.start])
 		s.c_rules = []
 		for rule in inp.rules:
-			log(rule)
+			logging.getLogger("precompute_grammar").debug(rule)
 			if rule[0]:  # its a sequence
 				_, _, lhs, rhs, action, sep, min, prop = rule
 				s.c_rules.append(s.g.sequence_new(lhs, rhs, sep, min, prop))
@@ -101,7 +101,7 @@ class MarpaThread(LemmacsThread):
 					s.c_rules.append(cr)
 					if rank != 0:
 						s.g.rule_rank_set(cr, rank)
-						log(("rank ", rule, rank))
+						logging.getLogger("precompute_grammar").debug(("rank ", rule, rank))
 
 		if args.graph_grammar:
 			def gen():
@@ -146,15 +146,21 @@ class MarpaThread(LemmacsThread):
 	def print_events(s):
 		for event_type, event_value in s.g.events():
 			if event_type == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_PREDICTED:
-				log('predicted:%s:%s', event_value, s.symbol2debug_name(event_value))
+				log('predicted:%s(%s)', event_value, s.symbol2debug_name(event_value))
+			elif event_type == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_EXPECTED:
+				log('expected:%s(%s)', event_value, s.symbol2debug_name(event_value))
 			elif event_type == marpa_cffi.marpa.lib.MARPA_EVENT_SYMBOL_COMPLETED:
-				log('completed:%s:%s', event_value, s.symbol2debug_name(event_value))
+				log('completed:%s(%s)', event_value, s.symbol2debug_name(event_value))
 			else:
 				log('event:%s, value:%s', events[event_type], event_value)
 
 	def parse(s, tokens, raw, rules):
 		log("parse..")
 		r = Recce(s.g)
+		for x in s.c_syms:
+			marpa_cffi.marpa.lib.marpa_r_expected_symbol_event_set(r.r, x, True)
+
+
 		r.start_input()
 
 		ce = lib.marpa_r_current_earleme(r.r)
@@ -164,16 +170,17 @@ class MarpaThread(LemmacsThread):
 		for i, sym in enumerate(tokens):
 			# assert type(sym) == symbol_int
 			if s.debug:
-				log("parsed so far:%s" % raw[:i])
+				log("parsed so far:[%s]" % raw[:i])
 			if sym == None:
 				log("input:symid:%s name:%s raw:%s" % (sym, s.symbol2debug_name(sym), raw[i]))
 				log("grammar not implemented, skipping this node")
 			else:
 				s.print_events()
-				# s.print_completions(r)
+				s.print_completions(r)
 				if s.debug:
 					log("input:symid:%s name:%s raw:%s" % (sym, s.symbol2debug_name(sym), raw[i]))
-				r.alternative(s.c_syms[sym], i + 1)
+				if not r.alternative(s.c_syms[sym], i + 1):
+					return
 			r.earleme_complete()
 		s.print_events()
 		# token value 0 has special meaning(unvalued),

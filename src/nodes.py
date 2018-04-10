@@ -669,7 +669,7 @@ class Node(NodePersistenceStuff, element.Element):
 
 	def symbol(s, m):
 		if not s in m.node_symbols:
-			logging.getLogger("marpa").debug(("gimme symbol for", s))
+			logging.getLogger("collect_grammar").debug(("gimme symbol for", s))
 			s.register_symbol(m)
 		if s in m.node_symbols:
 			return m.node_symbols[s]
@@ -3798,7 +3798,7 @@ def parse_sync(p, text=None):
 
 
 def load_module(file_name, placeholder):
-	print ("loading "+file_name)
+	#print ("loading "+file_name)
 	try:
 		input = json.load(open(file_name, "r"))
 	except Exception as e:
@@ -4205,11 +4205,11 @@ def register_def_symbol(s, m):
 				return
 		item_symbol = deref_decl(s.ch.itemtype).symbol(m)
 		if item_symbol == None:
-			log = logging.getLogger("marpa").warning("no symbol for %s" % s)
+			logging.getLogger("collect_grammar").warning("no symbol for %s" % s)
 			return
 		desc = '%s literal' % s.tostr()
 		m.node_symbols[s] = r = m.symbol(desc)
-		log("registering %s grammar" % desc)
+		logging.getLogger("collect_grammar").debug("registering %s grammar" % desc)
 		optionally_elements = m.symbol('optionally_elements of %s' % desc)
 		sep = m.symbol('comma with whitespace')
 		m.rule('comma with whitespace', sep, [m.syms.maybe_whitespace, m.known_char(','), m.syms.maybe_whitespace], action=ignore)
@@ -4230,7 +4230,7 @@ def register_def_symbol(s, m):
 			rhs = deref_decl(i) .symbol(m)
 			m.node_rules[s] = m.rule(str(s)+"<-"+str(i), lhs, rhs)
 	else:
-		log(("no symbol for", s))
+		logging.getLogger("collect_grammar").debug(("no symbol for", s))
 
 
 
@@ -4239,8 +4239,7 @@ def register_def_symbol(s, m):
 def register_class_symbol(cls, m):
 	"""a nodecl calls this for its instance class"""
 
-	log = logging.getLogger("marpa").debug
-
+	log = logging.getLogger("collect_grammar").debug
 
 	if FunctionCall.__subclasscheck__(cls):
 		top = m.symbol("function_call")

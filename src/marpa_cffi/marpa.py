@@ -142,7 +142,7 @@ class Recce(object):
 	def __init__(s, g):
 		s.g = g
 		s.r = s.g.check_null(lib.marpa_r_new(g.g))
-		log(s.r)
+		#log(s.r)
 	def __del__(s):
 		lib.marpa_r_unref(s.r)
 	def start_input(s):
@@ -154,9 +154,11 @@ class Recce(object):
 		
 		r = lib.marpa_r_alternative(s.r, sym, val, length)
 		#Return value: On success, MARPA_ERR_NONE. On failure, some other error code.
+		if r == lib.MARPA_ERR_UNEXPECTED_TOKEN_ID:
+			return False
 		if r != lib.MARPA_ERR_NONE:
 			log_error(r)
-
+		return True
 
 	def earleme_complete(s):
 		s.g.check_int(lib.marpa_r_earleme_complete(s.r))

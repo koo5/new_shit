@@ -27,13 +27,13 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
 	def handle(self):
 		self.data = self.rfile.readline()
 		print("{} wrote:".format(self.client_address[0]))
-		print(self.data)
-		# msg = json.loads(self.data)
-		# meth = msg["method"]
-		response = JSONRPCResponseManager.handle(self.data, dispatcher)
-		self.wfile.write(response.json.encode("utf-8"))
-		# self.wfile.write(json.dumps(result))
+		response = handle_message(self.data)
+		self.wfile.write(response.encode("utf-8"))
 
+def handle_message(data):
+	print(data)
+	response = JSONRPCResponseManager.handle(data, dispatcher)
+	return response.json
 
 from lemon_args import args
 #do_graph_grammar = input.value(command, ti.DebugOptionGenerateGrammarGraphPngOn)
@@ -78,9 +78,9 @@ def parse(text):
 	p.add(nodes.Text(value=text))
 	rr = _parse_sync(p, text)
 	result = {}
+	results = []
 	result["results"] = results
 	if (rr and len(rr)):
-		results = []
 		for i in rr:
 			print("parse result:%s" % i)
 			if isinstance(i, nodes.Element):
@@ -90,6 +90,10 @@ def parse(text):
 
 
 if __name__ == "__main__":
+
+	#just for quicker debugging
+	handle_message(' {"id": null, "jsonrpc": "2.0", "method":"parse", "params":["pri"]}')
+
 	HOST, PORT = "localhost", 9999
 	while True:
 		try:

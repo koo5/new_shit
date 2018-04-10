@@ -103,7 +103,7 @@ class MarpaClient(object):
 			assert type(debug_name) == unicode
 			assert type(action) in (tuple, types.FunctionType, types.MethodType)
 
-		log((debug_name, lhs, rhs, action, rank))
+		logging.getLogger("collect_grammar").debug((debug_name, lhs, rhs, action, rank))
 		rule = (False, debug_name, lhs, rhs, action, rank)
 		if not rule in s.rules:
 			s.rules.append(rule)
@@ -182,7 +182,7 @@ class MarpaClient(object):
 		assert scope == uniq(scope),  (scope,uniq(scope))
 
 		s.clear()
-		log("collect_grammar:...")
+		logging.getLogger("collect_grammar").debug("collect_grammar:...")
 
 		#we dont have a separate tokenizer
 		#any char used in any terminal of the grammar:
