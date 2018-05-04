@@ -48,9 +48,9 @@ if do_graph_grammar:
 import nodes
 nodes.autocomplete = False
 r = nodes.make_root()
-
 from marpa_cffi.marpa_rpc_client import MarpaClient
-
+import server_frames
+server_frames.init(?)
 
 def _parse_sync(p, text=None):
 	m = MarpaClient(print, True)
@@ -67,6 +67,14 @@ def _parse_sync(p, text=None):
 			return msg.results
 		else:
 			raise Exception(msg.message)
+
+@dispatcher.add_method
+def menu(text):
+	p = nodes.Parser()
+	r.repl.ch.statements.add(p)
+	server_frames.menu._current_parser_node = p
+	server_frames.menu.
+
 
 @dispatcher.add_method
 def parse(text):
@@ -92,7 +100,9 @@ def parse(text):
 if __name__ == "__main__":
 
 	#just for quicker debugging
+	handle_message(' {"id": null, "jsonrpc": "2.0", "method":"menu", "params":["pri"]}')
 	handle_message(' {"id": null, "jsonrpc": "2.0", "method":"parse", "params":["pri"]}')
+	handle_message(' {"id": null, "jsonrpc": "2.0", "method":"execute", "params":[{...}]}')
 
 	HOST, PORT = "localhost", 9999
 	while True:

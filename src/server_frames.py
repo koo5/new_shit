@@ -392,7 +392,13 @@ class Menu(SidebarFrame):
 		old_text = s.current_text
 		s.update_current_text()
 		if s.current_parser_node and (node_changed or old_text != s.current_text):
-			pygame.time.set_timer(pygame.USEREVENT + 3, 50)
+			s.start_delay_timer()
+
+	def start_delay_timer(s):
+		pygame.time.set_timer(pygame.USEREVENT + 3, 50)
+
+	def stop_delay_timer(s):
+		pygame.time.set_timer(pygame.USEREVENT + 3, 0)
 
 	def parser_changed(s):
 		def relevant_parser(e):
@@ -409,7 +415,7 @@ class Menu(SidebarFrame):
 			return True
 
 	def update_menu(s):
-		pygame.time.set_timer(pygame.USEREVENT + 3, 0)
+		s.stop_delay_timer()
 		log = logging.getLogger('menu').debug
 		if s.current_parser_node:
 			# warning, current_parser_node could have been moved to clipboard or something, and theres currently no way to know
@@ -447,7 +453,7 @@ class Menu(SidebarFrame):
 			for i,v in enumerate(solr_result):
 				s.solr_results.append(nodes.SolrMenuItem([], v["id"], {'solr_results_order':100-i}))
 
-				s.send_items_to_menu_process('solr', s.solr_results)				
+				s.send_items_to_menu_process('solr', s.solr_results)
 				s.update_items()
 
 		if m:
@@ -818,7 +824,7 @@ def init(_thread_message_signal, _send_thread_message):
 
 	node_info = NodeInfo(editor)
 	node_debug = NodeDebug(editor)
-
+?
 	send_thread_message = _send_thread_message
 	_thread_message_signal.connect(menu.on_thread_message)
 
