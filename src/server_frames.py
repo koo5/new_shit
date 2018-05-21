@@ -329,6 +329,7 @@ class Menu(SidebarFrame):
 	def __init__(s):
 		super().__init__()
 		s.editor = editor
+		s.counterpart = None
 		# editor.on_serverside_change.connect(s.on_editor_change)
 		editor.on_atts_change.connect(s.update)
 		s._changed = True
@@ -340,7 +341,8 @@ class Menu(SidebarFrame):
 		s._current_parser_node = None
 		s.must_update = True
 
-	def send_items_to_menu_process(category, items):
+	def send_items_to_menu_process(s, category, items):
+		"""not used, would be used for async notifying clients of new menu items"""
 		pass
 
 	def signal_change(s):
@@ -386,7 +388,7 @@ class Menu(SidebarFrame):
 		s.must_update = True
 
 	def update(s):
-		if not s.counterpart.visible:
+		if not s.counterpart or not s.counterpart.visible:
 			return
 		node_changed = s.parser_changed()
 		old_text = s.current_text
@@ -452,9 +454,8 @@ class Menu(SidebarFrame):
 			s.solr_results = []
 			for i,v in enumerate(solr_result):
 				s.solr_results.append(nodes.SolrMenuItem([], v["id"], {'solr_results_order':100-i}))
-
 				s.send_items_to_menu_process('solr', s.solr_results)
-				s.update_items()
+				s.on_gotten_new_results()
 
 		if m:
 			if m.message == 'precomputed':
@@ -487,7 +488,7 @@ class Menu(SidebarFrame):
 						maybe_add(5555, "a parse", x)
 				s.parse_results = results
 				s.send_items_to_menu_process('parse', s.parse_results)
-				s.update_items()
+				s.on_gotten_new_results()
 				#	r.append(ParserMenuItem(i, 333))
 
 	@staticmethod
@@ -532,9 +533,13 @@ class Menu(SidebarFrame):
 		log("palette_results:%s" % len(s.palette_results))
 
 		s.send_items_to_menu_process('palette', s.palette_results)
-		s.update_items()
+		s.on_gotten_new_results()
 
-	def update_items(s):
+
+	def on_gotten_new_results(s):
+		s.update_menu_items_with_results_from_various_sources()
+
+	def update_menu_items_with_results_from_various_sources(s):
 		log = logging.getLogger('menu').debug
 		log("parse_results:%s" % len(s.parse_results))
 		s.sorted_everything = s.sort_palette(s.palette_results + s.parse_results + s.solr_results,
@@ -824,7 +829,7 @@ def init(_thread_message_signal, _send_thread_message):
 
 	node_info = NodeInfo(editor)
 	node_debug = NodeDebug(editor)
-?
+
 	send_thread_message = _send_thread_message
 	_thread_message_signal.connect(menu.on_thread_message)
 

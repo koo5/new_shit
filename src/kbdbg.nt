@@ -1,0 +1,184 @@
+@prefix kbdbg: <http://kbd.bg/#> .
+@prefix : <file:///#> .
+:Rule1 a kbdbg:rule.
+:Rule1 kbdbg:has_head :Rule1Head.
+::Rule1Head kbdbg:has_text file://./tests/simple/superman.tau#not_a(file://./tests/simple/superman.tau#socrates, file://./tests/simple/superman.tau#superman).
+:Rule2 a kbdbg:rule.
+:Rule2 kbdbg:has_head :Rule2Head.
+::Rule2Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#mortal).
+:Rule3 a kbdbg:rule.
+:Rule3 kbdbg:has_head :Rule3Head.
+::Rule3Head kbdbg:has_text file://./tests/simple/superman.tau#not_a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#superman).
+:Rule4 a kbdbg:rule.
+:Rule4 kbdbg:has_head :Rule4Head.
+::Rule4Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau#socrates, file://./tests/simple/superman.tau#man).
+:Rule5 a kbdbg:rule.
+:Rule5 kbdbg:has_head :Rule5Head.
+::Rule5Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#man).
+:Rule6 a kbdbg:rule.
+:Rule6 kbdbg:has_head :Rule6Head.
+::Rule6Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#mortal).
+:Rule7 a kbdbg:rule.
+:Rule7 kbdbg:has_head :Rule7Head.
+::Rule7Head kbdbg:has_text None.
+:Rule7Frame1 kbdbg:is_for_rule :rule7.
+:Rule2Frame2 kbdbg:is_for_rule :rule2.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule2Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule2Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule2Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule4Frame3 kbdbg:is_for_rule :rule4.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule4Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule4Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule5Frame4 kbdbg:is_for_rule :rule5.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule5Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule5Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule5Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule5Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule6Frame5 kbdbg:is_for_rule :rule6.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame6 kbdbg:is_for_rule :rule2.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule4Frame7 kbdbg:is_for_rule :rule4.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule4Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule1Frame8 kbdbg:is_for_rule :rule1.
+:Rule3Frame9 kbdbg:is_for_rule :rule3.
+:Rule3Frame9_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule4Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule3Frame9_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule4Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule4Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule5Frame10 kbdbg:is_for_rule :rule5.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+EP!.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+@prefix kbdbg: <http://kbd.bg/#> .
+@prefix : <file:///#> .
+:Rule1 a kbdbg:rule.
+:Rule1 kbdbg:has_head :Rule1Head.
+::Rule1Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#mortal).
+:Rule2 a kbdbg:rule.
+:Rule2 kbdbg:has_head :Rule2Head.
+::Rule2Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#mortal).
+:Rule3 a kbdbg:rule.
+:Rule3 kbdbg:has_head :Rule3Head.
+::Rule3Head kbdbg:has_text file://./tests/simple/superman.tau#not_a(file://./tests/simple/superman.tau#socrates, file://./tests/simple/superman.tau#superman).
+:Rule4 a kbdbg:rule.
+:Rule4 kbdbg:has_head :Rule4Head.
+::Rule4Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau#socrates, file://./tests/simple/superman.tau#man).
+:Rule5 a kbdbg:rule.
+:Rule5 kbdbg:has_head :Rule5Head.
+::Rule5Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#man).
+:Rule6 a kbdbg:rule.
+:Rule6 kbdbg:has_head :Rule6Head.
+::Rule6Head kbdbg:has_text file://./tests/simple/superman.tau#not_a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#superman).
+:Rule7 a kbdbg:rule.
+:Rule7 kbdbg:has_head :Rule7Head.
+::Rule7Head kbdbg:has_text None.
+:Rule7Frame1 kbdbg:is_for_rule :rule7.
+:Rule1Frame2 kbdbg:is_for_rule :rule1.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+EP!.
+:Rule2Frame3 kbdbg:is_for_rule :rule2.
+:Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule2Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule2Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule4Frame4 kbdbg:is_for_rule :rule4.
+:Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule4Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule3Frame5 kbdbg:is_for_rule :rule3.
+:Rule6Frame6 kbdbg:is_for_rule :rule6.
+:Rule6Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule4Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule6Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule4Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule4Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule5Frame7 kbdbg:is_for_rule :rule5.
+:Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule5Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule5Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule5Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule5Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule1Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule2Frame8 kbdbg:is_for_rule :rule2.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule2Frame8_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule2Frame8_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame8_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule2Frame8_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule4Frame9 kbdbg:is_for_rule :rule4.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule4Frame9_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule4Frame9_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule5Frame10 kbdbg:is_for_rule :rule5.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+@prefix kbdbg: <http://kbd.bg/#> .
+@prefix : <file:///#> .
+:Rule1 a kbdbg:rule.
+:Rule1 kbdbg:has_head :Rule1Head.
+::Rule1Head kbdbg:has_text file://./tests/simple/superman.tau#not_a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#superman).
+:Rule2 a kbdbg:rule.
+:Rule2 kbdbg:has_head :Rule2Head.
+::Rule2Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#man).
+:Rule3 a kbdbg:rule.
+:Rule3 kbdbg:has_head :Rule3Head.
+::Rule3Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#mortal).
+:Rule4 a kbdbg:rule.
+:Rule4 kbdbg:has_head :Rule4Head.
+::Rule4Head kbdbg:has_text file://./tests/simple/superman.tau#not_a(file://./tests/simple/superman.tau#socrates, file://./tests/simple/superman.tau#superman).
+:Rule5 a kbdbg:rule.
+:Rule5 kbdbg:has_head :Rule5Head.
+::Rule5Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau#socrates, file://./tests/simple/superman.tau#man).
+:Rule6 a kbdbg:rule.
+:Rule6 kbdbg:has_head :Rule6Head.
+::Rule6Head kbdbg:has_text file://./tests/simple/superman.tau#a(file://./tests/simple/superman.tau?x, file://./tests/simple/superman.tau#mortal).
+:Rule7 a kbdbg:rule.
+:Rule7 kbdbg:has_head :Rule7Head.
+::Rule7Head kbdbg:has_text None.
+:Rule7Frame1 kbdbg:is_for_rule :rule7.
+:Rule2Frame2 kbdbg:is_for_rule :rule2.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule2Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule2Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule2Frame2_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule3Frame3 kbdbg:is_for_rule :rule3.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule3Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule3Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule3Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule3Frame3_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule5Frame4 kbdbg:is_for_rule :rule5.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule5Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule5Frame4_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule6Frame5 kbdbg:is_for_rule :rule6.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_bound_to :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame6 kbdbg:is_for_rule :rule2.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule1Frame7 kbdbg:is_for_rule :rule1.
+:Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule1Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule1Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule1Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule1Frame7_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule4Frame8 kbdbg:is_for_rule :rule4.
+:Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule4Frame8_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule4Frame8_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule2Frame6_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule3Frame9 kbdbg:is_for_rule :rule3.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule3Frame9_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule3Frame9_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule3Frame9_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule3Frame9_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule5Frame10 kbdbg:is_for_rule :rule5.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule5Frame10_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%23socrates.
+EP!.
+:Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY kbdbg:is_unbound_from :Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_bound_to :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.
+:Rule6Frame5_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3Fx kbdbg:is_unbound_from :Rule7Frame1_file%3A%2F%2F.%2Ftests%2Fsimple%2Fsuperman.tau%3FY.

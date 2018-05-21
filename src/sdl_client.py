@@ -39,17 +39,8 @@ from frontend_events import *
 os.environ['SDL_VIDEO_ALLOW_SCREENSAVER'] = '1'
 
 
-if hasattr(sys, 'pypy_version_info'):
-	print ("trying to load pygame_cffi, adding pygame_cffi to sys.path")
-	try:
-		sys.path.append("pygame_cffi")
-		import pygame
-	except e:
-		print(e)
-		sys.path.remove("pygame_cffi")
-import pygame
-if hasattr(pygame, 'cffi'):
-		print("loaded pygame_cffi")
+from pygame_wrapper import pygame
+
 from pygame import display, image, Rect, time
 flags = pygame.RESIZABLE#|pygame.DOUBLEBUF
 
@@ -63,7 +54,7 @@ import lemon_platform
 lemon_platform.SDL = True
 
 
-import lemon_client, rpcing_frames
+import ui_generic_lemon_client, rpcing_frames
 import keybindings
 import replay
 
@@ -217,6 +208,9 @@ def process_event(event):
 	elif event.type == pygame.USEREVENT + 3:
 		c.menu.counterpart.update_menu()
 
+	elif event.type == pygame.USEREVENT + 4:
+		on_rpc_message()
+
 	elif event.type == pygame.KEYDOWN:
 		handle(KeypressEvent(pygame.key.get_pressed(), event.unicode, event.key, event.mod))
 
@@ -236,7 +230,7 @@ def process_event(event):
 
 	elif event.type == pygame.QUIT:
 		pygame.display.iconify()
-		lemon_client.bye()
+		ui_generic_lemon_client.bye()
 
 
 
@@ -247,7 +241,7 @@ def redraw_all(self=None):
 		#log("maybe_redrawing %s on client window request",f)
 		f.maybe_draw()
 	pygame.display.flip()
-lemon_client.redraw = redraw_all
+	ui_generic_lemon_client.redraw = redraw_all
 
 def redraw(self):
 	self.maybe_draw()
@@ -303,8 +297,8 @@ def set_pygame_keyboard_settings_to_system_settings():
 
 
 
-def send_thread_message():
-	pygame.event.post(pygame.event.Event(pygame.USEREVENT + 2))
+def send_thread_message(offset = 2):
+	pygame.event.post(pygame.event.Event(pygame.USEREVENT + offset))
 
 thread_message_signal = Signal(0)
 
@@ -323,13 +317,110 @@ rpcing_frames.server.key_to_name = pygame.key.name
 rpcing_frames.server.mods_to_str = mods_to_str
 
 
-
-
-
-
 def loop():
 	process_event(pygame.event.wait())
 
+
+
+from jsonrpc import Dispatcher, JSONRPCResponseManager, dispatcher
+from jsonrpc.manager import JSONRPCRequest
+import socketserver
+
+
+dispatcher2 = Dispatcher()
+from queue import Queue
+rpc_message_queue = Queue()
+
+import json
+
+class MyTCPHandler(socketserver.StreamRequestHandler):
+	def handle(self):
+		data = b''
+		while True:
+			data += self.rfile.read1(1)
+			try:
+				json.loads(data.decode("utf-8"))
+			except (TypeError, ValueError) as e:
+				continue
+			print("{} wrote:".format(self.client_address[0]))
+			response = handle_sync_message(data)
+			if 'error' in response:
+				rpc_message_queue.append(self.data)
+				send_thread_message(4)
+				response = {"jsonrpc": "2.0",'result':'ok'}
+			r = json.dumps(response).encode("utf-8")
+			print(r)
+			self.wfile.write(r)#\\"}}}}
+			break
+
+def handle_sync_message(data):
+	print(data)
+	response = JSONRPCResponseManager.handle(data, dispatcher)
+	return response.data
+
+
+
+def on_async_rpc_message():
+	request_str = rpc_message_queue.pop()
+	request_str = request_str.decode("utf-8")
+	data = json.loads(request_str)
+	request = JSONRPCRequest.from_data(data)
+	method = dispatcher2[request.method]
+	method(*request.args, **request.kwargs)
+
+
+
+@dispatcher.add_method
+def foobar(**kwargs):
+	return kwargs["foo"] + kwargs["bar"]
+dispatcher["echo"] = lambda s: s
+dispatcher["add"] = lambda a, b: a + b
+
+
+
+
+def _parse_sync(p, text=None):
+	m = MarpaClient(print, True)
+	m.clear()
+	m.collect_grammar(p.full_scope(), p.scope(), p.type)  # parsed_symbol)
+	m.enqueue_precomputation(None)
+	while True:
+		msg = m.t.output.get()
+		if msg.message == 'precomputed':
+			ts = m.string2tokens(text)
+			print("tokens", ts)
+			m.enqueue_parsing([ts, text])
+		elif msg.message == 'parsed':
+			return msg.results
+		else:
+			raise Exception(msg.message)
+
+@dispatcher2.add_method
+def menu(text):
+	p = nodes.Parser()
+	server_frames.editor.root.repl.ch.statements.add(p)
+	server_frames.menu.current_parser_node = p
+	server_frames.menu.update_menu()
+
+@dispatcher2.add_method
+def parse(text):
+	if text == "":
+		return False
+	module = r['repl']
+	p = nodes.Parser()
+	module.ch.statements.add(p)
+	p.add(nodes.Text(value=text))
+	rr = _parse_sync(p, text)
+	result = {}
+	results = []
+	result["results"] = results
+	if (rr and len(rr)):
+		for i in rr:
+			print("parse result:%s" % i)
+			if isinstance(i, nodes.Element):
+				print(" - %s" % i.tostr())
+			results.append({"value":i.serialize()})
+	return result
 
 
 
@@ -342,6 +433,36 @@ def mainloop():
 		loop()
 
 
+def init_rpc():
+
+	#just for quicker debugging
+	#handle_message(' {"id": null, "jsonrpc": "2.0", "method":"menu", "params":["pri"]}')
+	#handle_message(' {"id": null, "jsonrpc": "2.0", "method":"parse", "params":["pri"]}')
+	#handle_message(' {"id": null, "jsonrpc": "2.0", "method":"execute", "params":[{...}]}')
+
+
+	HOST, PORT = "localhost", 9999
+
+	def test():
+		nonlocal HOST, PORT
+		while True:
+			try:
+				server = socketserver.ThreadingTCPServer((HOST, PORT), MyTCPHandler)
+				server.timeout = 0.01
+				server.handle_request()
+			except:# (OSError, ValueError)
+				PORT += 1
+				continue
+			with server:
+				print("listening on %s : %s" % (HOST, PORT))
+				server.serve_forever()
+				break
+
+	import threading
+
+	thread = threading.Thread(target=test)
+	thread.daemon = True
+	thread.start()
 
 
 
@@ -353,23 +474,18 @@ def main():
 		display.set_icon(icon)
 	except:
 		pass
-
 	set_pygame_keyboard_settings_to_system_settings()
 	change_font_size()
-
-	c = lemon_client.Client(thread_message_signal, send_thread_message)
+	c = ui_generic_lemon_client.Client(thread_message_signal, send_thread_message)
 	keybindings.setup(c)
-
 	initial_resize()
 	c.after_start()
-
 	if args.no_timers:
 		args.dontblink = True
 	else:
 		pygame.time.set_timer(pygame.USEREVENT, 777) #poll for SIGINT once in a while
-
 	reset_cursor_blink_timer()
-
+	init_rpc()
 	try:
 		if args.profile:
 			import cProfile
@@ -383,8 +499,6 @@ def main():
 		#log(e),pass
 		pygame.display.iconify()
 		raise
-
-
 
 
 if __name__ == "__main__":
