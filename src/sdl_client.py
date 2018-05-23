@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
 
@@ -209,7 +209,7 @@ def process_event(event):
 		c.menu.counterpart.update_menu()
 
 	elif event.type == pygame.USEREVENT + 4:
-		on_rpc_message()
+		on_async_rpc_message()
 
 	elif event.type == pygame.KEYDOWN:
 		handle(KeypressEvent(pygame.key.get_pressed(), event.unicode, event.key, event.mod))
@@ -333,25 +333,34 @@ rpc_message_queue = Queue()
 
 import json
 
+www = 666
+
 class MyTCPHandler(socketserver.StreamRequestHandler):
 	def handle(self):
+		global www
+		www = self.wfile
 		data = b''
 		while True:
-			data += self.rfile.read1(1)
+			by = self.rfile.read1(1)
+			#print (by)
+			data += by
 			try:
-				json.loads(data.decode("utf-8"))
+				if by == b'}':
+					json.loads(data.decode("utf-8"))
+				else:
+					continue
 			except (TypeError, ValueError) as e:
 				continue
 			print("{} wrote:".format(self.client_address[0]))
-			response = handle_sync_message(data)
-			if 'error' in response:
-				rpc_message_queue.append(self.data)
-				send_thread_message(4)
-				response = {"jsonrpc": "2.0",'result':'ok'}
-			r = json.dumps(response).encode("utf-8")
-			print(r)
-			self.wfile.write(r)#\\"}}}}
-			break
+			#response = handle_sync_message(data)
+			#if 'error' in response:
+			rpc_message_queue.put(data)
+			send_thread_message(4)
+			#	response = {"jsonrpc": "2.0",'result':'ok'}
+			#r = json.dumps(response).encode("utf-8")
+			#print(r)
+			#self.wfile.write(r)#\\"}}}}
+			#break
 
 def handle_sync_message(data):
 	print(data)
@@ -361,21 +370,24 @@ def handle_sync_message(data):
 
 
 def on_async_rpc_message():
-	request_str = rpc_message_queue.pop()
+	request_str = rpc_message_queue.get()
+	print(request_str)
 	request_str = request_str.decode("utf-8")
 	data = json.loads(request_str)
 	request = JSONRPCRequest.from_data(data)
 	method = dispatcher2[request.method]
-	method(*request.args, **request.kwargs)
+	#from IPython import embed; embed()
+	response = {"jsonrpc": "2.0",'id':request.data['id'],'result':method(*request.args, **request.kwargs)}
+	r = json.dumps(response).encode("utf-8")
+	print(r)
+	www.write(r)
 
 
 
 @dispatcher.add_method
 def foobar(**kwargs):
 	return kwargs["foo"] + kwargs["bar"]
-dispatcher["echo"] = lambda s: s
-dispatcher["add"] = lambda a, b: a + b
-
+dispatcher2["echo"] = lambda s: s
 
 
 
@@ -422,8 +434,8 @@ def parse(text):
 			results.append({"value":i.serialize()})
 	return result
 
-
-
+@dispatcher2.add_method
+def setReplPromptText(text)
 
 
 

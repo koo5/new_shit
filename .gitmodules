@@ -7,3 +7,6 @@
 [submodule "supertools"]
 	path = supertools
 	url = https://github.com/gissehel/supertools
+[submodule "lol_ui/lol_ui/jcon-cpp"]
+	path = lol_ui/lol_ui/jcon-cpp
+	url = github.com:joncol/jcon-cpp.git
