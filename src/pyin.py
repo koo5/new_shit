@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+IMPORTS
+"""
+
 from weakref import ref as weakref
 from rdflib import URIRef
 import rdflib
@@ -11,7 +15,21 @@ import logging
 import urllib.parse
 from collections import defaultdict
 
-formatter = logging.Formatter('%(message)s')
+
+
+
+
+kbdbg_out = logging.FileHandler('kbdbg.nt')
+
+
+
+
+
+
+
+
+
+formatter = logging.Formatter('#%(message)s')
 console_debug_out = logging.StreamHandler()
 console_debug_out.setFormatter(formatter)
 
@@ -20,7 +38,6 @@ logger.addHandler(console_debug_out)
 logger.setLevel(logging.DEBUG)
 log=logger.debug
 
-kbdbg_out = logging.FileHandler('kbdbg.nt')
 kbdbg_out.setLevel(logging.DEBUG)
 kbdbg_out.setFormatter(logging.Formatter('%(message)s.'))
 logger=logging.getLogger("kbdbg")

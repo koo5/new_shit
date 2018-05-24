@@ -65,3 +65,9 @@
 :Rule3Frame14 kbdbg:is_for_rule rule3.
 :Rule6Frame8_?who kbdbg:is_bound_to :Rule3Frame14_koo.
 :Rule6Frame8_?who kbdbg:is_unbound_from :Rule3Frame14_koo.
+@prefix kbdbg: <http://kbd.bg/#> .
+@prefix : <file:///#> .
+@prefix kbdbg: <http://kbd.bg/#> .
+@prefix kbdbg: <http://kbd.bg/#> .
+@prefix : <file:///#> .
+@prefix : <file:///#> .
