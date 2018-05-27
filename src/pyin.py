@@ -1,51 +1,60 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-"""
-IMPORTS
-"""
+# coding: utf-8
+
+# In[4]:
+
 
 from weakref import ref as weakref
 from rdflib import URIRef
 import rdflib
 import sys
-#import common_utils
-#g = common_utils.parse_input()
 import logging
 import urllib.parse
 from collections import defaultdict
 
 
+# #OUTPUT:
+# into kbdbg.nt, we should output a valid n3 file with kbdbg2 schema (which is to be defined). 
+# lines starting with "#" are n3 comments. 
+# "#RESULT:" lines are for univar fronted/runner/tester ("tau")
+# the rest of the comment lines are random noise
+
+# In[5]:
 
 
+def init_logging():
+	formatter = logging.Formatter('#%(message)s')
+	console_debug_out = logging.StreamHandler()
+	console_debug_out.setFormatter(formatter)
+	
+	logger1=logging.getLogger()
+	logger1.addHandler(console_debug_out)
+	logger1.setLevel(logging.DEBUG)
+	
+	kbdbg_out = logging.FileHandler('kbdbg.nt')
+	kbdbg_out.setLevel(logging.DEBUG)
+	kbdbg_out.setFormatter(logging.Formatter('%(message)s.'))
+	logger2=logging.getLogger("kbdbg")
+	logger2.addHandler(kbdbg_out)
+	
+	return logger1.debug, logger2.info
 
-kbdbg_out = logging.FileHandler('kbdbg.nt')
 
+log, kbdbg = init_logging()
 
-
-
-
-
-
-
-
-formatter = logging.Formatter('#%(message)s')
-console_debug_out = logging.StreamHandler()
-console_debug_out.setFormatter(formatter)
-
-logger=logging.getLogger()
-logger.addHandler(console_debug_out)
-logger.setLevel(logging.DEBUG)
-log=logger.debug
-
-kbdbg_out.setLevel(logging.DEBUG)
-kbdbg_out.setFormatter(logging.Formatter('%(message)s.'))
-logger=logging.getLogger("kbdbg")
-logger.addHandler(kbdbg_out)
-kbdbg=logger.info
 kbdbg("@prefix kbdbg: <http://kbd.bg/#> ")
 kbdbg("@prefix : <file:///#> ")
+print(33)
 
+
+# In[6]:
+
+
+
+
+
+
+# In[1]:
 
 
 def printify(iterable, separator):
@@ -95,6 +104,8 @@ class Atom(AtomVar):
 		return s.kbdbg_name + s.___short__str__()
 	def ___short__str__(s):
 		return '("'+str(s.value)+'")'
+	def rdf_str(s):
+		return '"'+str(s.value)+'")'
 
 class Var(AtomVar):
 	def __init__(s, debug_name, debug_locals=None):
@@ -223,7 +234,6 @@ class Rule(Kbdbgable):
 					generator = pred(triple.pred, bi_args)
 				generators.append(generator)
 				log("generators:%s", generators)
-		
 			try:
 				generators[depth].__next__()
 				log ("back in " + desc() + "\n# from sub-rule")
@@ -299,7 +309,12 @@ def success(msg):
 
 def is_var(x):
 	#return x.startswith('?')
-	return '?' in x
+	#from IPython import embed; embed()
+	if type(x) == rdflib.URIRef and '?' in str(x):
+		return True
+	if type(x) == str and '?' in x:
+		return True
+	return False
 
 def get_value(x):
 	asst(x)
@@ -321,47 +336,6 @@ def pred(p, args):
 			yield i
 
 
-import click
-
-@click.command()
-@click.argument('kb', type=click.File('rb'))
-@click.argument('goal', type=click.File('rb'))
-def query_from_files(kb, goal):
-	default_graph = '@default'
-	implies = URIRef("http://www.w3.org/2000/10/swap/log#implies")
-
-	graph = rdflib.ConjunctiveGraph(identifier=default_graph)
-	graph.parse(kb, format='nquads')
-
-	rules = []
-
-	for s,p,o in graph.triples((None, None, None, default_graph)):
-		if p != implies:
-			rules.append(Rule(Triple(str(p), [str(s), str(o)]), Graph()))
-		else:
-			for head_triple in graph.get_context(o):
-				#print()
-				#print(head_triple, "<=")
-				body = Graph()
-				for body_triple in graph.get_context(s):
-					#print(body_triple)
-					body.append(Triple(str(body_triple[1]), [str(body_triple[0]), str(body_triple[2])]))
-				rules.append(Rule(Triple(str(head_triple[1]), [str(head_triple[0]), str(head_triple[2])]), body))
-
-	graph = rdflib.Graph()
-	graph.parse(goal, format='nquads')
-
-	goal = Graph()
-	for s,p,o in graph.triples((None, None, None)):
-		goal.append(Triple(str(p), [str(s),str(o)]))
-
-	for i in query(rules, goal):
-		print ('RESULT: ')
-		print (i.__short__str__())
-		print ()
-
-
-
 def query(input_rules, input_query):
 	global preds
 	preds = defaultdict(list)
@@ -370,7 +344,7 @@ def query(input_rules, input_query):
 	for nyan in Rule(None, input_query).match():
 		yield nyan
 
-
+"""
 def test1():
 	input_rules = [
 		Rule(Triple('a', ['?X', 'mortal']),
@@ -388,7 +362,7 @@ def test1():
 	input_query = Graph([Triple('a', [w, 'mortal'])])
 	for nyan in query(input_rules, input_query):
 		print ('#'+str(nyan[w]) + " is mortal, and he's dead")
+"""
 
-if __name__ == "__main__":
-	query_from_files()
 
+# jupyter nbconvert --to python pyin.ipynb 
