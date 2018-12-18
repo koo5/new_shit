@@ -1,0 +1,10 @@
+<lambda> ::= "λ" | "\"
+<expression> ::= <lambda> <variable-list> "." <expression>
+<expression> ::= <application-term>
+<application-term> ::= <application-term> <item>
+<application-term> ::= <item>
+<item> ::= <variable>
+<item> ::= "(" <expression> ")"
+<variable-list> := <variable> | <variable>, <variable-list>
+
+

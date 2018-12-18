@@ -35,8 +35,8 @@ if do_graph_grammar:
 import nodes
 nodes.autocomplete = False
 
-from marpa_cffi.marpa_rpc_client import ThreadedMarpa
-fixmenodes.m = m = ThreadedMarpa(print, True)
+from marpa_cffi.marpa_rpc_client import MarpaClient
+fixmenodes.m = m = MarpaClient(print, True)
 
 def parse_sync(p, text=None):
 	fixmenodes.forget_symbols()
@@ -78,6 +78,7 @@ else:
 	module = r['repl']
 
 p = nodes.Parser()
+
 module.ch.statements.add(p)
 p.add(nodes.Text(value=rest_of_lines))
 module.fix_parents()
