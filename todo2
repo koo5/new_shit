@@ -1,0 +1,17 @@
+help wanted
+===
+here are some (random and possibly outdated) things that i think would help lemon further, sometimes directly, sometimes by making it more
+accesible/interesting to other people. Some understanding of lemon is usually
+necessary though. I will be more than happy to explain every detail, but be prepared that it takes some time.
+some (messy) notes are also notes1, and search for "todo" in the source files..
+
+* add more standard library functions, operators for strings and lists
+* help developing the license
+* look into runnig lemon in pypyjs or compiling it to asm.js
+* improve the curses frontend, figure out what keys to use
+* do more research on or write comparisons of related projects (projectured, cedalion, MPS, eastwest..)
+* figure out how to have a better font in pygame (for mathy expressions, for example) compatible with lemon license (search notes1 for 'font')
+* improve logging, use: (todo)
+* integrate some test framework
+* lemon needs a better data model for the ast nodes. Looking into oldman, or pure rdflib, or a rewrite in another language. Or into graph libraries. And inferencers..
+* alternatively, lets try to do with what we have now and use lemon for user shell-like features or editing triples or narsesse or anything

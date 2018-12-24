@@ -1,2 +1,0 @@
-node "while loop" with syntax: ["while ", ("condition"-*exp)
-//node "while loop" with syntax: ["while ", ("condition"-bool expression)
