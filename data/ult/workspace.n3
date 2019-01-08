@@ -1,0 +1,26 @@
+@prefix lol: http://lemon-operating-language.com/rdf/lol#
+
+:rozsvit_lampicku a lol:command_stub; has_note "budem ovladat lampicku pocitacem?"@cs; 
+has_label "Rozsviť lampičku."@cs.
+
+[ a lol:text_to_be_parsed_and_inserted; rdf:value """
+
+
+#with disambiguation
+grammar for command_stub(lol) is:
+
+
+#without disambiguation
+grammar for command_stub is:
+(name - a string) is a command stub.
+
+
+module rdf
+fragment identifier is 
+
+
+
+end.
+
+
+rdf_identifier is <fragment identifier><optional identifier disambiguation>

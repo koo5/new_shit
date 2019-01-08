@@ -1,0 +1,58 @@
+dbpedia
+snipplr
+android apis alla commandr and automateit
+narsese - nars
+scripting/controlling the ui/editor
+mycroft
+dmesg watcher:
+	when dmesg matches regex ".*Freezing of tasks failed after $\n[.*].* fstrim .*":
+		notify:
+			"fstrim is preventing your computer from going to sleep... file a bug here:... disable fstrim cron entry:..."
+-------------------
+
+simple services:
+standalone microservices with unified rest api with one function to fetch results given some input/search string
+
+file search service:
+	using my python solr code
+browser bookmarks/history
+..
+shell history
+
+google autocomplete/search
+..
+https://retractionwatch.com/retraction-watch-database-user-guide/
+
+
+
+then we have some n3 code like this:
+
+
+then we have a top-level initial document for the ui:
+"""
+available service: 
+	name: file search
+	port: xxx
+...
+
+"""
+
+
+
+
+
+
+module nars0:
+	use nars.stuff.
+	to (command - unquoted string):
+
+module nars1:
+	use nars.stuff.
+	to (command):
+
+
+
+
+
+
+

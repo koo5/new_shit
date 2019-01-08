@@ -1,0 +1,167 @@
+:list_type 
+	a :builtin_nodecl; 
+	:syntax ("list of " [a :child; :name "type"; :type :type_ref]).
+
+:list_literal
+	a :builtin_nodecl;
+	:syntax ("[" :list_literal_body "]").
+
+
+{?x a :builtins} <= {?x :eq (bi:list_type)}.
+
+
+
+
+
+
+{?search_depth :literally_string (?value ?x0 ?rest)} <= {
+	?search_depth_predecessor :has_succ ?search_depth.
+	?value string_builtins:is_split ?l.
+	?search_depth_predecessor :literally_list (?l ?x0 ?rest).
+}.
+
+{?search_depth :literally_list (?value ?x0 ?rest)} <= {
+	?search_depth_predecessor :has_succ ?search_depth.
+	?x0 rdf:first ?x0f. ?value rdf:first ?x0f.
+	?x0 rdf:rest  ?x0r.  ?value rdf:rest ?vr.
+	?search_depth_predecessor :literally_list (?vr ?x0r ?rest).
+}.
+
+{?search_depth :literally_list (?x0 ?x0 rdf:nil)} <= {
+}.
+
+{?search_depth :repeat_literal (?repeat_depth ?literal ?x0 ?rest)} <= {
+	?search_depth_predecessor :has_succ ?search_depth.
+	?repeat_depth_predecessor :has_succ ?repeat_depth.
+	?search_depth_predecessor :literally_string (?literal ?x0 ?rest).
+}.
+
+{?search_depth :repeat_literal (:zero ?literal ?x0 ?rest)} <= {
+}.
+
+
+
+
+
+
+
+
+
+
+
+{?search_depth :parse_indents (?indent_depth ?x0 ?rest)} <= {
+	?search_depth_predecessor :has_succ ?search_depth.
+	?search_depth_predecessor :repeat_literal (?indent_depth "\t" ?x0 ?rest).
+}.
+
+{?search_depth :parse_with_indent (?indent_depth ?node_type ?x0 ?rest)} <= {
+	?search_depth_predecessor :has_succ ?search_depth.
+	?search_depth_predecessor :parse_indents (?indent_depth ?x0 ?rest).
+
+}.
+
+
+
+
+
+:minus_1 a :negative_nat.
+{?x a :negative_nat. ?x :has_succ ?y} <= {?y a :negative_nat}.
+
+
+--with-second-chance
+query
+:minus_1 :parse (:modules """
+module "basic translation":
+	node definition of "node translation": ("language description"-string), " translation of ", ("node"-node), ":", ("syntax"-list of syntax item)
+
+module "basic scripting":
+	node "while loop" with syntax: ["while ", ("condition"-bool exp), ("body"-statement)]
+	czech translation of *while loop: ["dokud", (condition), (body)]
+""" rdf:rest).
+
+
+
+
+builtins_dcg_plus_plus_text has_comment """
+this is a declarative definition of the basic building blocks of the ddl and their grammar.
+probably just dcg + optional child names + indent/dedent..
+i think im gonna parse this and transform it into ast nodes of the ddl language, and stick it into a builtins module.
+"""
+; has_value
+----
+modules ++> module, modules.
+modules ++> .
+module ++> "module ", name:string_literal, ":", indent, "\n", statements, dedent
+statements ++> .
+statements ++> statement, statements.
+statement ++>
+""".
+
+scratch that, the correspondence is more complex, and im gonna have to make the initial translation by hand anyway.
+---
+
+
+
+:built_in_ldl_initial_specification_text :has_value
+"""
+
+string_literal_body is a series of string_literal_body_item.
+string_literal_body_item ++> anything except ["\""].
+string_literal_body_item ++> "\\\\".
+string_literal_body_item ++> "\\\"".
+#or \character_code..., todo
+
+node_name is a category(?).
+node_name_unquoted is a node_name.
+node_name_unquoted ++> string_literal_body.
+node_name_quoted is a node_name.
+node_name_quoted ++> string_literal.
+
+statements is a series of statement separated with newline.
+
+x_is_a_series_of_y_separated_with_z is a statement.
+x_is_a_series_of_y_separated_with_z ++> node_name, " is a series of ", item_type:node_name, " separated with ", separator:string_literal.
+
+subtype is a statement.
+subtype ++> sub:node_name, " is a ", sup:node_name.
+
+grammar is a statement.
+grammar ++> node_name, " ++> ", grammar_items, ".".
+
+grammar_items is a series of grammar_item separated with ", ".
+grammar_item is a category.
+
+string_literal is a grammar_item.
+string_literal ++> "\"", string_literal_body, "\"".
+node_name is a grammar_item.
+node_name_with_child_name is a grammar item.
+node_name_with_child_name ++> child_name:node_name, ":", type_name:node_name.
+
+comment is a statement.
+comment ++> "#", anything except ["\n"].
+
+""";
+:has_comment """
+this is a declarative definition of the basic building blocks of the ddl and their grammar.
+probably just dcg + "anything except" +  optional child names + "indent"/"dedent" special syntax items.
+"""
+
+
+
+ldl_2:
+"""
+modules is a series of module separated with newline.
+module ++> "module ", name:string_literal_body, ":", indent, "\n", statements, dedent.
+"""
+
+lexicon_module has_text
+"""
+..
+...
+
+
+category: category/kind/class of nodes. for example "statement" is a category of nodes, and "while" is a statement.
+
+
+
+"""

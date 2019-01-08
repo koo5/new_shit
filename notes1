@@ -1244,3 +1244,9 @@ transition has string input
 
 A a state. B a state. X a transition. X source A. X target B. X input i.
 <stoopkid> M a semiautomaton. M hasState A. M hasState B. M hasTransition X
+
+
+http://xahlee.info/cmaci/notation/lang_notation_formalism.html
+
+
+
